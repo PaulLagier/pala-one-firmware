@@ -442,10 +442,18 @@ static void invalidateMetrics() {
   g_metricsValid = false;
 }
 
+// Returns the font ascent adjusted for layout purposes.
+// Samim 12 (size 9) reports an ascent 1 px taller than its visual cap
+// height warrants relative to the Helvetica faces. Subtracting 1 fits
+// an extra line on screen without the text feeling dense.
+static inline int layoutAscent() {
+  return u8g2.getFontAscent() - (g_settings.fontSize == 9 ? 1 : 0);
+}
+
 static const LayoutMetrics& getMetrics() {
   if (!g_metricsValid) {
     u8g2.setFont(MAIN_FONT);
-    g_metrics.ascent = u8g2.getFontAscent();
+    g_metrics.ascent = layoutAscent();
     g_metrics.descent = u8g2.getFontDescent();
     g_metrics.lineH = (g_metrics.ascent - g_metrics.descent) + g_settings.lineGap;
 
@@ -2349,7 +2357,7 @@ static void drawLibrary() {
   u8g2.setFont(MAIN_FONT);
   buildLibraryEntries();
 
-  int ascent = u8g2.getFontAscent();
+  int ascent = layoutAscent();
   int descent = u8g2.getFontDescent();
   int lineH = (ascent - descent) + g_settings.lineGap + 1;
   int y = drawSectionHeader("Library");
@@ -2384,7 +2392,7 @@ static void drawLibrary() {
 static void drawListScreen() {
   prepareMenuFrame();
   u8g2.setFont(MAIN_FONT);
-  int ascent = u8g2.getFontAscent();
+  int ascent = layoutAscent();
   int descent = u8g2.getFontDescent();
   int lineH = (ascent - descent) + g_settings.lineGap + 1;
   int y = drawSectionHeader("List");
@@ -2453,7 +2461,7 @@ static void drawListScreen() {
 static void drawAbout() {
   prepareMenuFrame();
   u8g2.setFont(MAIN_FONT);
-  int ascent = u8g2.getFontAscent();
+  int ascent = layoutAscent();
   int lineH = (ascent - u8g2.getFontDescent()) + g_settings.lineGap + 1;
   int y = drawSectionHeader("Device");
 
@@ -2763,7 +2771,7 @@ static bool loadAndRunApp(const char* path) {
 static void drawAppsMenu() {
   prepareMenuFrame();
   u8g2.setFont(MAIN_FONT);
-  int ascent  = u8g2.getFontAscent();
+  int ascent  = layoutAscent();
   int descent = u8g2.getFontDescent();
   int lineH   = (ascent - descent) + g_settings.lineGap + 1;
   int y = drawSectionHeader("Apps");
@@ -2792,7 +2800,7 @@ static void drawAppsMenu() {
 static void drawBookmarksBookSelect() {
   prepareMenuFrame();
   u8g2.setFont(MAIN_FONT);
-  int ascent = u8g2.getFontAscent();
+  int ascent = layoutAscent();
   int descent = u8g2.getFontDescent();
   int lineH = (ascent - descent) + g_settings.lineGap + 1;
   int y = drawSectionHeader("Bookmarks");
@@ -2827,7 +2835,7 @@ static void drawBookmarksBookSelect() {
 static void drawBookmarksList() {
   prepareMenuFrame();
   u8g2.setFont(MAIN_FONT);
-  int ascent = u8g2.getFontAscent();
+  int ascent = layoutAscent();
   int descent = u8g2.getFontDescent();
   int lineH = (ascent - descent) + g_settings.lineGap;
   int y = drawSectionHeader("Bookmarks");
