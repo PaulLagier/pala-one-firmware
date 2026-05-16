@@ -1333,7 +1333,7 @@ static void buildLibraryEntries() {
     g_library.entryDepths[g_library.entryCount] = 0;
     g_library.entryCount++;
   }
-  if (g_library.entryCount < MAX_LIBRARY_ENTRIES) {
+  if (hasAnyApp() && g_library.entryCount < MAX_LIBRARY_ENTRIES) {
     g_library.entryTypes[g_library.entryCount] = LIB_ENTRY_APPS;
     g_library.entryRefs[g_library.entryCount] = -1;
     g_library.entryDepths[g_library.entryCount] = 0;
@@ -2470,6 +2470,23 @@ static void drawAbout() {
   }
 
   display.update();
+}
+
+static bool hasAnyApp() {
+  if (!FS.exists("/apps")) return false;
+  File dir = FS.open("/apps");
+  if (!dir || !dir.isDirectory()) { if (dir) dir.close(); return false; }
+
+  bool found = false;
+  File f = dir.openNextFile();
+  while (f) {
+    String n = String(f.name());
+    f.close();
+    if (n.endsWith(".bin")) { found = true; break; }
+    f = dir.openNextFile();
+  }
+  dir.close();
+  return found;
 }
 
 static void scanApps() {
