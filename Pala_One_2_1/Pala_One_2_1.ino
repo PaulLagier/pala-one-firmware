@@ -146,6 +146,7 @@ struct RuntimeSettings {
   uint32_t sleepSecs = 120;
   int lineGap = 0;
   int readerLongPressAction = LONGPRESS_BOOKMARK;
+  bool noScreensaver = false;
 };
 
 struct LibraryState {
@@ -464,8 +465,9 @@ static const LayoutMetrics& getMetrics() {
 
 static void applyFontSize(int sz) {
   switch (sz) {
-    case 8:  MAIN_FONT = u8g2_font_helvR08_te; BOLD_FONT = u8g2_font_helvB08_te; break;
-    case 10: MAIN_FONT = u8g2_font_helvR10_te; BOLD_FONT = u8g2_font_helvB10_te; break;
+    case 8:  MAIN_FONT = u8g2_font_helvR08_te;    BOLD_FONT = u8g2_font_helvB08_te;    break;
+    case 9:  MAIN_FONT = u8g2_font_samim_12_t_all; BOLD_FONT = u8g2_font_samim_12_t_all; break;
+    case 10: MAIN_FONT = u8g2_font_helvR10_te;    BOLD_FONT = u8g2_font_helvB10_te;    break;
     case 12: MAIN_FONT = u8g2_font_helvR12_te; BOLD_FONT = u8g2_font_helvB12_te; break;
     case 14: MAIN_FONT = u8g2_font_helvR14_te; BOLD_FONT = u8g2_font_helvB14_te; break;
     default: MAIN_FONT = u8g2_font_helvR10_te; BOLD_FONT = u8g2_font_helvB10_te; sz = 10; break;
@@ -486,6 +488,7 @@ static void loadSettings() {
   if (g_settings.lineGap > 4) g_settings.lineGap = 4;
 
   g_settings.readerLongPressAction = LONGPRESS_BOOKMARK;
+  g_settings.noScreensaver = prefs.getBool("cfg_noscr", false);
   invalidateMetrics();
 }
 
@@ -3776,6 +3779,7 @@ static void handleListClearDoneWeb() {
 
 static void handleSettings() {
   String sel8 = (g_settings.fontSize == 8) ? " selected" : "";
+  String sel9 = (g_settings.fontSize == 9) ? " selected" : "";
   String sel10 = (g_settings.fontSize == 10) ? " selected" : "";
   String sel12 = (g_settings.fontSize == 12) ? " selected" : "";
   String sel14 = (g_settings.fontSize == 14) ? " selected" : "";
@@ -3823,6 +3827,7 @@ static void handleSettings() {
     "<div class='top'><div><h1>Pala One Settings</h1><div class='muted'>Firmware " FW_VERSION " configuration page stored directly on the device.</div></div><a href='/'>&#8592; Home</a></div>"
     "<div class='card'><h2>Reading</h2><form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'><div><label for='font'>Font size</label><select id='font' name='font'>"
     "<option value='8'"; out += sel8; out += ">8px &mdash; tiny</option>";
+  out += "<option value='9'"; out += sel9; out += ">9px &mdash; Samim</option>";
   out += "<option value='10'"; out += sel10; out += ">10px &mdash; small</option>";
   out += "<option value='12'"; out += sel12; out += ">12px &mdash; medium</option>";
   out += "<option value='14'"; out += sel14; out += ">14px &mdash; large</option>";
@@ -3844,6 +3849,13 @@ static void handleSettings() {
   out +=
     "</select><div class='hint'>A small change here can make text much easier to scan.</div></div>"
     "</div>"
+    "<div style='margin-top:14px'><label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
+    "<input type='checkbox' name='noscr' id='noscr' style='width:auto'";
+  if (g_settings.noScreensaver) out += " checked";
+  out +=
+    "><span>No-screensaver mode</span></label>"
+    "<div class='hint'>Device still sleeps normally. When asleep, the last page stays on screen instead of the screensaver, and waking skips the full display refresh.</div></div>"
+    "<input type='hidden' name='noscr_form' value='1'>"
     "<div class='actions' style='margin-top:24px;'><button type='submit'>Save settings</button><span class='muted'>No extra files, scripts, or fonts.</span></div></form></div>"
     "<div class='card'><h2>Screensaver</h2>"
     "<p>Upload raw XBM bytes: <b>3904 bytes</b>, 250&times;122 px, 1-bit, LSB-first, 32 bytes per row.</p>"
@@ -3869,7 +3881,7 @@ static void handleSettingsPost() {
 
   if (server.hasArg("font")) {
     int fs = server.arg("font").toInt();
-    if (fs != 8 && fs != 10 && fs != 12 && fs != 14) fs = 10;
+    if (fs != 8 && fs != 9 && fs != 10 && fs != 12 && fs != 14) fs = 10;
     if (fs != g_settings.fontSize) {
       applyFontSize(fs);
       prefs.putInt("cfg_font", fs);
@@ -3896,6 +3908,16 @@ static void handleSettingsPost() {
       prefs.putInt("cfg_lgap", lg);
       invalidateMetrics();
       layoutChanged = true;
+    }
+  }
+
+  // noscr_form is a hidden sentinel always present when the settings form is submitted,
+  // which lets us distinguish an explicit unchecked state from a non-settings POST.
+  if (server.hasArg("noscr_form")) {
+    bool ns = server.hasArg("noscr");
+    if (ns != g_settings.noScreensaver) {
+      g_settings.noScreensaver = ns;
+      prefs.putBool("cfg_noscr", ns);
     }
   }
 
@@ -4338,8 +4360,10 @@ static void goToSleep() {
   syncWakeState(wasReading);
   safeCloseCurrentBook();
 
-  drawSleepScreen();
-  delay(600);
+  if (!g_settings.noScreensaver) {
+    drawSleepScreen();
+    delay(600);
+  }
 
   WiFi.softAPdisconnect(true);
   WiFi.disconnect(true, true);
@@ -4408,7 +4432,7 @@ void setup() {
           if (openBookByIndex(i)) {
             resetPreviewState();
             mode = MODE_READER;
-            g_reader.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
+            if (!g_settings.noScreensaver) g_reader.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
             renderCurrentPage();   // draw first — takes ~300ms, user releases button during this
             resetInputFrontend();  // then discard the wake-press only
             restored = true;
