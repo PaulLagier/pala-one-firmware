@@ -4442,6 +4442,139 @@ static void drawSleepScreen() {
   display.update();
 }
 
+// ============================================================================
+//  App integration: reading-streak auto-log + sleep-timer notification
+//  Both features touch /apps/<key>.dat files that the corresponding example
+//  apps (examples/reading_streak, examples/sleep_timer) own. The structs
+//  below MUST match the SavedState/SleepTimerFile layouts in those apps —
+//  field order and types are the wire format.
+// ============================================================================
+
+struct ReadingStreakFile {
+  uint32_t version;        // == STREAK_SCHEMA
+  uint32_t firstRtcSec;    // rtcSeconds() at first ever write
+  uint32_t lastLoggedDay;  // day index, 0xFFFFFFFFu = never
+  uint32_t currentStreak;
+  uint32_t longestStreak;
+  uint32_t totalSessions;
+  uint32_t bitmapHead;     // day index of bit 0
+  uint32_t bitmap;         // bit i = "logged on day (head - i)"
+};
+
+struct SleepTimerFile {
+  uint32_t version;        // == SLEEP_TIMER_SCHEMA
+  uint32_t status;         // SLEEP_TIMER_IDLE / RUNNING / NEEDS_NOTIFY
+  uint32_t endRtcSec;
+  uint32_t durationMin;
+  uint32_t startedRtcSec;
+};
+
+static const uint32_t STREAK_SCHEMA          = 1;
+static const uint32_t STREAK_DAY_SECS        = 86400u;
+static const int      STREAK_PAGES_THRESHOLD = 5;     // pages today before we log
+
+static const uint32_t SLEEP_TIMER_SCHEMA        = 1;
+static const uint32_t SLEEP_TIMER_IDLE          = 0;
+static const uint32_t SLEEP_TIMER_RUNNING       = 1;
+static const uint32_t SLEEP_TIMER_NEEDS_NOTIFY  = 2;
+
+static struct {
+  int      pagesToday        = 0;
+  uint32_t cachedFirstRtcSec = 0;
+  uint32_t cachedLastDay     = 0xFFFFFFFFu;
+  bool     bootstrapped      = false;
+} g_streakAuto;
+
+static bool readAppDat(const char* key, void* buf, size_t expected) {
+  String path = String("/apps/") + key + ".dat";
+  File f = LittleFS.open(path, "r");
+  if (!f) return false;
+  size_t n = f.read((uint8_t*)buf, expected);
+  f.close();
+  return n == expected;
+}
+
+static void writeAppDat(const char* key, const void* buf, size_t len) {
+  String path = String("/apps/") + key + ".dat";
+  File f = LittleFS.open(path, "w");
+  if (!f) return;
+  f.write((const uint8_t*)buf, len);
+  f.close();
+}
+
+// Increment the streak after enough page turns on a new day. Mirrors the
+// log logic in examples/reading_streak/app.c so manual taps and auto-log
+// produce the same numbers.
+static void streakAutoLogOnPageTurn() {
+  if (!g_streakAuto.bootstrapped) {
+    ReadingStreakFile s;
+    if (!readAppDat("streak", &s, sizeof(s)) || s.version != STREAK_SCHEMA) {
+      s.version       = STREAK_SCHEMA;
+      s.firstRtcSec   = api_rtcSeconds();
+      s.lastLoggedDay = 0xFFFFFFFFu;
+      s.currentStreak = 0;
+      s.longestStreak = 0;
+      s.totalSessions = 0;
+      s.bitmapHead    = 0;
+      s.bitmap        = 0;
+      writeAppDat("streak", &s, sizeof(s));
+    }
+    g_streakAuto.cachedFirstRtcSec = s.firstRtcSec;
+    g_streakAuto.cachedLastDay     = s.lastLoggedDay;
+    g_streakAuto.bootstrapped      = true;
+  }
+
+  uint32_t now = api_rtcSeconds();
+  if (now < g_streakAuto.cachedFirstRtcSec) return;           // RTC ran backwards
+  uint32_t today = (now - g_streakAuto.cachedFirstRtcSec) / STREAK_DAY_SECS;
+
+  if (g_streakAuto.cachedLastDay == today) return;            // already logged today
+  if (++g_streakAuto.pagesToday < STREAK_PAGES_THRESHOLD) return;
+
+  ReadingStreakFile s;
+  if (!readAppDat("streak", &s, sizeof(s)) || s.version != STREAK_SCHEMA) return;
+
+  bool cont = (s.lastLoggedDay != 0xFFFFFFFFu) && (today == s.lastLoggedDay + 1);
+  if (today > s.bitmapHead) {
+    uint32_t d = today - s.bitmapHead;
+    s.bitmap     = (d >= 32) ? 0 : (s.bitmap << d);
+    s.bitmapHead = today;
+  }
+  s.bitmap        |= 1u;
+  s.currentStreak  = cont ? (s.currentStreak + 1) : 1;
+  if (s.currentStreak > s.longestStreak) s.longestStreak = s.currentStreak;
+  s.lastLoggedDay  = today;
+  s.totalSessions += 1;
+  writeAppDat("streak", &s, sizeof(s));
+
+  g_streakAuto.cachedLastDay = today;
+  g_streakAuto.pagesToday    = 0;
+
+  showToast(String("Reading streak: day ") + String(s.currentStreak));
+}
+
+// Flip RUNNING -> NEEDS_NOTIFY exactly once when the timer first expires,
+// and toast at that moment. Subsequent page turns are quiet — the
+// sleep_timer app's own UI is the persistent indicator (and it clears
+// the file back to IDLE on acknowledge).
+static void sleepTimerCheckExpired() {
+  SleepTimerFile s;
+  if (!readAppDat("sleep_timer", &s, sizeof(s)) || s.version != SLEEP_TIMER_SCHEMA) return;
+  if (s.status != SLEEP_TIMER_RUNNING) return;
+  if (api_rtcSeconds() < s.endRtcSec)  return;
+
+  s.status = SLEEP_TIMER_NEEDS_NOTIFY;
+  writeAppDat("sleep_timer", &s, sizeof(s));
+  showToast(String("Sleep timer up (") + String(s.durationMin) + " min)");
+}
+
+// Called from the four reader next/prev-page sites (not from bookmark
+// adds — those re-render but aren't a real page turn).
+static inline void onReaderPageTurn() {
+  streakAutoLogOnPageTurn();
+  sleepTimerCheckExpired();
+}
+
 static void goToSleep() {
   if (!ENABLE_DEEP_SLEEP) return;
 
@@ -4475,6 +4608,22 @@ static void goToSleep() {
   Platform::prepareToSleep();
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
   esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN, 0);
+
+  // If a sleep timer is running, also wake at its end-time so the user
+  // gets the toast even if they put the device down.
+  {
+    SleepTimerFile st;
+    if (readAppDat("sleep_timer", &st, sizeof(st)) &&
+        st.version == SLEEP_TIMER_SCHEMA &&
+        st.status  == SLEEP_TIMER_RUNNING) {
+      uint32_t now = api_rtcSeconds();
+      if (st.endRtcSec > now) {
+        uint64_t deltaUs = (uint64_t)(st.endRtcSec - now) * 1000000ULL;
+        esp_sleep_enable_timer_wakeup(deltaUs);
+      }
+    }
+  }
+
   delay(50);
   esp_deep_sleep_start();
 }
@@ -4522,6 +4671,10 @@ void setup() {
   loadBooks();
   registerWebRoutes();
   markUserActivity();
+
+  // If a sleep timer expired (possibly woke us via RTC alarm), queue the
+  // toast so it appears on whatever screen we render next.
+  sleepTimerCheckExpired();
 
   bool restored = false;
   if (prefs.getInt("wake_mode", 0) == 1) {
@@ -4701,6 +4854,7 @@ static void handleModeBookmarkPreview() {
     if (g_reader.pageIndex > 0) {
       g_reader.pageIndex--;
       g_reader.pageTurnsSinceFull++;
+      onReaderPageTurn();
       renderCurrentPage();
     }
     return;
@@ -4713,6 +4867,7 @@ static void handleModeBookmarkPreview() {
     if (g_reader.eofReached && g_reader.pageIndex >= g_reader.knownPages) g_reader.pageIndex = g_reader.knownPages - 1;
     if (g_reader.pageIndex != oldPage) {
       g_reader.pageTurnsSinceFull++;
+      onReaderPageTurn();
       renderCurrentPage();
     }
     return;
@@ -4836,6 +4991,7 @@ static void handleModeReader() {
       g_reader.pageIndex--;
       saveProgressThrottled(false);
       g_reader.pageTurnsSinceFull++;
+      onReaderPageTurn();
       renderCurrentPage();
     }
     return;
@@ -4850,6 +5006,7 @@ static void handleModeReader() {
     if (g_reader.pageIndex != oldPage) {
       saveProgressThrottled(false);
       g_reader.pageTurnsSinceFull++;
+      onReaderPageTurn();
       renderCurrentPage();
     }
     return;
