@@ -2632,11 +2632,23 @@ static void drawReaderMenu() {
   if (filled > barW) filled = barW;
   gfx.drawRect(barX, y, barW, barH, 1);
   if (filled > 2) gfx.fillRect(barX + 1, y + 1, filled - 2, barH - 2, 1);
-  y += barH + 4 + lineH;  // gap after bar, then advance one line
+  y += barH + 4;
+
+  // Statusbar mode row — short-click cycles through the three modes.
+  const char* sbName = "Full";
+  switch (g_settings.statusbarMode) {
+    case STATUSBAR_MINIMAL: sbName = "Minimal"; break;
+    case STATUSBAR_HIDDEN:  sbName = "Hidden";  break;
+    case STATUSBAR_FULL:
+    default:                sbName = "Full";    break;
+  }
+  snprintf(buf, sizeof(buf), "Statusbar: %s", sbName);
+  u8g2.setCursor(MARGIN_X, y);
+  u8g2.print(buf);
 
   // Footer hint at the very bottom.
   u8g2.setCursor(MARGIN_X, SCREEN_H - 2);
-  u8g2.print("click to close");
+  u8g2.print("click: cycle  2x: close");
 
   display.update();
 }
@@ -4919,8 +4931,19 @@ static void handleModeList() {
 }
 
 static void handleModeReader() {
-  // Reader menu overlay: any click closes it and re-renders the page.
+  // Reader menu overlay:
+  //   - shortClick cycles the statusbar mode and redraws the menu in place.
+  //   - any other click closes the menu and returns to the page.
   if (g_readerMenu.active) {
+    if (btns.shortClick) {
+      int next = g_settings.statusbarMode + 1;
+      if (next > STATUSBAR_HIDDEN) next = STATUSBAR_FULL;
+      g_settings.statusbarMode = next;
+      prefs.putInt("cfg_statusbar", next);
+      invalidateMetrics();
+      drawReaderMenu();
+      return;
+    }
     if (btns.anyClick()) {
       g_readerMenu.active = false;
       btns.resetClicks();
