@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+
+# Built app artifacts (per-example .bin/.elf produced by examples/build.ps1).
+examples/**/*.bin
+examples/**/*.elf
