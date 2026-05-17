@@ -116,6 +116,12 @@ enum ReaderLongPressAction {
   LONGPRESS_BOOKMARK = 0
 };
 
+enum StatusbarMode {
+  STATUSBAR_FULL    = 0,  // 8px: page-progress bar + page number
+  STATUSBAR_MINIMAL = 1,  // 1px: single-row progress fraction
+  STATUSBAR_HIDDEN  = 2,  // no statusbar reserve
+};
+
 enum LibraryEntryType {
   LIB_ENTRY_BACK,
   LIB_ENTRY_FOLDER,
@@ -147,6 +153,7 @@ struct RuntimeSettings {
   uint32_t sleepSecs = 120;
   int lineGap = 0;
   int readerLongPressAction = LONGPRESS_BOOKMARK;
+  int statusbarMode = STATUSBAR_FULL;
 };
 
 struct LibraryState {
@@ -449,6 +456,18 @@ static void invalidateMetrics() {
   g_metricsValid = false;
 }
 
+// Pixels reserved at the bottom for the statusbar in the current mode.
+// STATUS_H (8) is the maximum and is what toast overlays use unconditionally;
+// this is the per-mode reservation that subtracts from reader text area.
+static int statusbarReserveH() {
+  switch (g_settings.statusbarMode) {
+    case STATUSBAR_HIDDEN:  return 0;
+    case STATUSBAR_MINIMAL: return 1;
+    case STATUSBAR_FULL:
+    default:                return STATUS_H;
+  }
+}
+
 static const LayoutMetrics& getMetrics() {
   if (!g_metricsValid) {
     u8g2.setFont(MAIN_FONT);
@@ -461,7 +480,7 @@ static const LayoutMetrics& getMetrics() {
     g_metrics.maxWidth = w;
 
     int maxHeight = SCREEN_H - TOP_PAD - BOT_PAD;
-    if (SHOW_PROGRESS_BAR || SHOW_PAGE_NUMBER) maxHeight -= STATUS_H;
+    maxHeight -= statusbarReserveH();
 
     g_metrics.maxLines = maxHeight / g_metrics.lineH;
     if (g_metrics.maxLines < 1) g_metrics.maxLines = 1;
@@ -494,6 +513,11 @@ static void loadSettings() {
   if (g_settings.lineGap > 4) g_settings.lineGap = 4;
 
   g_settings.readerLongPressAction = LONGPRESS_BOOKMARK;
+
+  int sb = prefs.getInt("cfg_statusbar", STATUSBAR_FULL);
+  if (sb < STATUSBAR_FULL || sb > STATUSBAR_HIDDEN) sb = STATUSBAR_FULL;
+  g_settings.statusbarMode = sb;
+
   invalidateMetrics();
 }
 
@@ -2269,8 +2293,19 @@ static bool openBookByIndex(int idx) {
 }
 
 static void drawStatusBar(uint32_t startOffset) {
+  if (g_settings.statusbarMode == STATUSBAR_HIDDEN) return;
+
   size_t total = g_reader.file.size();
   if (total == 0) total = 1;
+
+  if (g_settings.statusbarMode == STATUSBAR_MINIMAL) {
+    int w = SCREEN_W - 2 * MARGIN_X;
+    int filled = (int)((startOffset * (uint32_t)w) / (uint32_t)total);
+    if (filled < 0) filled = 0;
+    if (filled > w) filled = w;
+    if (filled > 0) gfx.drawFastHLine(MARGIN_X, SCREEN_H - 1, filled, 1);
+    return;
+  }
 
   int pageTextW = 0;
   if (SHOW_PAGE_NUMBER) {
