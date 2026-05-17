@@ -4730,7 +4730,14 @@ void setup() {
             mode = MODE_READER;
             g_reader.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
             renderCurrentPage();   // draw first — takes ~300ms, user releases button during this
-            resetInputFrontend();  // then discard the wake-press only
+            if (g_deviceLocked) {
+              // Keep the wake-press edges so a click-then-hold can wake AND
+              // unlock in one motion. resetInputFrontend would otherwise
+              // drain them and force the user to repeat the unlock gesture.
+              markUserActivity();
+            } else {
+              resetInputFrontend();  // discard the wake-press only
+            }
             restored = true;
           }
           break;
@@ -4741,7 +4748,11 @@ void setup() {
 
   if (!restored) {
     drawLibrary();
-    resetInputFrontend();
+    if (g_deviceLocked) {
+      markUserActivity();
+    } else {
+      resetInputFrontend();
+    }
   }
 
   // Drop to 80 MHz for normal operation — saves significant power.
