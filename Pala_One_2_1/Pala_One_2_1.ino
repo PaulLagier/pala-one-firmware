@@ -66,6 +66,7 @@ static const int READER_IDLE_PREFETCH_PAGES = 1;
 static const uint32_t DOUBLE_MS = 300;
 static const uint32_t TRIPLE_MS = 550;
 static const uint32_t LONG_MS = 850;
+static const uint32_t VERY_LONG_MS = 2000;
 static const uint32_t DEBOUNCE_MS = 14;
 
 static const uint32_t SAVE_EVERY_MS = 7000;
@@ -121,6 +122,15 @@ enum StatusbarMode {
   STATUSBAR_HIDDEN  = 2,  // no statusbar reserve
 };
 
+// Actions that can be bound to the three "advanced" reader gestures
+// (long press, very-long press, click-then-hold). Stored in prefs.
+enum ButtonAction {
+  ACTION_NONE     = 0,
+  ACTION_BOOKMARK = 1,
+  ACTION_LOCK     = 2,
+  ACTION_MENU     = 3,
+};
+
 enum LibraryEntryType {
   LIB_ENTRY_BACK,
   LIB_ENTRY_FOLDER,
@@ -153,6 +163,10 @@ struct RuntimeSettings {
   int lineGap = 0;
   int readerLongPressAction = LONGPRESS_BOOKMARK;
   int statusbarMode = STATUSBAR_FULL;
+
+  int actionLong      = ACTION_BOOKMARK;  // plain long press
+  int actionExtraLong = ACTION_LOCK;      // very-long press
+  int actionClickHold = ACTION_MENU;      // click then hold
 };
 
 struct LibraryState {
@@ -288,6 +302,7 @@ struct ButtonState {
   bool tripleClick = false;
   bool quadClick = false;
   bool longClick = false;
+  bool veryLongClick = false;   // hold >= VERY_LONG_MS, no preceding click
   bool clickHoldClick = false;  // chord: short click immediately followed by a long hold
 
   uint32_t rawPressCount = 0; // every short press-release, unfiltered by multi-click windows
@@ -298,6 +313,7 @@ struct ButtonState {
     tripleClick = false;
     quadClick = false;
     longClick = false;
+    veryLongClick = false;
     clickHoldClick = false;
   }
 
@@ -314,7 +330,7 @@ struct ButtonState {
   }
 
   bool anyClick() const {
-    return shortClick || doubleClick || tripleClick || quadClick || longClick || clickHoldClick;
+    return shortClick || doubleClick || tripleClick || quadClick || longClick || veryLongClick || clickHoldClick;
   }
 
   void poll();
@@ -340,6 +356,7 @@ ReaderState g_reader;
 BookmarkUiState g_bookmarkUi;
 ToastState g_toast;
 ReaderMenuState g_readerMenu;
+bool g_deviceLocked = false;
 ListState g_list;
 UploadState g_upload;
 BatteryState g_battery;
@@ -522,6 +539,14 @@ static void loadSettings() {
   if (sb < STATUSBAR_FULL || sb > STATUSBAR_HIDDEN) sb = STATUSBAR_FULL;
   g_settings.statusbarMode = sb;
 
+  auto clampAction = [](int v, int defaultV) -> int {
+    if (v < ACTION_NONE || v > ACTION_MENU) return defaultV;
+    return v;
+  };
+  g_settings.actionLong      = clampAction(prefs.getInt("cfg_btnL",  ACTION_BOOKMARK), ACTION_BOOKMARK);
+  g_settings.actionExtraLong = clampAction(prefs.getInt("cfg_btnXL", ACTION_LOCK),     ACTION_LOCK);
+  g_settings.actionClickHold = clampAction(prefs.getInt("cfg_btnCH", ACTION_MENU),     ACTION_MENU);
+
   invalidateMetrics();
 }
 
@@ -588,10 +613,11 @@ void ButtonState::poll() {
       if (pressArmed) {
         uint32_t dur = (uint32_t)(edgeT - pressStart);
         if (dur >= LONG_MS) {
-          // If a short click happened just before this hold, treat the
-          // pair as a click-then-hold chord instead of a plain longClick.
           if (clickCount == 1) {
+            // click-then-hold chord (regardless of hold duration after the click)
             clickHoldClick = true;
+          } else if (dur >= VERY_LONG_MS) {
+            veryLongClick = true;
           } else {
             longClick = true;
           }
@@ -3987,6 +4013,34 @@ static void handleListClearDoneWeb() {
   server.send(302, "text/plain", "");
 }
 
+// Helpers for the remappable-button section of the settings page.
+static void appendActionOption(String& out, int val, const char* label, int current) {
+  out += "<option value='";
+  out += val;
+  out += "'";
+  if (val == current) out += " selected";
+  out += ">";
+  out += label;
+  out += "</option>";
+}
+
+static void appendActionSelect(String& out, const char* nameId, const char* label, int current) {
+  out += "<div><label for='";
+  out += nameId;
+  out += "'>";
+  out += label;
+  out += "</label><select id='";
+  out += nameId;
+  out += "' name='";
+  out += nameId;
+  out += "'>";
+  appendActionOption(out, ACTION_NONE,     "None",          current);
+  appendActionOption(out, ACTION_BOOKMARK, "Bookmark page", current);
+  appendActionOption(out, ACTION_LOCK,     "Lock device",   current);
+  appendActionOption(out, ACTION_MENU,     "Open menu",     current);
+  out += "</select></div>";
+}
+
 static void handleSettings() {
   String sel8 = (g_settings.fontSize == 8) ? " selected" : "";
   String sel10 = (g_settings.fontSize == 10) ? " selected" : "";
@@ -4057,7 +4111,19 @@ static void handleSettings() {
   out +=
     "</select><div class='hint'>A small change here can make text much easier to scan.</div></div>"
     "</div>"
-    "<div class='actions' style='margin-top:24px;'><button type='submit'>Save settings</button><span class='muted'>No extra files, scripts, or fonts.</span></div></form></div>"
+    "<div class='actions' style='margin-top:24px;'><button type='submit'>Save settings</button><span class='muted'>No extra files, scripts, or fonts.</span></div></form></div>";
+
+  out += "<div class='card'><h2>Buttons</h2>";
+  out += "<p class='muted'>1 click = next, 2 = previous, 3 = home. The three holds below are remappable.</p>";
+  out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
+  appendActionSelect(out, "btnL",  "Long press",            g_settings.actionLong);
+  appendActionSelect(out, "btnXL", "Extra-long press",      g_settings.actionExtraLong);
+  appendActionSelect(out, "btnCH", "Click, then hold",      g_settings.actionClickHold);
+  out += "</div><div class='actions' style='margin-top:24px;'><button type='submit'>Save buttons</button>";
+  out += "<span class='muted'>If locked, repeat the same gesture to unlock.</span>";
+  out += "</div></form></div>";
+
+  out +=
     "<div class='card'><h2>Screensaver</h2>"
     "<p>Upload raw XBM bytes: <b>3904 bytes</b>, 250&times;122 px, 1-bit, LSB-first, 32 bytes per row.</p>"
     "<p class='muted'>Tip: use <a class='link' href='https://javl.github.io/image2cpp/' target='_blank'>image2cpp</a> with <b>Plain bytes</b>. Invert colors if needed.</p>";
@@ -4111,6 +4177,19 @@ static void handleSettingsPost() {
       layoutChanged = true;
     }
   }
+
+  auto saveBtnAction = [&](const char* arg, const char* prefKey, int* dest) {
+    if (!server.hasArg(arg)) return;
+    int v = server.arg(arg).toInt();
+    if (v < ACTION_NONE || v > ACTION_MENU) v = ACTION_NONE;
+    if (v != *dest) {
+      *dest = v;
+      prefs.putInt(prefKey, v);
+    }
+  };
+  saveBtnAction("btnL",  "cfg_btnL",  &g_settings.actionLong);
+  saveBtnAction("btnXL", "cfg_btnXL", &g_settings.actionExtraLong);
+  saveBtnAction("btnCH", "cfg_btnCH", &g_settings.actionClickHold);
 
   if (layoutChanged) {
     // invalidateAllPageCaches() already resets pageIndex to 0 for the open book.
@@ -4937,6 +5016,38 @@ static void handleModeList() {
   }
 }
 
+// Returns the user-bound action for the gesture fired in this poll, or
+// ACTION_NONE if no remappable gesture is active.
+static int currentMappedGestureAction() {
+  if (btns.clickHoldClick) return g_settings.actionClickHold;
+  if (btns.veryLongClick)  return g_settings.actionExtraLong;
+  if (btns.longClick)      return g_settings.actionLong;
+  return ACTION_NONE;
+}
+
+// Carries out one of the bindable reader actions. No-op for ACTION_NONE.
+static void performReaderAction(int action) {
+  switch (action) {
+    case ACTION_BOOKMARK: {
+      const char* msg = addBookmarkForCurrentBook();
+      if (msg) showToast(msg);
+      g_reader.pageTurnsSinceFull++;
+      renderCurrentPage();
+      break;
+    }
+    case ACTION_LOCK:
+      g_deviceLocked = true;
+      showToast("Locked");
+      break;
+    case ACTION_MENU:
+      g_readerMenu.active = true;
+      drawReaderMenu();
+      break;
+    default:
+      break;
+  }
+}
+
 static void handleModeReader() {
   // Reader menu overlay:
   //   - shortClick cycles the statusbar mode and redraws the menu in place.
@@ -4961,16 +5072,17 @@ static void handleModeReader() {
   }
 
   if (btns.clickHoldClick) {
-    g_readerMenu.active = true;
-    drawReaderMenu();
+    performReaderAction(g_settings.actionClickHold);
+    return;
+  }
+
+  if (btns.veryLongClick) {
+    performReaderAction(g_settings.actionExtraLong);
     return;
   }
 
   if (btns.longClick) {
-    const char* msg = addBookmarkForCurrentBook();
-    if (msg) showToast(msg);
-    g_reader.pageTurnsSinceFull++;
-    renderCurrentPage();
+    performReaderAction(g_settings.actionLong);
     return;
   }
 
@@ -5028,6 +5140,22 @@ void loop() {
   }
 
   if (btns.anyClick()) markUserActivity();
+
+  // Locked state: swallow all input except the gesture currently bound to
+  // ACTION_LOCK, which toggles back to unlocked. If no gesture is bound to
+  // LOCK, the device cannot be locked in the first place, so this branch
+  // doesn't strand the user.
+  if (g_deviceLocked) {
+    if (btns.anyClick() && currentMappedGestureAction() == ACTION_LOCK) {
+      g_deviceLocked = false;
+      showToast("Unlocked");
+      if (mode == MODE_READER) {
+        g_reader.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
+        renderCurrentPage();
+      }
+    }
+    return;
+  }
 
   if (ENABLE_DEEP_SLEEP && mode != MODE_UPLOAD) {
     if ((uint32_t)(millis() - lastUserActionMs) > sleepAfterMs()) {
