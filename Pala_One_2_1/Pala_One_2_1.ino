@@ -207,6 +207,10 @@ struct ToastState {
   uint32_t untilMs = 0;
 };
 
+struct ReaderMenuState {
+  bool active = false;
+};
+
 struct ListItem {
   char text[MAX_LIST_TEXT + 1];
   uint8_t done = 0;
@@ -336,6 +340,7 @@ LibraryState g_library;
 ReaderState g_reader;
 BookmarkUiState g_bookmarkUi;
 ToastState g_toast;
+ReaderMenuState g_readerMenu;
 ListState g_list;
 UploadState g_upload;
 BatteryState g_battery;
@@ -669,6 +674,7 @@ static void resetUiEphemeralState() {
   g_toast.msg = "";
   g_toast.untilMs = 0;
   resetPreviewState();
+  g_readerMenu.active = false;
 }
 
 static void resetNavigationState() {
@@ -695,6 +701,7 @@ static void enterLibraryRoot(bool redraw) {
   safeCloseCurrentBook();
   resetPreviewState();
   resetNavigationState();
+  g_readerMenu.active = false;
   syncWakeState(false);
   mode = MODE_LIBRARY;
   if (redraw) drawLibrary();
@@ -2582,6 +2589,54 @@ static void drawListScreen() {
       u8g2.setFont(MAIN_FONT);
     }
   }
+
+  display.update();
+}
+
+static void drawReaderMenu() {
+  prepareMenuFrame();
+  u8g2.setFont(MAIN_FONT);
+  int ascent = u8g2.getFontAscent();
+  int lineH = (ascent - u8g2.getFontDescent()) + g_settings.lineGap + 1;
+  int y = drawSectionHeader("Reading");
+
+  // Book title (truncated by font; the screen clip handles overflow).
+  String title = lastPathComponent(g_reader.currentBookPath);
+  if (title.endsWith(".txt")) title = title.substring(0, title.length() - 4);
+  u8g2.setFont(BOLD_FONT);
+  u8g2.setCursor(MARGIN_X, y);
+  u8g2.print(title.c_str());
+  y += lineH;
+  u8g2.setFont(MAIN_FONT);
+
+  size_t total = g_reader.file ? g_reader.file.size() : 0;
+  if (total == 0) total = 1;
+  uint32_t pos = g_reader.lastPageStartOffset;
+  int pct = (int)((pos * 100UL) / (uint32_t)total);
+  int totalPages = (g_reader.knownPages > 0) ? g_reader.knownPages : 1;
+  const char* pageSuffix = g_reader.eofReached ? "" : "+";
+
+  char buf[64];
+  snprintf(buf, sizeof(buf), "Page %d of %d%s  (%d%%)",
+           g_reader.pageIndex + 1, totalPages, pageSuffix, pct);
+  u8g2.setCursor(MARGIN_X, y);
+  u8g2.print(buf);
+  y += lineH;
+
+  // Progress bar — full width, 8px tall.
+  int barX = MARGIN_X;
+  int barW = SCREEN_W - 2 * MARGIN_X;
+  int barH = 8;
+  int filled = (int)((pos * (uint32_t)barW) / (uint32_t)total);
+  if (filled < 0) filled = 0;
+  if (filled > barW) filled = barW;
+  gfx.drawRect(barX, y, barW, barH, 1);
+  if (filled > 2) gfx.fillRect(barX + 1, y + 1, filled - 2, barH - 2, 1);
+  y += barH + 4 + lineH;  // gap after bar, then advance one line
+
+  // Footer hint at the very bottom.
+  u8g2.setCursor(MARGIN_X, SCREEN_H - 2);
+  u8g2.print("click to close");
 
   display.update();
 }
@@ -4864,6 +4919,23 @@ static void handleModeList() {
 }
 
 static void handleModeReader() {
+  // Reader menu overlay: any click closes it and re-renders the page.
+  if (g_readerMenu.active) {
+    if (btns.anyClick()) {
+      g_readerMenu.active = false;
+      btns.resetClicks();
+      g_reader.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES; // force full refresh after menu
+      renderCurrentPage();
+    }
+    return;
+  }
+
+  if (btns.veryLongClick) {
+    g_readerMenu.active = true;
+    drawReaderMenu();
+    return;
+  }
+
   if (btns.longClick) {
     const char* msg = addBookmarkForCurrentBook();
     if (msg) showToast(msg);
