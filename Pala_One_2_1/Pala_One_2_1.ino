@@ -2813,11 +2813,15 @@ static bool loadAndRunApp(const char* path) {
   if (hdr->magic != PALA_APP_MAGIC) {
     freeAppExecBuf(); drawCenter("Bad app file", "Wrong magic"); delay(1500); return false;
   }
-  if (hdr->api_version != PALA_API_VERSION) {
-    char msg[32];
-    snprintf(msg, sizeof(msg), "API v%u, need v%u",
+  // PalaAPI is append-only (see pala_api.h), so an app built against an
+  // older API version can run on this firmware unchanged -- it only reads
+  // the prefix of the struct it knows about. An app built against a NEWER
+  // API would read past the end of our struct, so we still reject those.
+  if (hdr->api_version > PALA_API_VERSION) {
+    char msg[40];
+    snprintf(msg, sizeof(msg), "App v%u > firmware v%u",
              (unsigned)hdr->api_version, (unsigned)PALA_API_VERSION);
-    freeAppExecBuf(); drawCenter("API mismatch", msg); delay(1500); return false;
+    freeAppExecBuf(); drawCenter("App too new", msg); delay(1500); return false;
   }
 
   if (hdr->entry_offset < sizeof(PalaAppHeader) || hdr->entry_offset >= fileSize) {
