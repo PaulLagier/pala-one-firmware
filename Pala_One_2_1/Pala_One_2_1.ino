@@ -66,6 +66,7 @@ static const int READER_IDLE_PREFETCH_PAGES = 1;
 static const uint32_t DOUBLE_MS = 300;
 static const uint32_t TRIPLE_MS = 550;
 static const uint32_t LONG_MS = 850;
+static const uint32_t VERY_LONG_MS = 2000;
 static const uint32_t DEBOUNCE_MS = 14;
 
 static const uint32_t SAVE_EVERY_MS = 7000;
@@ -277,6 +278,7 @@ struct ButtonState {
   bool tripleClick = false;
   bool quadClick = false;
   bool longClick = false;
+  bool veryLongClick = false;
 
   uint32_t rawPressCount = 0; // every short press-release, unfiltered by multi-click windows
 
@@ -286,6 +288,7 @@ struct ButtonState {
     tripleClick = false;
     quadClick = false;
     longClick = false;
+    veryLongClick = false;
   }
 
   void resetState() {
@@ -301,7 +304,7 @@ struct ButtonState {
   }
 
   bool anyClick() const {
-    return shortClick || doubleClick || tripleClick || quadClick || longClick;
+    return shortClick || doubleClick || tripleClick || quadClick || longClick || veryLongClick;
   }
 
   void poll();
@@ -556,7 +559,10 @@ void ButtonState::poll() {
     if (prevPressed && !stablePressed) {
       if (pressArmed) {
         uint32_t dur = (uint32_t)(edgeT - pressStart);
-        if (dur >= LONG_MS) {
+        if (dur >= VERY_LONG_MS) {
+          clickCount = 0;
+          veryLongClick = true;
+        } else if (dur >= LONG_MS) {
           clickCount = 0;
           longClick = true;
         } else {
