@@ -209,6 +209,8 @@ struct ToastState {
 
 struct ReaderMenuState {
   bool active = false;
+  bool needsFullRedraw = true;  // set on entry; forces ePaper full clear so the
+                                // old reader page doesn't bleed through partial refresh
 };
 
 struct ListItem {
@@ -2594,6 +2596,13 @@ static void drawListScreen() {
 }
 
 static void drawReaderMenu() {
+  if (g_readerMenu.needsFullRedraw) {
+    // Force a full refresh: we're coming from a different view (the reader
+    // page) and partial refresh would leave the old statusbar / page text
+    // visible underneath the menu rows.
+    menuDrawsSinceFull = MENU_FULL_REFRESH_EVERY;
+    g_readerMenu.needsFullRedraw = false;
+  }
   prepareMenuFrame();
   u8g2.setFont(MAIN_FONT);
   int ascent = u8g2.getFontAscent();
@@ -2613,12 +2622,18 @@ static void drawReaderMenu() {
   if (total == 0) total = 1;
   uint32_t pos = g_reader.lastPageStartOffset;
   int pct = (int)((pos * 100UL) / (uint32_t)total);
-  int totalPages = (g_reader.knownPages > 0) ? g_reader.knownPages : 1;
-  const char* pageSuffix = g_reader.eofReached ? "" : "+";
 
+  // knownPages grows lazily as the reader walks the book; only show it as a
+  // total when pagination has actually reached EOF. Otherwise the "of Y" is
+  // just "how many pages we've cached so far" and reads as a hard cap.
   char buf[64];
-  snprintf(buf, sizeof(buf), "Page %d of %d%s  (%d%%)",
-           g_reader.pageIndex + 1, totalPages, pageSuffix, pct);
+  if (g_reader.eofReached && g_reader.knownPages > 0) {
+    snprintf(buf, sizeof(buf), "Page %d of %d  (%d%%)",
+             g_reader.pageIndex + 1, g_reader.knownPages, pct);
+  } else {
+    snprintf(buf, sizeof(buf), "Page %d  (%d%% of book)",
+             g_reader.pageIndex + 1, pct);
+  }
   u8g2.setCursor(MARGIN_X, y);
   u8g2.print(buf);
   y += lineH;
@@ -4955,6 +4970,7 @@ static void handleModeReader() {
 
   if (btns.veryLongClick) {
     g_readerMenu.active = true;
+    g_readerMenu.needsFullRedraw = true;  // first draw must clear the old reader page
     drawReaderMenu();
     return;
   }
