@@ -547,6 +547,8 @@ static void loadSettings() {
   g_settings.actionExtraLong = clampAction(prefs.getInt("cfg_btnXL", ACTION_LOCK),     ACTION_LOCK);
   g_settings.actionClickHold = clampAction(prefs.getInt("cfg_btnCH", ACTION_MENU),     ACTION_MENU);
 
+  g_deviceLocked = prefs.getBool("cfg_locked", false);
+
   invalidateMetrics();
 }
 
@@ -5036,8 +5038,12 @@ static void performReaderAction(int action) {
       break;
     }
     case ACTION_LOCK:
+      // Persist lock state across deep sleep, then sleep immediately.
+      // On wake, loop() sees g_deviceLocked == true (loaded from prefs)
+      // and swallows input until the same gesture unlocks.
       g_deviceLocked = true;
-      showToast("Locked");
+      prefs.putBool("cfg_locked", true);
+      goToSleep();  // does not return
       break;
     case ACTION_MENU:
       g_readerMenu.active = true;
@@ -5139,23 +5145,32 @@ void loop() {
     btns.resetState();
   }
 
-  if (btns.anyClick()) markUserActivity();
-
   // Locked state: swallow all input except the gesture currently bound to
-  // ACTION_LOCK, which toggles back to unlocked. If no gesture is bound to
-  // LOCK, the device cannot be locked in the first place, so this branch
-  // doesn't strand the user.
+  // ACTION_LOCK, which toggles back to unlocked. Auto-sleep still applies
+  // so an idle locked device re-sleeps instead of draining the battery.
   if (g_deviceLocked) {
     if (btns.anyClick() && currentMappedGestureAction() == ACTION_LOCK) {
       g_deviceLocked = false;
+      prefs.putBool("cfg_locked", false);
+      markUserActivity();
       showToast("Unlocked");
       if (mode == MODE_READER) {
         g_reader.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
         renderCurrentPage();
       }
+      return;
+    }
+    // Non-unlock input: ignored. Don't markUserActivity so auto-sleep can fire.
+    if (ENABLE_DEEP_SLEEP && mode != MODE_UPLOAD) {
+      if ((uint32_t)(millis() - lastUserActionMs) > sleepAfterMs()) {
+        goToSleep();  // cfg_locked remains true; we re-sleep still locked
+        return;
+      }
     }
     return;
   }
+
+  if (btns.anyClick()) markUserActivity();
 
   if (ENABLE_DEEP_SLEEP && mode != MODE_UPLOAD) {
     if ((uint32_t)(millis() - lastUserActionMs) > sleepAfterMs()) {
