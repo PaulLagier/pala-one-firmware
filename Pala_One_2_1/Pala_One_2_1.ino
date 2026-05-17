@@ -2638,16 +2638,10 @@ static void drawReaderMenu() {
   u8g2.print(buf);
   y += lineH;
 
-  // Progress bar — full width, 8px tall.
-  int barX = MARGIN_X;
-  int barW = SCREEN_W - 2 * MARGIN_X;
-  int barH = 8;
-  int filled = (int)((pos * (uint32_t)barW) / (uint32_t)total);
-  if (filled < 0) filled = 0;
-  if (filled > barW) filled = barW;
-  gfx.drawRect(barX, y, barW, barH, 1);
-  if (filled > 2) gfx.fillRect(barX + 1, y + 1, filled - 2, barH - 2, 1);
-  y += barH + 4;
+  // Blank gap so the settings section reads as separate from progress info,
+  // not as a label for any visual above it. (The earlier full-width bar was
+  // visually indistinguishable from the bottom-of-screen statusbar.)
+  y += lineH;
 
   // Statusbar mode row — short-click cycles through the three modes.
   const char* sbName = "Full";
