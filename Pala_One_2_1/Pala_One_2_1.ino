@@ -2661,6 +2661,19 @@ static void api_refreshDisplay() {
   display.update();
 }
 
+// 1bpp XBitmap blit. Silently no-ops on malformed app input so a buggy app
+// cannot drive Adafruit_GFX into OOB reads. Off-screen pixels are already
+// clipped by HeltecGFXAdapter::drawPixel.
+static void api_drawXBitmap(int16_t x, int16_t y, const uint8_t* bits, int16_t w, int16_t h, uint16_t color) {
+  if (!bits || w <= 0 || h <= 0) return;
+  // x+w / y+h must fit int16_t — Adafruit_GFX's inner loops increment signed (UB on overflow).
+  if ((int32_t)x + (int32_t)w > 32767 || (int32_t)y + (int32_t)h > 32767) return;
+  // Bound the app-supplied buffer read at 64 KB (~17x full-screen).
+  uint32_t row_bytes = (uint32_t)((w + 7) / 8);
+  if (row_bytes * (uint32_t)h > 65536u) return;
+  gfx.drawXBitmap(x, y, bits, w, h, color ? 1 : 0);
+}
+
 static uint8_t api_waitForEvent() {
   markUserActivity();
   while (true) {
@@ -2758,6 +2771,7 @@ static void initPalaAPI() {
   g_palaAPI.storageRead       = api_storageRead;
   g_palaAPI.storageWrite      = api_storageWrite;
   g_palaAPI.rtcSeconds        = api_rtcSeconds;
+  g_palaAPI.drawXBitmap       = api_drawXBitmap;
 }
 
 // ---- App loader -------------------------------------------------------------

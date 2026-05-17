@@ -50,7 +50,7 @@ void app_main(const PalaAPI* api);
 
 The firmware calls it after loading the binary and relocating it into RAM. The `api` pointer gives you access to all firmware services. When `app_main` returns, the firmware returns to the app launcher.
 
-## The PalaAPI (v3)
+## The PalaAPI (v4)
 
 All interaction with the device goes through function pointers in `PalaAPI`. Field order is frozen — new fields are always appended, never inserted. Do not cache the pointer; use it directly.
 
@@ -60,6 +60,7 @@ All interaction with the device goes through function pointers in `PalaAPI`. Fie
 | `drawHeader(title)` | Draw the standard title bar at the top |
 | `drawTextAt(x, y, text, bold)` | Draw text at pixel coordinates; `bold=1` for bold weight |
 | `drawCenteredLarge(text)` | Draw large bold text horizontally centred |
+| `drawXBitmap(x, y, bits, w, h, color)` | Blit a 1bpp XBitmap. `int16_t` coords/dims, `uint16_t color`. **LSB-first**, packed rows, `((w+7)/8)` bytes per row. `color=1` draws set bits as black ink on the current canvas (default white after `clearScreen`); `color=0` draws them as white (useful when you have inverted to a black canvas). Off-screen coordinates are clipped automatically. **Silently skipped** if `bits==NULL`, `w<=0`, `h<=0`, the right/bottom edge would exceed `INT16_MAX`, or the total byte budget `((w+7)/8)*h` exceeds 64 KB (~17x full-screen) — design the bitmap budget around this, the firmware will not error. See `examples/campfire/` for a worked example with a PIL-based Bayer 4x4 converter that bakes a PNG spritesheet into a 1bpp header. |
 | `refreshDisplay()` | Flush the frame buffer to the e-ink panel |
 | `waitForEvent()` | Block until a button gesture arrives; returns an event code |
 | `pollEvent()` | Non-blocking version; returns 0 if no event is ready |
@@ -148,3 +149,4 @@ The app appears in the app launcher the next time the device loads the app list.
 |---|---|
 | `click_counter/` | Minimal app: event loop, display updates, long-press exit, `pendingPresses()` |
 | `palagotchi/` | Timers, cross-session state with `storageRead`/`storageWrite` + `rtcSeconds`, action screens, stat display |
+| `campfire/` | Full-screen `drawXBitmap` animation. `convert.py` upscales the PNG 4x with LANCZOS, rotates 90 deg, Bayer 4x4 dithers aligned to the panel pixel grid, and packs an inverted XBitmap so a single blit per frame renders white flames on a black background |
