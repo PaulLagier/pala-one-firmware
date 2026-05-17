@@ -66,7 +66,6 @@ static const int READER_IDLE_PREFETCH_PAGES = 1;
 static const uint32_t DOUBLE_MS = 300;
 static const uint32_t TRIPLE_MS = 550;
 static const uint32_t LONG_MS = 850;
-static const uint32_t VERY_LONG_MS = 2000;
 static const uint32_t DEBOUNCE_MS = 14;
 
 static const uint32_t SAVE_EVERY_MS = 7000;
@@ -289,7 +288,7 @@ struct ButtonState {
   bool tripleClick = false;
   bool quadClick = false;
   bool longClick = false;
-  bool veryLongClick = false;
+  bool clickHoldClick = false;  // chord: short click immediately followed by a long hold
 
   uint32_t rawPressCount = 0; // every short press-release, unfiltered by multi-click windows
 
@@ -299,7 +298,7 @@ struct ButtonState {
     tripleClick = false;
     quadClick = false;
     longClick = false;
-    veryLongClick = false;
+    clickHoldClick = false;
   }
 
   void resetState() {
@@ -315,7 +314,7 @@ struct ButtonState {
   }
 
   bool anyClick() const {
-    return shortClick || doubleClick || tripleClick || quadClick || longClick || veryLongClick;
+    return shortClick || doubleClick || tripleClick || quadClick || longClick || clickHoldClick;
   }
 
   void poll();
@@ -588,12 +587,15 @@ void ButtonState::poll() {
     if (prevPressed && !stablePressed) {
       if (pressArmed) {
         uint32_t dur = (uint32_t)(edgeT - pressStart);
-        if (dur >= VERY_LONG_MS) {
+        if (dur >= LONG_MS) {
+          // If a short click happened just before this hold, treat the
+          // pair as a click-then-hold chord instead of a plain longClick.
+          if (clickCount == 1) {
+            clickHoldClick = true;
+          } else {
+            longClick = true;
+          }
           clickCount = 0;
-          veryLongClick = true;
-        } else if (dur >= LONG_MS) {
-          clickCount = 0;
-          longClick = true;
         } else {
           rawPressCount++;  // count every short press unconditionally
           clickCount++;
@@ -615,6 +617,11 @@ void ButtonState::poll() {
     bool emit = false;
     if (clickCount <= 2) emit = (uint32_t)(now - lastRelease) > DOUBLE_MS;
     else if (clickCount == 3) emit = (uint32_t)(now - firstClickRelease) > TRIPLE_MS;
+
+    // Defer the emit while the user is still holding the button down -- a
+    // long release coming up may form a click-then-hold chord, and emitting
+    // shortClick here would prematurely fire "next page" before we see it.
+    if (emit && stablePressed) emit = false;
 
     if (emit) {
       if (clickCount == 1) shortClick  = true;
@@ -4953,7 +4960,7 @@ static void handleModeReader() {
     return;
   }
 
-  if (btns.veryLongClick) {
+  if (btns.clickHoldClick) {
     g_readerMenu.active = true;
     drawReaderMenu();
     return;
