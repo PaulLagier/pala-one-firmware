@@ -1,0 +1,94 @@
+name: Deploy installer page
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO and esptool
+        run: pip install --upgrade platformio esptool
+
+      - name: Build firmware (V1.2)
+        env:
+          # Tag pushes build a clean release (no git hash in UI). Anything
+          # else (workflow_dispatch) keeps DEBUG_BUILD=1 from config.h so the
+          # hash stays visible during iteration.
+          PLATFORMIO_BUILD_FLAGS: ${{ startsWith(github.ref, 'refs/tags/') && '-DDEBUG_BUILD=0' || '' }}
+        run: pio run -e wireless-paper-v1_2
+
+      - name: Build firmware (V1.1)
+        env:
+          PLATFORMIO_BUILD_FLAGS: ${{ startsWith(github.ref, 'refs/tags/') && '-DDEBUG_BUILD=0' || '' }}
+        run: pio run -e wireless-paper-v1_1
+
+      - name: Assemble site
+        run: |
+          set -euo pipefail
+          mkdir -p site
+          cp install/index.html site/
+
+          # bootloader / partitions / boot_app0 are byte-identical between the
+          # two envs (same chip, same partition table). Take them from the V1.2
+          # build dir; the V1.1 build produces the same bytes.
+          V12=.pio/build/wireless-paper-v1_2
+          V11=.pio/build/wireless-paper-v1_1
+          BOOT_APP0=$(find ~/.platformio/packages/framework-arduinoespressif32/tools/partitions -name boot_app0.bin | head -n1)
+
+          cp "$V12/bootloader.bin" site/bootloader.bin
+          cp "$V12/partitions.bin" site/partitions.bin
+          cp "$BOOT_APP0"          site/boot_app0.bin
+          cp "$V12/firmware.bin"   site/firmware-v1_2.bin
+          cp "$V11/firmware.bin"   site/firmware-v1_1.bin
+
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF_NAME}"
+          else
+            VERSION="dev-${GITHUB_SHA::7}"
+          fi
+          jq --arg v "$VERSION" '.version = $v' install/manifest-v1_2.json > site/manifest-v1_2.json
+          jq --arg v "$VERSION" '.version = $v' install/manifest-v1_1.json > site/manifest-v1_1.json
+
+          ls -lh site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -5,6 +5,14 @@ Pala One — A tiny E-Ink reader project by Paul Lagier
 
 The goal of the project was to create a simple, distraction-free reading device that feels minimal, portable and easy to build while still looking and behaving more like a real product than a typical DIY electronics project.
 
+## Install (no toolchain needed)
+
+[Web Installer](https://gnatpat.github.io/pala-one-firmware/)
+
+The easiest way to flash a board is via the web installer. Plug your Heltec Wireless Paper into a desktop computer running Chrome, Edge, or Opera, then open the installer page and click **Install** for your display revision (V1.1 or V1.2).
+
+The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
+
 ## Contributing
 
 If you improve the firmware, add features or fix bugs, feel free to open a pull request.
@@ -74,6 +82,7 @@ docs/                    # Architecture notes + refactor journal
 scripts/                 # PlatformIO pre-build helpers
 test/                    # Host-side CMake unit tests for pure/ + storage/
 examples/                # Sample apps (click_counter, palagotchi)
+install/                 # ESP Web Tools installer page (deployed to GitHub Pages by CI)
 archive/                 # Past firmware revisions, kept for reference
 ```
 

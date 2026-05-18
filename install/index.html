@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pala One Installer</title>
+  <script
+    type="module"
+    src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"
+  ></script>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 640px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.5;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .sub { color: #666; margin-top: 0; }
+    .variant {
+      border: 1px solid rgba(127,127,127,0.3);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    .variant h3 { margin: 0 0 0.25rem; }
+    .variant p { margin: 0.25rem 0 0.75rem; color: #666; }
+    .note {
+      background: #fff8c5;
+      border: 1px solid #e6dba0;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      .note { background: #2a2a1a; border-color: #5a5a3a; }
+      .variant p { color: #aaa; }
+    }
+    code {
+      background: rgba(127,127,127,0.15);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    ol li { margin: 0.4rem 0; }
+  </style>
+</head>
+<body>
+  <h1>Pala One Installer</h1>
+  <p class="sub">Flash the firmware directly from your browser.</p>
+
+  <div class="variant">
+    <h3>V1.2 board</h3>
+    <p>Newer Heltec Wireless Paper. If your board's silkscreen says <code>V1.2</code>, pick this.</p>
+    <esp-web-install-button manifest="manifest-v1_2.json">
+      <button slot="activate">Install V1.2</button>
+      <span slot="unsupported">
+        Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
+      </span>
+      <span slot="not-allowed">Open this page over HTTPS.</span>
+    </esp-web-install-button>
+  </div>
+
+  <div class="variant">
+    <h3>V1.1 board</h3>
+    <p>Older revision of the Heltec Wireless Paper.</p>
+    <esp-web-install-button manifest="manifest-v1_1.json">
+      <button slot="activate">Install V1.1</button>
+      <span slot="unsupported">
+        Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
+      </span>
+      <span slot="not-allowed">Open this page over HTTPS.</span>
+    </esp-web-install-button>
+  </div>
+
+  <h2>Before you click install</h2>
+  <ol>
+    <li>Use a desktop browser: <strong>Chrome, Edge, or Opera</strong>. Safari, Firefox, and mobile browsers won't work.</li>
+    <li>Plug the board into your computer with a USB-C cable that supports data (not power-only).</li>
+    <li>Click the install button for your board, pick the serial port, then choose <strong>Install</strong>.</li>
+  </ol>
+
+  <p class="note">
+    Not sure which version you have? Flashing the wrong one won't brick the board — the e-ink panel just won't draw correctly. Try the other variant if the screen looks wrong after the first boot.
+  </p>
+</body>
+</html>

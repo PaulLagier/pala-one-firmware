@@ -1,0 +1,16 @@
+{
+  "name": "Pala One (V1.2 display)",
+  "version": "dev",
+  "new_install_skip_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "bootloader.bin",    "offset": 0 },
+        { "path": "partitions.bin",    "offset": 32768 },
+        { "path": "boot_app0.bin",     "offset": 57344 },
+        { "path": "firmware-v1_2.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}
