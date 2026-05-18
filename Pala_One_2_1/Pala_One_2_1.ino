@@ -4686,6 +4686,18 @@ void setup() {
   pinMode(BTN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN), btnISR, CHANGE);
 
+  // If we just woke from deep sleep due to a button press (ext0), that
+  // press started BEFORE the ISR was attached, so its leading edge never
+  // made it into the queue. Seed the input state so the upcoming release
+  // edge is classified as a real press, not silently dropped. Required
+  // for "click-then-hold on wake" to work as a single chord gesture.
+  if (digitalRead(BTN) == LOW) {
+    btns.stablePressed   = true;
+    btns.pressArmed      = true;
+    btns.pressStart      = millis();
+    btns.lastStableChange = 0;  // make the first queued edge debounce-eligible
+  }
+
   u8g2.begin(gfx);
   initPalaAPI();
   invalidateMetrics();
