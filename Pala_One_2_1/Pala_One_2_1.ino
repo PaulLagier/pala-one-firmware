@@ -395,6 +395,7 @@ static void resetUiEphemeralState();
 static void resetNavigationState();
 static void syncWakeState(bool reading);
 static void enterLibraryRoot(bool redraw = true);
+static void drawLibrary(bool postWakeFullRefresh = false);
 
 static uint32_t hashPath32(const String& path);
 static void resetOffsetCache();
@@ -1887,7 +1888,6 @@ static void prepareMenuFrame() {
   bool doFull = (menuDrawsSinceFull >= MENU_FULL_REFRESH_EVERY);
   if (doFull) {
     display.fastmodeOff();
-    display.clear();
     menuDrawsSinceFull = 0;
   } else {
     display.fastmodeOn();
@@ -2338,7 +2338,6 @@ static void renderCurrentPage() {
   bool doFull = (g_reader.pageTurnsSinceFull >= FULL_REFRESH_EVERY_N_PAGES);
   if (doFull) {
     display.fastmodeOff();
-    display.clear();
     g_reader.pageTurnsSinceFull = 0;
   } else {
     display.fastmodeOn();
@@ -2439,7 +2438,8 @@ static void splitListLabelForDisplay(const String& in, int maxWidth, String& lin
 }
 
 
-static void drawLibrary() {
+static void drawLibrary(bool postWakeFullRefresh) {
+  if (postWakeFullRefresh) menuDrawsSinceFull = MENU_FULL_REFRESH_EVERY;
   prepareMenuFrame();
   u8g2.setFont(MAIN_FONT);
   buildLibraryEntries();
@@ -4424,7 +4424,6 @@ static void stopUploadModeToLibrary() {
 // ============================================================================
 static void drawSleepScreen() {
   display.fastmodeOff();
-  display.clear();
   beginPageCanvas();
 
   File sf = FS.open("/sleep.bin", "r");
@@ -4502,8 +4501,7 @@ void setup() {
   updateBatteryCached(true);
 #endif
 
-  display.fastmodeOff();
-  display.clear();
+  display.clearMemory();
 
   if (!fsBegin()) {
     drawCenter("Storage error", "Try factory reset");
@@ -4535,7 +4533,7 @@ void setup() {
             g_reader.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
             renderCurrentPage();   // draw first — takes ~300ms, user releases button during this
             resetInputFrontend();  // then discard the wake-press only
-            restored = true;
+            restored = (mode == MODE_READER);
           }
           break;
         }
@@ -4544,7 +4542,7 @@ void setup() {
   }
 
   if (!restored) {
-    drawLibrary();
+    drawLibrary(true);
     resetInputFrontend();
   }
 
