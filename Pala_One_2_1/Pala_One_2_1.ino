@@ -5165,10 +5165,10 @@ void loop() {
       prefs.putBool("cfg_locked", false);
       markUserActivity();
       showToast("Unlocked");
-      if (mode == MODE_READER) {
-        g_reader.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
-        renderCurrentPage();
-      }
+      // Partial refresh is enough -- the page is already on screen (either
+      // from before the lock, or rendered by setup() after a deep-sleep
+      // wake). We just need a render cycle to paint the toast.
+      if (mode == MODE_READER) renderCurrentPage();
       return;
     }
     // Non-unlock input: ignored. Don't markUserActivity so auto-sleep can fire.
