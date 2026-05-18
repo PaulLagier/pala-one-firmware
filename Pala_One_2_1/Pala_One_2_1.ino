@@ -4442,6 +4442,80 @@ static void drawSleepScreen() {
   display.update();
 }
 
+// ============================================================================
+//  Stats: lifetime page-turn + button-press counters
+//  Working counters live in RTC RAM (survive deep sleep, unlimited writes).
+//  Flash flush happens at sleep, library-root transition, and every
+//  STATS_FLUSH_EVERY_EVENTS bumps as a safety fallback. The wire-format
+//  struct below MUST match examples/stats/app.c.
+// ============================================================================
+
+struct StatsFile {
+  uint32_t version;        // == STATS_SCHEMA
+  uint32_t firstRtcSec;    // rtcSeconds() at first ever write
+  uint64_t pagesRead;
+  uint64_t buttonPresses;
+};
+
+static const uint32_t STATS_SCHEMA              = 1;
+static const uint32_t STATS_FLUSH_EVERY_EVENTS  = 100;
+
+RTC_DATA_ATTR uint64_t g_statsPagesRead       = 0;
+RTC_DATA_ATTR uint64_t g_statsButtonPresses   = 0;
+RTC_DATA_ATTR uint32_t g_statsFirstRtcSec     = 0;
+RTC_DATA_ATTR uint32_t g_statsEventsSinceFlush = 0;
+RTC_DATA_ATTR bool     g_statsRtcInit         = false;
+
+static void statsFlushToFile() {
+  StatsFile s;
+  s.version        = STATS_SCHEMA;
+  s.firstRtcSec    = g_statsFirstRtcSec;
+  s.pagesRead      = g_statsPagesRead;
+  s.buttonPresses  = g_statsButtonPresses;
+  api_storageWrite("stats", &s, (int)sizeof(s));
+  g_statsEventsSinceFlush = 0;
+}
+
+// Load from flash on cold boot (RTC RAM lost on power-off); on deep-sleep
+// wake the RTC counters are already authoritative.
+static void statsEnsureLoaded() {
+  if (g_statsRtcInit) return;
+  StatsFile s;
+  int n = api_storageRead("stats", &s, (int)sizeof(s));
+  if (n == (int)sizeof(s) && s.version == STATS_SCHEMA) {
+    g_statsPagesRead     = s.pagesRead;
+    g_statsButtonPresses = s.buttonPresses;
+    g_statsFirstRtcSec   = s.firstRtcSec;
+  } else {
+    g_statsPagesRead     = 0;
+    g_statsButtonPresses = 0;
+    g_statsFirstRtcSec   = api_rtcSeconds();
+  }
+  g_statsEventsSinceFlush = 0;
+  g_statsRtcInit = true;
+}
+
+static inline void statsBumpEventsAndMaybeFlush() {
+  if (++g_statsEventsSinceFlush >= STATS_FLUSH_EVERY_EVENTS) statsFlushToFile();
+}
+
+static inline void statsBumpPages() {
+  g_statsPagesRead++;
+  statsBumpEventsAndMaybeFlush();
+}
+
+static inline void statsBumpButtons(uint32_t delta) {
+  if (delta == 0) return;
+  g_statsButtonPresses += delta;
+  statsBumpEventsAndMaybeFlush();
+}
+
+// Called from the four reader page-turn sites (not from bookmark-add,
+// which re-renders but isn't a real page turn).
+static inline void onReaderPageTurn() {
+  statsBumpPages();
+}
+
 static void goToSleep() {
   if (!ENABLE_DEEP_SLEEP) return;
 
@@ -4475,6 +4549,9 @@ static void goToSleep() {
   Platform::prepareToSleep();
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
   esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN, 0);
+
+  statsFlushToFile();
+
   delay(50);
   esp_deep_sleep_start();
 }
@@ -4522,6 +4599,7 @@ void setup() {
   loadBooks();
   registerWebRoutes();
   markUserActivity();
+  statsEnsureLoaded();  // RTC RAM has lifetime stats post-deep-sleep; load from /apps/stats.dat on cold boot
 
   bool restored = false;
   if (prefs.getInt("wake_mode", 0) == 1) {
@@ -4701,6 +4779,7 @@ static void handleModeBookmarkPreview() {
     if (g_reader.pageIndex > 0) {
       g_reader.pageIndex--;
       g_reader.pageTurnsSinceFull++;
+      onReaderPageTurn();
       renderCurrentPage();
     }
     return;
@@ -4713,6 +4792,7 @@ static void handleModeBookmarkPreview() {
     if (g_reader.eofReached && g_reader.pageIndex >= g_reader.knownPages) g_reader.pageIndex = g_reader.knownPages - 1;
     if (g_reader.pageIndex != oldPage) {
       g_reader.pageTurnsSinceFull++;
+      onReaderPageTurn();
       renderCurrentPage();
     }
     return;
@@ -4836,6 +4916,7 @@ static void handleModeReader() {
       g_reader.pageIndex--;
       saveProgressThrottled(false);
       g_reader.pageTurnsSinceFull++;
+      onReaderPageTurn();
       renderCurrentPage();
     }
     return;
@@ -4850,6 +4931,7 @@ static void handleModeReader() {
     if (g_reader.pageIndex != oldPage) {
       saveProgressThrottled(false);
       g_reader.pageTurnsSinceFull++;
+      onReaderPageTurn();
       renderCurrentPage();
     }
     return;
@@ -4882,6 +4964,20 @@ void loop() {
     interrupts();
     clearButtonQueue();
     btns.resetState();
+  }
+
+  // Stats: rawPressCount increments unconditionally for every short
+  // press-release; long-hold releases are NOT counted, matching what a
+  // user would expect to see as a "click". Delta is computed against the
+  // last seen value (resets each cold boot, which is fine -- we accumulate
+  // into the RTC-RAM lifetime counter).
+  {
+    static uint32_t lastSeenPressCount = 0;
+    uint32_t pc = btns.rawPressCount;
+    if (pc != lastSeenPressCount) {
+      statsBumpButtons(pc - lastSeenPressCount);
+      lastSeenPressCount = pc;
+    }
   }
 
   if (btns.anyClick()) markUserActivity();
