@@ -5168,11 +5168,18 @@ void loop() {
     btns.resetState();
   }
 
-  // Locked state: swallow all input except the gesture currently bound to
-  // ACTION_LOCK, which toggles back to unlocked. Auto-sleep still applies
-  // so an idle locked device re-sleeps instead of draining the battery.
+  // Locked state: swallow all input except any deliberate hold-type
+  // gesture, which unlocks. We accept any of {longClick, veryLongClick,
+  // clickHoldClick} rather than strictly matching the gesture currently
+  // bound to ACTION_LOCK -- after a deep-sleep wake the firmware can't
+  // reliably reconstruct a click-then-hold chord (the wake press's start
+  // edge happens before the ISR is attached), so strict matching would
+  // leave the user unable to unlock if they bound LOCK to the chord.
+  // Auto-sleep still applies so an idle locked device re-sleeps instead
+  // of draining the battery.
   if (g_deviceLocked) {
-    if (btns.anyClick() && currentMappedGestureAction() == ACTION_LOCK) {
+    bool unlockGesture = btns.longClick || btns.veryLongClick || btns.clickHoldClick;
+    if (unlockGesture) {
       g_deviceLocked = false;
       prefs.putBool("cfg_locked", false);
       markUserActivity();
