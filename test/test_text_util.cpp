@@ -73,24 +73,44 @@ TEST_CASE("compactText collapses spaces and tabs") {
   CHECK_EQ(compactText("a    b\tc"), String("a b c"));
 }
 
-TEST_CASE("compactText strips \\r") {
-  CHECK_EQ(compactText("a\r\nb"), String("a\nb"));
+TEST_CASE("compactText strips \\r (default reflow turns the \\n into a space)") {
+  CHECK_EQ(compactText("a\r\nb"), String("a b"));
 }
 
 TEST_CASE("compactText limits consecutive newlines to two") {
   CHECK_EQ(compactText("a\n\n\n\nb"), String("a\n\nb"));
   CHECK_EQ(compactText("a\n\nb"), String("a\n\nb"));
-  CHECK_EQ(compactText("a\nb"), String("a\nb"));
+}
+
+TEST_CASE("compactText (default reflow=true) collapses single \\n to a space") {
+  // Single newline is treated as a soft-wrap and reflowed; double newline
+  // is a paragraph break.
+  CHECK_EQ(compactText("a\nb"), String("a b"));
+  CHECK_EQ(compactText("first\nsecond\nthird"), String("first second third"));
+  CHECK_EQ(compactText("para one\nstill one\n\npara two"),
+           String("para one still one\n\npara two"));
+}
+
+TEST_CASE("compactText reflow=false preserves single \\n as a line break") {
+  CHECK_EQ(compactText("a\nb", nullptr, nullptr, /*trimTail=*/true,
+                       /*reflowSingleNewlines=*/false),
+           String("a\nb"));
+  CHECK_EQ(compactText("first\nsecond\nthird", nullptr, nullptr, true, false),
+           String("first\nsecond\nthird"));
 }
 
 TEST_CASE("compactText trims trailing whitespace and newlines") {
   CHECK_EQ(compactText("hello   "), String("hello"));
   CHECK_EQ(compactText("hello\n\n\n"), String("hello"));
   CHECK_EQ(compactText("hello \n "), String("hello"));
+  // Reflow shouldn't leave a trailing space from a dangling \n.
+  CHECK_EQ(compactText("hello\n"), String("hello"));
 }
 
-TEST_CASE("compactText drops trailing spaces before newline") {
-  CHECK_EQ(compactText("a   \nb"), String("a\nb"));
+TEST_CASE("compactText drops trailing spaces before newline (then reflows)") {
+  // Spaces before the \n get stripped, the \n becomes a join space, so
+  // the run between 'a' and 'b' is a single space.
+  CHECK_EQ(compactText("a   \nb"), String("a b"));
 }
 
 TEST_CASE("compactText streaming: space run across chunk boundary collapses") {
@@ -133,4 +153,32 @@ TEST_CASE("compactText streaming: no word merging across boundary") {
   String a = compactText("fo", &lastWasSpace, &newlineCount, /*trimTail=*/false);
   String b = compactText("o bar", &lastWasSpace, &newlineCount, /*trimTail=*/true);
   CHECK_EQ(a + b, String("foo bar"));
+}
+
+TEST_CASE("compactText reflow streaming: single \\n across chunk boundary becomes a space") {
+  // The deferred-newline state must carry across a chunk boundary or the
+  // \n at the end of chunk 1 would be silently dropped.
+  bool lastWasSpace = false;
+  int newlineCount = 0;
+  String a = compactText("foo\n", &lastWasSpace, &newlineCount, /*trimTail=*/false);
+  String b = compactText("bar", &lastWasSpace, &newlineCount, /*trimTail=*/true);
+  CHECK_EQ(a + b, String("foo bar"));
+}
+
+TEST_CASE("compactText reflow streaming: split paragraph break still collapses") {
+  // \n at end of chunk 1 + \n at start of chunk 2 = paragraph break.
+  bool lastWasSpace = false;
+  int newlineCount = 0;
+  String a = compactText("foo\n", &lastWasSpace, &newlineCount, /*trimTail=*/false);
+  String b = compactText("\nbar", &lastWasSpace, &newlineCount, /*trimTail=*/true);
+  CHECK_EQ(a + b, String("foo\n\nbar"));
+}
+
+TEST_CASE("compactText reflow=false streaming preserves single newlines") {
+  bool lastWasSpace = false;
+  int newlineCount = 0;
+  String a = compactText("foo\n", &lastWasSpace, &newlineCount,
+                         /*trimTail=*/false, /*reflowSingleNewlines=*/false);
+  String b = compactText("bar", &lastWasSpace, &newlineCount, false, false);
+  CHECK_EQ(a + b, String("foo\nbar"));
 }

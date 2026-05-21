@@ -35,7 +35,11 @@ bool isBreakablePunctuationByte(char b);
 String normalizeTypography(const String& in);
 
 // Compact text for storage: collapse runs of spaces, normalize line endings,
-// limit consecutive newlines to 2, strip trailing whitespace.
+// strip trailing whitespace. By default, reflows single newlines to spaces
+// and treats two-or-more newlines as a single paragraph break — matching
+// markdown/EPUB/word-processor conventions so hard-wrapped plain text reads
+// the way the author intended. Pass `reflowSingleNewlines=false` to keep
+// every source newline as a forced line break (poetry, lists, code).
 String compactText(const String& in);
 
 // Streaming overload. Carries `lastWasSpace` and `newlineCount` across calls
@@ -53,6 +57,7 @@ String compactText(const String& in);
 String compactText(const String& in,
                    bool* ioLastWasSpace,
                    int* ioNewlineCount,
-                   bool trimTail);
+                   bool trimTail,
+                   bool reflowSingleNewlines = true);
 
 #endif  // PALA_PURE_TEXT_UTIL_H

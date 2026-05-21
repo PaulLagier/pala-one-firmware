@@ -99,7 +99,8 @@ String normalizeTypography(const String& in) {
 String compactText(const String& in,
                    bool* ioLastWasSpace,
                    int* ioNewlineCount,
-                   bool trimTail) {
+                   bool trimTail,
+                   bool reflowSingleNewlines) {
   String out;
   out.reserve(in.length());
 
@@ -120,14 +121,31 @@ String compactText(const String& in,
     if (c == '\n') {
       if (out.length() > trimAnchor) out.remove(trimAnchor);
       newlineCount++;
-      if (newlineCount <= 2) {
-        out += '\n';
-        trimAnchor = out.length();
+      if (reflowSingleNewlines) {
+        // Defer until we see what follows. A lone newline becomes a space
+        // (resolved when the next non-newline arrives, below). The second
+        // newline in a run promotes the deferred state to a paragraph break.
+        // 3+ in a run are absorbed into the same break.
+        if (newlineCount == 2) {
+          out += '\n';
+          out += '\n';
+          trimAnchor = out.length();
+        }
+      } else {
+        if (newlineCount <= 2) {
+          out += '\n';
+          trimAnchor = out.length();
+        }
       }
       lastWasSpace = false;
       continue;
     }
 
+    // Non-newline. If reflow mode left a single \n pending, resolve it as a
+    // space now (we know the run was just one). A run of length >=2 already
+    // emitted its paragraph break above, so nothing more to do.
+    const bool resolveDeferredNewline =
+        reflowSingleNewlines && newlineCount == 1;
     newlineCount = 0;
 
     if (c == ' ') {
@@ -136,6 +154,12 @@ String compactText(const String& in,
         lastWasSpace = true;
       }
       continue;
+    }
+
+    if (resolveDeferredNewline && !lastWasSpace) {
+      out += ' ';
+      // Don't update trimAnchor — this space should still get stripped if a
+      // newline arrives before any non-space character does.
     }
 
     lastWasSpace = false;

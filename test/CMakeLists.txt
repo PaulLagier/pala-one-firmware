@@ -18,6 +18,7 @@ set(SUT_SRC
   ${FW_SRC}/pure/text_util.cpp
   ${FW_SRC}/pure/hashing.cpp
   ${FW_SRC}/pure/paginator.cpp
+  ${FW_SRC}/pure/token_reader.cpp
   ${FW_SRC}/pure/library_nav.cpp
   ${FW_SRC}/pure/bookmark_label.cpp
   ${FW_SRC}/pure/bookmarks_codec.cpp
@@ -33,6 +34,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_text_util.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hashing.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_paginator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_token_reader.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_nav.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_bookmark_label.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_bookmarks_codec.cpp
