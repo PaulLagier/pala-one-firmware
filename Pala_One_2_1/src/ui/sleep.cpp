@@ -11,6 +11,7 @@
 #include "src/hal/display.h"
 #include "src/hal/input.h"          // injectButtonEdgeNow, markUserActivity
 #include "src/ui/pala_one_sleep_black_icon_v4.h"
+#include "src/ui/reading_hooks.h"   // sleepTimerWakeUs — arm RTC alarm if timer running
 #include "src/ui/screen.h"
 
 namespace Sleep {
@@ -88,6 +89,13 @@ void enter() {
   rtc_gpio_pulldown_dis((gpio_num_t)BTN);
   rtc_gpio_pullup_en((gpio_num_t)BTN);
   esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN, 0);
+
+  // If a sleep timer is running, also wake at its end-time so the user
+  // gets the toast even if they put the device down.
+  if (uint64_t deltaUs = sleepTimerWakeUs()) {
+    esp_sleep_enable_timer_wakeup(deltaUs);
+  }
+
   delay(50);
   Serial.printf("[sleep] BTN=%d entering deep sleep\n", digitalRead(BTN));
   Serial.flush();

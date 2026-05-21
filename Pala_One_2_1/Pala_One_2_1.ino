@@ -77,6 +77,7 @@
 #include "src/ui/font.h"
 #include "src/ui/pala_api_impl.h"
 #include "src/ui/reader.h"
+#include "src/ui/reading_hooks.h"
 #include "src/ui/screen.h"
 #include "src/ui/widgets.h"  // drawCenter
 #include "src/ui/screens/about_screen.h"
@@ -151,6 +152,10 @@ void setup() {
   initPalaAPI();
   registerWebRoutes();
   markUserActivity();
+
+  // If a sleep timer expired (possibly woke us via RTC alarm), queue the
+  // toast so it appears on whatever screen we render next.
+  sleepTimerCheckExpired();
 
   if (tryRestoreReadingSession()) {
     renderCurrentPage();      // ~300ms draw — wake-press releases during this

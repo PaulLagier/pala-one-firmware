@@ -8,6 +8,7 @@
 #include "src/storage/preferences_store.h"
 
 #include "src/ui/font.h"                    // currentBodySize/currentLineGap for cache stamping
+#include "src/ui/reading_hooks.h"           // onReaderPageTurn — streak + sleep-timer integration
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
 #include "src/ui/text.h"
 #include "src/ui/toast.h"                   // Toast::isActive / Toast::draw
@@ -312,6 +313,7 @@ bool advancePage() {
   if (targetPage >= g_bookview.pages.count) return false;
   g_bookview.cursor.pageIndex = targetPage;
   g_bookview.cursor.pageTurnsSinceFull++;
+  onReaderPageTurn();
   return true;
 }
 
@@ -319,6 +321,7 @@ bool retreatPage() {
   if (g_bookview.cursor.pageIndex <= 0) return false;
   g_bookview.cursor.pageIndex--;
   g_bookview.cursor.pageTurnsSinceFull++;
+  onReaderPageTurn();
   return true;
 }
 
