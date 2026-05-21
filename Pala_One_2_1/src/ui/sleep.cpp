@@ -10,6 +10,7 @@
 #include "src/state.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"          // injectButtonEdgeNow, markUserActivity
+#include "src/storage/stats.h"      // statsFlushToFile — drain RTC counters to flash
 #include "src/ui/pala_one_sleep_black_icon_v4.h"
 #include "src/ui/screen.h"
 
@@ -88,6 +89,9 @@ void enter() {
   rtc_gpio_pulldown_dis((gpio_num_t)BTN);
   rtc_gpio_pullup_en((gpio_num_t)BTN);
   esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN, 0);
+
+  statsFlushToFile();
+
   delay(50);
   Serial.printf("[sleep] BTN=%d entering deep sleep\n", digitalRead(BTN));
   Serial.flush();

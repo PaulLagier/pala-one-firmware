@@ -84,6 +84,13 @@ struct ButtonState {
     return n;
   }
 
+  // Read the accumulated raw short-press count without resetting it. Used
+  // by the lifetime-stats counter in `loop()`, which diffs against its
+  // last-seen value each tick. Independent of `consumePressCount` — the
+  // apps API can still consume + reset; stats clamps `lastSeen` to the
+  // current value on the next tick to recover.
+  uint32_t peekPressCount() const { return rawPressCount_; }
+
   bool anyClick() const {
     return shortClick_ || doubleClick_ || tripleClick_ || quadClick_ || longClick_;
   }

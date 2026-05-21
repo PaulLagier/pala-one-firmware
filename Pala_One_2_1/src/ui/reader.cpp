@@ -6,6 +6,7 @@
 #include "src/storage/library.h"   // g_library — openBookByIndex reads it
 #include "src/storage/page_cache.h"
 #include "src/storage/preferences_store.h"
+#include "src/storage/stats.h"              // statsBumpPages — lifetime page-turn counter
 
 #include "src/ui/font.h"                    // currentBodySize/currentLineGap for cache stamping
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
@@ -312,6 +313,7 @@ bool advancePage() {
   if (targetPage >= g_bookview.pages.count) return false;
   g_bookview.cursor.pageIndex = targetPage;
   g_bookview.cursor.pageTurnsSinceFull++;
+  statsBumpPages();
   return true;
 }
 
@@ -319,6 +321,7 @@ bool retreatPage() {
   if (g_bookview.cursor.pageIndex <= 0) return false;
   g_bookview.cursor.pageIndex--;
   g_bookview.cursor.pageTurnsSinceFull++;
+  statsBumpPages();
   return true;
 }
 

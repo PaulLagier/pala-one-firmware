@@ -74,6 +74,7 @@
 #include "src/storage/library.h"
 #include "src/storage/list_items.h"
 #include "src/storage/page_cache.h"
+#include "src/storage/stats.h"
 #include "src/ui/font.h"
 #include "src/ui/pala_api_impl.h"
 #include "src/ui/reader.h"
@@ -152,6 +153,10 @@ void setup() {
   registerWebRoutes();
   markUserActivity();
 
+  // RTC RAM holds the working counters across deep sleep; on a cold boot
+  // they're zeroed, so reload from /apps/stats.dat. No-op on warm wake.
+  statsEnsureLoaded();
+
   if (tryRestoreReadingSession()) {
     renderCurrentPage();      // ~300ms draw — wake-press releases during this
     resetInputFrontend();     // then discard the wake-press only
@@ -176,6 +181,21 @@ void loop() {
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
   if (ev.any()) markUserActivity();
+
+  // Stats: peekPressCount is the raw short-press counter — every
+  // press-release pair bumps it (long-holds excluded). Delta against the
+  // last seen value adds those into the lifetime counter. If the apps
+  // API consumed-and-reset between ticks, current < lastSeen — clamp
+  // and continue rather than underflow.
+  {
+    static uint32_t lastSeenPressCount = 0;
+    uint32_t pc = g_btns.peekPressCount();
+    if (pc < lastSeenPressCount) lastSeenPressCount = pc;
+    if (pc != lastSeenPressCount) {
+      statsBumpButtons(pc - lastSeenPressCount);
+      lastSeenPressCount = pc;
+    }
+  }
 
   if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()) {
     if (userIdleMs() > Sleep::idleTimeoutMs()) {
