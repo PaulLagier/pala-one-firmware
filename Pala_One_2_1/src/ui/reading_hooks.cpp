@@ -1,7 +1,8 @@
 #include "src/ui/reading_hooks.h"
 
-#include "src/state.h"      // FS (=LittleFS), prefs unused here but matches sibling modules
-#include "src/ui/toast.h"   // Toast::show
+#include "src/pure/streak_log.h"  // ReadingStreakFile + applyStreakLog
+#include "src/state.h"            // FS (=LittleFS)
+#include "src/ui/toast.h"         // Toast::show
 
 // esp_rtc_get_time_us lives in a chip-specific header; forward-declaring it
 // keeps this file building across chip variants. Same pattern as
@@ -9,22 +10,12 @@
 extern "C" uint64_t esp_rtc_get_time_us(void);
 
 // ============================================================================
-//  Wire-format structs — MUST match the SavedState / SleepTimerFile layouts
-//  in examples/reading_streak/app.c and examples/sleep_timer/app.c. Field
-//  order and types are the on-disk format; the schema-version field gates
-//  upgrades.
+//  Sleep-timer wire format — MUST match SleepTimerFile in
+//  examples/sleep_timer/app.c. Field order and types are the on-disk format;
+//  the schema-version field gates upgrades.
+//  (ReadingStreakFile + its constants live in src/pure/streak_log.h so the
+//  log-advance logic is host-testable.)
 // ============================================================================
-
-struct ReadingStreakFile {
-  uint32_t version;        // == STREAK_SCHEMA
-  uint32_t firstRtcSec;    // rtcSeconds() at first ever write
-  uint32_t lastLoggedDay;  // day index, 0xFFFFFFFFu = never
-  uint32_t currentStreak;
-  uint32_t longestStreak;
-  uint32_t totalSessions;
-  uint32_t bitmapHead;     // day index of bit 0
-  uint32_t bitmap;         // bit i = "logged on day (head - i)"
-};
 
 struct SleepTimerFile {
   uint32_t version;        // == SLEEP_TIMER_SCHEMA
@@ -34,10 +25,6 @@ struct SleepTimerFile {
   uint32_t startedRtcSec;
 };
 
-static const uint32_t STREAK_SCHEMA          = 1;
-static const uint32_t STREAK_DAY_SECS        = 86400u;
-static const int      STREAK_PAGES_THRESHOLD = 5;     // pages today before we log
-
 static const uint32_t SLEEP_TIMER_SCHEMA       = 1;
 static const uint32_t SLEEP_TIMER_IDLE         = 0;
 static const uint32_t SLEEP_TIMER_RUNNING      = 1;
@@ -46,7 +33,7 @@ static const uint32_t SLEEP_TIMER_NEEDS_NOTIFY = 2;
 static struct {
   int      pagesToday        = 0;
   uint32_t cachedFirstRtcSec = 0;
-  uint32_t cachedLastDay     = 0xFFFFFFFFu;
+  uint32_t cachedLastDay     = STREAK_DAY_UNSET;
   bool     bootstrapped      = false;
 } g_streakAuto;
 
@@ -75,14 +62,15 @@ static void writeAppDat(const char* key, const void* buf, size_t len) {
 
 // Increment the streak after enough page turns on a new day. Mirrors the
 // log logic in examples/reading_streak/app.c so manual taps and auto-log
-// produce the same numbers.
+// produce the same numbers. The bitmap-shift + continuation rules live in
+// src/pure/streak_log; this function just owns the I/O + threshold gate.
 static void streakAutoLogOnPageTurn() {
   if (!g_streakAuto.bootstrapped) {
     ReadingStreakFile s;
     if (!readAppDat("streak", &s, sizeof(s)) || s.version != STREAK_SCHEMA) {
       s.version       = STREAK_SCHEMA;
       s.firstRtcSec   = rtcSecondsNow();
-      s.lastLoggedDay = 0xFFFFFFFFu;
+      s.lastLoggedDay = STREAK_DAY_UNSET;
       s.currentStreak = 0;
       s.longestStreak = 0;
       s.totalSessions = 0;
@@ -105,23 +93,14 @@ static void streakAutoLogOnPageTurn() {
   ReadingStreakFile s;
   if (!readAppDat("streak", &s, sizeof(s)) || s.version != STREAK_SCHEMA) return;
 
-  bool cont = (s.lastLoggedDay != 0xFFFFFFFFu) && (today == s.lastLoggedDay + 1);
-  if (today > s.bitmapHead) {
-    uint32_t d = today - s.bitmapHead;
-    s.bitmap     = (d >= 32) ? 0 : (s.bitmap << d);
-    s.bitmapHead = today;
-  }
-  s.bitmap        |= 1u;
-  s.currentStreak  = cont ? (s.currentStreak + 1) : 1;
-  if (s.currentStreak > s.longestStreak) s.longestStreak = s.currentStreak;
-  s.lastLoggedDay  = today;
-  s.totalSessions += 1;
-  writeAppDat("streak", &s, sizeof(s));
+  StreakLogResult r = applyStreakLog(s, today);
+  if (!r.changed) return;
+  writeAppDat("streak", &r.next, sizeof(r.next));
 
   g_streakAuto.cachedLastDay = today;
   g_streakAuto.pagesToday    = 0;
 
-  Toast::show(String("Reading streak: day ") + String(s.currentStreak));
+  Toast::show(String("Reading streak: day ") + String(r.next.currentStreak));
 }
 
 // Flip RUNNING -> NEEDS_NOTIFY exactly once when the timer first expires,
