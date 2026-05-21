@@ -1,23 +1,13 @@
 #include "src/storage/stats.h"
 
-#include "src/state.h"   // FS (=LittleFS)
+#include "src/pure/stats_codec.h"  // StatsFile + encodeStats / decodeStats
+#include "src/state.h"             // FS (=LittleFS)
 
 // esp_rtc_get_time_us lives in a chip-specific header; forward-declaring it
 // keeps this file building across chip variants. Same pattern as
 // src/ui/pala_api_impl.cpp.
 extern "C" uint64_t esp_rtc_get_time_us(void);
 
-// ============================================================================
-//  Wire format — MUST stay byte-identical to StatsFile in examples/stats/app.c.
-// ============================================================================
-struct StatsFile {
-  uint32_t version;        // == STATS_SCHEMA
-  uint32_t firstRtcSec;    // rtcSeconds() at first ever write
-  uint64_t pagesRead;
-  uint64_t buttonPresses;
-};
-
-static const uint32_t STATS_SCHEMA             = 1;
 static const uint32_t STATS_FLUSH_EVERY_EVENTS = 100;
 
 // Working counters live in RTC RAM. Preserved across deep sleep; lost on
@@ -39,9 +29,12 @@ void statsFlushToFile() {
   s.pagesRead     = s_pagesRead;
   s.buttonPresses = s_buttonPresses;
 
+  uint8_t buf[STATS_ENCODED_SIZE];
+  size_t n = encodeStats(s, buf);
+
   File f = FS.open("/apps/stats.dat", "w");
   if (!f) return;
-  f.write((const uint8_t*)&s, sizeof(s));
+  f.write(buf, n);
   f.close();
 
   s_eventsSinceFlush = 0;
@@ -50,9 +43,16 @@ void statsFlushToFile() {
 void statsEnsureLoaded() {
   if (s_rtcInitialised) return;
 
-  StatsFile s;
+  uint8_t buf[STATS_ENCODED_SIZE];
+  size_t  got = 0;
   File f = FS.open("/apps/stats.dat", "r");
-  if (f && f.read((uint8_t*)&s, sizeof(s)) == sizeof(s) && s.version == STATS_SCHEMA) {
+  if (f) {
+    got = f.read(buf, sizeof(buf));
+    f.close();
+  }
+
+  StatsFile s;
+  if (decodeStats(buf, got, s)) {
     s_pagesRead     = s.pagesRead;
     s_buttonPresses = s.buttonPresses;
     s_firstRtcSec   = s.firstRtcSec;
@@ -61,7 +61,6 @@ void statsEnsureLoaded() {
     s_buttonPresses = 0;
     s_firstRtcSec   = rtcSecondsNow();
   }
-  if (f) f.close();
 
   s_eventsSinceFlush = 0;
   s_rtcInitialised   = true;
