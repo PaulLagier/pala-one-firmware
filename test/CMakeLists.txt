@@ -16,6 +16,7 @@ set(FW_SRC ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/src)
 set(SUT_SRC
   ${FW_SRC}/pure/paths.cpp
   ${FW_SRC}/pure/text_util.cpp
+  ${FW_SRC}/pure/find_text.cpp
   ${FW_SRC}/pure/hashing.cpp
   ${FW_SRC}/pure/paginator.cpp
   ${FW_SRC}/pure/library_nav.cpp

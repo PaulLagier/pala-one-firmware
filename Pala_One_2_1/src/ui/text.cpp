@@ -2,6 +2,7 @@
 
 #include "src/hal/display.h"            // u8g2
 #include "src/pure/bookmarks_codec.h"   // kOffsetUnset
+#include "src/pure/find_text.h"
 #include "src/storage/page_cache.h"     // on-disk page-offset cache
 #include "src/ui/font.h"                // Font::useBody / bodyLayout / current{BodySize,LineGap}
 
@@ -78,6 +79,60 @@ uint32_t pageOffsetForPage(File& f, const String& path, int page) {
     off = next;
   }
   return off;
+}
+
+uint32_t pageOffsetForText(File& f, const String& path, const String& query,
+                           int* outPageIndex) {
+  if (query.length() == 0) return 0;
+
+  FileReadStream stream(f);
+  uint32_t matchOffset = findByteOffset(stream, query);
+  if (matchOffset == 0xFFFFFFFFu) return 0xFFFFFFFFu;
+
+  // Load any existing page cache so we can skip re-pagination of pages the
+  // reader already computed, and so we don't discard that work when we save.
+  // Static to keep 40 KB off the stack; re-initialised on every call.
+  static PageOffsetTable table;
+  table.count = 1;
+  table.offsets[0] = 0;
+  table.eofReached = false;
+  loadPageOffsetCacheForBook(path, f.size(),
+                             Font::currentBodySize(), Font::currentLineGap(), table);
+
+  // Find the highest cached page whose byte offset is at or before the match
+  // so we can resume from there instead of walking from page 0.
+  int pageIdx = 0;
+  for (int i = table.count - 1; i >= 0; i--) {
+    if (table.offsets[i] <= matchOffset) { pageIdx = i; break; }
+  }
+
+  Font::useBody();
+  uint32_t pageStart = table.offsets[pageIdx];
+
+  // Walk forward, using cached entries when available and computing new ones
+  // otherwise. New entries are appended to the table as we go.
+  while (pageStart < matchOffset && pageIdx + 1 < MAX_PAGES) {
+    uint32_t next;
+    if (pageIdx + 1 < table.count) {
+      next = table.offsets[pageIdx + 1];   // already known — free
+    } else {
+      next = nextPageOffset(f, pageStart);
+      if (next <= pageStart) break;        // EOF or no progress
+      table.offsets[pageIdx + 1] = next;
+      table.count = pageIdx + 2;
+    }
+    if (next > matchOffset) break;
+    pageStart = next;
+    pageIdx++;
+  }
+
+  // Persist everything we know. The reader and future lookups start from the
+  // highest page recorded here rather than paginating from scratch.
+  savePageOffsetCacheForBook(path, f.size(),
+                             Font::currentBodySize(), Font::currentLineGap(), table);
+
+  if (outPageIndex) *outPageIndex = pageIdx;
+  return pageStart;
 }
 
 uint32_t resolveBookmarkOffset(const String& path, uint16_t page, uint32_t storedOffset) {

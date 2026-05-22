@@ -1,5 +1,6 @@
 #include "test_framework.h"
 #include "pure/text_util.h"
+#include "pure/find_text.h"
 
 TEST_CASE("utf8CharLenFromLead recognizes ASCII and multibyte leads") {
   CHECK_EQ(utf8CharLenFromLead('a'), 1);
@@ -91,4 +92,86 @@ TEST_CASE("compactText trims trailing whitespace and newlines") {
 
 TEST_CASE("compactText drops trailing spaces before newline") {
   CHECK_EQ(compactText("a   \nb"), String("a\nb"));
+}
+
+TEST_CASE("find_text locates patterns with Boyer-Moore-Horspool") {
+  CHECK_EQ(find_text("hello world", "world"), 6u);
+  CHECK_EQ(find_text("hello world", "hello"), 0u);
+  CHECK_EQ(find_text("hello world", "o w"), 4u);
+  CHECK_EQ(find_text("hello world", ""), 0u);
+  CHECK_EQ(find_text("hello world", "missing"), 0xFFFFFFFFu);
+}
+
+TEST_CASE("find_text handles repeated partial pattern matches and skip arithmetic") {
+  // Text contains several prefixes of the pattern before the actual match.
+  CHECK_EQ(find_text("abcxabcdabxabcdabcdabcy", "abcdabcy"), 15u);
+  CHECK_EQ(find_text("aaaaaaab", "aaab"), 4u);
+  CHECK_EQ(find_text("ababababaabababc", "abababc"), 9u);
+}
+
+// ============================================================================
+//  findByteOffset — chunked streaming search
+//
+//  All cases use chunkSize=3 so the fixture strings force boundary crossings
+//  without needing large buffers.
+// ============================================================================
+
+TEST_CASE("findByteOffset finds pattern entirely within the first chunk") {
+  StringReadStream s("abcdef");
+  CHECK_EQ(findByteOffset(s, String("ab"), 3), 0u);
+  CHECK_EQ(findByteOffset(s, String("bc"), 3), 1u);
+}
+
+TEST_CASE("findByteOffset finds pattern that spans a chunk boundary") {
+  // "cd" straddles the boundary between chunk "abc" and chunk "def".
+  StringReadStream s("abcdef");
+  CHECK_EQ(findByteOffset(s, String("cd"), 3), 2u);
+}
+
+TEST_CASE("findByteOffset finds pattern entirely in a later chunk") {
+  StringReadStream s("abcdef");
+  CHECK_EQ(findByteOffset(s, String("de"), 3), 3u);
+  CHECK_EQ(findByteOffset(s, String("ef"), 3), 4u);
+}
+
+TEST_CASE("findByteOffset handles pattern longer than chunkSize") {
+  // "cdefg" spans three chunks ("abc","def","ghi") with chunkSize=3.
+  StringReadStream s("abcdefghi");
+  CHECK_EQ(findByteOffset(s, String("cdefg"), 3), 2u);
+}
+
+TEST_CASE("findByteOffset returns 0xFFFFFFFFu when pattern is absent") {
+  StringReadStream s("abcdef");
+  CHECK_EQ(findByteOffset(s, String("xy"), 3), 0xFFFFFFFFu);
+}
+
+TEST_CASE("findByteOffset returns 0 for empty pattern") {
+  StringReadStream s("abcdef");
+  CHECK_EQ(findByteOffset(s, String(""), 3), 0u);
+}
+
+TEST_CASE("findByteOffset finds pattern at the very end of the stream") {
+  StringReadStream s("abcdef");
+  CHECK_EQ(findByteOffset(s, String("f"), 3), 5u);
+}
+
+TEST_CASE("findByteOffset is consistent with find_text on whole-string search") {
+  const String text = "the quick brown fox jumps over the lazy dog";
+  const String pattern = "lazy";
+  StringReadStream s(text);
+  CHECK_EQ(findByteOffset(s, pattern, 8), find_text(text, pattern));
+}
+
+TEST_CASE("findByteOffset is case-insensitive for ASCII") {
+  StringReadStream s("Hello World");
+  CHECK_EQ(findByteOffset(s, String("world"),  4), 6u);
+  CHECK_EQ(findByteOffset(s, String("HELLO"),  4), 0u);
+  CHECK_EQ(findByteOffset(s, String("hElLo"),  4), 0u);
+  CHECK_EQ(findByteOffset(s, String("WORLD"),  4), 6u);
+}
+
+TEST_CASE("findByteOffset case-insensitive match spans chunk boundary") {
+  // "LO W" straddles the chunk boundary between "Hel" and "lo World".
+  StringReadStream s("Hello World");
+  CHECK_EQ(findByteOffset(s, String("LO W"), 3), 3u);
 }

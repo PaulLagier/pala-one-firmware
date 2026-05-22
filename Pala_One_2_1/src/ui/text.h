@@ -39,6 +39,13 @@ uint32_t nextPageOffset(File& f, uint32_t startPos);
 // `nextPageOffset` if the requested page is past the cached portion.
 uint32_t pageOffsetForPage(File& f, const String& path, int page);
 
+// Find the byte offset of the first page that contains `query`. Searches
+// raw file bytes, then walks pages to the page boundary. Returns
+// 0xFFFFFFFFu if the pattern is not found. If `outPageIndex` is non-null
+// it receives the zero-based page index of the matched page.
+uint32_t pageOffsetForText(File& f, const String& path, const String& query,
+                           int* outPageIndex = nullptr);
+
 // Returns `storedOffset` if it's a usable cached value for this book; falls
 // back to `pageOffsetForPage` otherwise. Owns the file handle internally.
 uint32_t resolveBookmarkOffset(const String& path, uint16_t page, uint32_t storedOffset);

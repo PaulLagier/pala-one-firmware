@@ -57,6 +57,10 @@ public:
   String& operator+=(int n)           { s_ += String(n).s_; return *this; }
   String& operator+=(unsigned long n) { s_ += String(n).s_; return *this; }
 
+  bool concat(const char* buf, unsigned int len) { s_.append(buf, len); return true; }
+  bool concat(const String& o)                   { s_ += o.s_; return true; }
+  bool concat(char c)                            { s_ += c; return true; }
+
   String operator+(const String& o) const { String r(*this); r += o; return r; }
   String operator+(const char* o) const   { String r(*this); r += o; return r; }
   String operator+(char c) const          { String r(*this); r += c; return r; }
