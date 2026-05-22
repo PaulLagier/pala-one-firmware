@@ -128,8 +128,7 @@ void setup() {
   updateBatteryCached(true);
 #endif
 
-  display.fastmodeOff();
-  display.clear();
+  display.clearMemory();
 
   if (!fsBegin()) {
     drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
