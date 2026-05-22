@@ -4,6 +4,7 @@
 #include "src/ui/font.h"
 #include "src/ui/sleep.h"
 #include "src/pure/paginator.h"
+#include "src/config.h"
 
 // ---------------------------------------------------------------------------
 //  Font
@@ -22,11 +23,14 @@ void loadSettings() {}
 
 const LayoutMetrics& bodyLayout() {
   static LayoutMetrics m;
-  m.lineH    = s_bodySize + 2 + s_lineGap;
-  m.maxWidth = 250;
-  m.maxLines = 122 / m.lineH;
   m.ascent   = s_bodySize;
   m.descent  = 2;
+  m.lineH    = s_bodySize + m.descent + s_lineGap;
+  m.maxWidth = SCREEN_W - 2 * MARGIN_X;
+  int usableH = SCREEN_H - TOP_PAD - BOT_PAD;
+  if (SHOW_PROGRESS_BAR || SHOW_PAGE_NUMBER) usableH -= STATUS_H;
+  m.maxLines = usableH / m.lineH;
+  if (m.maxLines < 1) m.maxLines = 1;
   return m;
 }
 

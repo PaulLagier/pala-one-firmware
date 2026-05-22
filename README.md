@@ -91,6 +91,12 @@ Pure modules and KV-backed storage have host-side unit tests under [`test/`](tes
 
 See [test/README.md](test/README.md) for prerequisites (CMake + a C++17 compiler) and per-platform setup / run instructions for Windows, Linux, and macOS.
 
+## Web UI emulator
+
+The [`dev/`](dev/) directory contains a host-side emulator for the captive-portal web UI. It builds a native binary that serves the same route handlers as the firmware, backed by a local filesystem, so you can iterate on the web UI without flashing the device.
+
+See [dev/README.md](dev/README.md) for build and run instructions, the VS Code debug launch config, and the integration test suite.
+
 ## Apps
 
 Pala One supports user-installable apps — self-contained position-independent C binaries that run on top of the firmware and have access to the display, button, RTC, and a per-app key-value store. Apps are uploaded over Wi-Fi through the same web UI used for books, and they appear under the **Apps** entry of the library menu. No firmware rebuild is needed to install one.

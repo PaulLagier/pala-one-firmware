@@ -73,16 +73,17 @@ set(STUB_SRC
   ${STUBS_ROOT}/upload_stub.cpp
 )
 
-add_executable(pala_web_emu
-  ${CMAKE_SOURCE_DIR}/main.cpp
-  ${CMAKE_SOURCE_DIR}/mock_data.cpp
+# ---------------------------------------------------------------------------
+#  Shared library — all non-main sources used by both the emulator and tests
+# ---------------------------------------------------------------------------
+add_library(pala_web_shared STATIC
   ${PURE_SRC}
   ${STORAGE_SRC}
   ${WEB_SRC}
   ${STUB_SRC}
 )
 
-target_include_directories(pala_web_emu PRIVATE
+target_include_directories(pala_web_shared PUBLIC
   # MUST be first — these shadow real Arduino/firmware headers
   ${STUBS_ROOT}/overrides
   # dev/ root — resolves #include "stubs/..." paths from override headers
@@ -95,13 +96,37 @@ target_include_directories(pala_web_emu PRIVATE
   ${TEST_ROOT}
 )
 
-target_link_libraries(pala_web_emu PRIVATE httplib::httplib)
+target_link_libraries(pala_web_shared PUBLIC httplib::httplib)
 
 # PROGMEM is a no-op on the host (it's a flash-storage hint for AVR/Xtensa).
-target_compile_definitions(pala_web_emu PRIVATE PROGMEM=)
+target_compile_definitions(pala_web_shared PUBLIC PROGMEM=)
 
-target_compile_options(pala_web_emu PRIVATE
+target_compile_options(pala_web_shared PUBLIC
   -Wall -Wextra -Wno-unused-parameter -Wno-unused-function
   # Pre-include system headers before arduino_compat.h can define min/max macros.
   -include ${CMAKE_SOURCE_DIR}/stubs/prelude.h
+)
+
+# ---------------------------------------------------------------------------
+#  Emulator executable
+# ---------------------------------------------------------------------------
+add_executable(pala_web_emu
+  ${CMAKE_SOURCE_DIR}/main.cpp
+  ${CMAKE_SOURCE_DIR}/mock_data.cpp
+)
+target_link_libraries(pala_web_emu PRIVATE pala_web_shared)
+
+# ---------------------------------------------------------------------------
+#  Integration test executable
+# ---------------------------------------------------------------------------
+add_executable(pala_web_test
+  ${CMAKE_SOURCE_DIR}/integration_test.cpp
+)
+target_link_libraries(pala_web_test PRIVATE pala_web_shared)
+
+enable_testing()
+add_test(NAME integration COMMAND pala_web_test)
+set_tests_properties(integration PROPERTIES
+  # Run from the repo root so "dev/fs_test" resolves correctly.
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
 )
