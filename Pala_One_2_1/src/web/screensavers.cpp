@@ -326,19 +326,19 @@ static String slotGridHtml() {
   out.reserve(2000);
   out += "<div class='ss-slots'>";
   for (int i = 0; i < Screensavers::MAX_SLOTS; i++) {
-    out += "<div class='ss-slot'><div class='muted small'>Slot ";
+    out += "<div class='ss-slot'><div class='muted small'>" D_WEB_SS_SLOT_LABEL " ";
     out += String(i);
     out += "</div>";
     if (Screensavers::slotExists(i)) {
       out += "<img src='/screensavers/thumb?slot=" + String(i) +
-             "' alt='Slot " + String(i) + "'>";
+             "' alt='" D_WEB_SS_SLOT_LABEL " " + String(i) + "'>";
       out += "<form method='POST' action='/screensavers/delete' style='width:100%'>";
       out += "<input type='hidden' name='slot' value='" + String(i) + "'>";
       out += "<button type='submit' class='btn secondary' style='width:100%;padding:6px 10px;font-size:13px' "
-             "onclick=\"return confirm('Delete slot " + String(i) + "?')\">Delete</button>";
+             "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SLOT "')\">" D_WEB_DELETE_BUTTON "</button>";
       out += "</form>";
     } else {
-      out += "<div class='ss-slot-empty'>empty</div>";
+      out += "<div class='ss-slot-empty'>" D_WEB_SS_SLOT_EMPTY "</div>";
     }
     out += "</div>";
   }
@@ -352,52 +352,51 @@ static String editorCardHtml(int nextFreeSlot) {
   String out;
   out.reserve(3500);
   out += FPSTR(kEditorStyle);
-  out += "<div class='card'><h2>Editor</h2>"
-         "<p class='muted'>Drop an image into the editor, then upload it to a rotation slot or as the single legacy screensaver. "
-         "All images render as 250&times;122 1-bit (3904 bytes).</p>"
+  out += "<div class='card'><h2>" D_WEB_SS_EDITOR_HEADING "</h2>"
+         "<p class='muted'>" D_WEB_SS_EDITOR_INTRO "</p>"
          "<div class='ss-wrap'>"
          "<div class='ss-card ss-grid'>"
-         "<div class='full'><div class='ss-label-row'><label for='ssEditFile'>Source image</label></div>"
+         "<div class='full'><div class='ss-label-row'><label for='ssEditFile'>" D_WEB_SS_SOURCE_IMAGE "</label></div>"
          "<input id='ssEditFile' type='file' accept='image/*'></div>"
-         "<div class='full'><div class='ss-label-row'><label for='ssTolerance'>Black tolerance</label>"
+         "<div class='full'><div class='ss-label-row'><label for='ssTolerance'>" D_WEB_SS_TOLERANCE "</label>"
          "<span class='ss-value' id='ssToleranceLabel'>0%</span></div>"
          "<input id='ssTolerance' type='range' min='-100' max='100' value='0'></div>"
          "<div class='full'><label style='display:flex;gap:10px;align-items:center;font-weight:500'>"
-         "<input id='ssInvert' type='checkbox'><span>Invert black/white</span></label></div>"
-         "<div class='full'><details class='ss-adv'><summary>Precise control</summary><div class='ss-adv-body ss-grid'>"
-         "<div><div class='ss-label-row'><label for='ssZoom'>Zoom</label><span class='ss-value' id='ssZoomLabel'>100%</span></div>"
+         "<input id='ssInvert' type='checkbox'><span>" D_WEB_SS_INVERT "</span></label></div>"
+         "<div class='full'><details class='ss-adv'><summary>" D_WEB_SS_PRECISE_CONTROL "</summary><div class='ss-adv-body ss-grid'>"
+         "<div><div class='ss-label-row'><label for='ssZoom'>" D_WEB_SS_ZOOM "</label><span class='ss-value' id='ssZoomLabel'>100%</span></div>"
          "<input id='ssZoom' type='range' min='10' max='400' value='100'></div>"
-         "<div><div class='ss-label-row'><label for='ssPanX'>Move X</label><span class='ss-value' id='ssPanXLabel'>0 px</span></div>"
+         "<div><div class='ss-label-row'><label for='ssPanX'>" D_WEB_SS_MOVE_X "</label><span class='ss-value' id='ssPanXLabel'>0 px</span></div>"
          "<input id='ssPanX' type='range' min='-250' max='250' value='0'></div>"
-         "<div class='full'><div class='ss-label-row'><label for='ssPanY'>Move Y</label><span class='ss-value' id='ssPanYLabel'>0 px</span></div>"
+         "<div class='full'><div class='ss-label-row'><label for='ssPanY'>" D_WEB_SS_MOVE_Y "</label><span class='ss-value' id='ssPanYLabel'>0 px</span></div>"
          "<input id='ssPanY' type='range' min='-180' max='180' value='0'></div>"
          "</div></details></div>"
          "</div>"
          "<div class='ss-card ss-preview-wrap'>"
-         "<label>Preview (drag to move, pinch or scroll to zoom)</label>"
+         "<label>" D_WEB_SS_PREVIEW_LABEL "</label>"
          "<div class='ss-preview-stage'><canvas id='ssPreview' width='250' height='122'></canvas></div>"
-         "<button type='button' class='btn secondary' id='ssResetBtn' style='align-self:flex-start;padding:6px 12px;font-size:13px'>Reset fit</button>"
-         "<div class='ss-meta' id='ssMeta'>No image loaded</div>"
+         "<button type='button' class='btn secondary' id='ssResetBtn' style='align-self:flex-start;padding:6px 12px;font-size:13px'>" D_WEB_SS_RESET_FIT "</button>"
+         "<div class='ss-meta' id='ssMeta'>" D_WEB_SS_NO_IMAGE "</div>"
          "</div>"
          "<div class='ss-card'>"
-         "<div class='ss-label-row'><label for='ssDestination'>Save to</label></div>"
+         "<div class='ss-label-row'><label for='ssDestination'>" D_WEB_SS_SAVE_TO "</label></div>"
          "<select id='ssDestination'>"
-         "<option value='single'>Single screensaver (/sleep.bin)</option>";
+         "<option value='single'>" D_WEB_SS_DST_SINGLE "</option>";
   if (nextFreeSlot >= 0) {
-    out += "<option value='auto' selected>Next free rotation slot (slot ";
+    out += "<option value='auto' selected>" D_WEB_SS_DST_AUTO_PREFIX;
     out += String(nextFreeSlot);
-    out += ")</option>";
+    out += D_WEB_SS_DST_AUTO_SUFFIX "</option>";
   } else {
-    out += "<option value='auto' disabled>(All rotation slots full)</option>";
+    out += "<option value='auto' disabled>" D_WEB_SS_DST_FULL "</option>";
   }
   for (int i = 0; i < Screensavers::MAX_SLOTS; i++) {
-    out += "<option value='" + String(i) + "'>Rotation slot " + String(i);
-    if (Screensavers::slotExists(i)) out += " (overwrite)";
+    out += "<option value='" + String(i) + "'>" D_WEB_SS_DST_SLOT_PREFIX + String(i);
+    if (Screensavers::slotExists(i)) out += D_WEB_SS_DST_OVERWRITE;
     out += "</option>";
   }
   out += "</select></div>"
          "<div class='actions'>"
-         "<button type='button' class='btn' id='ssUploadBtn'>Upload edited image</button>"
+         "<button type='button' class='btn' id='ssUploadBtn'>" D_WEB_SS_UPLOAD_EDITED "</button>"
          "<span class='ss-status' id='ssUploadStatus'></span>"
          "</div></div></div>";
   out += FPSTR(kEditorScript);
@@ -415,49 +414,48 @@ static void handleSleepEditorPage() {
   int nextFree = Screensavers::firstFreeSlot();
 
   String out = webPageStart(
-    "Screensavers",
-    "Custom sleep images, multi-slot rotation, and in-firmware bitmap editor.",
-    "<a href='/'>&#8592; Home</a><a href='/settings'>Settings</a>",
+    D_WEB_SS_TITLE,
+    D_WEB_SS_SUBTITLE,
+    "<a href='/'>" D_WEB_SETTINGS_BACK_NAV "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
     true
   );
   out.reserve(out.length() + 8000);
 
   // Mode picker.
-  out += "<div class='card'><h2>Rotation</h2>"
-         "<p class='muted'>Pick what shows on the e-ink each time the device sleeps. "
-         "Cycle walks the populated slots in order; Shuffle picks at random without immediate repeats.</p>"
+  out += "<div class='card'><h2>" D_WEB_SS_ROTATION_HEADING "</h2>"
+         "<p class='muted'>" D_WEB_SS_ROTATION_INTRO "</p>"
          "<form method='POST' action='/screensavers/mode' class='stack' style='margin-top:12px'>"
          "<div class='grid cols-2'>"
-         "<div><label for='ssMode'>Mode</label><select id='ssMode' name='mode'>"
-         "<option value='single'";  out += selSingle;  out += ">Single image only</option>"
-         "<option value='cycle'";   out += selCycle;   out += ">Cycle through slots</option>"
-         "<option value='shuffle'"; out += selShuffle; out += ">Shuffle slots</option>"
-         "</select><div class='hint'>Populated slots: ";
+         "<div><label for='ssMode'>" D_WEB_SS_MODE_LABEL "</label><select id='ssMode' name='mode'>"
+         "<option value='single'";  out += selSingle;  out += ">" D_WEB_SS_MODE_SINGLE  "</option>"
+         "<option value='cycle'";   out += selCycle;   out += ">" D_WEB_SS_MODE_CYCLE   "</option>"
+         "<option value='shuffle'"; out += selShuffle; out += ">" D_WEB_SS_MODE_SHUFFLE "</option>"
+         "</select><div class='hint'>" D_WEB_SS_SLOTS_POPULATED;
   out += String(populated);
   out += "/";
   out += String(Screensavers::MAX_SLOTS);
   out += "</div></div></div>"
-         "<div class='actions'><button type='submit'>Save mode</button></div>"
+         "<div class='actions'><button type='submit'>" D_WEB_SS_SAVE_MODE "</button></div>"
          "</form></div>";
 
   // Slot grid.
-  out += "<div class='card'><h2>Rotation slots</h2>";
+  out += "<div class='card'><h2>" D_WEB_SS_SLOTS_HEADING "</h2>";
   out += slotGridHtml();
   out += "</div>";
 
   // Legacy single image card.
-  out += "<div class='card'><h2>Single screensaver</h2>";
+  out += "<div class='card'><h2>" D_WEB_SS_SINGLE_HEADING "</h2>";
   if (hasLegacy) {
     out += "<div class='row' style='align-items:center;gap:12px'>"
-           "<img src='/screensavers/thumb?single=1' alt='Single screensaver' "
+           "<img src='/screensavers/thumb?single=1' alt='" D_WEB_SS_SINGLE_ALT "' "
            "style='width:180px;border:1px solid var(--line);border-radius:8px;background:#fff;image-rendering:pixelated'>"
            "<form method='POST' action='/screensavers/delete'>"
            "<input type='hidden' name='single' value='1'>"
            "<button type='submit' class='btn secondary' "
-           "onclick=\"return confirm('Delete the single screensaver?')\">Delete</button>"
+           "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SINGLE "')\">" D_WEB_DELETE_BUTTON "</button>"
            "</form></div>";
   } else {
-    out += "<p class='muted'>No single screensaver uploaded.</p>";
+    out += "<p class='muted'>" D_WEB_SS_NO_SINGLE "</p>";
   }
   out += "</div>";
 

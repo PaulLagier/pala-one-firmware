@@ -205,9 +205,9 @@ static void handleReadView() {
   if (savedPage < 1) savedPage = 1;
 
   String out = webPageStart(
-    "Read",
-    "Browse and search the book in your browser. Use Jump to set the device's resume point.",
-    "<a href='/'>Home</a><a href='/files'>Files</a><a href='/bookmarks'>Bookmarks</a>",
+    D_WEB_READ_TITLE,
+    D_WEB_READ_SUBTITLE,
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a>",
     true
   );
   out.reserve(out.length() + 6000);
@@ -217,28 +217,28 @@ static void handleReadView() {
   out += htmlEscape(String(g_library.books[id].name));
   out += "</h2><div class='meta'>";
   out += String((int)g_library.books[id].size);
-  out += " bytes &middot; current page: ";
+  out += " " D_WEB_READ_BYTES_LABEL " &middot; " D_WEB_READ_CURRENT_PAGE_LABEL " ";
   out += String(savedPage);
   out += "</div>";
 
   // Find UI.
   out += "<div class='bv-find'>"
-         "<input id='bvFind' type='search' placeholder='Find in book' autocomplete='off'>"
-         "<button type='button' class='btn small' id='bvFindBtn'>Find all</button>"
-         "<button type='button' class='btn secondary small' id='bvFindPrev'>&#9650; Prev</button>"
-         "<button type='button' class='btn secondary small' id='bvFindNext'>&#9660; Next</button>"
-         "<button type='button' class='btn small' id='bvJumpBtn'>Jump to here</button>"
+         "<input id='bvFind' type='search' placeholder='" D_WEB_READ_FIND_PLACEHOLDER "' autocomplete='off'>"
+         "<button type='button' class='btn small' id='bvFindBtn'>" D_WEB_READ_FIND_ALL "</button>"
+         "<button type='button' class='btn secondary small' id='bvFindPrev'>&#9650; " D_WEB_READ_FIND_PREV "</button>"
+         "<button type='button' class='btn secondary small' id='bvFindNext'>&#9660; " D_WEB_READ_FIND_NEXT "</button>"
+         "<button type='button' class='btn small' id='bvJumpBtn'>" D_WEB_READ_JUMP_HERE "</button>"
          "</div>"
-         "<div class='bv-status' id='bvFindStat'>Loading book text...</div>"
+         "<div class='bv-status' id='bvFindStat'>" D_WEB_READ_LOADING "</div>"
          "<div class='bv-status' id='bvJumpStat'></div>";
 
   // Jump-by-page form (uses the existing /jumppage route).
   out += "<div style='margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px'>"
          "<form method='POST' action='/jumppage' class='bv-find'>"
          "<input type='hidden' name='id' value='" + String(id) + "'>"
-         "<input type='text' name='page' inputmode='numeric' placeholder='Page number' value='" + String(savedPage) + "' style='max-width:140px'>"
-         "<button type='submit' class='btn small'>Jump to page</button>"
-         "<span class='muted small'>Saves the next-open page directly.</span>"
+         "<input type='text' name='page' inputmode='numeric' placeholder='" D_WEB_READ_PAGE_PLACEHOLDER "' value='" + String(savedPage) + "' style='max-width:140px'>"
+         "<button type='submit' class='btn small'>" D_WEB_READ_JUMP_PAGE "</button>"
+         "<span class='muted small'>" D_WEB_READ_JUMP_HINT "</span>"
          "</form></div>";
 
   out += "<div id='bvData' data-id='" + String(id) + "'></div>";
