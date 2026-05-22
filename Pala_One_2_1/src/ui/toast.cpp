@@ -41,7 +41,7 @@ void draw() {
   const int yTop = SCREEN_H - STATUS_H;
   gfx.fillRect(0, yTop, SCREEN_W, STATUS_H, 0);
 
-  Font::useUiSmall();
+  Font::useToast();   // Latin Extended — translated strings may carry accents
   int textY = SCREEN_H - 1;
   u8g2.setCursor(MARGIN_X, textY);
   u8g2.print(s_msg.c_str());

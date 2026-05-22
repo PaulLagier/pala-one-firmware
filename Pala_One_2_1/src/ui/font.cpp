@@ -12,12 +12,15 @@ namespace Font {
 // role accessors (useBody, useBold, ...).
 static const uint8_t* s_body    = u8g2_font_helvR08_te;
 static const uint8_t* s_bold    = u8g2_font_helvB08_te;
+// _tf = ASCII only. Translated strings must NOT use these — see font.h.
 static const uint8_t* s_uiSmall = u8g2_font_6x10_tf;
 static const uint8_t* s_uiTiny  = u8g2_font_5x8_tf;
+// _te = Latin Extended. Used by toasts so translations with accents render.
+static const uint8_t* s_toast   = u8g2_font_helvR08_te;
 
 // Owned settings. `s_size` mirrors which Helvetica size is currently active;
 // `s_lineGap` is the user-configurable extra spacing between body lines.
-static int s_size    = 10;
+static int s_size    = 8;
 static int s_lineGap = 0;
 
 // Layout-metrics cache. Invalid after the mutators below; recomputed on the
@@ -55,6 +58,7 @@ static void applyLineGap(int gap) {
 
 void useBody()     { u8g2.setFont(s_body); }
 void useBold()     { u8g2.setFont(s_bold); }
+void useToast()    { u8g2.setFont(s_toast); }
 void useUiSmall()  { u8g2.setFont(s_uiSmall); }
 void useUiTiny()   { u8g2.setFont(s_uiTiny); }
 void useAppLarge() { u8g2.setFont(u8g2_font_helvB14_te); }
@@ -81,7 +85,7 @@ const LayoutMetrics& bodyLayout() {
 }
 
 void loadSettings() {
-  applyBodySize(prefs.getInt(kKeyBodySize, 10));
+  applyBodySize(prefs.getInt(kKeyBodySize, 8));
   applyLineGap(prefs.getInt(kKeyLineGap, 0));
 }
 

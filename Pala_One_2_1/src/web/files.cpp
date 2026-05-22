@@ -23,44 +23,46 @@
 // ============================================================================
 
 static void handleRoot() {
-  String subtitle = "Firmware ";
+  String subtitle = D_WEB_HOME_FW_PREFIX;
   subtitle += FW_BUILD;
-  subtitle += " &middot; ";
+  subtitle += D_WEB_HOME_MIDDOT_SEP;
   subtitle += String(g_library.bookCount);
-  subtitle += " books &middot; Free: ";
+  subtitle += D_WEB_HOME_BOOKS_SUFFIX;
+  subtitle += D_WEB_HOME_MIDDOT_SEP;
+  subtitle += D_WEB_HOME_FREE_LABEL;
   subtitle += humanBytes(fsFreeBytesSafe());
   subtitle += " / ";
   subtitle += humanBytes(fsTotalBytesSafe());
 
   String out = webPageStart(
-    "Pala One",
+    D_WEB_HOME_TITLE,
     subtitle,
-    "<a href='/files'>Files</a><a href='/bookmarks'>Bookmarks</a><a href='/list'>List</a><a href='/settings'>Settings</a><a href='/reset'>Factory reset</a>"
+    "<a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/list'>" D_WEB_NAV_LIST "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a><a href='/reset'>" D_WEB_NAV_FACTORY_RESET "</a>"
   );
 
   out += storageCardHtml();
 
   if (fsTotalBytesSafe() == 0 || fsFreeBytesSafe() < 8192) {
-    out += "<div class='banner-warn'>&#9888; Storage is not available or almost full. If uploads fail, delete books or use Factory reset from this web UI.</div>";
+    out += "<div class='banner-warn'>" D_WEB_HOME_STORAGE_WARN "</div>";
   }
 
   out +=
-    "<div class='card'><h2>Upload book</h2>"
-    "<p class='muted'>Send UTF-8 plain text files to <b>/books</b> on the device, then sort them into folders from the Files page.</p>"
+    "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
     "<form method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
     "<input type='file' name='file' accept='.txt,text/plain' required>"
-    "<div class='actions'><button type='submit'>Upload</button><a class='btn secondary' href='/files'>Manage files</a></div>"
+    "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button><a class='btn secondary' href='/files'>" D_WEB_MANAGE_FILES_BUTTON "</a></div>"
     "</form></div>";
 
   out +=
-    "<div class='card'><h2>Install app</h2>"
-    "<p class='muted'>Upload a Pala app binary (<b>.bin</b>) to <b>/apps</b>. The header is validated before commit; only files with the correct magic and API version are accepted. Open <b>Apps</b> from the library to launch.</p>"
+    "<div class='card'><h2>" D_WEB_INSTALL_APP_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_INSTALL_APP_DESC "</p>"
     "<form method='POST' action='/upload-app' enctype='multipart/form-data' style='margin-top:14px'>"
     "<input type='file' name='file' accept='.bin' required>"
-    "<div class='actions'><button type='submit'>Install app</button></div>"
+    "<div class='actions'><button type='submit'>" D_WEB_INSTALL_APP_BUTTON "</button></div>"
     "</form></div>";
 
-  out += "<div class='card'><h2>Notes</h2><p class='muted'>Uploaded books are normalized and compacted before saving, so a source TXT can be larger than the final stored file. The reader is optimized for UTF-8 plain text and Latin-based languages.</p></div>";
+  out += "<div class='card'><h2>" D_WEB_NOTES_HEADING "</h2><p class='muted'>" D_WEB_NOTES_DESC "</p></div>";
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
@@ -68,22 +70,22 @@ static void handleRoot() {
 
 static void handleFiles() {
   String out = webPageStart(
-    "Files",
-    "Manage books, folders and library structure for Pala One.",
-    "<a href='/'>Home</a><a href='/bookmarks'>Bookmarks</a><a href='/settings'>Settings</a>",
+    D_WEB_FILES_HEADING,
+    D_WEB_FILES_SUBTITLE,
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
     true
   );
 
   out +=
-    "<div class='card'><h2>Create folder</h2>"
+    "<div class='card'><h2>" D_WEB_CREATE_FOLDER_HEADING "</h2>"
     "<form method='POST' action='/mkdir' class='stack' accept-charset='UTF-8' style='margin-top:12px'>"
-    "<input type='text' name='folder' placeholder='books or classics/english' maxlength='64'>"
-    "<div class='actions'><button type='submit'>Create folder</button><span class='muted'>Folders live inside /books.</span></div>"
+    "<input type='text' name='folder' placeholder='" D_WEB_CREATE_FOLDER_PLACEHOLDER "' maxlength='64'>"
+    "<div class='actions'><button type='submit'>" D_WEB_CREATE_FOLDER_BUTTON "</button><span class='muted'>" D_WEB_CREATE_FOLDER_HINT "</span></div>"
     "</form></div>";
 
-  out += "<div class='card'><h2>Folders</h2>";
+  out += "<div class='card'><h2>" D_WEB_FOLDERS_HEADING "</h2>";
   if (g_library.folderCount == 0) {
-    out += "<p class='muted'>No folders yet. Books currently live in the root of /books.</p>";
+    out += "<p class='muted'>" D_WEB_NO_FOLDERS "</p>";
   } else {
     out += "<ul class='list'>";
     for (int i = 0; i < g_library.folderCount; i++) {
@@ -92,23 +94,23 @@ static void handleFiles() {
       out += "</span></div><div><form method='POST' action='/rmdir' style='display:inline'>";
       out += "<input type='hidden' name='folder' value='";
       out += htmlEscape(g_library.folders[i]);
-      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('Delete folder? Only empty folders can be deleted.')\">Delete</button></form></div></div></li>";
+      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FOLDER "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
     }
     out += "</ul>";
   }
   out += "</div>";
 
-  out += "<div class='card'><h2>Library files</h2>";
-  if (g_library.bookCount   >= MAX_BOOKS)   out += "<p style='color:#b91c1c;font-weight:600'>&#9888; Library full (80 books max). Delete books to make room.</p>";
-  if (g_library.folderCount >= MAX_FOLDERS) out += "<p style='color:#b91c1c;font-weight:600'>&#9888; Folder limit reached (32 max).</p>";
+  out += "<div class='card'><h2>" D_WEB_LIBRARY_FILES_HEADING "</h2>";
+  if (g_library.bookCount   >= MAX_BOOKS)   out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_LIBRARY_FULL_WARN "</p>";
+  if (g_library.folderCount >= MAX_FOLDERS) out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_FOLDER_LIMIT_WARN "</p>";
 
   if (g_library.bookCount == 0) {
-    out += "<p class='muted'>No books uploaded yet.</p>";
+    out += "<p class='muted'>" D_WEB_NO_BOOKS_UPLOADED "</p>";
   } else {
     out += "<ul class='list'>";
     for (int i = 0; i < g_library.bookCount; i++) {
       String bookPath = String(g_library.books[i].path);
-      String folderLabel = g_library.books[i].folder[0] ? prettyRelativeLabel(g_library.books[i].folder) : String("Root");
+      String folderLabel = g_library.books[i].folder[0] ? prettyRelativeLabel(g_library.books[i].folder) : String(D_WEB_BOOK_ROOT);
       int savedPage = savedPageForBookPath(bookPath) + 1;
       if (savedPage < 1) savedPage = 1;
 
@@ -116,32 +118,32 @@ static void handleFiles() {
       out += htmlEscape(String(g_library.books[i].name));
       out += "</h3><div class='meta'>";
       out += String((int)g_library.books[i].size);
-      out += " bytes &middot; folder: ";
+      out += D_WEB_BOOK_BYTES_LABEL D_WEB_BOOK_FOLDER_LABEL;
       out += htmlEscape(folderLabel);
-      out += " &middot; current page: ";
+      out += D_WEB_BOOK_CURRENT_PAGE;
       out += String(savedPage);
       out += "</div>";
 
       out += "<form method='POST' action='/jumppage' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<div class='row' style='align-items:end;gap:10px'><div style='flex:1'><input type='text' name='page' value='" + String(savedPage) + "' inputmode='numeric' placeholder='Page'></div><div><button type='submit'>Jump</button></div></div>";
-      out += "<div class='muted'>Set the page that should open next on the device.<br><span class='muted'>The first open may take a moment.</span></div></form>";
+      out += "<div class='row' style='align-items:end;gap:10px'><div style='flex:1'><input type='text' name='page' value='" + String(savedPage) + "' inputmode='numeric' placeholder='" D_WEB_PAGE_PLACEHOLDER "'></div><div><button type='submit'>" D_WEB_JUMP_BUTTON "</button></div></div>";
+      out += "<div class='muted'>" D_WEB_JUMP_HINT "<br><span class='muted'>" D_WEB_JUMP_HINT2 "</span></div></form>";
 
       out += "<form method='POST' action='/move' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + "' placeholder='leave blank for root' maxlength='64'>";
-      out += "<div class='actions'><button type='submit'>Move</button><span class='muted'>Use the exact folder path.</span></div></form></div>";
+      out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + "' placeholder='" D_WEB_MOVE_PLACEHOLDER "' maxlength='64'>";
+      out += "<div class='actions'><button type='submit'>" D_WEB_MOVE_BUTTON "</button><span class='muted'>" D_WEB_MOVE_HINT "</span></div></form></div>";
       out += "<div><form method='POST' action='/del' style='display:inline'><input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<button type='submit' class='btn secondary' onclick=\"return confirm('Delete file?')\">Delete</button></form></div></div></li>";
+      out += "<button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
     }
     out += "</ul>";
   }
 
   out += "</div>";
 
-  out += "<div class='card'><h2>Apps</h2>";
+  out += "<div class='card'><h2>" D_WEB_APPS_PAGE_HEADING "</h2>";
   if (g_apps.count == 0) {
-    out += "<p class='muted'>No apps installed.</p>";
+    out += "<p class='muted'>" D_WEB_NO_APPS_INSTALLED "</p>";
   } else {
     out += "<ul class='list'>";
     for (int i = 0; i < g_apps.count; i++) {
@@ -155,12 +157,12 @@ static void handleFiles() {
       out += htmlEscape(String(g_apps.entries[i].name));
       out += "</h3><div class='meta'>";
       out += String((int)sz);
-      out += " bytes &middot; ";
+      out += D_WEB_BOOK_BYTES_LABEL " &middot; ";
       out += htmlEscape(fileName);
       out += "</div></div><div><form method='POST' action='/del-app' style='display:inline'>";
       out += "<input type='hidden' name='name' value='";
       out += htmlEscape(fileName);
-      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('Delete app?')\">Delete</button></form></div></div></li>";
+      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_APP "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
     }
     out += "</ul>";
   }
@@ -172,13 +174,13 @@ static void handleFiles() {
 
 static void handleDelete() {
   if (!server.hasArg("id")) {
-    server.send(400, "text/plain; charset=utf-8", "missing id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
     return;
   }
 
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
     return;
   }
 
@@ -195,23 +197,23 @@ static void handleDelete() {
 static void handleCreateFolder() {
   ensureBooksDir();
   if (!server.hasArg("folder")) {
-    server.send(400, "text/plain; charset=utf-8", "missing folder");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_FOLDER);
     return;
   }
 
   String folder = sanitizeFolderInput(server.arg("folder"));
   if (folder.length() == 0) {
-    server.send(400, "text/plain; charset=utf-8", "bad folder");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
     return;
   }
   if (g_library.folderCount >= MAX_FOLDERS) {
-    server.send(409, "text/plain; charset=utf-8", "folder limit reached");
+    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_LIMIT);
     return;
   }
 
   String fullPath = "/books/" + folder;
   if (!ensureDirRecursive(fullPath)) {
-    server.send(500, "text/plain; charset=utf-8", "mkdir failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MKDIR_FAILED);
     return;
   }
   loadBooks();   // refresh catalog so the new folder appears
@@ -222,27 +224,27 @@ static void handleCreateFolder() {
 
 static void handleDeleteFolder() {
   if (!server.hasArg("folder")) {
-    server.send(400, "text/plain; charset=utf-8", "missing folder");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_FOLDER);
     return;
   }
 
   String folder = sanitizeFolderInput(server.arg("folder"));
   if (folder.length() == 0) {
-    server.send(400, "text/plain; charset=utf-8", "bad folder");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
     return;
   }
 
   String fullPath = "/books/" + folder;
   if (!FS.exists(fullPath)) {
-    server.send(404, "text/plain; charset=utf-8", "folder not found");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_NOT_FOUND);
     return;
   }
   if (!isDirEmpty(fullPath)) {
-    server.send(409, "text/plain; charset=utf-8", "folder not empty");
+    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_NOT_EMPTY);
     return;
   }
   if (!FS.rmdir(fullPath)) {
-    server.send(500, "text/plain; charset=utf-8", "delete failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_DELETE_FAILED);
     return;
   }
   loadBooks();   // refresh catalog so the folder disappears
@@ -253,13 +255,13 @@ static void handleDeleteFolder() {
 
 static void handleMoveBook() {
   if (!server.hasArg("id")) {
-    server.send(400, "text/plain; charset=utf-8", "missing id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
     return;
   }
 
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
     return;
   }
 
@@ -268,7 +270,7 @@ static void handleMoveBook() {
   String destDir = (folder.length() == 0) ? String("/books") : String("/books/") + folder;
 
   if (!ensureDirRecursive(destDir)) {
-    server.send(500, "text/plain; charset=utf-8", "folder create failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_CREATE_FAILED);
     return;
   }
 
@@ -279,13 +281,13 @@ static void handleMoveBook() {
     return;
   }
   if (FS.exists(newPath)) {
-    server.send(409, "text/plain; charset=utf-8", "destination exists");
+    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_DEST_EXISTS);
     return;
   }
 
   // Library entry already cleared g_bookview; no book is "current" here.
   if (!FS.rename(oldPath, newPath)) {
-    server.send(500, "text/plain; charset=utf-8", "move failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MOVE_FAILED);
     return;
   }
 
@@ -298,13 +300,13 @@ static void handleMoveBook() {
 
 static void handleJumpPageWeb() {
   if (!server.hasArg("id") || !server.hasArg("page")) {
-    server.send(400, "text/plain; charset=utf-8", "missing id/page");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID_PAGE);
     return;
   }
 
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
     return;
   }
 

@@ -18,11 +18,11 @@ void UploadScreen::onEnter() {
 void UploadScreen::draw() {
   prepareMenuFrame();
 
-  int y = drawSectionHeader("Upload");
+  int y = drawSectionHeader(D_UPLOAD_HEADER);
 
   Font::useBold();
   u8g2.setCursor(MARGIN_X, y);
-  u8g2.print("Wi-Fi");
+  u8g2.print(D_UPLOAD_WIFI);
   y += 14;
 
   Font::useBody();
@@ -32,7 +32,7 @@ void UploadScreen::draw() {
 
   Font::useBold();
   u8g2.setCursor(MARGIN_X, y);
-  u8g2.print("Password");
+  u8g2.print(D_UPLOAD_PASSWORD);
   y += 14;
 
   Font::useBody();
@@ -42,7 +42,7 @@ void UploadScreen::draw() {
 
   Font::useBold();
   u8g2.setCursor(MARGIN_X, y);
-  u8g2.print("Open");
+  u8g2.print(D_UPLOAD_OPEN);
   y += 14;
 
   Font::useBody();

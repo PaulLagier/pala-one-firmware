@@ -2,6 +2,7 @@
 #define PALA_WEB_CHROME_H
 
 #include "src/pure/arduino_compat.h"  // String
+#include "src/config.h"                // D_WEB_STORAGE_HEADING default for storageCardHtml (via lang.h)
 
 // ============================================================================
 //  Web page chrome — shared helpers used by every route group.
@@ -30,8 +31,8 @@ String htmlEscape(const String& in);
 String humanBytes(size_t bytes);
 
 // Used + free + total + percent-used storage card. Title is the card heading
-// (defaults to "Storage").
-String storageCardHtml(const char* title = "Storage");
+// (defaults to the language-appropriate "Storage" string).
+String storageCardHtml(const char* title = D_WEB_STORAGE_HEADING);
 
 // For external callers that want just the percent (e.g. banners).
 int storageUsedPct();

@@ -4,6 +4,7 @@
 #include <esp_wifi.h>
 #include <esp_bt.h>
 #include <esp_sleep.h>
+#include <esp_random.h>
 #include <driver/rtc_io.h>
 
 #include "src/config.h"
@@ -12,6 +13,7 @@
 #include "src/hal/input.h"          // injectButtonEdgeNow, markUserActivity
 #include "src/ui/pala_one_sleep_black_icon_v4.h"
 #include "src/ui/screen.h"
+#include "src/ui/sleep_slots.h"
 
 namespace Sleep {
 
@@ -36,21 +38,78 @@ void setIdleTimeout(int secs) {
 int      idleTimeoutSecs() { return s_idleSecs; }
 uint32_t idleTimeoutMs()   { return (uint32_t)s_idleSecs * 1000UL; }
 
-// Render the sleep image onto the e-ink before powering down. Tries the
-// user-uploaded /sleep.bin first; falls back to the built-in icon.
+// Render the sleep image onto the e-ink before powering down. Multi-slot
+// rotation, multi-frame /sleep.bin, then built-in icon.
 static void drawSleepScreen() {
   display.fastmodeOff();
   beginPageCanvas();
 
-  File sf = FS.open("/sleep.bin", "r");
-  if (sf && sf.size() >= 3904) {
-    static uint8_t sleepBuf[3904];
-    sf.read(sleepBuf, 3904);
-    sf.close();
-    gfx.fillScreen(1);
-    gfx.drawXBitmap(0, 0, sleepBuf, SCREEN_W, SCREEN_H, 0);
-  } else {
-    if (sf) sf.close();
+  bool drewCustom = false;
+
+  bool multiEnabled = (prefs.getInt("cfg_ss_multi", 0) == 1);
+  int slots[MAX_MULTI_SLEEP_SLOTS];
+  int slotCount = collectSleepSlots(slots);
+  if (multiEnabled && slotCount > 0) {
+    int sleepMode = prefs.getInt("cfg_ss_mode", 0);
+    if (sleepMode != 1) sleepMode = 0;  // 0=cycle, 1=shuffle
+
+    int slotPick = slots[0];
+    if (sleepMode == 1) {
+      int lastSlot = prefs.getInt("cfg_ss_last_slot", -1);
+      if (slotCount <= 1) {
+        slotPick = slots[0];
+      } else {
+        int guard = 12;
+        do {
+          slotPick = slots[(int)(esp_random() % (uint32_t)slotCount)];
+          guard--;
+        } while (slotPick == lastSlot && guard > 0);
+      }
+      prefs.putInt("cfg_ss_last_slot", slotPick);
+    } else {
+      int idx = loadSleepCycleIndex();
+      if (idx < 0) idx = 0;
+      slotPick = slots[idx % slotCount];
+      int nextIdx = (idx + 1) % slotCount;
+      saveSleepCycleIndex(nextIdx);
+      prefs.putInt("cfg_ss_last_slot", slotPick);
+    }
+
+    File mf = FS.open(sleepSlotPath(slotPick), "r");
+    if (mf && mf.size() == SLEEP_FRAME_BYTES) {
+      static uint8_t sleepBuf[SLEEP_FRAME_BYTES];
+      if (mf.read(sleepBuf, SLEEP_FRAME_BYTES) == SLEEP_FRAME_BYTES) {
+        gfx.fillScreen(1);
+        gfx.drawXBitmap(0, 0, sleepBuf, SCREEN_W, SCREEN_H, 0);
+        drewCustom = true;
+      }
+    }
+    if (mf) mf.close();
+  }
+
+  if (!drewCustom) {
+    File sf = FS.open("/sleep.bin", "r");
+    if (sf) {
+      size_t sz = sf.size();
+      if (sz >= SLEEP_FRAME_BYTES && (sz % SLEEP_FRAME_BYTES) == 0) {
+        int numFrames = (int)(sz / SLEEP_FRAME_BYTES);
+        if (numFrames >= 1 && numFrames <= MAX_SLEEP_FRAMES) {
+          uint32_t idx = prefs.getUInt("cfg_sleep_ss_idx", 0) % (uint32_t)numFrames;
+          static uint8_t sleepBuf[SLEEP_FRAME_BYTES];
+          if (sf.seek(idx * SLEEP_FRAME_BYTES, SeekSet) &&
+              sf.read(sleepBuf, SLEEP_FRAME_BYTES) == SLEEP_FRAME_BYTES) {
+            prefs.putUInt("cfg_sleep_ss_idx", idx + 1);
+            gfx.fillScreen(1);
+            gfx.drawXBitmap(0, 0, sleepBuf, SCREEN_W, SCREEN_H, 0);
+            drewCustom = true;
+          }
+        }
+      }
+      sf.close();
+    }
+  }
+
+  if (!drewCustom) {
     gfx.fillScreen(1);
     gfx.drawXBitmap(0, 0, pala_one_sleep_black_icon_v4_bits, SCREEN_W, SCREEN_H, 0);
   }

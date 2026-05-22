@@ -15,8 +15,9 @@ build/
 *.bin
 .theia/
 
-# Host-test build artifacts
-test/build/
+# Host-test build artifacts (any test/build* variant — covers per-language
+# host builds like test/build-es/ etc.)
+test/build*/
 
 # OS / editor cruft
 .DS_Store

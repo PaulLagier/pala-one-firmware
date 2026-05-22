@@ -5,16 +5,42 @@ Pala One — A tiny E-Ink reader project by Paul Lagier
 
 The goal of the project was to create a simple, distraction-free reading device that feels minimal, portable and easy to build while still looking and behaving more like a real product than a typical DIY electronics project.
 
-## Fork Information
+## Branch notes: `screensavers`
 
-This repository is a community fork with the following additions beyond the base firmware:
+This folder is **Paul’s dev baseline** plus **multi-screensaver rotation** (ported from `Pala_One_2_1_kevinst1r`). It does **not** include the in-browser screensaver editor (see **`screensaver_editor`**).
 
-- Multiple screensavers (up to 8)
-- Screensaver editor built into firmware
-- Bionic reading and OpenDyslexia fonts
-- Dark Mode in WebUI
-- Reading location retention when changing font, size, or spacing
-- Find jumping in books
+**What it adds**
+
+- Up to **8** slot files: `/sleep-slot-0.bin` … `/sleep-slot-7.bin` (3904 bytes each, 250×122 XBM).
+- **Single** `/sleep.bin`: one frame or up to **16** concatenated frames (3904 bytes per frame), rotated via `cfg_sleep_ss_idx`.
+- Modes when multi enabled: **cycle** (persisted `/sleep-cycle.idx`) or **shuffle** (`cfg_ss_last_slot` + random).
+- Web settings: multi vs single, mode, thumbnails, per-slot delete, slot upload.
+- Sleep draw picks slot/frame before falling back to built-in icon.
+
+**Key files**
+
+| Path | Role |
+|------|------|
+| `Pala_One_2_1/src/ui/sleep_slots.cpp`, `.h` | Slot paths, cycle index, slot list |
+| `Pala_One_2_1/src/ui/sleep.cpp` | `drawSleepScreen()` rotation logic |
+| `Pala_One_2_1/src/web/upload.cpp` | `/upload-sleep`, `/upload-sleep-slot` validation |
+| `Pala_One_2_1/src/web/settings.cpp` | Multi/single UI, `/sleep-thumb`, remove slot |
+
+**Settings (NVS)**
+
+- `cfg_ss_multi`, `cfg_ss_mode` (0 = cycle, 1 = shuffle), `cfg_ss_last_slot`, `cfg_sleep_ss_idx`
+- Filesystem: `/sleep-cycle.idx`
+
+**How to test**
+
+1. **Settings** → enable multiple screensavers, upload `.bin` files to slots (or multi-frame `/sleep.bin`).
+2. Let device sleep repeatedly; confirm different images (cycle or shuffle per mode).
+3. Open `/sleep-thumb?slot=N` or `?single=1` in browser to preview.
+
+**Not in this branch**
+
+- Canvas editor (upload from phone with crop/zoom) — merge **`screensaver_editor`**.
+- Reader/font/web features from other branches.
 
 ## Contributing
 
@@ -33,6 +59,19 @@ There are currently two supported Heltec Wireless Paper versions:
 The board version is usually printed on the back of the PCB.
 
 Pick your board's revision in the build step below — either by uncommenting the matching `#define` at the top of `Pala_One_2_1/Pala_One_2_1.ino` (Arduino IDE), or by selecting the matching env (PlatformIO).
+
+## Language
+
+The firmware ships with two built-in languages, selected at build time:
+
+- `LANG_EN` — English (default)
+- `LANG_ES_LA` — Spanish (Latin America)
+
+One language per binary. PlatformIO users pick a leaf env that already encodes both the board and the language (`wireless-paper-v1_2-en`, `wireless-paper-v1_2-es`, `wireless-paper-v1_1-en`, `wireless-paper-v1_1-es`). Arduino IDE users uncomment one of `LANG_EN` / `LANG_ES_LA` near the top of `Pala_One_2_1/Pala_One_2_1.ino`, alongside the board `#define`. If nothing is set, the firmware compiles with `LANG_EN` and a `#pragma message` warning.
+
+Strings live in `Pala_One_2_1/src/lang/` — `en.h` is the canonical key set; `es_la.h` mirrors it. Adding a new language is additive: clone one of the headers, add the include arm in `src/lang/lang.h`, and add two leaf envs in `platformio.ini` (one per board). See `src/lang/lang.h` for the authoring rules (key set, placeholders, JS-confirm quoting constraint).
+
+Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
 
 ## Building the firmware
 
@@ -54,8 +93,10 @@ The same sources build under either toolchain.
 1. Install [PlatformIO Core](https://platformio.org/install/cli) (CLI) or the PlatformIO IDE extension for VS Code.
 2. From the repo root:
    ```
-   pio run -e wireless-paper-v1_2 -t upload    # V1.2 panel
-   pio run -e wireless-paper-v1_1 -t upload    # V1.1 panel
+   pio run -e wireless-paper-v1_2-en -t upload    # V1.2 panel, English
+   pio run -e wireless-paper-v1_2-es -t upload    # V1.2 panel, Spanish-LA
+   pio run -e wireless-paper-v1_1-en -t upload    # V1.1 panel, English
+   pio run -e wireless-paper-v1_1-es -t upload    # V1.1 panel, Spanish-LA
    ```
 3. Serial monitor:
    ```

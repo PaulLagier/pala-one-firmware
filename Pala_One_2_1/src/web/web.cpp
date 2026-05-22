@@ -20,8 +20,8 @@ void registerWebRoutes() {
   registerFilesRoutes();       // /, /files, /del, /mkdir, /rmdir, /move, /jumppage
   registerBookmarksRoutes();   // /bookmarks, /viewbm, /delbm, /exportbm
   registerListRoutes();        // /list, /list-clear-done
-  registerSettingsRoutes();    // /settings, /del-sleep
-  registerUploadRoutes();      // /upload, /upload-sleep
+  registerSettingsRoutes();    // /settings, /del-sleep, /sleep-thumb, /sleep-slot-remove
+  registerUploadRoutes();      // /upload, /upload-sleep, /upload-sleep-slot
   registerAppUploadRoutes();   // /upload-app
   registerResetRoutes();       // /reset
 }

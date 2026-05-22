@@ -120,11 +120,11 @@ static String entryLabel(const LibEntry& e) {
       return prefix + folderLeafLabel(String(g_library.folders[e.ref]));
     }
     case LIB_ENTRY_BOOK:      return bookLeafLabel(String(g_library.books[e.ref].path));
-    case LIB_ENTRY_BOOKMARKS: return "Bookmarks";
-    case LIB_ENTRY_LIST:      return "List";
-    case LIB_ENTRY_APPS:      return "Apps";
-    case LIB_ENTRY_ABOUT:     return "Device";
-    case LIB_ENTRY_UPLOAD:    return "Upload";
+    case LIB_ENTRY_BOOKMARKS: return D_MENU_BOOKMARKS;
+    case LIB_ENTRY_LIST:      return D_MENU_LIST;
+    case LIB_ENTRY_APPS:      return D_MENU_APPS;
+    case LIB_ENTRY_ABOUT:     return D_MENU_DEVICE;
+    case LIB_ENTRY_UPLOAD:    return D_MENU_UPLOAD;
   }
   return "";
 }
@@ -216,7 +216,7 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     if (openBookByIndex(sel.ref)) {
       nextScreen = &g_readerScreen;
     } else {
-      drawCenter("Open failed", "Try upload again");
+      drawCenter(D_LIBRARY_OPEN_FAILED, D_LIBRARY_TRY_UPLOAD);
       draw();
     }
     return;

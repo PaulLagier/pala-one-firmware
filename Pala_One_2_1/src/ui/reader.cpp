@@ -253,7 +253,7 @@ void renderCurrentPage() {
   // Strong invariant: if we got here, a book is open. The reader screen
   // is never active otherwise.
   if (!prepareForRender()) {
-    drawCenter("Book empty", "Back to library");
+    drawCenter(D_READER_BOOK_EMPTY, D_READER_BACK_LIBRARY);
     navigateToLibraryRoot();
     return;
   }

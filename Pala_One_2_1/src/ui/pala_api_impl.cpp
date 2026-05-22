@@ -193,7 +193,7 @@ static void paintLoadError(const char* line1, const char* line2 = nullptr) {
 
 void runApp(const char* path) {
   if (!path) {
-    paintLoadError("App error", "null path");
+    paintLoadError(D_APP_ERR_TITLE, D_APP_ERR_NULL_PATH);
     return;
   }
   uint32_t fileApiVer = 0;
@@ -203,38 +203,41 @@ void runApp(const char* path) {
       // App ran to completion. AppsScreen will repaint itself on return.
       return;
     case LoadResult::FileNotFound:
-      paintLoadError("App not found", path);
+      paintLoadError(D_APP_ERR_NOT_FOUND, path);
       return;
     case LoadResult::FileTooSmall:
-      paintLoadError("App too small", "Invalid file");
+      paintLoadError(D_APP_ERR_TOO_SMALL, D_APP_ERR_INVALID_FILE);
       return;
     case LoadResult::FileTooLarge:
-      paintLoadError("App too large", "> 48 KB");
+      paintLoadError(D_APP_ERR_TOO_LARGE, D_APP_ERR_SIZE_LIMIT);
       return;
     case LoadResult::ReadError:
-      paintLoadError("Read error", "Partial read");
+      paintLoadError(D_APP_ERR_READ, D_APP_ERR_PARTIAL_READ);
       return;
     case LoadResult::OutOfMemory:
-      paintLoadError("No exec memory", nullptr);
+      paintLoadError(D_APP_ERR_NO_EXEC_MEM, nullptr);
       return;
     case LoadResult::BadMagic:
-      paintLoadError("Bad app file", "Wrong magic");
+      paintLoadError(D_APP_ERR_BAD_FILE, D_APP_ERR_WRONG_MAGIC);
       return;
     case LoadResult::ApiMismatch: {
-      char msg[32];
-      snprintf(msg, sizeof(msg), "API v%u, need v%u",
+      // 64 to match the upload-side buffer in web/apps_upload.cpp. Worst-case
+      // current expansion ("API v4294967295, requiere v4294967295") = 38 bytes;
+      // keeps room for translation/format changes without re-validating here.
+      char msg[64];
+      snprintf(msg, sizeof(msg), D_APP_ERR_API_FMT,
                (unsigned)fileApiVer, (unsigned)PALA_API_VERSION);
-      paintLoadError("API mismatch", msg);
+      paintLoadError(D_APP_ERR_API_MISMATCH, msg);
       return;
     }
     case LoadResult::BadEntryOffset:
-      paintLoadError("Bad entry offset", nullptr);
+      paintLoadError(D_APP_ERR_BAD_ENTRY, nullptr);
       return;
     case LoadResult::BadRelocTable:
-      paintLoadError("Bad reloc table", nullptr);
+      paintLoadError(D_APP_ERR_BAD_RELOC, nullptr);
       return;
     case LoadResult::BadRelocEntry:
-      paintLoadError("Reloc out of range", nullptr);
+      paintLoadError(D_APP_ERR_RELOC_RANGE, nullptr);
       return;
   }
 }

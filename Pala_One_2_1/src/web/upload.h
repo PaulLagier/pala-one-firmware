@@ -1,9 +1,7 @@
 #ifndef PALA_WEB_UPLOAD_H
 #define PALA_WEB_UPLOAD_H
 
-// Mounts /upload (book upload, multipart) and /upload-sleep (custom sleep
-// image upload). Both register a stream handler (chunk receiver) and a done
-// handler (final response).
+// Mounts /upload, /upload-sleep, and /upload-sleep-slot (stream + done handlers).
 void registerUploadRoutes();
 
 // Close any open tmp file and clear all per-session fields. Called by the

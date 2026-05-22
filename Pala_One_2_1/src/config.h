@@ -20,7 +20,7 @@
 
 #include "src/pure/arduino_compat.h"
 
-#define FW_VERSION "2.1c"
+#define FW_VERSION "2.1"
 
 // BUILD_GIT_HASH is injected by scripts/build_info.py at PlatformIO build
 // time. Host-test builds skip that script, so provide a fallback so the
@@ -29,7 +29,7 @@
 #define BUILD_GIT_HASH "unknown"
 #endif
 
-#define FW_BUILD FW_VERSION " (" BUILD_GIT_HASH ")"
+#define FW_BUILD FW_VERSION
 
 // DEBUG_BUILD = 1 shows the git hash in the on-device library screen header
 // (the front face of the device). About screen + web UI always show the
@@ -44,6 +44,10 @@
 #else
   #define LIB_HEADER_TITLE "Pala One"
 #endif
+
+// Language selection (LANG_EN / LANG_ES_LA) and the LANG_EN fallback live in
+// src/lang/lang.h itself — included at the end of this header so every TU
+// that pulls in config.h transitively sees the D_* macros.
 
 static const int SCREEN_W = 250;
 static const int SCREEN_H = 122;
@@ -116,5 +120,11 @@ static const bool ENABLE_DEEP_SLEEP = true;
 // Fonts live behind the role API in `ui/font.h` (Font::useBody/useBold/
 // useUiSmall/useUiTiny). No code outside font.cpp references u8g2 font
 // tables directly.
+
+// Language strings (D_* macros) live in src/lang/. Included here so every
+// TU that pulls in config.h transitively sees the macros without per-file
+// includes. lang.h is pure preprocessor — no Arduino dependencies, host-test
+// safe.
+#include "src/lang/lang.h"
 
 #endif  // PALA_CONFIG_H

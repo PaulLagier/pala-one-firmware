@@ -100,7 +100,7 @@ String webPageEnd() {
 String successPage(const String& title, const String& subtitle,
                    const String& banner, const String& innerHtml) {
   String out = webPageStart(title, subtitle,
-    "<a href='/'>Home</a><a href='/files'>Files</a><a href='/settings'>Settings</a>");
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>");
   out += "<div class='banner-ok'>" + banner + "</div>";
   out += innerHtml;
   out += webPageEnd();
@@ -152,11 +152,11 @@ String storageCardHtml(const char* title) {
   out += "<div class='card'><h2>";
   out += title;
   out += "</h2><div class='stats'>";
-  out += "<div class='stat'><span class='muted'>Books</span><b>" + String(g_library.bookCount) + "</b></div>";
-  out += "<div class='stat'><span class='muted'>Used</span><b>"  + humanBytes(usedBytes)  + "</b></div>";
-  out += "<div class='stat'><span class='muted'>Free</span><b>"  + humanBytes(freeBytes)  + "</b></div>";
-  out += "<div class='stat'><span class='muted'>Total</span><b>" + humanBytes(totalBytes) + "</b></div>";
+  out += "<div class='stat'><span class='muted'>" D_WEB_STORAGE_BOOKS "</span><b>" + String(g_library.bookCount) + "</b></div>";
+  out += "<div class='stat'><span class='muted'>" D_WEB_STORAGE_USED  "</span><b>" + humanBytes(usedBytes)         + "</b></div>";
+  out += "<div class='stat'><span class='muted'>" D_WEB_STORAGE_FREE  "</span><b>" + humanBytes(freeBytes)         + "</b></div>";
+  out += "<div class='stat'><span class='muted'>" D_WEB_STORAGE_TOTAL "</span><b>" + humanBytes(totalBytes)        + "</b></div>";
   out += "</div><div class='bar'><span style='width:" + String(pct) + "%'></span></div>";
-  out += "<div class='muted' style='margin-top:8px'>" + String(pct) + "% of internal storage currently used.</div></div>";
+  out += "<div class='muted' style='margin-top:8px'>" + String(pct) + D_WEB_STORAGE_PCT_SUFFIX "</div></div>";
   return out;
 }

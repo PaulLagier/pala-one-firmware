@@ -25,7 +25,15 @@
 
 // ── Board selection: uncomment the line that matches your hardware ──────────
 // #define BOARD_V1_1
-#define BOARD_V1_2
+// #define BOARD_V1_2
+// ────────────────────────────────────────────────────────────────────────────
+
+// ── Language selection: uncomment exactly one (Arduino IDE) ─────────────────
+//   PlatformIO users pick the env in platformio.ini (-en / -es leaf envs)
+//   and can leave these defines commented out. Default if nothing is set:
+//   English (with a #pragma message warning from src/config.h).
+#define LANG_EN
+// #define LANG_ES_LA
 // ────────────────────────────────────────────────────────────────────────────
 
 // When built with PlatformIO, WIRELESS_PAPER + DISPLAY_V1_x come from
@@ -49,7 +57,7 @@
 #endif
 
 #if !defined(DISPLAY_V1_1) && !defined(DISPLAY_V1_2)
-  #error "Board not selected. Arduino IDE: uncomment BOARD_V1_1 or BOARD_V1_2 in Pala_One_2_1_kevinst1r.ino. PlatformIO: build with -e wireless-paper-v1_1 or -e wireless-paper-v1_2."
+  #error "Board not selected. Arduino IDE: uncomment BOARD_V1_1 or BOARD_V1_2 in Pala_One_2_1.ino. PlatformIO: build with -e wireless-paper-v1_1 or -e wireless-paper-v1_2."
 #endif
 
 #include <Arduino.h>
@@ -124,7 +132,7 @@ void setup() {
   display.clear();
 
   if (!fsBegin()) {
-    drawCenter("Storage error", "Try factory reset");
+    drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
     return;
   }
   ensureBooksDir();
