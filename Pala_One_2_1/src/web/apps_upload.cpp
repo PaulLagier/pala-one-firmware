@@ -49,7 +49,7 @@ static void handleUploadAppDone() {
   AppUpload& s = s_app;
   if (!s.ok) {
     server.send(400, "text/plain; charset=utf-8",
-                s.error.length() ? s.error : String("App upload failed"));
+                s.error.length() ? s.error : String(D_WEB_APP_UPLOAD_ERR_FALLBACK));
     return;
   }
 
@@ -62,20 +62,20 @@ static void handleUploadAppDone() {
 
   String inner;
   inner.reserve(900);
-  inner += "<div class='card'><h2>App installed</h2>";
-  inner += "<p class='muted'>Open the device, scroll the library to <b>Apps</b>, and double-click to launch.</p>";
+  inner += "<div class='card'><h2>" D_WEB_APP_INSTALLED_HEADING "</h2>";
+  inner += "<p class='muted'>" D_WEB_APP_INSTALLED_DESC "</p>";
   inner += "<div class='stats'>";
-  inner += "<div class='stat'><span class='muted'>App</span><b>"        + htmlEscape(s.finalName)      + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>Stored size</span><b>"+ humanBytes(storedSize)        + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>Apps now</span><b>"   + String(g_apps.count)          + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>Free space</span><b>" + humanBytes(fsFreeBytesSafe()) + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/'>Upload another</a></div></div>";
+  inner += "<div class='stat'><span class='muted'>" D_WEB_APP_LABEL          "</span><b>" + htmlEscape(s.finalName)      + "</b></div>";
+  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)        + "</b></div>";
+  inner += "<div class='stat'><span class='muted'>" D_WEB_APPS_NOW           "</span><b>" + String(g_apps.count)          + "</b></div>";
+  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe()) + "</b></div>";
+  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
   inner += storageCardHtml();
 
   String page = successPage(
-    "App installed",
-    "App saved to /apps/.",
-    "&#10003; App ready to run.",
+    D_WEB_APP_INSTALLED_HEADING,
+    D_WEB_APP_INSTALLED_SUBTITLE,
+    D_WEB_APP_INSTALLED_BANNER,
     inner
   );
   server.send(200, "text/html; charset=utf-8", page);
@@ -85,19 +85,19 @@ static void handleUploadAppDone() {
 // runApp switch in ui/pala_api_impl.cpp; lives here so the upload route
 // can present the same diagnostics at install time.
 static const char* validationErrorMessage(AppHeaderStatus s, uint32_t fileApiVer) {
-  static char buf[48];
+  static char buf[64];
   switch (s) {
-    case AppHeaderStatus::Ok:             return "OK";
-    case AppHeaderStatus::TooSmall:       return "Invalid app (file too small)";
-    case AppHeaderStatus::BadMagic:       return "Invalid app (bad magic)";
-    case AppHeaderStatus::BadEntryOffset: return "Invalid app (bad entry offset)";
-    case AppHeaderStatus::BadRelocTable:  return "Invalid app (bad reloc table)";
+    case AppHeaderStatus::Ok:             return D_WEB_APP_VALID_OK;
+    case AppHeaderStatus::TooSmall:       return D_WEB_APP_VALID_TOO_SMALL;
+    case AppHeaderStatus::BadMagic:       return D_WEB_APP_VALID_BAD_MAGIC;
+    case AppHeaderStatus::BadEntryOffset: return D_WEB_APP_VALID_BAD_ENTRY;
+    case AppHeaderStatus::BadRelocTable:  return D_WEB_APP_VALID_BAD_RELOC;
     case AppHeaderStatus::ApiMismatch:
-      snprintf(buf, sizeof(buf), "Invalid app (API v%u, need v%u)",
+      snprintf(buf, sizeof(buf), D_WEB_APP_VALID_API_FMT,
                (unsigned)fileApiVer, (unsigned)PALA_API_VERSION);
       return buf;
   }
-  return "Invalid app";
+  return D_WEB_APP_VALID_INVALID;
 }
 
 static void handleUploadAppStream() {
@@ -113,7 +113,7 @@ static void handleUploadAppStream() {
     // Defensive — protects MAX_APPS check from a stale catalog.
     loadApps();
     if (g_apps.count >= MAX_APPS) {
-      s.error = "Apps directory full";
+      s.error = D_WEB_APPS_DIR_FULL;
       return;
     }
 
@@ -122,7 +122,7 @@ static void handleUploadAppStream() {
     // MAX_APP_BINARY. Lets us fail fast if storage is nearly full
     // rather than burning the whole transfer.
     if (fsFreeBytesSafe() < MAX_APP_BINARY) {
-      s.error = "Not enough free space";
+      s.error = D_WEB_ERR_NOT_ENOUGH_SPACE;
       return;
     }
 
@@ -136,7 +136,7 @@ static void handleUploadAppStream() {
     if (FS.exists(s.tmpPath)) FS.remove(s.tmpPath);
     s.tmpFile = FS.open(s.tmpPath, "w");
     if (!s.tmpFile) {
-      s.error = "Cannot create temp app file";
+      s.error = D_WEB_ERR_CANT_CREATE_TEMP_APP;
       s.tmpPath = "";
     }
   }
@@ -150,7 +150,7 @@ static void handleUploadAppStream() {
       s.tmpFile.close();
       if (FS.exists(s.tmpPath)) FS.remove(s.tmpPath);
       s.tmpPath = "";
-      s.error = "App too large (> 48 KB)";
+      s.error = D_WEB_APP_TOO_LARGE;
       return;
     }
     s.tmpFile.write(up.buf, up.currentSize);
@@ -161,7 +161,7 @@ static void handleUploadAppStream() {
 
     if (up.totalSize < sizeof(PalaAppHeader) + 4) {
       if (FS.exists(s.tmpPath)) FS.remove(s.tmpPath);
-      s.error = "App binary too small";
+      s.error = D_WEB_APP_BINARY_TOO_SMALL;
       s.tmpPath = "";
       return;
     }
@@ -178,7 +178,7 @@ static void handleUploadAppStream() {
     }
     if (!readOk) {
       if (FS.exists(s.tmpPath)) FS.remove(s.tmpPath);
-      s.error = "Could not read app header";
+      s.error = D_WEB_APP_CANT_READ_HEADER;
       s.tmpPath = "";
       return;
     }
@@ -202,7 +202,7 @@ static void handleUploadAppStream() {
       s.ok = true;
     } else {
       if (FS.exists(s.tmpPath)) FS.remove(s.tmpPath);
-      s.error = "Failed to finalize app upload";
+      s.error = D_WEB_APP_FINALIZE_FAILED;
     }
     s.tmpPath = "";
   }
@@ -211,18 +211,18 @@ static void handleUploadAppStream() {
     if (s.tmpPath.length() > 0 && FS.exists(s.tmpPath)) FS.remove(s.tmpPath);
     s.tmpPath = "";
     s.ok = false;
-    s.error = "App upload aborted";
+    s.error = D_WEB_APP_UPLOAD_ABORTED;
   }
 }
 
 static void handleDeleteApp() {
   if (!server.hasArg("name")) {
-    server.send(400, "text/plain; charset=utf-8", "missing name");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_NAME);
     return;
   }
   String name = server.arg("name");
   if (name.indexOf('/') >= 0 || name.indexOf('\\') >= 0 || !name.endsWith(".bin")) {
-    server.send(400, "text/plain; charset=utf-8", "invalid name");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_INVALID_NAME);
     return;
   }
   String path = String("/apps/") + name;

@@ -16,26 +16,26 @@
 // strings are user-facing for this download flow).
 static String readPageTextForWeb(const String& path, int page) {
   File f = FS.open(path, "r");
-  if (!f) return String("Open failed.");
+  if (!f) return String(D_WEB_BOOKMARK_OPEN_FAILED_DOT);
   uint32_t off = pageOffsetForPage(f, path, page);
   String out;
   out.reserve(900);
   (void)extractPageText(f, off, out);
   f.close();
   out.trim();
-  if (out.length() == 0) out = "(empty)";
+  if (out.length() == 0) out = D_WEB_BOOKMARK_PAGE_EMPTY;
   return out;
 }
 
 static void handleBookmarksWeb() {
   String out = webPageStart(
-    "Bookmarks",
-    "Saved reading positions for Pala One, grouped by book.",
-    "<a href='/'>Home</a><a href='/files'>Files</a><a href='/settings'>Settings</a>",
+    D_WEB_BOOKMARKS_HEADING,
+    D_WEB_BOOKMARKS_SUBTITLE,
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
     true
   );
 
-  if (g_library.bookCount == 0) out += "<div class='card'><p class='muted'>No books available yet.</p></div>";
+  if (g_library.bookCount == 0) out += "<div class='card'><p class='muted'>" D_WEB_NO_BOOKS_YET "</p></div>";
 
   for (int i = 0; i < g_library.bookCount; i++) {
     String bookPath = String(g_library.books[i].path);
@@ -49,13 +49,13 @@ static void handleBookmarksWeb() {
     out += "</h2>";
 
     if (count == 0) {
-      out += "<p class='muted'>No bookmarks</p></div>";
+      out += "<p class='muted'>" D_WEB_NO_BOOKMARKS_CARD "</p></div>";
       continue;
     }
 
     File f = FS.open(bookPath, "r");
     if (!f) {
-      out += "<p class='muted'>Open failed</p></div>";
+      out += "<p class='muted'>" D_WEB_BOOKMARKS_OPEN_FAILED_CARD "</p></div>";
       continue;
     }
 
@@ -68,19 +68,19 @@ static void handleBookmarksWeb() {
       uint32_t pageOff = resolveBookmarkOffset(bookPath, (uint16_t)targetPage, offsets[j]);
       FileReadStream fs(f);
       String sn = readBookmarkLabelAtOffset(fs, pageOff, targetPage);
-      out += "<li><div class='row'><div><div class='pill'>Bookmark ";
+      out += "<li><div class='row'><div><div class='pill'>" D_WEB_BOOKMARK_PILL_PREFIX;
       out += String(j + 1);
       out += "</div><p class='meta' style='margin-top:8px'>";
       out += htmlEscape(sn);
-      out += "</p></div><div><a class='link' href='/viewbm?book=" + String(i) + "&idx=" + String(j) + "'>View</a> | ";
+      out += "</p></div><div><a class='link' href='/viewbm?book=" + String(i) + "&idx=" + String(j) + "'>" D_WEB_BOOKMARK_VIEW "</a> | ";
       out += "<form method='POST' action='/delbm' style='display:inline'>";
       out += "<input type='hidden' name='book' value='" + String(i) + "'>";
       out += "<input type='hidden' name='idx' value='" + String(j) + "'>";
-      out += "<button type='submit' class='btn secondary' style='padding:4px 8px;font-size:13px' onclick=\"return confirm('Delete bookmark?')\">Delete</button>";
+      out += "<button type='submit' class='btn secondary' style='padding:4px 8px;font-size:13px' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_BOOKMARK "')\">" D_WEB_DELETE_BUTTON "</button>";
       out += "</form></div></div></li>";
     }
 
-    out += "</ul><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(i) + "'>Download all bookmarks</a></div></div>";
+    out += "</ul><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(i) + "'>" D_WEB_BOOKMARK_DOWNLOAD_ALL "</a></div></div>";
     f.close();
   }
 
@@ -90,14 +90,14 @@ static void handleBookmarksWeb() {
 
 static void handleDeleteBookmarkWeb() {
   if (!server.hasArg("book") || !server.hasArg("idx")) {
-    server.send(400, "text/plain; charset=utf-8", "missing book/idx");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_BOOK_IDX);
     return;
   }
 
   int b   = server.arg("book").toInt();
   int idx = server.arg("idx").toInt();
   if (b < 0 || b >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad book");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_BOOK);
     return;
   }
 
@@ -106,7 +106,7 @@ static void handleDeleteBookmarkWeb() {
   uint32_t offsets[MAX_BOOKMARKS];
   uint8_t count = loadBookmarksForKey(key, pages, offsets);
   if (idx < 0 || idx >= count) {
-    server.send(400, "text/plain; charset=utf-8", "bad idx");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_IDX);
     return;
   }
 
@@ -123,14 +123,14 @@ static void handleDeleteBookmarkWeb() {
 
 static void handleViewBookmarkWeb() {
   if (!server.hasArg("book") || !server.hasArg("idx")) {
-    server.send(400, "text/plain; charset=utf-8", "missing book/idx");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_BOOK_IDX);
     return;
   }
 
   int b   = server.arg("book").toInt();
   int idx = server.arg("idx").toInt();
   if (b < 0 || b >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad book");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_BOOK);
     return;
   }
 
@@ -139,7 +139,7 @@ static void handleViewBookmarkWeb() {
   uint32_t offsets[MAX_BOOKMARKS];
   uint8_t count = loadBookmarksForKey(key, pages, offsets);
   if (idx < 0 || idx >= count) {
-    server.send(400, "text/plain; charset=utf-8", "bad idx");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_IDX);
     return;
   }
 
@@ -148,42 +148,42 @@ static void handleViewBookmarkWeb() {
   File vf = FS.open(bookPath, "r");
   String txt;
   if (!vf) {
-    txt = "Open failed.";
+    txt = D_WEB_BOOKMARK_OPEN_FAILED_DOT;
   } else {
     uint32_t off = resolveBookmarkOffset(bookPath, (uint16_t)page, offsets[idx]);
     txt.reserve(900);
     (void)extractPageText(vf, off, txt);
     vf.close();
     txt.trim();
-    if (txt.length() == 0) txt = "(empty)";
+    if (txt.length() == 0) txt = D_WEB_BOOKMARK_PAGE_EMPTY;
   }
   String out = webPageStart(
-    "Bookmark View",
-    "Preview the saved page text for this bookmark.",
-    "<a href='/bookmarks'>&#8592; Back</a><a href='/files'>Files</a><a href='/'>Home</a>",
+    D_WEB_BOOKMARK_VIEW_HEADING,
+    D_WEB_BOOKMARK_VIEW_SUBTITLE,
+    "<a href='/bookmarks'>" D_WEB_BOOKMARK_VIEW_BACK_NAV "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/'>" D_WEB_NAV_HOME "</a>",
     true
   );
 
   out += "<div class='card'><h2>";
   out += htmlEscape(String(g_library.books[b].name));
-  out += "</h2><p class='muted'>Bookmark ";
+  out += "</h2><p class='muted'>" D_WEB_BOOKMARK_PILL_PREFIX;
   out += String(idx + 1);
   out += "</p><pre class='pre'>";
   out += htmlEscape(txt);
-  out += "</pre><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(b) + "'>Download all bookmarks</a></div></div>";
+  out += "</pre><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(b) + "'>" D_WEB_BOOKMARK_DOWNLOAD_ALL "</a></div></div>";
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }
 
 static void handleExportBookmarksWeb() {
   if (!server.hasArg("book")) {
-    server.send(400, "text/plain; charset=utf-8", "missing book");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_BOOK);
     return;
   }
 
   int b = server.arg("book").toInt();
   if (b < 0 || b >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad book");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_BOOK);
     return;
   }
 
@@ -194,13 +194,13 @@ static void handleExportBookmarksWeb() {
   uint8_t count = loadBookmarksForKey(key, pages, offsets);
 
   if (count == 0) {
-    server.send(404, "text/plain; charset=utf-8", "No bookmarks for this book");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_NO_BOOKMARKS_THIS_BOOK);
     return;
   }
 
   File f = FS.open(bookPath, "r");
   if (!f) {
-    server.send(500, "text/plain; charset=utf-8", "Open failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_BOOKMARKS_OPEN_FAILED_CARD);
     return;
   }
 
@@ -211,11 +211,11 @@ static void handleExportBookmarksWeb() {
   String out;
   out.reserve(8192);
 
-  out += "Book: ";
+  out += D_WEB_BMEXPORT_BOOK;
   out += stripTxtExt(lastPathComponent(bookPath));
   out += "\n";
 
-  out += "Bookmarks: ";
+  out += D_WEB_BMEXPORT_BOOKMARKS;
   out += String(count);
   out += "\n\n";
 
@@ -229,7 +229,7 @@ static void handleExportBookmarksWeb() {
     String txt = readPageTextForWeb(bookPath, targetPage);
 
     out += "==================================================\n";
-    out += "Bookmark ";
+    out += D_WEB_BMEXPORT_BOOKMARK_LBL;
     out += String(i + 1);
     out += "\n";
     out += label;

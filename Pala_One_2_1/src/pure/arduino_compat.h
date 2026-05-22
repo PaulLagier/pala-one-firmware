@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <ostream>
 #include <string>
 
 // Minimal Arduino `String` shim. Only the methods used by the pure modules

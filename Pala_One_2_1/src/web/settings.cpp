@@ -2,7 +2,13 @@
 
 #include "src/config.h"
 #include "src/state.h"
+#include "src/pure/hashing.h"             // prefKeyForBook
+#include "src/storage/book_metadata.h"
+#include "src/storage/page_cache.h"       // deletePageCacheForBook
+#include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
+#include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
+#include "src/ui/screens/reader_screen.h" // g_readerScreen — active-reader check
 #include "src/ui/sleep.h"
 #include "src/web/chrome.h"
 
@@ -27,68 +33,84 @@ static void handleSettings() {
   String lg2 = (curGap == 2) ? " selected" : "";
   String lg3 = (curGap == 3) ? " selected" : "";
 
-  bool hasSleepImg = FS.exists("/sleep.bin");
+  Font::Family curFam = Font::currentFamily();
+  String famH = (curFam == Font::Family::Helvetica)    ? " selected" : "";
+  String famD = (curFam == Font::Family::OpenDyslexic) ? " selected" : "";
+
+  bool curBionic   = Font::bionicEnabled();
+  String bChecked  = curBionic ? " checked" : "";
 
   String out = webPageStart(
-    "Pala One Settings",
-    "Firmware " FW_BUILD " configuration page stored directly on the device.",
-    "<a href='/'>&#8592; Home</a>"
+    D_WEB_SETTINGS_TITLE,
+    D_WEB_SETTINGS_SUBTITLE_PREFIX FW_BUILD D_WEB_SETTINGS_SUBTITLE_SUFFIX,
+    "<a href='/'>" D_WEB_SETTINGS_BACK_NAV "</a>"
   );
   out.reserve(out.length() + 4000);
 
   out +=
-    "<div class='card'><h2>Reading</h2>"
-    "<form method='POST' action='/settings' accept-charset='UTF-8'>"
+    "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_READING_INTRO "</p>"
+    "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>"
     "<div class='grid cols-2'>"
-    "<div><label for='font'>Font size</label><select id='font' name='font'>"
-    "<option value='8'";  out += sel8;  out += ">8px &mdash; tiny</option>"
-    "<option value='10'"; out += sel10; out += ">10px &mdash; small</option>"
-    "<option value='12'"; out += sel12; out += ">12px &mdash; medium</option>"
-    "<option value='14'"; out += sel14; out += ">14px &mdash; large</option>"
-    "</select><div class='hint'>Controls how many lines fit on each page.</div></div>"
-    "<div><label for='sleep'>Sleep after</label><select id='sleep' name='sleep'>"
-    "<option value='30'";   out += ss30;   out += ">30 seconds</option>"
-    "<option value='60'";   out += ss60;   out += ">1 minute</option>"
-    "<option value='120'";  out += ss120;  out += ">2 minutes</option>"
-    "<option value='300'";  out += ss300;  out += ">5 minutes</option>"
-    "<option value='600'";  out += ss600;  out += ">10 minutes</option>"
-    "<option value='1800'"; out += ss1800; out += ">30 minutes</option>"
-    "</select><div class='hint'>Auto-sleep keeps battery draw low while idle.</div></div>"
-    "<div><label for='lgap'>Line spacing</label><select id='lgap' name='lgap'>"
-    "<option value='0'"; out += lg0; out += ">0 px &mdash; compact</option>"
-    "<option value='1'"; out += lg1; out += ">1 px &mdash; normal</option>"
-    "<option value='2'"; out += lg2; out += ">2 px &mdash; relaxed</option>"
-    "<option value='3'"; out += lg3; out += ">3 px &mdash; loose</option>"
-    "</select><div class='hint'>A small change here can make text much easier to scan.</div></div>"
+    "<div><label for='font'>" D_WEB_FONT_SIZE_LABEL "</label><select id='font' name='font'>"
+    "<option value='8'";  out += sel8;  out += ">" D_WEB_FONT_SIZE_8  "</option>"
+    "<option value='10'"; out += sel10; out += ">" D_WEB_FONT_SIZE_10 "</option>"
+    "<option value='12'"; out += sel12; out += ">" D_WEB_FONT_SIZE_12 "</option>"
+    "<option value='14'"; out += sel14; out += ">" D_WEB_FONT_SIZE_14 "</option>"
+    "</select><div class='hint'>" D_WEB_FONT_SIZE_HINT "</div></div>"
+    "<div><label for='family'>" D_WEB_FONT_FAMILY_LABEL "</label><select id='family' name='family'>"
+    "<option value='helv'"; out += famH; out += ">" D_WEB_FONT_FAMILY_HELVETICA "</option>"
+    "<option value='dys'";  out += famD; out += ">" D_WEB_FONT_FAMILY_DYSLEXIC  "</option>"
+    "</select><div class='hint'>" D_WEB_FONT_FAMILY_HINT "</div></div>"
+    "<div><label for='sleep'>" D_WEB_SLEEP_AFTER_LABEL "</label><select id='sleep' name='sleep'>"
+    "<option value='30'";   out += ss30;   out += ">" D_WEB_SLEEP_30S "</option>"
+    "<option value='60'";   out += ss60;   out += ">" D_WEB_SLEEP_1M  "</option>"
+    "<option value='120'";  out += ss120;  out += ">" D_WEB_SLEEP_2M  "</option>"
+    "<option value='300'";  out += ss300;  out += ">" D_WEB_SLEEP_5M  "</option>"
+    "<option value='600'";  out += ss600;  out += ">" D_WEB_SLEEP_10M "</option>"
+    "<option value='1800'"; out += ss1800; out += ">" D_WEB_SLEEP_30M "</option>"
+    "</select><div class='hint'>" D_WEB_SLEEP_HINT "</div></div>"
+    "<div><label for='lgap'>" D_WEB_LINE_SPACING_LABEL "</label><select id='lgap' name='lgap'>"
+    "<option value='0'"; out += lg0; out += ">" D_WEB_LINE_SPACING_0 "</option>"
+    "<option value='1'"; out += lg1; out += ">" D_WEB_LINE_SPACING_1 "</option>"
+    "<option value='2'"; out += lg2; out += ">" D_WEB_LINE_SPACING_2 "</option>"
+    "<option value='3'"; out += lg3; out += ">" D_WEB_LINE_SPACING_3 "</option>"
+    "</select><div class='hint'>" D_WEB_LINE_SPACING_HINT "</div></div>"
+    "<div class='full' style='grid-column:1/-1'><label style='display:flex;gap:10px;align-items:center;font-weight:600'>"
+    "<input type='checkbox' name='bionic' value='1'"; out += bChecked; out += "><span>" D_WEB_BIONIC_LABEL "</span></label>"
+    "<div class='hint'>" D_WEB_BIONIC_HINT "</div></div>"
     "</div>"
-    "<div class='actions' style='margin-top:24px'><button type='submit'>Save settings</button><span class='muted'>No extra files, scripts, or fonts.</span></div>"
+    "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button>"
+    "<span class='muted'>" D_WEB_SETTINGS_APPLY_HINT "</span></div>"
     "</form></div>"
-    "<div class='card'><h2>Screensaver</h2>"
-    "<p>Upload raw XBM bytes: <b>3904 bytes</b>, 250&times;122 px, 1-bit, LSB-first, 32 bytes per row.</p>"
-    "<p class='muted'>Tip: use <a class='link' href='https://javl.github.io/image2cpp/' target='_blank'>image2cpp</a> with <b>Plain bytes</b>. Invert colors if needed.</p>";
 
-  if (hasSleepImg) {
-    out += "<div class='status ok'>&#10003; Custom screensaver active. <form method='POST' action='/del-sleep' style='display:inline;margin-left:6px'><button type='submit' class='btn secondary' onclick=\"return confirm('Delete custom screensaver?')\">Delete</button></form></div>";
-  } else {
-    out += "<div class='status idle'>Using built-in screensaver.</div>";
-  }
-
-  out +=
-    "<form method='POST' action='/upload-sleep' enctype='multipart/form-data' style='margin-top:14px'>"
-    "<div class='grid'><div><label for='file'>Sleep image file</label><input id='file' type='file' name='file' accept='.bin'></div></div>"
-    "<div class='actions'><button type='submit'>Upload image</button></div>"
-    "</form></div>";
+    "<div class='card'><h2>" D_WEB_SCREENSAVER_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_SCREENSAVER_CARD_DESC "</p>"
+    "<div class='actions' style='margin-top:8px'>"
+    "<a class='btn' href='/screensavers'>" D_WEB_SCREENSAVER_EDITOR_LINK "</a>"
+    "<span class='muted'>" D_WEB_SCREENSAVER_EDITOR_HINT "</span>"
+    "</div></div>";
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }
 
-static void handleSettingsPost() {
-  // Font::setBodySize, Font::setLineGap, Sleep::setIdleTimeout all clamp /
-  // validate internally — no inline guards needed here.
+// Apply pending form changes. Returns true if any layout-affecting setting
+// (font size, family, line gap, bionic) was modified — caller uses this to
+// decide whether to remap the reader's byte-offset cursor afterwards.
+static bool applySettingsForm() {
+  bool layoutChanged = false;
+
+  // Font::setBodySize / setLineGap / setFamily / Sleep::setIdleTimeout all
+  // clamp + validate internally — no inline guards needed here.
   if (server.hasArg("font")) {
     int fs = server.arg("font").toInt();
-    if (fs != Font::currentBodySize()) Font::setBodySize(fs);
+    if (fs != Font::currentBodySize()) { Font::setBodySize(fs); layoutChanged = true; }
+  }
+  if (server.hasArg("family")) {
+    String f = server.arg("family");
+    Font::Family want = (f == "dys") ? Font::Family::OpenDyslexic : Font::Family::Helvetica;
+    if (want != Font::currentFamily()) { Font::setFamily(want); layoutChanged = true; }
   }
   if (server.hasArg("sleep")) {
     int ss = server.arg("sleep").toInt();
@@ -96,10 +118,56 @@ static void handleSettingsPost() {
   }
   if (server.hasArg("lgap")) {
     int lg = server.arg("lgap").toInt();
-    if (lg != Font::currentLineGap()) Font::setLineGap(lg);
+    if (lg != Font::currentLineGap()) { Font::setLineGap(lg); layoutChanged = true; }
   }
-  // On-disk page caches are layout-stamped and self-invalidate on load, so
-  // a font/lineGap change needs no cross-cutting cleanup here.
+  // Checkbox is absent from the POST when unchecked.
+  bool wantBionic = server.hasArg("bionic");
+  if (wantBionic != Font::bionicEnabled()) {
+    Font::setBionic(wantBionic);
+    layoutChanged = true;
+  }
+  return layoutChanged;
+}
+
+static void handleSettingsPost() {
+  // Snapshot the reader's current byte offset before applying changes, so
+  // we can re-land on the same byte under the new layout. The on-disk page
+  // cache self-invalidates via its layout stamp (see page_cache.cpp), so the
+  // page table will rebuild lazily — no explicit cache wipe needed.
+  bool readerActive =
+      (g_currentScreen == &g_readerScreen) &&
+      g_bookview.book.isOpen();
+  uint32_t savedByte = 0;
+  if (readerActive
+      && g_bookview.cursor.pageIndex >= 0
+      && g_bookview.cursor.pageIndex < g_bookview.pages.count) {
+    savedByte = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+  }
+
+  bool layoutChanged = applySettingsForm();
+
+  // Layout shifted under our feet — the in-memory page table no longer
+  // matches the active layout. Reset it (the on-disk cache, if any, will
+  // be rejected on the next loadPageOffsetCacheForBook because of the
+  // layout-stamp mismatch) and re-locate the cursor on the page that
+  // contains the saved byte offset. Then render so the user sees the new
+  // layout immediately when they return to the device.
+  if (readerActive && layoutChanged) {
+    g_bookview.pages.count = 1;
+    g_bookview.pages.offsets[0] = 0;
+    g_bookview.pages.eofReached = false;
+    int newPage = findPageForOffset(savedByte);
+    if (newPage < 0) newPage = 0;
+    g_bookview.cursor.pageIndex = newPage;
+    g_bookview.cursor.pageTurnsSinceFull = 0;
+
+    PreferencesStore kv(prefs);
+    saveSavedPage(kv, g_bookview.book.key(), newPage);
+    // Offset is unchanged — no need to rewrite the canonical position.
+
+    renderCurrentPage();
+  }
+
   server.sendHeader("Location", "/settings");
   server.send(302, "text/plain", "");
 }

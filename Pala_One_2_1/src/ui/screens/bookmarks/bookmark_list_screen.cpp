@@ -20,7 +20,7 @@ void BookmarkListScreen::onEnter() {
 void BookmarkListScreen::draw() {
   prepareMenuFrame();
   Font::useBody();
-  int y = drawSectionHeader("Bookmarks");
+  int y = drawSectionHeader(D_BOOKMARKS_HEADER);
 
   String bookPath = String(g_library.books[g_bookmarkSession.bookIndex].path);
   String key = prefKeyForBook(bookPath);
@@ -29,14 +29,14 @@ void BookmarkListScreen::draw() {
     g_bookmarkSession.selectedIndex = max(0, (int)g_bookmarkSession.count - 1);
 
   if (g_bookmarkSession.count == 0) {
-    drawMenuRow(y, "No bookmarks", false);
+    drawMenuRow(y, D_BOOKMARKS_NONE, false);
     display.update();
     return;
   }
 
   File f = FS.open(bookPath, "r");
   if (!f) {
-    drawMenuRow(y, "Open failed", false);
+    drawMenuRow(y, D_BOOKMARKS_OPEN_FAILED, false);
     display.update();
     return;
   }

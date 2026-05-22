@@ -15,6 +15,14 @@ ListData loadList(KeyValueStore& kv) {
 void saveList(KeyValueStore& kv, const ListData& data) {
   uint8_t buf[LIST_ENCODED_MAX_SIZE];
   size_t n = encodeList(data, buf);
+
+  // Skip the NVS write if the stored bytes already match. The list screen
+  // calls saveListItems on every change AND on screen exit; without this
+  // guard, untouched lists still take a flash-write hit on exit.
+  uint8_t existing[LIST_ENCODED_MAX_SIZE];
+  size_t got = kv.getBytes(LIST_KEY, existing, sizeof(existing));
+  if (got == n && std::memcmp(existing, buf, n) == 0) return;
+
   kv.putBytes(LIST_KEY, buf, n);
 }
 

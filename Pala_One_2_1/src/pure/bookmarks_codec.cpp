@@ -52,7 +52,7 @@ size_t encodeBookmarks(const Bookmarks& bm, uint8_t* outBuf) {
 
 BookmarkAddResult addBookmark(Bookmarks& bm, uint16_t page, uint32_t offset) {
   for (uint8_t i = 0; i < bm.count; i++) {
-    if (bm.pages[i] == page) return {false, "Bookmark exists"};
+    if (bm.pages[i] == page) return {false, D_TOAST_BOOKMARK_EXISTS};
   }
 
   if (bm.count < MAX_BOOKMARKS) {
@@ -84,5 +84,5 @@ BookmarkAddResult addBookmark(Bookmarks& bm, uint16_t page, uint32_t offset) {
     }
   }
 
-  return {true, "Bookmark saved"};
+  return {true, D_TOAST_BOOKMARK_SAVED};
 }
