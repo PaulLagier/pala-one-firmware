@@ -14,14 +14,14 @@ void AboutScreen::draw() {
   Font::useBody();
   int ascent = u8g2.getFontAscent();
   int lineH = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 1;
-  int y = drawSectionHeader("Device");
+  int y = drawSectionHeader(D_ABOUT_HEADER);
 
   String rows[5] = {
-    "Firmware " FW_BUILD,
-    "1x next / down",
-    "2x open / select",
-    "3x home",
-    "Hold bookmark"
+    D_ABOUT_FIRMWARE_PREFIX FW_BUILD,
+    D_ABOUT_GESTURE_NEXT,
+    D_ABOUT_GESTURE_OPEN,
+    D_ABOUT_GESTURE_HOME,
+    D_ABOUT_GESTURE_BOOKMARK
   };
 
   for (int i = 0; i < 5; i++) {

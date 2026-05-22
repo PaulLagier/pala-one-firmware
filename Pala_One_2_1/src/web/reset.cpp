@@ -27,15 +27,15 @@ static void doFactoryReset() {
 
 static void handleResetConfirm() {
   String out = webPageStart(
-    "Factory Reset",
-    "Erase all books, bookmarks, progress, and custom assets.",
-    "<a href='/'>Back</a>"
+    D_WEB_RESET_HEADING,
+    D_WEB_RESET_SUBTITLE,
+    "<a href='/'>" D_WEB_NAV_BACK "</a>"
   );
   out +=
-    "<div class='card'><h2>Confirm reset</h2>"
-    "<p><strong>This will delete ALL books, bookmarks and reading progress.</strong></p>"
-    "<p class='muted'>The device filesystem will be formatted and settings will return to defaults.</p>"
-    "<form method='POST' action='/reset' style='margin-top:14px'><button class='danger' type='submit'>Yes, reset</button></form>"
+    "<div class='card'><h2>" D_WEB_RESET_CONFIRM_HEADING "</h2>"
+    "<p><strong>" D_WEB_RESET_WARNING "</strong></p>"
+    "<p class='muted'>" D_WEB_RESET_DETAIL "</p>"
+    "<form method='POST' action='/reset' style='margin-top:14px'><button class='danger' type='submit'>" D_WEB_RESET_YES_BUTTON "</button></form>"
     "</div>";
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
@@ -46,13 +46,13 @@ static void handleResetDo() {
 
   String inner;
   inner.reserve(600);
-  inner += "<div class='card'><h2>Factory reset complete</h2><p class='muted'>All books, bookmarks, progress and custom assets were removed. The device is now back to a clean state.</p><div class='actions'><a class='btn' href='/'>Go to home</a><a class='btn secondary' href='/files'>Open files</a></div></div>";
+  inner += "<div class='card'><h2>" D_WEB_RESET_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_RESET_COMPLETE_DESC "</p><div class='actions'><a class='btn' href='/'>" D_WEB_GO_HOME_BUTTON "</a><a class='btn secondary' href='/files'>" D_WEB_OPEN_FILES_BUTTON "</a></div></div>";
   inner += storageCardHtml();
 
   String page = successPage(
-    "Reset complete",
-    "Pala One was reset successfully.",
-    "&#10003; Factory reset complete.",
+    D_WEB_RESET_SUCCESS_TITLE,
+    D_WEB_RESET_SUCCESS_SUBTITLE,
+    D_WEB_RESET_BANNER,
     inner
   );
   server.send(200, "text/html; charset=utf-8", page);

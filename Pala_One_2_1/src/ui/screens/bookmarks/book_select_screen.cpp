@@ -15,10 +15,10 @@ void BookmarkBookSelectScreen::onEnter() {
 void BookmarkBookSelectScreen::draw() {
   prepareMenuFrame();
   Font::useBody();
-  int y = drawSectionHeader("Bookmarks");
+  int y = drawSectionHeader(D_BOOKMARKS_HEADER);
 
   if (g_library.bookCount == 0) {
-    drawMenuRow(y, "No books", false);
+    drawMenuRow(y, D_BOOKMARKS_NO_BOOKS, false);
     display.update();
     return;
   }

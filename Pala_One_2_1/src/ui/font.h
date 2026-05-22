@@ -13,11 +13,19 @@
 //    Body / Bold   Regular/bold body face at the user-chosen body size
 //                  (8/10/12/14) AND family (Helvetica or OpenDyslexic).
 //                  Reader text, menu rows, section headers.
-//    UiSmall       Fixed 6x10. Toast text + battery percentage.
-//    UiTiny        Fixed 5x8.  Page number in the reader status bar.
+//    Toast         Helvetica regular 8 — Latin Extended (accent-capable);
+//                  used for toast text where translated strings may carry
+//                  á é í ó ú ñ ¿ ¡ ü.
+//    UiSmall       Fixed 6x10 (ASCII only). Battery percentage — digits/% only.
+//    UiTiny        Fixed 5x8  (ASCII only). Page number in the status bar.
 //
 //  Roles, not tables: nothing outside font.cpp references u8g2 font
 //  identifiers directly. Adding/changing a font is a one-file change.
+//
+//  Glyph coverage: UiSmall / UiTiny tables are _tf (ASCII printable only).
+//  Do NOT route translated user-visible strings through them — they will
+//  render missing-glyph boxes for any accent. Use Toast (or Body/Bold) for
+//  anything that could contain a translation.
 // ============================================================================
 namespace Font {
 
@@ -30,6 +38,7 @@ enum class Family : uint8_t { Helvetica = 0, OpenDyslexic = 1 };
 // u8g2 calls (setCursor/print/getUTF8Width) all use the role's table.
 void useBody();
 void useBold();
+void useToast();
 void useUiSmall();
 void useUiTiny();
 

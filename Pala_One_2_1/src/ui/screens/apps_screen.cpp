@@ -23,10 +23,10 @@ void AppsScreen::onEnter() {
 void AppsScreen::draw() {
   prepareMenuFrame();
   Font::useBody();
-  int y = drawSectionHeader("Apps");
+  int y = drawSectionHeader(D_APPS_HEADER);
 
   if (g_apps.count == 0) {
-    drawMenuRow(y, "No apps installed", false);
+    drawMenuRow(y, D_APPS_NONE, false);
     display.update();
     return;
   }

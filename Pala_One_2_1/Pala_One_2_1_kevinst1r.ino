@@ -28,6 +28,14 @@
 #define BOARD_V1_2
 // ────────────────────────────────────────────────────────────────────────────
 
+// ── Language selection: uncomment exactly one (Arduino IDE) ─────────────────
+//   PlatformIO users pick the env in platformio.ini (-en / -es leaf envs)
+//   and can leave these defines commented out. Default if nothing is set:
+//   English (with a #pragma message warning from src/config.h).
+#define LANG_EN
+// #define LANG_ES_LA
+// ────────────────────────────────────────────────────────────────────────────
+
 // When built with PlatformIO, WIRELESS_PAPER + DISPLAY_V1_x come from
 // build_flags and the BOARD_V1_x macros above stay commented out. When
 // built with Arduino IDE, the macros above drive the same defines so the
@@ -125,7 +133,7 @@ void setup() {
   display.clear();
 
   if (!fsBegin()) {
-    drawCenter("Storage error", "Try factory reset");
+    drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
     return;
   }
   ensureBooksDir();

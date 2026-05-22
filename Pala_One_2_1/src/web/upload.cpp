@@ -63,7 +63,7 @@ static void handleUploadDone() {
     server.send(400, "text/plain; charset=utf-8",
                 s_book.error.length()
                   ? s_book.error
-                  : "Upload failed");
+                  : String(D_WEB_UPLOAD_ERR_FALLBACK));
     return;
   }
 
@@ -79,19 +79,19 @@ static void handleUploadDone() {
 
   String inner;
   inner.reserve(1200);
-  inner += "<div class='card'><h2>Upload complete</h2><p class='muted'>Your book is now stored on the device and available in the library.</p>";
+  inner += "<div class='card'><h2>" D_WEB_UPLOAD_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_UPLOAD_COMPLETE_DESC "</p>";
   inner += "<div class='stats'>";
-  inner += "<div class='stat'><span class='muted'>Book</span><b>"        + htmlEscape(s_book.finalName) + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>Stored size</span><b>" + humanBytes(storedSize)                          + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>Books now</span><b>"   + String(g_library.bookCount)                     + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>Free space</span><b>"  + humanBytes(fsFreeBytesSafe())                   + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/'>Upload another</a><a class='btn secondary' href='/files'>Open files</a></div></div>";
+  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOK_LABEL  "</span><b>" + htmlEscape(s_book.finalName) + "</b></div>";
+  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
+  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOKS_NOW   "</span><b>" + String(g_library.bookCount)    + "</b></div>";
+  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe())  + "</b></div>";
+  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a><a class='btn secondary' href='/files'>" D_WEB_OPEN_FILES_BUTTON "</a></div></div>";
   inner += storageCardHtml();
 
   String page = successPage(
-    "Upload complete",
-    "Book saved successfully.",
-    "&#10003; Upload finished.",
+    D_WEB_UPLOAD_COMPLETE_HEADING,
+    D_WEB_UPLOAD_BOOK_SAVED,
+    D_WEB_UPLOAD_FINISHED,
     inner
   );
   server.send(200, "text/html; charset=utf-8", page);
@@ -111,13 +111,13 @@ static void handleUploadBookStream() {
 
     loadBooks();   // defensive — protects MAX_BOOKS check from a stale catalog
     if (g_library.bookCount >= MAX_BOOKS) {
-      s_book.error = "Library full";
+      s_book.error = D_WEB_ERR_LIBRARY_FULL;
       return;
     }
 
     size_t freeBytes = fsFreeBytesSafe();
     if (freeBytes < 8192) {
-      s_book.error = "Not enough free space";
+      s_book.error = D_WEB_ERR_NOT_ENOUGH_SPACE;
       return;
     }
 
@@ -128,7 +128,7 @@ static void handleUploadBookStream() {
     if (FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
     s_book.tmpFile = FS.open(s_book.tmpPath, "w");
     if (!s_book.tmpFile) {
-      s_book.error = "Cannot create temp upload file";
+      s_book.error = D_WEB_ERR_CANT_CREATE_TEMP_BOOK;
       s_book.tmpPath = "";
     }
   }
@@ -155,7 +155,7 @@ static void handleUploadBookStream() {
         if (wrote != cleanedLen) {
           // Short write — out of space or FS error. Abort so a truncated
           // file isn't promoted to a finalized book.
-          s_book.error = "Write failed (out of space?)";
+          s_book.error = D_WEB_ERR_WRITE_FAILED;
           s_book.tmpFile.close();
           if (s_book.tmpPath.length() > 0
               && FS.exists(s_book.tmpPath)) {
@@ -177,7 +177,7 @@ static void handleUploadBookStream() {
         size_t cleanedLen = cleaned.length();
         size_t wrote = s_book.tmpFile.print(cleaned);
         if (wrote != cleanedLen && s_book.error.length() == 0) {
-          s_book.error = "Write failed (out of space?)";
+          s_book.error = D_WEB_ERR_WRITE_FAILED;
         }
         s_book.pendingUtf8Tail = "";
       }
@@ -197,16 +197,16 @@ static void handleUploadBookStream() {
           s_book.ok = true;
         } else {
           if (FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
-          s_book.error = "Failed to finalize upload";
+          s_book.error = D_WEB_ERR_FINALIZE_UPLOAD;
         }
       } else {
         if (s_book.tmpPath.length() > 0 && FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
-        s_book.error = "Empty upload";
+        s_book.error = D_WEB_ERR_EMPTY_UPLOAD;
       }
       s_book.tmpPath = "";
     } else {
       if (s_book.tmpPath.length() > 0 && FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
-      if (s_book.error.length() == 0) s_book.error = "Upload failed";
+      if (s_book.error.length() == 0) s_book.error = D_WEB_UPLOAD_ERR_FALLBACK;
       s_book.tmpPath = "";
     }
   }
@@ -216,7 +216,7 @@ static void handleUploadBookStream() {
     s_book.pendingUtf8Tail = "";
     s_book.tmpPath = "";
     s_book.ok = false;
-    s_book.error = "Upload aborted";
+    s_book.error = D_WEB_ERR_UPLOAD_ABORTED;
   }
 }
 
@@ -229,18 +229,18 @@ static void handleUploadSleepDone() {
     server.send(400, "text/plain; charset=utf-8",
                 s_sleep.error.length()
                   ? s_sleep.error
-                  : "Sleep image upload failed");
+                  : String(D_WEB_SLEEP_UPLOAD_ERR_FALLBACK));
     return;
   }
 
   String inner;
   inner.reserve(500);
-  inner += "<div class='card'><h2>Screensaver updated</h2><p class='muted'>Your custom sleep image was saved successfully and will be shown the next time the device goes to sleep.</p><div class='actions'><a class='btn' href='/settings'>Back to settings</a><a class='btn secondary' href='/'>Home</a></div></div>";
+  inner += "<div class='card'><h2>" D_WEB_SLEEP_UPLOAD_HEADING "</h2><p class='muted'>" D_WEB_SLEEP_UPLOAD_DESC "</p><div class='actions'><a class='btn' href='/settings'>" D_WEB_BACK_TO_SETTINGS "</a><a class='btn secondary' href='/'>" D_WEB_NAV_HOME "</a></div></div>";
 
   String page = successPage(
-    "Upload complete",
-    "Screensaver saved successfully.",
-    "&#10003; Custom sleep image uploaded.",
+    D_WEB_UPLOAD_COMPLETE_HEADING,
+    D_WEB_SLEEP_UPLOAD_SUBTITLE,
+    D_WEB_SLEEP_UPLOAD_BANNER,
     inner
   );
   server.send(200, "text/html; charset=utf-8", page);
@@ -255,7 +255,7 @@ static void handleUploadSleepStream() {
     s_sleep.tmpPath = "/sleep.bin.tmp";
     if (FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
     s_sleep.tmpFile = FS.open(s_sleep.tmpPath, "w");
-    if (!s_sleep.tmpFile) s_sleep.error = "Cannot create temp sleep file";
+    if (!s_sleep.tmpFile) s_sleep.error = D_WEB_SLEEP_ERR_TEMP;
   }
   else if (upS.status == UPLOAD_FILE_WRITE) {
     if (s_sleep.tmpFile) s_sleep.tmpFile.write(upS.buf, upS.currentSize);
@@ -268,14 +268,14 @@ static void handleUploadSleepStream() {
 
     if (sz != 3904) {
       if (FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
-      s_sleep.error = "Sleep image must be exactly 3904 bytes";
+      s_sleep.error = D_WEB_SLEEP_ERR_SIZE;
       s_sleep.ok = false;
     } else {
       if (FS.exists("/sleep.bin")) FS.remove("/sleep.bin");
       if (FS.rename(s_sleep.tmpPath, "/sleep.bin")) s_sleep.ok = true;
       else {
         if (FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
-        s_sleep.error = "Failed to save sleep image";
+        s_sleep.error = D_WEB_SLEEP_ERR_SAVE;
       }
     }
     s_sleep.tmpPath = "";
@@ -283,7 +283,7 @@ static void handleUploadSleepStream() {
   else if (upS.status == UPLOAD_FILE_ABORTED) {
     if (s_sleep.tmpFile) s_sleep.tmpFile.close();
     if (s_sleep.tmpPath.length() > 0 && FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
-    s_sleep.error = "Sleep image upload aborted";
+    s_sleep.error = D_WEB_SLEEP_ERR_ABORTED;
     s_sleep.ok = false;
     s_sleep.tmpPath = "";
   }

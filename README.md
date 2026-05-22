@@ -34,6 +34,19 @@ The board version is usually printed on the back of the PCB.
 
 Pick your board's revision in the build step below — either by uncommenting the matching `#define` at the top of `Pala_One_2_1/Pala_One_2_1.ino` (Arduino IDE), or by selecting the matching env (PlatformIO).
 
+## Language
+
+The firmware ships with two built-in languages, selected at build time:
+
+- `LANG_EN` — English (default)
+- `LANG_ES_LA` — Spanish (Latin America)
+
+One language per binary. PlatformIO users pick a leaf env that already encodes both the board and the language (`wireless-paper-v1_2-en`, `wireless-paper-v1_2-es`, `wireless-paper-v1_1-en`, `wireless-paper-v1_1-es`). Arduino IDE users uncomment one of `LANG_EN` / `LANG_ES_LA` near the top of `Pala_One_2_1/Pala_One_2_1.ino`, alongside the board `#define`. If nothing is set, the firmware compiles with `LANG_EN` and a `#pragma message` warning.
+
+Strings live in `Pala_One_2_1/src/lang/` — `en.h` is the canonical key set; `es_la.h` mirrors it. Adding a new language is additive: clone one of the headers, add the include arm in `src/lang/lang.h`, and add two leaf envs in `platformio.ini` (one per board). See `src/lang/lang.h` for the authoring rules (key set, placeholders, JS-confirm quoting constraint).
+
+Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
+
 ## Building the firmware
 
 The same sources build under either toolchain.
@@ -54,8 +67,10 @@ The same sources build under either toolchain.
 1. Install [PlatformIO Core](https://platformio.org/install/cli) (CLI) or the PlatformIO IDE extension for VS Code.
 2. From the repo root:
    ```
-   pio run -e wireless-paper-v1_2 -t upload    # V1.2 panel
-   pio run -e wireless-paper-v1_1 -t upload    # V1.1 panel
+   pio run -e wireless-paper-v1_2-en -t upload    # V1.2 panel, English
+   pio run -e wireless-paper-v1_2-es -t upload    # V1.2 panel, Spanish-LA
+   pio run -e wireless-paper-v1_1-en -t upload    # V1.1 panel, English
+   pio run -e wireless-paper-v1_1-es -t upload    # V1.1 panel, Spanish-LA
    ```
 3. Serial monitor:
    ```

@@ -13,10 +13,10 @@ void ListScreen::onEnter() {
 void ListScreen::draw() {
   prepareMenuFrame();
   Font::useBody();
-  int y = drawSectionHeader("List");
+  int y = drawSectionHeader(D_LIST_HEADER);
 
   if (!listHasVisibleItems()) {
-    drawMenuRow(y, "No items", false);
+    drawMenuRow(y, D_LIST_NONE, false);
     display.update();
     return;
   }
