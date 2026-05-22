@@ -20,16 +20,19 @@
 
 #include "src/pure/arduino_compat.h"
 
-#define FW_VERSION "2.1c"
+// FW_VERSION and BUILD_GIT_HASH are injected by scripts/build_info.py from
+// `git describe --tags --always --dirty` and the short SHA respectively, at
+// PlatformIO build time. Host-test and Arduino IDE builds skip that script,
+// so provide fallbacks so the preprocessor never sees an undefined macro.
+// The Arduino IDE path is for developer iteration — releases go through the
+// PIO + tagged-CI flow, where the real values get injected.
+#ifndef FW_VERSION
+#define FW_VERSION "dev"
+#endif
 
-// BUILD_GIT_HASH is injected by scripts/build_info.py at PlatformIO build
-// time. Host-test builds skip that script, so provide a fallback so the
-// preprocessor never sees an undefined macro.
 #ifndef BUILD_GIT_HASH
 #define BUILD_GIT_HASH "unknown"
 #endif
-
-#define FW_BUILD FW_VERSION " (" BUILD_GIT_HASH ")"
 
 // DEBUG_BUILD = 1 shows the git hash in the on-device library screen header
 // (the front face of the device). About screen + web UI always show the
@@ -88,6 +91,13 @@ static const uint32_t MAX_CLICK_GAP_MS = 175;
 static const uint32_t MAX_CLICK_SEQUENCE_MS = 550;
 
 static const uint32_t LONG_MS = 850;
+
+// Hold this long (without a preceding click) and the classifier emits
+// VeryLong instead of Long. Long and VeryLong — plus the click-then-hold
+// chord — are independently bindable to reader actions (bookmark / lock /
+// menu / none) via the web settings UI.
+static const uint32_t VERY_LONG_MS = 2000;
+
 static const uint32_t DEBOUNCE_MS = 14;
 
 static const uint32_t SAVE_EVERY_MS = 7000;

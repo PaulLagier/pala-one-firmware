@@ -2,6 +2,22 @@
 
 #include <esp_timer.h>
 
+#include "src/pure/hold_gesture.h"  // classifyHoldRelease / classifyHoldInProgress
+
+// Local helper: map a HoldGestureKind decision into the matching output
+// flag. Used at both classification sites (release path + in-progress).
+// Returns true if any flag was set — caller uses that to decide whether
+// to consume the press (clear pressArmed_) and zero clickCount_.
+static bool applyHoldKindTo(ButtonState& s, HoldGestureKind k) {
+  switch (k) {
+    case HoldLong:      s.longClick_      = true; return true;
+    case HoldVeryLong:  s.veryLongClick_  = true; return true;
+    case HoldClickHold: s.clickHoldClick_ = true; return true;
+    case HoldNone:
+    default:            return false;
+  }
+}
+
 ButtonState g_btns;
 
 // Time of the last accepted user input. Used by the loop to decide when
@@ -297,39 +313,39 @@ void ButtonState::poll() {
     if (prevPressed && !stablePressed_) {
       if (pressArmed_) {
         uint32_t dur = (uint32_t)(edgeTime - pressStart_);
-        if (dur >= LONG_MS) {
+        HoldGestureKind k = classifyHoldRelease(dur, clickCount_);
+        if (applyHoldKindTo(*this, k)) {
           clickCount_ = 0;
-          longClick_ = true;
-        } else {
-          // Bump the apps-API raw counter *before* the multi-click
-          // accumulator, so apps see every short release even when the
-          // classifier later groups them into a double/triple.
+        } else if (dur < LONG_MS) {
+          // Short release — accumulate into the click sequence. Bump the
+          // apps-API raw counter *before* the multi-click accumulator so
+          // apps see every short release even when the classifier later
+          // groups them into a double/triple.
           rawPressCount_++;
           clickCount_++;
           lastRelease_ = edgeTime;
           if (clickCount_ == 1) firstClickRelease_ = edgeTime;
         }
+        // dur >= LONG_MS but classifyHoldRelease returned None (count >= 2)
+        // → pending clicks commit on their own; the hold contributes nothing.
       }
       pressArmed_ = false;
       pressStart_ = 0;
     }
   }
 
-  // Long-press hold detection: while the button is still down past LONG_MS,
-  // fire the long-click now rather than waiting for release. Makes bookmark
-  // feedback feel instant — the toast appears as the user crosses 850ms
-  // instead of after they let go.
-  //
-  // Clearing pressArmed_ silently swallows the eventual release: the release
-  // path's `if (pressArmed_)` guard skips classification, so the release
-  // contributes nothing. Same observable state as "we never saw the press."
-  // A genuinely stuck button stays in stablePressed_=true / pressArmed_=false
-  // until the pin actually changes — the guard here gates on pressArmed_, so
-  // no further long-clicks spam out while it's stuck.
+  // In-progress hold detection. ClickHold and VeryLong emit at the
+  // earliest threshold the gesture is unambiguously identified, then
+  // consume the press so the eventual release is ignored (cleared
+  // pressArmed_ → release path's `if (pressArmed_)` guard skips). Plain
+  // Long is deferred to release because at LONG_MS we can't yet tell
+  // whether the user is on their way to a VeryLong — that case lives
+  // in the release classifier above.
   if (stablePressed_ && pressArmed_) {
-    if ((uint32_t)(millis() - pressStart_) >= LONG_MS) {
+    uint32_t held = (uint32_t)(millis() - pressStart_);
+    HoldGestureKind k = classifyHoldInProgress(held, clickCount_);
+    if (applyHoldKindTo(*this, k)) {
       clickCount_ = 0;
-      longClick_ = true;
       pressArmed_ = false;
     }
   }
@@ -398,8 +414,8 @@ void resetInputFrontend() {
   // from leaking into the new mode as an accidental action.
   // We do NOT clear the whole ISR queue — any presses that arrive AFTER
   // release are intentional and should be processed normally.
-  uint32_t deadline = millis() + 600; // safety timeout
-  while (digitalRead(BTN) == LOW && (uint32_t)(millis()) < deadline) delay(1);
+  uint32_t start = millis();
+  while (digitalRead(BTN) == LOW && (uint32_t)(millis() - start) < 600) delay(1);
   delay(DEBOUNCE_MS + 2); // minimal debounce after release
 
   // Discard only events that happened BEFORE this moment (the transition press).

@@ -36,6 +36,16 @@
 // #define LANG_ES_LA
 // ────────────────────────────────────────────────────────────────────────────
 
+// ── Web UI default theme: uncomment exactly one ─────────────────────────────
+//   The web UI has a light and a dark palette and a per-page toggle button.
+//   Once a visitor picks one the choice is remembered in their browser's
+//   localStorage and overrides whatever's set here — this define only picks
+//   the *first-visit* default. Default if nothing is set: light.
+//   PlatformIO users can also pass -D WEB_THEME_DARK in build_flags.
+#define WEB_THEME_LIGHT
+// #define WEB_THEME_DARK
+// ────────────────────────────────────────────────────────────────────────────
+
 // When built with PlatformIO, WIRELESS_PAPER + DISPLAY_V1_x come from
 // build_flags and the BOARD_V1_x macros above stay commented out. When
 // built with Arduino IDE, the macros above drive the same defines so the
@@ -68,17 +78,20 @@
 #include "src/hal/battery.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"
+#include "src/hal/wifi_provisioning.h"
 #include "src/pure/hashing.h"
 #include "src/storage/app_catalog.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
 #include "src/storage/list_items.h"
 #include "src/storage/page_cache.h"
+#include "src/storage/statistics.h"
 #include "src/ui/font.h"
 #include "src/ui/pala_api_impl.h"
 #include "src/ui/reader.h"
+#include "src/ui/reader_actions.h"  // Gestures::loadSettings
 #include "src/ui/screen.h"
-#include "src/ui/widgets.h"  // drawCenter
+#include "src/ui/widgets.h"  // drawCenter, forceNextMenuFrameFull
 #include "src/ui/screens/about_screen.h"
 #include "src/ui/screens/apps_screen.h"
 #include "src/ui/screens/bookmarks/book_select_screen.h"
@@ -87,8 +100,12 @@
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
+#include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/upload_screen.h"
+#include "src/ui/lock.h"
+#include "src/ui/screensavers.h"
 #include "src/ui/sleep.h"
+#include "src/ui/statusbar.h"
 #include "src/ui/text.h"
 #include "src/ui/toast.h"
 #include "src/web/web.h"
@@ -102,6 +119,7 @@ UploadScreen               g_uploadScreen;
 AboutScreen                g_aboutScreen;
 AppsScreen                 g_appsScreen;
 ListScreen                 g_listScreen;
+StatisticsScreen           g_statsScreen;
 BookmarkBookSelectScreen   g_bmBookSelectScreen;
 BookmarkListScreen         g_bmListScreen;
 BookmarkPreviewScreen      g_bmPreviewScreen;
@@ -120,6 +138,14 @@ void setup() {
   pinMode(BTN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN), btnISR, CHANGE);
 
+  // Button held through ext0 wake: its down-edge predates the ISR, so seed
+  // the press state manually. Pass 0 (not millis()) to credit the full boot
+  // time; millis() ≈ 200 here (after delay(200)) would shorten the hold and
+  // misclassify a Long press as Short.
+  if (digitalRead(BTN) == LOW) {
+    g_btns.seedPressOnWake(0);
+  }
+
   u8g2.begin(gfx);
 
 #if HAS_BATTERY
@@ -128,8 +154,13 @@ void setup() {
   updateBatteryCached(true);
 #endif
 
-  display.fastmodeOff();
-  display.clear();
+  prefs.begin("ereader", false);
+  Sleep::loadSettings();
+  Lock::loadSettings();
+
+  // Buffer only — display.clear() flushes the panel immediately (extra cycle).
+  // First draw (library or reader) owns the one post-wake full refresh.
+  display.clearMemory();
 
   if (!fsBegin()) {
     drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
@@ -142,9 +173,11 @@ void setup() {
     snprintf(AP_SSID, sizeof(AP_SSID), "PALA-%06llX", chipId & 0xFFFFFFULL);
   }
 
-  prefs.begin("ereader", false);
   Font::loadSettings();
-  Sleep::loadSettings();
+  Screensavers::loadSettings();
+  Statusbar::loadSettings();
+  Gestures::loadSettings();
+  // Sleep::loadSettings() and Lock::loadSettings() already ran above.
   loadBooks();
   loadListItems();
   loadApps();
@@ -152,20 +185,53 @@ void setup() {
   registerWebRoutes();
   markUserActivity();
 
+  // Reload lifetime counters from NVS into RTC RAM (no-op on warm wake).
+  // Streak state bootstraps lazily on the first page turn.
+  Statistics::loadOnBoot();
+
+  // When locked at boot, we skip the screen draw and leave the sleep image
+  // (with its lock indicator) on the e-ink. Otherwise a short-press wake
+  // would render the reader/library over the screensaver while the loop is
+  // still swallowing input — the device looks alive but ignores presses
+  // until an unlock gesture. The unlock branch in loop() calls
+  // g_currentScreen->draw() to paint the real screen once unlocked.
   if (tryRestoreReadingSession()) {
-    renderCurrentPage();      // ~300ms draw — wake-press releases during this
-    resetInputFrontend();     // then discard the wake-press only
     g_currentScreen = &g_readerScreen;
+    if (Lock::isLocked()) {
+      // Keep the wake-press edges so a click-then-hold can wake AND unlock
+      // in one motion. resetInputFrontend would otherwise drain them and
+      // force the user to repeat the unlock gesture.
+      markUserActivity();
+    } else {
+      // Screensaver wake: panel shows sleep art → need one full refresh.
+      // No-screensaver wake: last page is already on the panel (see Sleep::enter);
+      // skip forcing full so renderCurrentPage() can use fast partial mode.
+      if (!Sleep::noScreensaver()) forceNextRenderFull();
+      renderCurrentPage();
+      resetInputFrontend();     // discard the wake-press only
+    }
   } else {
     g_currentScreen = &g_libraryScreen;
-    g_libraryScreen.onEnter();
-    resetInputFrontend();
+    if (Lock::isLocked()) {
+      markUserActivity();
+    } else {
+      forceNextMenuFrameFull(); // one full refresh — replaces sleep image
+      g_libraryScreen.onEnter();
+      resetInputFrontend();
+    }
   }
 
   // Drop to 80 MHz for normal operation — saves significant power.
   // Upload mode will raise it back to 240 MHz temporarily.
   setCpuFrequencyMhz(80);
+
+  // Browser-side Wi-Fi provisioning over USB-CDC (Improv Serial under the
+  // hood). Once registered, WifiProvisioning::loop() listens whenever a host
+  // has the USB-CDC port open. No host = no listening = no battery cost. See
+  // src/hal/wifi_provisioning.h for the contract.
+  WifiProvisioning::begin();
 }
+
 
 // ============================================================================
 //  Main loop
@@ -175,14 +241,82 @@ void loop() {
   maybeRecoverFromIsrOverflow();
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
+
+  // Lifetime button-press counter. peekPressCount is monotonic-up except
+  // when the apps API consumes-and-resets — guard by clamping lastSeen to
+  // the current value if it ran backwards. Runs before the lock check so
+  // physical presses count toward lifetime stats even when the UI is
+  // swallowing them.
+  {
+    static uint32_t lastSeenPressCount = 0;
+    uint32_t pc = g_btns.peekPressCount();
+    if (pc < lastSeenPressCount) lastSeenPressCount = pc;
+    if (pc != lastSeenPressCount) {
+      Statistics::bumpButtons(pc - lastSeenPressCount);
+      lastSeenPressCount = pc;
+    }
+  }
+
+  // Locked: swallow all input except unlock gestures (Long/VeryLong/ClickHold).
+  // Does NOT call markUserActivity for non-unlock events so the idle deadline
+  // keeps ticking. cfg_locked persists in NVS so a re-sleep stays locked.
+  //
+  // Wake-press handling: the short press that woke the device re-appears
+  // through the classifier in the first loop iteration. We absorb it silently
+  // (s_lockedWakePressConsumed). A *subsequent* non-unlock press while still
+  // locked means the user deliberately tapped again → re-enter deep sleep
+  // immediately. A short 1500ms locked-idle timeout (independent of the user's
+  // sleep setting) also returns to deep sleep so an accidental wake doesn't
+  // leave the device on indefinitely.
+  {
+    static bool s_lockedWakePressConsumed = false;  // reset each deep-sleep wake
+
+    if (Lock::isLocked()) {
+      if (Lock::isUnlockGesture(ev)) {
+        s_lockedWakePressConsumed = false;
+        Lock::disengage();
+        markUserActivity();
+        Toast::show(D_TOAST_UNLOCKED);
+        // Full refresh to clear screensaver ghosting on unlock.
+        // forceNextRenderFull() overrides the reader's per-page fast-mode
+        // decision so renderCurrentPage() uses fastmodeOff regardless of
+        // pageTurnsSinceFull. display.fastmodeOff() covers non-reader screens.
+        forceNextRenderFull();
+        display.fastmodeOff();
+        g_currentScreen->draw();
+        return;
+      }
+      if (ev.any()) {
+        if (!s_lockedWakePressConsumed) {
+          s_lockedWakePressConsumed = true;   // absorb wake press
+        } else {
+          Sleep::enter();                     // second tap → back to screensaver
+          return;
+        }
+      }
+      // Short locked-idle: re-sleep after 1500ms with no input.
+      // Don't sleep while the button is held — a Long-press unlock gesture
+      // fires on release, so sleeping mid-hold would swallow the gesture.
+      if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
+          && userIdleMs() > 1500 && !g_btns.isPressed()) {
+        Sleep::enter();
+        return;
+      }
+      return;
+    }
+    s_lockedWakePressConsumed = false;  // clear when unlocked so state is fresh on next lock
+  }
+
   if (ev.any()) markUserActivity();
 
-  if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()) {
+  if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep() && !WifiProvisioning::isActive()) {
     if (userIdleMs() > Sleep::idleTimeoutMs()) {
       Sleep::enter();
       return;
     }
   }
+
+  WifiProvisioning::loop();   // no-op unless a USB host is on the bus
 
   g_currentScreen->onButton(ev);
   g_currentScreen->onIdleTick();
@@ -215,7 +349,8 @@ void loop() {
   // worst case under the bound below).
   if (g_currentScreen->allowSleep()
       && !g_btns.hasPendingClicks()
-      && !buttonQueueNonEmpty()) {
+      && !buttonQueueNonEmpty()
+      && !WifiProvisioning::isActive()) {
     Sleep::idleLightSleep(Toast::isActive());
   }
 }

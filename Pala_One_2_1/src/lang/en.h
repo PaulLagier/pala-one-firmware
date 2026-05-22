@@ -30,10 +30,22 @@
 #define D_MENU_BOOKMARKS            "Bookmarks"
 #define D_MENU_LIST                 "List"
 #define D_MENU_APPS                 "Apps"
+#define D_MENU_STATISTICS           "Statistics"
 #define D_MENU_DEVICE               "Device"
 #define D_MENU_UPLOAD               "Upload"
 #define D_LIBRARY_OPEN_FAILED       "Open failed"
 #define D_LIBRARY_TRY_UPLOAD        "Try upload again"
+
+// ----------------------------------------------------------------------------
+//  Statistics screen (src/ui/screens/statistics_screen.cpp). The *_FMT
+//  strings are snprintf templates with %u / %llu placeholders — keep the
+//  positional order across translations.
+// ----------------------------------------------------------------------------
+#define D_STATS_HEADING                "Statistics"
+#define D_STATS_STREAK_CURRENT_FMT     "Current streak: %u days"
+#define D_STATS_STREAK_LONGEST_FMT     "Longest: %u  Sessions: %u"
+#define D_STATS_LIFETIME_PAGES_FMT     "Pages turned: %llu"
+#define D_STATS_LIFETIME_PRESSES_FMT   "Button presses: %llu"
 
 // ----------------------------------------------------------------------------
 //  List screen (src/ui/screens/list_screen.cpp)
@@ -48,6 +60,10 @@
 #define D_UPLOAD_WIFI               "Wi-Fi"
 #define D_UPLOAD_PASSWORD           "Password"
 #define D_UPLOAD_OPEN               "Open"
+#define D_UPLOAD_CONNECTING         "Connecting"
+#define D_UPLOAD_CONNECTED          "Connected"
+#define D_UPLOAD_HOTSPOT_HINT_L1    "Press button to"
+#define D_UPLOAD_HOTSPOT_HINT_L2    "use hotspot instead"
 
 // ----------------------------------------------------------------------------
 //  Apps screen (src/ui/screens/apps_screen.cpp)
@@ -98,6 +114,12 @@
 // ----------------------------------------------------------------------------
 #define D_TOAST_BOOKMARK_EXISTS     "Bookmark exists"
 #define D_TOAST_BOOKMARK_SAVED      "Bookmark saved"
+
+// ----------------------------------------------------------------------------
+//  Lock / screensaver (src/ui/sleep.cpp, Pala_One_2_1.ino)
+// ----------------------------------------------------------------------------
+#define D_SCREENSAVER_LOCKED        "Locked"
+#define D_TOAST_UNLOCKED            "Unlocked"
 
 // ============================================================================
 //  Web UI (captive portal) — strings embedded in HTML via adjacent-literal
@@ -260,6 +282,8 @@
 #define D_WEB_LINE_SPACING_2        "2 px &mdash; relaxed"
 #define D_WEB_LINE_SPACING_3        "3 px &mdash; loose"
 #define D_WEB_LINE_SPACING_HINT     "A small change here can make text much easier to scan."
+#define D_WEB_NO_SCREENSAVER_LABEL  "No-screensaver mode"
+#define D_WEB_NO_SCREENSAVER_HINT   "Device still sleeps on the normal timer and refreshes the screen before going to sleep. Then it shows the last page of the book, and skips a full refresh on wake, so you can continue reading with a single click of the button without the interruption of a display refresh."
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Save settings"
 #define D_WEB_SETTINGS_NO_EXTRAS    "No extra files, scripts, or fonts."
 #define D_WEB_SCREENSAVER_HEADING   "Screensaver"
@@ -270,6 +294,19 @@
 #define D_WEB_SCREENSAVER_DEFAULT   "Using built-in screensaver."
 #define D_WEB_SLEEP_IMAGE_LABEL     "Sleep image file"
 #define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Upload image"
+
+// Buttons / remappable hold-gestures section.
+#define D_WEB_BUTTONS_HEADING       "Buttons"
+#define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The three holds below are remappable."
+#define D_WEB_BUTTONS_LONG          "Long press"
+#define D_WEB_BUTTONS_EXTRA_LONG    "Extra-long press"
+#define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
+#define D_WEB_BUTTONS_SAVE          "Save buttons"
+#define D_WEB_BUTTONS_LOCK_HINT     "If locked, repeat any hold gesture to unlock."
+#define D_WEB_BUTTONS_ACTION_NONE     "None"
+#define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
+#define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
+#define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
 
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)
@@ -351,5 +388,92 @@
 #define D_WEB_BMEXPORT_BOOKMARKS    "Bookmarks: "
 #define D_WEB_BMEXPORT_BOOKMARK_LBL "Bookmark "
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "No bookmarks for this book"
+
+// ----------------------------------------------------------------------------
+//  In-browser reader + find/jump (src/web/find.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_READ_TITLE            "Read"
+#define D_WEB_READ_SUBTITLE         "Browse and search the book in your browser. Use Jump to set the device's resume point."
+#define D_WEB_READ_BYTES_LABEL      "bytes"
+#define D_WEB_READ_CURRENT_PAGE_LABEL "current page:"
+#define D_WEB_READ_FIND_PLACEHOLDER "Find in book"
+#define D_WEB_READ_FIND_ALL         "Find all"
+#define D_WEB_READ_FIND_PREV        "Prev"
+#define D_WEB_READ_FIND_NEXT        "Next"
+#define D_WEB_READ_JUMP_HERE        "Jump to here"
+#define D_WEB_READ_LOADING          "Loading book text..."
+#define D_WEB_READ_PAGE_PLACEHOLDER "Page number"
+#define D_WEB_READ_JUMP_PAGE        "Jump to page"
+#define D_WEB_READ_JUMP_HINT        "Saves the next-open page directly."
+#define D_WEB_READ_AND_FIND_LINK    "Read &amp; find"
+
+// ----------------------------------------------------------------------------
+//  Font family + bionic reading + reading-position retention
+//  (src/web/settings.cpp). Layout-affecting settings; changes trigger the
+//  reader to remap its byte-offset cursor under the new layout.
+// ----------------------------------------------------------------------------
+#define D_WEB_READING_INTRO         "Changing the font, family, line spacing, or bionic mode keeps your place in the current book &mdash; the device re-flows pages around the byte you're reading and lands on the page that contains it."
+#define D_WEB_FONT_FAMILY_LABEL     "Font family"
+#define D_WEB_FONT_FAMILY_HELVETICA "Helvetica"
+#define D_WEB_FONT_FAMILY_DYSLEXIC  "OpenDyslexic"
+#define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic uses heavier letter shapes designed for easier scanning."
+#define D_WEB_BIONIC_LABEL          "Bionic reading"
+#define D_WEB_BIONIC_HINT           "Bolds the leading characters of each word to help your eyes anchor."
+#define D_WEB_SETTINGS_APPLY_HINT   "Changes apply to the next page render."
+
+// ----------------------------------------------------------------------------
+//  Screensaver settings card link (src/web/settings.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_SCREENSAVER_CARD_DESC "Manage the image (or multi-image rotation) shown on the e-ink when the device sleeps."
+#define D_WEB_SCREENSAVER_EDITOR_LINK "Open screensaver editor"
+#define D_WEB_SCREENSAVER_EDITOR_HINT "Includes an in-browser bitmap editor and up to 8 rotation slots."
+
+// ----------------------------------------------------------------------------
+//  Screensaver editor + multi-slot manager (src/web/screensavers.cpp).
+//  JS-internal status / error strings emitted by the editor are NOT yet i18n'd;
+//  they live inside the PROGMEM script block. Add D_WEB_SS_JS_* macros and a
+//  data-attribute pass-through if/when that's wanted.
+// ----------------------------------------------------------------------------
+#define D_WEB_SS_TITLE              "Screensavers"
+#define D_WEB_SS_SUBTITLE           "Custom sleep images, multi-slot rotation, and in-firmware bitmap editor."
+#define D_WEB_SS_ROTATION_HEADING   "Rotation"
+#define D_WEB_SS_ROTATION_INTRO     "Pick what shows on the e-ink each time the device sleeps. Cycle walks the populated slots in order; Shuffle picks at random without immediate repeats."
+#define D_WEB_SS_MODE_LABEL         "Mode"
+#define D_WEB_SS_MODE_SINGLE        "Single image only"
+#define D_WEB_SS_MODE_CYCLE         "Cycle through slots"
+#define D_WEB_SS_MODE_SHUFFLE       "Shuffle slots"
+#define D_WEB_SS_SLOTS_POPULATED    "Populated slots: "
+#define D_WEB_SS_SAVE_MODE          "Save mode"
+#define D_WEB_SS_SLOTS_HEADING      "Rotation slots"
+#define D_WEB_SS_SLOT_LABEL         "Slot"
+#define D_WEB_SS_SLOT_EMPTY         "empty"
+#define D_WEB_SS_CONFIRM_DEL_SLOT   "Delete this slot?"
+#define D_WEB_SS_DOWNLOAD_ARIA      "Download screensaver"
+#define D_WEB_SS_DELETE_ARIA        "Delete screensaver"
+#define D_WEB_SS_ROTATE             "Rotate 90\u00b0"
+#define D_WEB_SS_SINGLE_HEADING     "Single screensaver"
+#define D_WEB_SS_SINGLE_ALT         "Single screensaver"
+#define D_WEB_SS_CONFIRM_DEL_SINGLE "Delete the single screensaver?"
+#define D_WEB_SS_NO_SINGLE          "No single screensaver uploaded. Upload via Editor."
+#define D_WEB_SS_EDITOR_HEADING     "Editor"
+#define D_WEB_SS_EDITOR_INTRO       "Drop an image into the editor, then upload it to a rotation slot or as the single legacy screensaver. All images render as 250&times;122 1-bit (3904 bytes)."
+#define D_WEB_SS_SOURCE_IMAGE       "Source image"
+#define D_WEB_SS_TOLERANCE          "Black tolerance"
+#define D_WEB_SS_INVERT             "Invert black/white"
+#define D_WEB_SS_PRECISE_CONTROL    "Precise control"
+#define D_WEB_SS_ZOOM               "Zoom"
+#define D_WEB_SS_MOVE_X             "Move X"
+#define D_WEB_SS_MOVE_Y             "Move Y"
+#define D_WEB_SS_PREVIEW_LABEL      "Preview (drag to move, pinch or scroll to zoom)"
+#define D_WEB_SS_RESET_FIT          "Reset fit"
+#define D_WEB_SS_NO_IMAGE           "No image loaded"
+#define D_WEB_SS_SAVE_TO            "Save to"
+#define D_WEB_SS_DST_SINGLE         "Single screensaver (/sleep.bin)"
+#define D_WEB_SS_DST_AUTO_PREFIX    "Next free rotation slot (slot "
+#define D_WEB_SS_DST_AUTO_SUFFIX    ")"
+#define D_WEB_SS_DST_FULL           "(All rotation slots full)"
+#define D_WEB_SS_DST_SLOT_PREFIX    "Rotation slot "
+#define D_WEB_SS_DST_OVERWRITE      " (overwrite)"
+#define D_WEB_SS_UPLOAD_EDITED      "Upload edited image"
 
 #endif  // PALA_LANG_EN_H

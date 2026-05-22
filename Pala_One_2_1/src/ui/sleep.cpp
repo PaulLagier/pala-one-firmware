@@ -10,20 +10,27 @@
 #include "src/state.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"          // injectButtonEdgeNow, markUserActivity
+#include "src/storage/statistics.h" // Statistics::flushToNvs
+#include "src/ui/font.h"            // Font::useToast / Font::useBody
+#include "src/ui/lock.h"            // Lock::isLocked — gates the lock badge
 #include "src/ui/pala_one_sleep_black_icon_v4.h"
 #include "src/ui/screen.h"
+#include "src/ui/screensavers.h"   // multi-slot rotation
 
 namespace Sleep {
 
-// Owned setting + NVS key — file-private.
-static int s_idleSecs = 120;
-static constexpr const char* kKeyIdleSecs = "cfg_sleep";
+// Owned settings + NVS keys — file-private.
+static int  s_idleSecs      = 120;
+static bool s_noScreensaver = false;
+static constexpr const char* kKeyIdleSecs      = "cfg_sleep";
+static constexpr const char* kKeyNoScreensaver = "cfg_noscr";
 
 void loadSettings() {
   int s = prefs.getInt(kKeyIdleSecs, 120);
   if (s < 10)   s = 10;
   if (s > 3600) s = 3600;
   s_idleSecs = s;
+  s_noScreensaver = prefs.getBool(kKeyNoScreensaver, false);
 }
 
 void setIdleTimeout(int secs) {
@@ -35,25 +42,59 @@ void setIdleTimeout(int secs) {
 
 int      idleTimeoutSecs() { return s_idleSecs; }
 uint32_t idleTimeoutMs()   { return (uint32_t)s_idleSecs * 1000UL; }
+bool     noScreensaver()   { return s_noScreensaver; }
 
-// Render the sleep image onto the e-ink before powering down. Tries the
-// user-uploaded /sleep.bin first; falls back to the built-in icon.
+void setNoScreensaver(bool val) {
+  s_noScreensaver = val;
+  prefs.putBool(kKeyNoScreensaver, val);
+}
+
+// Draw a padlock icon in the top-right corner so a user who has locked the
+// device and walked away can tell at a glance why it's not responding.
+// White-on-black pill, icon only (no text label) — stays readable over both
+// the built-in screensaver and any user-uploaded image.
+static void drawLockBadge() {
+  const int iconW = 7;   // padlock body width (cols 0–6)
+  const int iconH = 9;   // total height: 4 rows shackle + 5 rows body
+  const int padX  = 4;
+  const int padY  = 2;
+  const int boxW  = padX + iconW + padX;   // 15 px
+  const int boxH  = padY + iconH + padY;   // 13 px
+  const int boxX  = SCREEN_W - boxW - 2;
+  const int boxY  = 2;
+
+  // Pill: black fill, white 1px border bleed for hairline contrast against
+  // dark uploaded images. Order matters — inner fill draws last.
+  gfx.fillRect(boxX - 1, boxY - 1, boxW + 2, boxH + 2, 0);
+  gfx.fillRect(boxX, boxY, boxW, boxH, 1);
+
+  // Padlock glyph, white-on-black.
+  const int iconX = boxX + padX;
+  const int iconY = boxY + padY;
+  const int bodyY = iconY + 4;
+  // Body: solid white 7×5 rectangle.
+  gfx.fillRect(iconX, bodyY, iconW, 5, 0);
+  // Keyhole: one black pixel at the body centre.
+  gfx.drawPixel(iconX + 3, bodyY + 2, 1);
+  // Shackle: U-shape — left/right verticals (4 px tall) + 3-px top connector.
+  gfx.drawFastVLine(iconX + 1, iconY, 4, 0);
+  gfx.drawFastVLine(iconX + 5, iconY, 4, 0);
+  gfx.drawPixel(iconX + 2, iconY, 0);
+  gfx.drawPixel(iconX + 3, iconY, 0);
+  gfx.drawPixel(iconX + 4, iconY, 0);
+}
+
+// Render the screensaver onto the e-ink before powering down. Falls back to
+// the built-in icon if no user-uploaded screensavers are available.
 static void drawSleepScreen() {
   display.fastmodeOff();
   beginPageCanvas();
 
-  File sf = FS.open("/sleep.bin", "r");
-  if (sf && sf.size() >= 3904) {
-    static uint8_t sleepBuf[3904];
-    sf.read(sleepBuf, 3904);
-    sf.close();
-    gfx.fillScreen(1);
-    gfx.drawXBitmap(0, 0, sleepBuf, SCREEN_W, SCREEN_H, 0);
-  } else {
-    if (sf) sf.close();
+  if (!Screensavers::drawNext()) {
     gfx.fillScreen(1);
     gfx.drawXBitmap(0, 0, pala_one_sleep_black_icon_v4_bits, SCREEN_W, SCREEN_H, 0);
   }
+  if (Lock::isLocked()) drawLockBadge();
   display.update();
 }
 
@@ -67,8 +108,27 @@ void enter() {
 
   delay(50);
 
-  drawSleepScreen();
-  delay(600);
+  // No-screensaver mode only applies when coming from the reader. If the user
+  // fell asleep in the library or a menu, show the screensaver as normal.
+  // ReaderScreen::onSleep() has already called armResumeOnWake() above, which
+  // writes wake_path to NVS — so checking it here tells us reliably whether
+  // we were reading without coupling sleep.cpp to any screen type.
+  bool wasReading = (prefs.getString("wake_path", "").length() > 0);
+
+  if (s_noScreensaver && wasReading) {
+    // Full refresh of the last page so it sits cleanly on the panel.
+    // The reader's framebuffer content is still intact at this point.
+    // Draw the lock badge on top of that framebuffer when locked — the badge
+    // is skipped by this branch (which bypasses drawSleepScreen entirely), so
+    // we inject it here before the final display.update() flush.
+    display.fastmodeOff();
+    if (Lock::isLocked()) drawLockBadge();
+    display.update();
+    delay(600);
+  } else {
+    drawSleepScreen();
+    delay(600);
+  }
 
   WiFi.softAPdisconnect(true);
   WiFi.disconnect(true, true);
@@ -88,6 +148,10 @@ void enter() {
   rtc_gpio_pulldown_dis((gpio_num_t)BTN);
   rtc_gpio_pullup_en((gpio_num_t)BTN);
   esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN, 0);
+
+  // Drain any RTC-RAM lifetime-counter deltas to NVS before power-down.
+  Statistics::flushToNvs();
+
   delay(50);
   Serial.printf("[sleep] BTN=%d entering deep sleep\n", digitalRead(BTN));
   Serial.flush();

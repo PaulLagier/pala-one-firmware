@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pala One Installer</title>
+  <script
+    type="module"
+    src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"
+  ></script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --accent: #4a90e2;
+      --accent-hover: #357abd;
+      --accent-dark: #5fa3f0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 640px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.5;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .sub { color: #666; margin-top: 0; }
+    /* "switch channel" link lives in the channel-bar; hidden in local-dev
+       mode (body.channel-local) because "../" doesn't go anywhere sensible. */
+    body.channel-local .switch-channel { display: none; }
+
+    .channel-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      margin: 0.5rem 0 1.5rem;
+      color: #666;
+    }
+    .channel-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15em 0.55em;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .channel-badge.stable { background: #d8efd9; color: #1f6b25; }
+    .channel-badge.dev,
+    .channel-badge.local  { background: #fde6c8; color: #8a4a07; }
+
+    .variant {
+      border: 1px solid rgba(127,127,127,0.3);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    .variant h3 { margin: 0 0 0.25rem; }
+    .variant p { margin: 0.25rem 0 0.75rem; color: #666; }
+    .lang-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+    }
+    .lang-row esp-web-install-button { display: inline-block; }
+
+    /* Style the buttons that sit inside <esp-web-install-button slot="activate">. */
+    .lang-row button {
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.05s;
+    }
+    .lang-row button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .lang-row button:active { transform: translateY(1px); }
+    .lang-row button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .note {
+      background: #fff8c5;
+      border: 1px solid #e6dba0;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+    }
+    code {
+      background: rgba(127,127,127,0.15);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    ol li { margin: 0.4rem 0; }
+
+    /* Walkthrough list — bigger steps, room to breathe, with a lead-in
+       sentence rendered bold so the page scans well at a glance. */
+    .walkthrough { padding-left: 1.25rem; }
+    .walkthrough > li { margin: 1rem 0; }
+    .walkthrough > li > strong:first-child {
+      display: block;
+      margin-bottom: 0.15rem;
+    }
+
+    /* Inline callouts inside steps. .tip = blue accent; .warn = yellow. */
+    .tip {
+      background: rgba(74,144,226,0.08);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      margin: 0.5rem 0 0;
+      font-size: 0.9rem;
+    }
+    .tip.warn {
+      background: #fff8e1;
+      border-left-color: #d4a017;
+    }
+    .read-first {
+      color: #666;
+      font-size: 0.95rem;
+      margin: 0.5rem 0 1rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .sub, .variant p, .channel-bar, .read-first { color: #aaa; }
+      .note { background: #2a2a1a; border-color: #5a5a3a; }
+      .channel-badge.stable { background: #1f3a22; color: #9bd6a1; }
+      .channel-badge.dev,
+      .channel-badge.local  { background: #3a2a14; color: #f0c089; }
+      .lang-row button { border-color: var(--accent); background: var(--accent); }
+      .lang-row button:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+      .tip { background: rgba(74,144,226,0.15); }
+      .tip.warn { background: #3a2e0a; border-left-color: #d4a017; }
+    }
+
+    @media (max-width: 480px) {
+      body { margin: 3rem auto 2rem; }
+    }
+  </style>
+</head>
+<body class="channel-{{CHANNEL}}">
+  <h1>Pala One Installer</h1>
+  <p class="sub">Flash the firmware directly from your browser.</p>
+  <div class="channel-bar">
+    <span class="channel-badge {{CHANNEL}}">{{CHANNEL}}</span>
+    <span>build: <code>{{VERSION}}</code></span>
+    <a class="switch-channel" href="../">switch channel</a>
+  </div>
+
+  <p class="tip">
+    <strong>First time?</strong> Read the <a href="#how-to-install">How to install</a> guide below before clicking!
+  </p>
+
+  <div class="variant">
+    <h3>V1.2 board</h3>
+    <p>Newer Heltec Wireless Paper. If your board's silkscreen says <code>V1.2</code>, pick this.</p>
+    <div class="lang-row">
+      <esp-web-install-button manifest="manifest-v1_2-en.json">
+        <button slot="activate">Install V1.2 — English</button>
+        <span slot="unsupported">
+          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
+        </span>
+        <span slot="not-allowed">Open this page over HTTPS.</span>
+      </esp-web-install-button>
+      <esp-web-install-button manifest="manifest-v1_2-es.json">
+        <button slot="activate">Install V1.2 — Español</button>
+        <span slot="unsupported">
+          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
+        </span>
+        <span slot="not-allowed">Open this page over HTTPS.</span>
+      </esp-web-install-button>
+    </div>
+  </div>
+
+  <div class="variant">
+    <h3>V1.1 board</h3>
+    <p>Older revision of the Heltec Wireless Paper.</p>
+    <div class="lang-row">
+      <esp-web-install-button manifest="manifest-v1_1-en.json">
+        <button slot="activate">Install V1.1 — English</button>
+        <span slot="unsupported">
+          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
+        </span>
+        <span slot="not-allowed">Open this page over HTTPS.</span>
+      </esp-web-install-button>
+      <esp-web-install-button manifest="manifest-v1_1-es.json">
+        <button slot="activate">Install V1.1 — Español</button>
+        <span slot="unsupported">
+          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
+        </span>
+        <span slot="not-allowed">Open this page over HTTPS.</span>
+      </esp-web-install-button>
+    </div>
+  </div>
+
+  <p class="note">
+    Not sure which version you have? Flashing the wrong one won't brick the board — the e-ink panel just won't draw correctly. Try the other variant if the screen looks wrong after the first boot.
+  </p>
+
+  <h2 id="how-to-install">How to install</h2>
+
+  <ol class="walkthrough">
+    <li>
+      <strong>Use Chrome, Edge, or Opera on a desktop computer.</strong>
+      Safari, Firefox, and mobile browsers aren't supported.
+    </li>
+    <li>
+      <strong>Plug your Pala One into your computer</strong>
+      with a USB-C cable that carries data. If you are having issues,
+      it may be that your cable is power-only. Try a different cable if the installer doesn't detect your board.
+    </li>
+    <li>
+      <strong>Click an Install button above</strong>
+      for your board and language. The browser will pop up a serial-port chooser.
+    </li>
+    <li>
+      <strong>Pick your Pala One's serial port.</strong>
+      On <strong>Windows</strong> it's usually <em>not</em> <code>COM1</code>.
+      If you only see <code>COM1</code>, the board isn't plugged in or the
+      cable doesn't carry data. On <strong>Mac / Linux</strong>, look for
+      something like <code>/dev/cu.usbmodem*</code> or <code>/dev/ttyACM*</code>;
+      skip Bluetooth and debug ports.
+    </li>
+    <li>
+      <strong>Confirm Install in the dialog.</strong>
+      Click <strong>Install</strong>, then <strong>Install</strong> again on
+      the confirmation screen.
+      <p class="tip warn">
+        ⚠️ <strong>Re-flashing an already-set-up device?</strong> Leave the
+        <strong>Erase device</strong> checkbox <strong>unchecked</strong> —
+        checking it wipes your books, settings, and saved Wi-Fi.
+      </p>
+    </li>
+    <li>
+      <strong>Wait ~2 minutes while it flashes.</strong>
+      You'll see a progress bar. Don't unplug.
+    </li>
+    <li>
+      <strong>Click "Connect to Wi-Fi" when offered,</strong>
+      then enter your home Wi-Fi credentials. This lets your Pala One join
+      your network so you can upload books to it from any device on the same
+      Wi-Fi. You can skip this, as there is a fallback when there is no
+      Wi-Fi configured or you are away from your network.
+    </li>
+    <li>
+      <strong>You're done!</strong>
+      To upload books, navigate to "Upload" on the Pala One's menu and enter the URL shown on the device into your web browser.
+    </li>
+  </ol>
+</body>
+</html>

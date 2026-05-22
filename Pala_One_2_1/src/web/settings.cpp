@@ -2,9 +2,46 @@
 
 #include "src/config.h"
 #include "src/state.h"
+#include "src/pure/hashing.h"             // prefKeyForBook
+#include "src/storage/book_metadata.h"
+#include "src/storage/page_cache.h"       // deletePageCacheForBook
+#include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
+#include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
+#include "src/ui/reader_actions.h"        // ButtonAction + Gestures
+#include "src/ui/screens/reader_screen.h" // g_readerScreen — active-reader check
 #include "src/ui/sleep.h"
 #include "src/web/chrome.h"
+
+// ----------------------------------------------------------------------------
+//  Helpers for the remappable-button section
+// ----------------------------------------------------------------------------
+static void appendActionOption(String& out, int val, const char* label, int current) {
+  out += "<option value='";
+  out += val;
+  out += "'";
+  if (val == current) out += " selected";
+  out += ">";
+  out += label;
+  out += "</option>";
+}
+
+static void appendActionSelect(String& out, const char* nameId, const char* label, int current) {
+  out += "<div><label for='";
+  out += nameId;
+  out += "'>";
+  out += label;
+  out += "</label><select id='";
+  out += nameId;
+  out += "' name='";
+  out += nameId;
+  out += "'>";
+  appendActionOption(out, ACTION_NONE,     D_WEB_BUTTONS_ACTION_NONE,     current);
+  appendActionOption(out, ACTION_BOOKMARK, D_WEB_BUTTONS_ACTION_BOOKMARK, current);
+  appendActionOption(out, ACTION_LOCK,     D_WEB_BUTTONS_ACTION_LOCK,     current);
+  appendActionOption(out, ACTION_MENU,     D_WEB_BUTTONS_ACTION_MENU,     current);
+  out += "</select></div>";
+}
 
 static void handleSettings() {
   int curFont = Font::currentBodySize();
@@ -27,18 +64,27 @@ static void handleSettings() {
   String lg2 = (curGap == 2) ? " selected" : "";
   String lg3 = (curGap == 3) ? " selected" : "";
 
+
+  Font::Family curFam = Font::currentFamily();
+  String famH = (curFam == Font::Family::Helvetica)    ? " selected" : "";
+  String famD = (curFam == Font::Family::OpenDyslexic) ? " selected" : "";
+
+  bool curBionic   = Font::bionicEnabled();
+  String bChecked  = curBionic ? " checked" : "";
+
   bool hasSleepImg = FS.exists("/sleep.bin");
 
   String out = webPageStart(
     D_WEB_SETTINGS_TITLE,
-    D_WEB_SETTINGS_SUBTITLE_PREFIX FW_BUILD D_WEB_SETTINGS_SUBTITLE_SUFFIX,
+    D_WEB_SETTINGS_SUBTITLE_PREFIX FW_VERSION D_WEB_SETTINGS_SUBTITLE_SUFFIX,
     "<a href='/'>" D_WEB_SETTINGS_BACK_NAV "</a>"
   );
   out.reserve(out.length() + 4000);
 
   out +=
     "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
-    "<form method='POST' action='/settings' accept-charset='UTF-8'>"
+    "<p class='muted'>" D_WEB_READING_INTRO "</p>"
+    "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>"
     "<div class='grid cols-2'>"
     "<div><label for='font'>" D_WEB_FONT_SIZE_LABEL "</label><select id='font' name='font'>"
     "<option value='8'";  out += sel8;  out += ">" D_WEB_FONT_SIZE_8  "</option>"
@@ -46,6 +92,10 @@ static void handleSettings() {
     "<option value='12'"; out += sel12; out += ">" D_WEB_FONT_SIZE_12 "</option>"
     "<option value='14'"; out += sel14; out += ">" D_WEB_FONT_SIZE_14 "</option>"
     "</select><div class='hint'>" D_WEB_FONT_SIZE_HINT "</div></div>"
+    "<div><label for='family'>" D_WEB_FONT_FAMILY_LABEL "</label><select id='family' name='family'>"
+    "<option value='helv'"; out += famH; out += ">" D_WEB_FONT_FAMILY_HELVETICA "</option>"
+    "<option value='dys'";  out += famD; out += ">" D_WEB_FONT_FAMILY_DYSLEXIC  "</option>"
+    "</select><div class='hint'>" D_WEB_FONT_FAMILY_HINT "</div></div>"
     "<div><label for='sleep'>" D_WEB_SLEEP_AFTER_LABEL "</label><select id='sleep' name='sleep'>"
     "<option value='30'";   out += ss30;   out += ">" D_WEB_SLEEP_30S "</option>"
     "<option value='60'";   out += ss60;   out += ">" D_WEB_SLEEP_1M  "</option>"
@@ -60,35 +110,62 @@ static void handleSettings() {
     "<option value='2'"; out += lg2; out += ">" D_WEB_LINE_SPACING_2 "</option>"
     "<option value='3'"; out += lg3; out += ">" D_WEB_LINE_SPACING_3 "</option>"
     "</select><div class='hint'>" D_WEB_LINE_SPACING_HINT "</div></div>"
+    "<div class='full' style='grid-column:1/-1'><label style='display:flex;gap:10px;align-items:center;font-weight:600'>"
+    "<input type='checkbox' name='bionic' value='1'"; out += bChecked; out += "><span>" D_WEB_BIONIC_LABEL "</span></label>"
+    "<div class='hint'>" D_WEB_BIONIC_HINT "</div></div>"
     "</div>"
-    "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button><span class='muted'>" D_WEB_SETTINGS_NO_EXTRAS "</span></div>"
-    "</form></div>"
-    "<div class='card'><h2>" D_WEB_SCREENSAVER_HEADING "</h2>"
-    "<p>" D_WEB_SCREENSAVER_SPECS "</p>"
-    "<p class='muted'>" D_WEB_SCREENSAVER_TIP "</p>";
+    "<div style='margin-top:14px'>"
+    "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
+    "<input type='checkbox' name='noscr' id='noscr' style='width:auto'";
+  if (Sleep::noScreensaver()) out += " checked";
+  out +=
+    "><span>" D_WEB_NO_SCREENSAVER_LABEL "</span></label>"
+    "<div class='hint'>" D_WEB_NO_SCREENSAVER_HINT "</div></div>"
+    "<input type='hidden' name='noscr_form' value='1'>"
+    "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button>"
+    "<span class='muted'>" D_WEB_SETTINGS_APPLY_HINT "</span></div>"
+    "</form></div>";
 
-  if (hasSleepImg) {
-    out += "<div class='status ok'>" D_WEB_SCREENSAVER_ACTIVE " <form method='POST' action='/del-sleep' style='display:inline;margin-left:6px'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DEL_SCREENSAVER "')\">" D_WEB_DELETE_BUTTON "</button></form></div>";
-  } else {
-    out += "<div class='status idle'>" D_WEB_SCREENSAVER_DEFAULT "</div>";
-  }
+  // Buttons card — submitted as a separate form so the gesture bindings
+  // don't share POST state with the reading-form's reader-cursor remap.
+  out += "<div class='card'><h2>" D_WEB_BUTTONS_HEADING "</h2>";
+  out += "<p class='muted'>" D_WEB_BUTTONS_HINT "</p>";
+  out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
+  appendActionSelect(out, "btnL",  D_WEB_BUTTONS_LONG,       (int)Gestures::actionLong());
+  appendActionSelect(out, "btnXL", D_WEB_BUTTONS_EXTRA_LONG, (int)Gestures::actionExtraLong());
+  appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
+  out += "</div><div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
+  out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
+  out += "</div></form></div>";
 
   out +=
-    "<form method='POST' action='/upload-sleep' enctype='multipart/form-data' style='margin-top:14px'>"
-    "<div class='grid'><div><label for='file'>" D_WEB_SLEEP_IMAGE_LABEL "</label><input id='file' type='file' name='file' accept='.bin'></div></div>"
-    "<div class='actions'><button type='submit'>" D_WEB_SCREENSAVER_UPLOAD_BUTTON "</button></div>"
-    "</form></div>";
+    "<div class='card'><h2>" D_WEB_SCREENSAVER_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_SCREENSAVER_CARD_DESC "</p>"
+    "<div class='actions' style='margin-top:8px'>"
+    "<a class='btn' href='/screensavers'>" D_WEB_SCREENSAVER_EDITOR_LINK "</a>"
+    "<span class='muted'>" D_WEB_SCREENSAVER_EDITOR_HINT "</span>"
+    "</div></div>";
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }
 
-static void handleSettingsPost() {
-  // Font::setBodySize, Font::setLineGap, Sleep::setIdleTimeout all clamp /
-  // validate internally — no inline guards needed here.
+// Apply pending form changes. Returns true if any layout-affecting setting
+// (font size, family, line gap, bionic) was modified — caller uses this to
+// decide whether to remap the reader's byte-offset cursor afterwards.
+static bool applySettingsForm() {
+  bool layoutChanged = false;
+
+  // Font::setBodySize / setLineGap / setFamily / Sleep::setIdleTimeout all
+  // clamp + validate internally — no inline guards needed here.
   if (server.hasArg("font")) {
     int fs = server.arg("font").toInt();
-    if (fs != Font::currentBodySize()) Font::setBodySize(fs);
+    if (fs != Font::currentBodySize()) { Font::setBodySize(fs); layoutChanged = true; }
+  }
+  if (server.hasArg("family")) {
+    String f = server.arg("family");
+    Font::Family want = (f == "dys") ? Font::Family::OpenDyslexic : Font::Family::Helvetica;
+    if (want != Font::currentFamily()) { Font::setFamily(want); layoutChanged = true; }
   }
   if (server.hasArg("sleep")) {
     int ss = server.arg("sleep").toInt();
@@ -96,10 +173,77 @@ static void handleSettingsPost() {
   }
   if (server.hasArg("lgap")) {
     int lg = server.arg("lgap").toInt();
-    if (lg != Font::currentLineGap()) Font::setLineGap(lg);
+    if (lg != Font::currentLineGap()) { Font::setLineGap(lg); layoutChanged = true; }
   }
-  // On-disk page caches are layout-stamped and self-invalidate on load, so
-  // a font/lineGap change needs no cross-cutting cleanup here.
+  // Checkbox is absent from the POST when unchecked.
+  bool wantBionic = server.hasArg("bionic");
+  if (wantBionic != Font::bionicEnabled()) {
+    Font::setBionic(wantBionic);
+    layoutChanged = true;
+  }
+  return layoutChanged;
+}
+
+static void handleSettingsPost() {
+  // Snapshot the reader's current byte offset before applying changes, so
+  // we can re-land on the same byte under the new layout. The on-disk page
+  // cache self-invalidates via its layout stamp (see page_cache.cpp), so the
+  // page table will rebuild lazily — no explicit cache wipe needed.
+  bool readerActive =
+      (g_currentScreen == &g_readerScreen) &&
+      g_bookview.book.isOpen();
+  uint32_t savedByte = 0;
+  if (readerActive
+      && g_bookview.cursor.pageIndex >= 0
+      && g_bookview.cursor.pageIndex < g_bookview.pages.count) {
+    savedByte = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+  }
+
+  bool layoutChanged = applySettingsForm();
+
+  // Layout shifted under our feet — the in-memory page table no longer
+  // matches the active layout. Reset it (the on-disk cache, if any, will
+  // be rejected on the next loadPageOffsetCacheForBook because of the
+  // layout-stamp mismatch) and re-locate the cursor on the page that
+  // contains the saved byte offset. Then render so the user sees the new
+  // layout immediately when they return to the device.
+  if (readerActive && layoutChanged) {
+    g_bookview.pages.count = 1;
+    g_bookview.pages.offsets[0] = 0;
+    g_bookview.pages.eofReached = false;
+    int newPage = findPageForOffset(savedByte);
+    if (newPage < 0) newPage = 0;
+    g_bookview.cursor.pageIndex = newPage;
+    g_bookview.cursor.pageTurnsSinceFull = 0;
+
+    PreferencesStore kv(prefs);
+    saveSavedPage(kv, g_bookview.book.key(), newPage);
+    // Offset is unchanged — no need to rewrite the canonical position.
+
+    renderCurrentPage();
+  }
+
+  // noscr_form is a hidden sentinel always present when the settings form is
+  // submitted, which lets us distinguish an explicit unchecked checkbox from a
+  // POST that didn't come from the settings form at all.
+  if (server.hasArg("noscr_form")) {
+    bool ns = server.hasArg("noscr");
+    if (ns != Sleep::noScreensaver()) Sleep::setNoScreensaver(ns);
+  }
+
+  // Gesture bindings — `setAction*` clamp internally, but we still check
+  // `hasArg` because the page submits this section as a separate form
+  // (so a Reading POST won't carry these keys at all).
+  if (server.hasArg("btnL")) {
+    Gestures::setActionLong((ButtonAction)server.arg("btnL").toInt());
+  }
+  if (server.hasArg("btnXL")) {
+    Gestures::setActionExtraLong((ButtonAction)server.arg("btnXL").toInt());
+  }
+  if (server.hasArg("btnCH")) {
+    Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());
+  }
+
   server.sendHeader("Location", "/settings");
   server.send(302, "text/plain", "");
 }

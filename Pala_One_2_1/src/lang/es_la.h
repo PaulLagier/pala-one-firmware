@@ -33,10 +33,20 @@
 #define D_MENU_BOOKMARKS            "Marcapáginas"
 #define D_MENU_LIST                 "Lista"
 #define D_MENU_APPS                 "Apps"
+#define D_MENU_STATISTICS           "Estadísticas"
 #define D_MENU_DEVICE               "Dispositivo"
 #define D_MENU_UPLOAD               "Conectar"
 #define D_LIBRARY_OPEN_FAILED       "Error al abrir"
 #define D_LIBRARY_TRY_UPLOAD        "Intente subir de nuevo"
+
+// ----------------------------------------------------------------------------
+//  Statistics screen
+// ----------------------------------------------------------------------------
+#define D_STATS_HEADING                "Estadísticas"
+#define D_STATS_STREAK_CURRENT_FMT     "Racha actual: %u días"
+#define D_STATS_STREAK_LONGEST_FMT     "Mejor: %u  Sesiones: %u"
+#define D_STATS_LIFETIME_PAGES_FMT     "Páginas leídas: %llu"
+#define D_STATS_LIFETIME_PRESSES_FMT   "Pulsaciones: %llu"
 
 // ----------------------------------------------------------------------------
 //  List screen
@@ -51,6 +61,10 @@
 #define D_UPLOAD_WIFI               "Wi-Fi"
 #define D_UPLOAD_PASSWORD           "Contraseña"
 #define D_UPLOAD_OPEN               "Abrir"
+#define D_UPLOAD_CONNECTING         "Conectando"
+#define D_UPLOAD_CONNECTED          "Conectado"
+#define D_UPLOAD_HOTSPOT_HINT_L1    "Pulsa el botón para"
+#define D_UPLOAD_HOTSPOT_HINT_L2    "usar punto de acceso"
 
 // ----------------------------------------------------------------------------
 //  Apps screen
@@ -98,6 +112,12 @@
 // ----------------------------------------------------------------------------
 #define D_TOAST_BOOKMARK_EXISTS     "Marcapáginas ya existe"
 #define D_TOAST_BOOKMARK_SAVED      "Marcapáginas guardado"
+
+// ----------------------------------------------------------------------------
+//  Lock / screensaver
+// ----------------------------------------------------------------------------
+#define D_SCREENSAVER_LOCKED        "Bloqueado"
+#define D_TOAST_UNLOCKED            "Desbloqueado"
 
 // ============================================================================
 //  Web UI
@@ -256,6 +276,8 @@
 #define D_WEB_LINE_SPACING_2        "2 px &mdash; relajado"
 #define D_WEB_LINE_SPACING_3        "3 px &mdash; suelto"
 #define D_WEB_LINE_SPACING_HINT     "Un pequeño cambio aquí puede facilitar mucho la lectura."
+#define D_WEB_NO_SCREENSAVER_LABEL  "Modo sin salvapantallas"
+#define D_WEB_NO_SCREENSAVER_HINT   "El dispositivo sigue durmiéndose según el temporizador habitual y actualiza la pantalla antes de dormirse. Luego muestra la última página del libro y omite la actualización completa al despertar, para que puedas continuar leyendo con un solo clic sin la interrupción de un refresco de pantalla."
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Guardar ajustes"
 #define D_WEB_SETTINGS_NO_EXTRAS    "Sin archivos extra, scripts ni fuentes."
 #define D_WEB_SCREENSAVER_HEADING   "Salvapantallas"
@@ -266,6 +288,19 @@
 #define D_WEB_SCREENSAVER_DEFAULT   "Usando salvapantallas predeterminado."
 #define D_WEB_SLEEP_IMAGE_LABEL     "Archivo de imagen de suspensión"
 #define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Subir imagen"
+
+// Buttons / remappable hold-gestures section.
+#define D_WEB_BUTTONS_HEADING       "Botones"
+#define D_WEB_BUTTONS_HINT          "1 clic = siguiente, 2 = anterior, 3 = inicio. Las tres pulsaciones largas abajo son reasignables."
+#define D_WEB_BUTTONS_LONG          "Pulsación larga"
+#define D_WEB_BUTTONS_EXTRA_LONG    "Pulsación muy larga"
+#define D_WEB_BUTTONS_CLICK_HOLD    "Clic y mantener"
+#define D_WEB_BUTTONS_SAVE          "Guardar botones"
+#define D_WEB_BUTTONS_LOCK_HINT     "Si está bloqueado, repita cualquier pulsación larga para desbloquear."
+#define D_WEB_BUTTONS_ACTION_NONE     "Ninguna"
+#define D_WEB_BUTTONS_ACTION_BOOKMARK "Marcar página"
+#define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
+#define D_WEB_BUTTONS_ACTION_MENU     "Abrir menú"
 
 // ----------------------------------------------------------------------------
 //  Upload routes
@@ -346,5 +381,89 @@
 #define D_WEB_BMEXPORT_BOOKMARKS    "Marcapáginas: "
 #define D_WEB_BMEXPORT_BOOKMARK_LBL "Marcapáginas "
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "Sin marcapáginas para este libro"
+
+// ----------------------------------------------------------------------------
+//  Lector en el navegador + buscar/saltar (src/web/find.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_READ_TITLE            "Leer"
+#define D_WEB_READ_SUBTITLE         "Explora y busca el libro en tu navegador. Usa Saltar para fijar el punto de retoma del dispositivo."
+#define D_WEB_READ_BYTES_LABEL      "bytes"
+#define D_WEB_READ_CURRENT_PAGE_LABEL "página actual:"
+#define D_WEB_READ_FIND_PLACEHOLDER "Buscar en el libro"
+#define D_WEB_READ_FIND_ALL         "Buscar todo"
+#define D_WEB_READ_FIND_PREV        "Anterior"
+#define D_WEB_READ_FIND_NEXT        "Siguiente"
+#define D_WEB_READ_JUMP_HERE        "Saltar aquí"
+#define D_WEB_READ_LOADING          "Cargando texto del libro..."
+#define D_WEB_READ_PAGE_PLACEHOLDER "Número de página"
+#define D_WEB_READ_JUMP_PAGE        "Saltar a página"
+#define D_WEB_READ_JUMP_HINT        "Guarda directamente la próxima página de apertura."
+#define D_WEB_READ_AND_FIND_LINK    "Leer y buscar"
+
+// ----------------------------------------------------------------------------
+//  Familia de fuente + lectura biónica + retención de posición
+//  (src/web/settings.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_READING_INTRO         "Cambiar la fuente, familia, espaciado de línea o modo biónico mantiene tu lugar en el libro actual &mdash; el dispositivo reorganiza las páginas alrededor del byte que estás leyendo y aterriza en la página que lo contiene."
+#define D_WEB_FONT_FAMILY_LABEL     "Familia de fuente"
+#define D_WEB_FONT_FAMILY_HELVETICA "Helvetica"
+#define D_WEB_FONT_FAMILY_DYSLEXIC  "OpenDyslexic"
+#define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic usa formas de letra más gruesas diseñadas para una lectura más fácil."
+#define D_WEB_BIONIC_LABEL          "Lectura biónica"
+#define D_WEB_BIONIC_HINT           "Resalta en negrita las primeras letras de cada palabra para anclar la mirada."
+#define D_WEB_SETTINGS_APPLY_HINT   "Los cambios se aplican en la próxima página renderizada."
+
+// ----------------------------------------------------------------------------
+//  Tarjeta de salvapantallas en la página de ajustes (src/web/settings.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_SCREENSAVER_CARD_DESC "Administra la imagen (o rotación de imágenes) que se muestra en la pantalla cuando el dispositivo se suspende."
+#define D_WEB_SCREENSAVER_EDITOR_LINK "Abrir editor de salvapantallas"
+#define D_WEB_SCREENSAVER_EDITOR_HINT "Incluye un editor de bitmap en el navegador y hasta 8 ranuras de rotación."
+
+// ----------------------------------------------------------------------------
+//  Editor y administrador multi-ranura de salvapantallas (src/web/screensavers.cpp).
+//  Las cadenas internas del editor en JS (estado / errores) aún NO están i18n'd.
+// ----------------------------------------------------------------------------
+#define D_WEB_SS_TITLE              "Salvapantallas"
+#define D_WEB_SS_SUBTITLE           "Imágenes de suspensión personalizadas, rotación multi-ranura y editor de bitmap en el firmware."
+#define D_WEB_SS_ROTATION_HEADING   "Rotación"
+#define D_WEB_SS_ROTATION_INTRO     "Elige qué se muestra en la pantalla cuando el dispositivo se suspende. Cycle recorre las ranuras pobladas en orden; Shuffle elige al azar sin repeticiones inmediatas."
+#define D_WEB_SS_MODE_LABEL         "Modo"
+#define D_WEB_SS_MODE_SINGLE        "Solo una imagen"
+#define D_WEB_SS_MODE_CYCLE         "Ciclar entre ranuras"
+#define D_WEB_SS_MODE_SHUFFLE       "Mezclar ranuras"
+#define D_WEB_SS_SLOTS_POPULATED    "Ranuras pobladas: "
+#define D_WEB_SS_SAVE_MODE          "Guardar modo"
+#define D_WEB_SS_SLOTS_HEADING      "Ranuras de rotación"
+#define D_WEB_SS_SLOT_LABEL         "Ranura"
+#define D_WEB_SS_SLOT_EMPTY         "vacía"
+#define D_WEB_SS_CONFIRM_DEL_SLOT   "¿Eliminar esta ranura?"
+#define D_WEB_SS_DOWNLOAD_ARIA      "Descargar salvapantallas"
+#define D_WEB_SS_DELETE_ARIA        "Eliminar salvapantallas"
+#define D_WEB_SS_ROTATE             "Girar 90\u00b0"
+#define D_WEB_SS_SINGLE_HEADING     "Salvapantallas único"
+#define D_WEB_SS_SINGLE_ALT         "Salvapantallas único"
+#define D_WEB_SS_CONFIRM_DEL_SINGLE "¿Eliminar el salvapantallas único?"
+#define D_WEB_SS_NO_SINGLE          "Sin salvapantallas único cargado."
+#define D_WEB_SS_EDITOR_HEADING     "Editor"
+#define D_WEB_SS_EDITOR_INTRO       "Arrastra una imagen al editor y súbela a una ranura de rotación o como el salvapantallas único heredado. Todas las imágenes se renderizan en 250&times;122 1 bit (3904 bytes)."
+#define D_WEB_SS_SOURCE_IMAGE       "Imagen fuente"
+#define D_WEB_SS_TOLERANCE          "Tolerancia de negro"
+#define D_WEB_SS_INVERT             "Invertir blanco/negro"
+#define D_WEB_SS_PRECISE_CONTROL    "Control preciso"
+#define D_WEB_SS_ZOOM               "Zoom"
+#define D_WEB_SS_MOVE_X             "Mover X"
+#define D_WEB_SS_MOVE_Y             "Mover Y"
+#define D_WEB_SS_PREVIEW_LABEL      "Vista previa (arrastra para mover, pellizca o usa la rueda para zoom)"
+#define D_WEB_SS_RESET_FIT          "Reiniciar ajuste"
+#define D_WEB_SS_NO_IMAGE           "Sin imagen cargada"
+#define D_WEB_SS_SAVE_TO            "Guardar en"
+#define D_WEB_SS_DST_SINGLE         "Salvapantallas único (/sleep.bin)"
+#define D_WEB_SS_DST_AUTO_PREFIX    "Próxima ranura libre (ranura "
+#define D_WEB_SS_DST_AUTO_SUFFIX    ")"
+#define D_WEB_SS_DST_FULL           "(Todas las ranuras llenas)"
+#define D_WEB_SS_DST_SLOT_PREFIX    "Ranura de rotación "
+#define D_WEB_SS_DST_OVERWRITE      " (sobrescribir)"
+#define D_WEB_SS_UPLOAD_EDITED      "Subir imagen editada"
 
 #endif  // PALA_LANG_ES_LA_H

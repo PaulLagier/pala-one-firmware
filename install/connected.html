@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pala One — Connected</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 640px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.5;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .sub { color: #666; margin-top: 0; }
+    .check {
+      font-size: 3rem;
+      color: #2a9b3a;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+    .card {
+      border: 1px solid rgba(127,127,127,0.3);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+    .card h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+    .card p { margin: 0.4rem 0; }
+    .card p:last-child { margin-bottom: 0; }
+    code {
+      background: rgba(127,127,127,0.15);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+    @media (prefers-color-scheme: dark) {
+      .sub { color: #aaa; }
+      .check { color: #6acc7a; }
+    }
+  </style>
+</head>
+<body>
+  <div class="check">✓</div>
+  <h1>Pala One is on Wi-Fi</h1>
+  <p class="sub">Your device saved its network credentials and is ready to use.</p>
+
+  <div class="card">
+    <h2>To upload books</h2>
+    <p>On your Pala One, open <strong>Upload</strong> from the device menu.</p>
+    <p>The screen will show a link like <code>http://pala-one.local</code> — open it on any device that's on the same Wi-Fi network to upload books, apps, or a custom sleep image.</p>
+  </div>
+
+  <div class="card">
+    <h2>If <code>pala-one.local</code> doesn't load</h2>
+    <p>Some networks don't resolve <code>.local</code> hostnames. Use the IP address shown underneath on the device's screen instead (e.g. <code>http://192.168.1.42</code>).</p>
+  </div>
+</body>
+</html>

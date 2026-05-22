@@ -63,6 +63,7 @@ extern BookView g_bookview;
 
 bool openBookByIndex(int idx);
 void renderCurrentPage();
+void forceNextRenderFull();  // one-shot: next renderCurrentPage() does a full refresh
 
 // Cursor navigation. Both move the cursor and bump `pageTurnsSinceFull` on
 // a real page change; `advancePage` lazily paginates one ahead and clamps
@@ -91,6 +92,19 @@ bool tryRestoreReadingSession();
 // consumed and cleared at boot by `tryRestoreReadingSession`. The clear
 // side is private to reader.cpp; nothing else needs to disarm.
 void armResumeOnWake();    // arm: persist currently-open book for resume
+
+// Layout changed mid-session — the byte offsets in `g_bookview.pages` were
+// computed under the old layout and no longer map to page boundaries under
+// the new one. Resets the in-memory table, reloads the on-disk cache (which
+// is layout-fingerprinted and will be rejected if the layout actually
+// differs), and re-finds the current page from the saved byte offset.
+// No-op if no book is open. Caller is responsible for the redraw.
+//
+// Called from `Statusbar::setMode`, which is the only path that can change
+// layout while the reader screen is active. Font size / line gap go through
+// the web /settings form — the user can't be in the reader at that moment,
+// and the next `openBookByIndex` rebuilds the table from scratch anyway.
+void repaginateForLayoutChange();
 
 // ============================================================================
 //  View lifecycle — full reset of every piece of `g_bookview` (and the reader's

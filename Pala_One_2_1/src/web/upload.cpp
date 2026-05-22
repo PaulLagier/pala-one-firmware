@@ -20,6 +20,7 @@ struct BookUpload {
   String finalName;
   bool   ok = false;
   String error;
+  size_t maxBytes = 0;
   // Cross-chunk state for streaming compactText() during upload, so a
   // whitespace or newline run that spans a chunk boundary collapses
   // correctly. Reset in UPLOAD_FILE_START. See pure/text_util.h.
@@ -120,6 +121,7 @@ static void handleUploadBookStream() {
       s_book.error = D_WEB_ERR_NOT_ENOUGH_SPACE;
       return;
     }
+    s_book.maxBytes = freeBytes;
 
     String clean = sanitizeUploadedFilename(up.filename);
     s_book.finalName = clean;
@@ -135,6 +137,12 @@ static void handleUploadBookStream() {
   else if (up.status == UPLOAD_FILE_WRITE) {
     if (s_book.error.length() > 0) return;
     if (s_book.tmpFile && up.currentSize > 0) {
+      if (s_book.tmpFile.size() + up.currentSize > s_book.maxBytes) {
+        s_book.error = D_WEB_ERR_WRITE_FAILED;
+        s_book.tmpFile.close();
+        if (s_book.tmpPath.length() > 0 && FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
+        return;
+      }
       String chunk = s_book.pendingUtf8Tail + String((const char*)up.buf, up.currentSize);
       int len = (int)chunk.length();
       if (len > 4) {
@@ -258,7 +266,22 @@ static void handleUploadSleepStream() {
     if (!s_sleep.tmpFile) s_sleep.error = D_WEB_SLEEP_ERR_TEMP;
   }
   else if (upS.status == UPLOAD_FILE_WRITE) {
-    if (s_sleep.tmpFile) s_sleep.tmpFile.write(upS.buf, upS.currentSize);
+    if (s_sleep.error.length() > 0) return;
+    if (s_sleep.tmpFile && upS.currentSize > 0) {
+      if (s_sleep.tmpFile.size() + upS.currentSize > 8192) {
+        s_sleep.tmpFile.close();
+        if (FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
+        s_sleep.error = D_WEB_SLEEP_ERR_SIZE;
+        return;
+      }
+      size_t wrote = s_sleep.tmpFile.write(upS.buf, upS.currentSize);
+      if (wrote != upS.currentSize) {
+        s_sleep.tmpFile.close();
+        if (FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
+        s_sleep.error = D_WEB_SLEEP_ERR_SAVE;
+        return;
+      }
+    }
   }
   else if (upS.status == UPLOAD_FILE_END) {
     if (s_sleep.tmpFile) s_sleep.tmpFile.close();

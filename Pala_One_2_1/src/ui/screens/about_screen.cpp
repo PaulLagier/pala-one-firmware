@@ -17,7 +17,7 @@ void AboutScreen::draw() {
   int y = drawSectionHeader(D_ABOUT_HEADER);
 
   String rows[5] = {
-    D_ABOUT_FIRMWARE_PREFIX FW_BUILD,
+    D_ABOUT_FIRMWARE_PREFIX FW_VERSION,
     D_ABOUT_GESTURE_NEXT,
     D_ABOUT_GESTURE_OPEN,
     D_ABOUT_GESTURE_HOME,

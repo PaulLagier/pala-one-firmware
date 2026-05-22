@@ -5,11 +5,12 @@
 
 // ============================================================================
 //  Sleep module — owns the deep-sleep entry sequence and the user-tunable
-//  idle-timeout setting (NVS key `cfg_sleep`, default 120s, range [10, 3600]).
+//  idle-timeout setting (NVS key `cfg_sleep`, default 120s, range [10, 3600])
+//  plus the no-screensaver toggle (NVS key `cfg_noscr`, default false).
 // ============================================================================
 namespace Sleep {
 
-// Read persisted idle-timeout from NVS into Sleep's internal state.
+// Read persisted settings from NVS into Sleep's internal state.
 // Call once from setup() after `prefs.begin`.
 void loadSettings();
 
@@ -19,6 +20,13 @@ void setIdleTimeout(int secs);
 // Current applied values.
 int      idleTimeoutSecs();   // for the web settings UI selects
 uint32_t idleTimeoutMs();     // for the main loop's sleep deadline check
+
+// No-screensaver mode. When true and sleeping from the reader: Sleep::enter()
+// keeps the last page on the panel (full refresh before sleep, no screensaver
+// image). On wake, setup() does not force a full reader refresh — the partial
+// path in renderCurrentPage() is enough because the page is already visible.
+bool noScreensaver();
+void setNoScreensaver(bool val);
 
 // Enter deep sleep right now. Notifies the active screen, draws the sleep
 // image, releases peripherals, then `esp_deep_sleep_start`s.

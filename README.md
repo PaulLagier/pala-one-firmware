@@ -5,6 +5,17 @@ Pala One — A tiny E-Ink reader project by Paul Lagier
 
 The goal of the project was to create a simple, distraction-free reading device that feels minimal, portable and easy to build while still looking and behaving more like a real product than a typical DIY electronics project.
 
+## Install (no toolchain needed)
+
+[Web Installer](https://paullagier.github.io/pala-one-firmware/)
+
+The easiest way to flash a board is via the web installer. Plug your Heltec Wireless Paper into a desktop computer running Chrome, Edge, or Opera, then open the installer page and pick a channel:
+
+- **Stable** ([`/stable/`](https://paullagier.github.io/pala-one-firmware/stable/)) — latest tagged release (`vX.Y.Z`). Use this unless you have a reason not to.
+- **Development** ([`/dev/`](https://paullagier.github.io/pala-one-firmware/dev/)) — latest build from `dev`; new features, may break.
+
+Each channel page lists both display revisions (V1.1 / V1.2) and both languages (English / Spanish-LA) — four install buttons total. Pick the one that matches your board + language and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
+
 ## Contributing
 
 If you improve the firmware, add features or fix bugs, feel free to open a pull request.
@@ -36,6 +47,17 @@ Strings live in `Pala_One_2_1/src/lang/` — `en.h` is the canonical key set; `e
 
 Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
 
+## Web UI theme
+
+The browser-side configuration UI ships with a light palette and a dark palette and a per-page toggle button in the header. The toggle's choice is stored in the browser's `localStorage` (`palaTheme`), so each device that connects to the captive portal remembers its own preference — there is no server-side persistence.
+
+Out of the box, a first visit defaults to **light**. To change the firmware default (e.g. so a freshly connected device lands in dark mode), pick one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` at build time, mirroring the language flow:
+
+- **Arduino IDE** — uncomment one of `WEB_THEME_LIGHT` / `WEB_THEME_DARK` near the top of `Pala_One_2_1/Pala_One_2_1.ino` (beneath the language block).
+- **PlatformIO** — add `-D WEB_THEME_DARK` to your env's `build_flags` if you want dark as the default; otherwise leave it alone.
+
+The build-time default only affects the *first* visit from a given browser — once the toggle is used, the localStorage choice wins from then on.
+
 ## Building the firmware
 
 The same sources build under either toolchain.
@@ -66,7 +88,52 @@ The same sources build under either toolchain.
    pio device monitor
    ```
 
-Both envs share libraries and partition table via `platformio.ini`. The PIO build also runs `scripts/build_info.py` to inject the current git short hash as `BUILD_GIT_HASH`; Arduino IDE builds fall back to `"unknown"`.
+Both envs share libraries and partition table via `platformio.ini`. The PIO build also runs `scripts/build_info.py` to inject:
+
+- `FW_VERSION` from `git describe --tags --always --dirty` (e.g. `v2.1`, `v2.1-3-gabc1234`, `…-dirty`)
+- `BUILD_GIT_HASH` from the current short SHA
+
+Arduino IDE / host-test builds skip the script and fall back to `"dev"` and `"unknown"` respectively — those toolchains are for developer iteration; releases go through the PIO + tagged-CI flow where the real values get injected.
+
+### Installer site (channels & CI)
+
+The [web installer](https://paullagier.github.io/pala-one-firmware/) is published to the `gh-pages` branch by [`.github/workflows/deploy-installer.yml`](.github/workflows/deploy-installer.yml). Two channels live side-by-side and never overwrite each other:
+
+| Trigger                       | Channel  | URL path     | `DEBUG_BUILD` | Manifest version |
+|-------------------------------|----------|--------------|---------------|------------------|
+| push to `dev`                 | `dev`    | `/dev/`      | `1` (git hash visible on device) | `dev-<sha>` |
+| tag `v*`                      | `stable` | `/stable/`   | `0` (clean UI) | `vX.Y.Z` |
+| `workflow_dispatch`           | choose   | matches      | depends on channel | `dev-<sha>` / `manual-<sha>` |
+
+Merges to `main` do **not** auto-publish. Tagging is the explicit release event, so `/stable/` never carries an arbitrary mid-release snapshot and the install dialog always shows a clean version name. To cut a release: merge to `main`, then `git tag vX.Y.Z && git push origin vX.Y.Z`.
+
+Every run rebuilds the channel it owns and publishes only the corresponding `gh-pages/<channel>/` subdirectory (the workflow uses `keep_files: true`, so the other channel's directory is preserved). A small landing page at the gh-pages root links to both — it is republished on every run with identical content, so the cross-write is safe. The Improv post-provisioning `connected.html` also lives at the gh-pages root (its content is channel-agnostic and the URL is baked into the firmware).
+
+Source HTML/manifests live in `install/` on the normal branches. The `gh-pages` branch is fully generated; do not edit it by hand.
+
+#### Local development
+
+To iterate on the installer page (HTML, Improv Serial provisioning flow, manifest tweaks) without CI:
+
+1. Build all four leaf envs at least once so the firmware bins exist:
+   ```
+   pio run -e wireless-paper-v1_1-en
+   pio run -e wireless-paper-v1_1-es
+   pio run -e wireless-paper-v1_2-en
+   pio run -e wireless-paper-v1_2-es
+   ```
+2. Assemble the bundle. Two layouts are supported:
+   ```
+   python scripts/assemble_site.py                       # flat layout in site/
+   python scripts/assemble_site.py --channel dev         # site/index.html + site/dev/
+   ```
+3. Serve it. Web Serial works on `localhost` without HTTPS:
+   ```
+   python -m http.server 8000 --directory site
+   ```
+4. Open <http://localhost:8000> in Chrome, Edge, or Opera. With `--channel`, the landing page is served; without, the installer is served directly.
+
+Optional flags: `--version <string>` to label the manifest, `--out <dir>` to write somewhere other than `site/`. The channel-aware layout produced locally is bit-identical to what the workflow uploads to `gh-pages`.
 
 ## Codebase layout
 
@@ -89,6 +156,7 @@ docs/                    # Architecture notes + refactor journal
 scripts/                 # PlatformIO pre-build helpers
 test/                    # Host-side CMake unit tests for pure/ + storage/
 examples/                # Sample apps (click_counter, palagotchi)
+install/                 # ESP Web Tools installer page (deployed to GitHub Pages by CI)
 archive/                 # Past firmware revisions, kept for reference
 ```
 

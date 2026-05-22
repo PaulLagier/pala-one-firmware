@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pala One Installer</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 640px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.5;
+    }
+    h1 { margin-bottom: 0.25rem; }
+    .sub { color: #666; margin-top: 0; }
+    .channel {
+      display: block;
+      border: 1px solid rgba(127,127,127,0.3);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      text-decoration: none;
+      color: inherit;
+    }
+    .channel:hover { border-color: #4a90e2; }
+    .channel h3 { margin: 0 0 0.25rem; }
+    .channel p { margin: 0.25rem 0 0; color: #666; }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.15em 0.55em;
+      border-radius: 999px;
+      vertical-align: middle;
+      margin-left: 0.5em;
+    }
+    .badge.stable { background: #d8efd9; color: #1f6b25; }
+    .badge.dev    { background: #fde6c8; color: #8a4a07; }
+    @media (prefers-color-scheme: dark) {
+      .sub, .channel p { color: #aaa; }
+      .badge.stable { background: #1f3a22; color: #9bd6a1; }
+      .badge.dev    { background: #3a2a14; color: #f0c089; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Pala One Installer</h1>
+  <p class="sub">Pick the firmware channel you want to flash.</p>
+
+  <a class="channel" href="stable/">
+    <h3>Stable <span class="badge stable">recommended</span></h3>
+    <p>Latest stable release. Use this unless you have a reason not to.</p>
+  </a>
+
+  <a class="channel" href="dev/">
+    <h3>Development <span class="badge dev">unstable</span></h3>
+    <p>Latest build with newest in development features. May be unstable or have bugs!</p>
+  </a>
+
+  <p class="sub" style="margin-top: 2rem;">
+    Both installers run in your browser via ESP Web Tools. Use desktop Chrome, Edge, or Opera with a data-capable USB-C cable.
+  </p>
+</body>
+</html>
