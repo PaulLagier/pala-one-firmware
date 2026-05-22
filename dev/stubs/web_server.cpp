@@ -35,8 +35,25 @@ static void dispatch(const httplib::Request& req, httplib::Response& res,
   t_req = &req;
   t_res = &res;
   t_hdrs.clear();
+
+  std::cerr << req.method << " " << req.path;
+  if (!req.params.empty()) {
+    std::cerr << "?";
+    bool first = true;
+    for (auto& p : req.params) {
+      if (!first) std::cerr << "&";
+      std::cerr << p.first << "=" << p.second;
+      first = false;
+    }
+  }
+  if (!req.body.empty()) std::cerr << " body=" << req.body;
+  std::cerr << "\n";
+
   handler();
   applyHeaders(res);
+
+  std::cerr << "  -> " << res.status << "\n";
+
   t_req = nullptr;
   t_res = nullptr;
 }
@@ -102,4 +119,8 @@ void WebServerStub::run(int port) {
   std::cout << "Pala One web emulator: http://localhost:" << port << "\n";
   std::cout << "Press Ctrl+C to stop.\n";
   impl_->svr.listen("0.0.0.0", port);
+}
+
+void WebServerStub::stop() {
+  impl_->svr.stop();
 }

@@ -41,6 +41,9 @@ public:
   // Start the blocking HTTP server loop.
   void run(int port = 8080);
 
+  // Stop the server (unblocks run()). Safe to call from another thread.
+  void stop();
+
 private:
   std::unique_ptr<WebServerImpl> impl_;
 };

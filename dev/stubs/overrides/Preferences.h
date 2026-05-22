@@ -7,16 +7,23 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <cstdio>
 #include "src/pure/arduino_compat.h"
 
 class Preferences {
 public:
   int getInt(const char* key, int def = 0) {
     auto it = bytes_.find(key);
-    if (it == bytes_.end() || it->second.size() != sizeof(int)) return def;
-    int v; std::memcpy(&v, it->second.data(), sizeof(v)); return v;
+    if (it == bytes_.end() || it->second.size() != sizeof(int)) {
+      std::fprintf(stderr, "  [prefs] getInt  %s -> %d (default)\n", key, def);
+      return def;
+    }
+    int v; std::memcpy(&v, it->second.data(), sizeof(v));
+    std::fprintf(stderr, "  [prefs] getInt  %s -> %d\n", key, v);
+    return v;
   }
   void putInt(const char* key, int v) {
+    std::fprintf(stderr, "  [prefs] putInt  %s = %d\n", key, v);
     auto& b = bytes_[key]; b.resize(sizeof(v)); std::memcpy(b.data(), &v, sizeof(v));
   }
 
