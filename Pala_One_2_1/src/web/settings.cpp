@@ -8,6 +8,7 @@
 #include "src/ui/sleep.h"
 #include "src/ui/sleep_slots.h"
 #include "src/web/chrome.h"
+#include "src/web/screensaver_editor.h"
 
 static void handleSettings() {
   int curFont = Font::currentBodySize();
@@ -46,7 +47,7 @@ static void handleSettings() {
     D_WEB_SETTINGS_SUBTITLE_PREFIX FW_BUILD D_WEB_SETTINGS_SUBTITLE_SUFFIX,
     "<a href='/'>" D_WEB_SETTINGS_BACK_NAV "</a>"
   );
-  out.reserve(out.length() + 8000);
+  out.reserve(out.length() + 22000);
 
   out +=
     "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
@@ -148,6 +149,8 @@ static void handleSettings() {
       "<div class='actions'><button type='submit'>" D_WEB_SS_USE_MULTI "</button></div>"
       "</form></div>";
   }
+
+  out += screensaverEditorHtml(multiScreensaver, nextSlot >= 0);
 
   out += webPageEnd();
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");

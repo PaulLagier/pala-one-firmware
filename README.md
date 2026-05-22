@@ -7,15 +7,24 @@ The goal of the project was to create a simple, distraction-free reading device 
 
 ## Branch notes: `screensavers`
 
-This folder is **Paul’s dev baseline** plus **multi-screensaver rotation** (ported from `Pala_One_2_1_kevinst1r`). It does **not** include the in-browser screensaver editor (see **`screensaver_editor`**).
+This folder is **Paul’s dev baseline** plus **screensavers** (rotation + in-browser editor), ported from `Pala_One_2_1_kevinst1r`. Use this branch for all sleep-image work; the separate **`screensaver_editor`** folder is no longer maintained.
 
 **What it adds**
+
+**Rotation & files**
 
 - Up to **8** slot files: `/sleep-slot-0.bin` … `/sleep-slot-7.bin` (3904 bytes each, 250×122 XBM).
 - **Single** `/sleep.bin`: one frame or up to **16** concatenated frames (3904 bytes per frame), rotated via `cfg_sleep_ss_idx`.
 - Modes when multi enabled: **cycle** (persisted `/sleep-cycle.idx`) or **shuffle** (`cfg_ss_last_slot` + random).
-- Web settings: multi vs single, mode, thumbnails, per-slot delete, slot upload.
+- Web settings: multi vs single, mode, thumbnails, per-slot delete, raw `.bin` upload.
 - Sleep draw picks slot/frame before falling back to built-in icon.
+
+**In-browser editor** (bottom of Settings page)
+
+- Load any image; black tolerance, invert, zoom/pan (sliders + drag/pinch/scroll on preview).
+- Live 250×122 preview; packs **3904-byte** 1-bit XBM client-side.
+- **Upload edited image** → `/upload-sleep` (`/sleep.bin`) or `/upload-sleep-slot` (next free slot when multi mode is on).
+- Destination dropdown appears when **multiple screensavers** is enabled.
 
 **Key files**
 
@@ -24,23 +33,25 @@ This folder is **Paul’s dev baseline** plus **multi-screensaver rotation** (po
 | `Pala_One_2_1/src/ui/sleep_slots.cpp`, `.h` | Slot paths, cycle index, slot list |
 | `Pala_One_2_1/src/ui/sleep.cpp` | `drawSleepScreen()` rotation logic |
 | `Pala_One_2_1/src/web/upload.cpp` | `/upload-sleep`, `/upload-sleep-slot` validation |
-| `Pala_One_2_1/src/web/settings.cpp` | Multi/single UI, `/sleep-thumb`, remove slot |
+| `Pala_One_2_1/src/web/settings.cpp` | Multi/single UI, thumbs, editor embed |
+| `Pala_One_2_1/src/web/screensaver_editor.cpp`, `.h` | Editor HTML/CSS/JS |
 
 **Settings (NVS)**
 
 - `cfg_ss_multi`, `cfg_ss_mode` (0 = cycle, 1 = shuffle), `cfg_ss_last_slot`, `cfg_sleep_ss_idx`
 - Filesystem: `/sleep-cycle.idx`
+- Default body font: **8**; firmware version: **`2.1`**
 
 **How to test**
 
-1. **Settings** → enable multiple screensavers, upload `.bin` files to slots (or multi-frame `/sleep.bin`).
-2. Let device sleep repeatedly; confirm different images (cycle or shuffle per mode).
-3. Open `/sleep-thumb?slot=N` or `?single=1` in browser to preview.
+1. **Settings** → use **Screensaver editor** to crop/upload an image from your phone.
+2. Enable **multiple screensavers**, add slot `.bin` files or use editor destination **Add to rotation slot**.
+3. Let device sleep repeatedly; confirm rotation (cycle or shuffle).
+4. Thumbnails: `/sleep-thumb?slot=N` or `?single=1`.
 
 **Not in this branch**
 
-- Canvas editor (upload from phone with crop/zoom) — merge **`screensaver_editor`**.
-- Reader/font/web features from other branches.
+- Bionic, OpenDyslexic, dark mode, web Find/Jump, location retention — other branch folders.
 
 ## Contributing
 
