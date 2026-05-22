@@ -25,7 +25,7 @@
 
 // ── Board selection: uncomment the line that matches your hardware ──────────
 // #define BOARD_V1_1
-#define BOARD_V1_2
+// #define BOARD_V1_2
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Language selection: uncomment exactly one (Arduino IDE) ─────────────────
@@ -57,7 +57,7 @@
 #endif
 
 #if !defined(DISPLAY_V1_1) && !defined(DISPLAY_V1_2)
-  #error "Board not selected. Arduino IDE: uncomment BOARD_V1_1 or BOARD_V1_2 in Pala_One_2_1_kevinst1r.ino. PlatformIO: build with -e wireless-paper-v1_1 or -e wireless-paper-v1_2."
+  #error "Board not selected. Arduino IDE: uncomment BOARD_V1_1 or BOARD_V1_2 in Pala_One_2_1.ino. PlatformIO: build with -e wireless-paper-v1_1 or -e wireless-paper-v1_2."
 #endif
 
 #include <Arduino.h>
@@ -88,7 +88,6 @@
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
 #include "src/ui/screens/upload_screen.h"
-#include "src/ui/screensavers.h"
 #include "src/ui/sleep.h"
 #include "src/ui/text.h"
 #include "src/ui/toast.h"
@@ -146,7 +145,6 @@ void setup() {
   prefs.begin("ereader", false);
   Font::loadSettings();
   Sleep::loadSettings();
-  Screensavers::loadSettings();
   loadBooks();
   loadListItems();
   loadApps();

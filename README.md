@@ -5,17 +5,6 @@ Pala One — A tiny E-Ink reader project by Paul Lagier
 
 The goal of the project was to create a simple, distraction-free reading device that feels minimal, portable and easy to build while still looking and behaving more like a real product than a typical DIY electronics project.
 
-## Fork Information
-
-This repository is a community fork with the following additions beyond the base firmware:
-
-- Multiple screensavers (up to 8)
-- Screensaver editor built into firmware
-- Bionic reading and OpenDyslexia fonts
-- Dark Mode in WebUI
-- Reading location retention when changing font, size, or spacing
-- Find jumping in books
-
 ## Contributing
 
 If you improve the firmware, add features or fix bugs, feel free to open a pull request.

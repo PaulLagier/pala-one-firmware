@@ -6,38 +6,29 @@
 //  On-disk page-offset cache
 //
 //  File format (little-endian):
-//    uint32 magic            kPageCacheMagic
-//    uint32 layoutVersion    encodeLayoutVersion(layout)  — bodySize/lineGap/family/bionic
-//    uint32 fileSize         source-book size at save time
-//    uint16 count            number of entries that follow
-//    uint32 offsets[count]   byte offsets of pages 0..count-1
+//    uint32 magic           kPageCacheMagic
+//    uint16 layoutVersion   (bodySize << 8) | lineGap   — see encodeLayoutVersion
+//    uint32 fileSize        source-book size at save time
+//    uint16 count           number of entries that follow
+//    uint32 offsets[count]  byte offsets of pages 0..count-1
 //
-//  Magic history:
-//    0x50434F46 — original, no stamp
-//    0x50434F47 — added 16-bit `(bodySize, lineGap)` stamp
-//    0x50434F48 — widened stamp to 32 bits to also cover font family + bionic
-//
-//  Old files fail the magic check, get ignored, then overwritten on the next
-//  save. No migration code needed.
+//  Magic was bumped from 0x50434F46 -> 0x50434F47 when `layoutVersion` was
+//  added. Old files fail the magic check, get ignored, then overwritten.
 // ============================================================================
 
-static constexpr uint32_t kPageCacheMagic = 0x50434F48UL;
+static constexpr uint32_t kPageCacheMagic = 0x50434F47UL;
 
 static constexpr size_t kHeaderBytes =
     sizeof(uint32_t)   // magic
-  + sizeof(uint32_t)   // layoutVersion
+  + sizeof(uint16_t)   // layoutVersion
   + sizeof(uint32_t)   // fileSize
   + sizeof(uint16_t);  // count
 
 // Compact encoding of "what layout were the offsets in this file computed
-// under?" — bodySize ∈ {8,10,12,14}, lineGap ∈ [0,4], family ∈ {0,1},
-// bionic ∈ {0,1}. Each tucks into one byte, so a stride-by-256 packing is
-// unambiguous and trivially injective.
-static uint32_t encodeLayoutVersion(const PageCacheLayout& layout) {
-  return ((uint32_t)(layout.bodySize & 0xFF))
-       | ((uint32_t)(layout.lineGap  & 0xFF) << 8)
-       | ((uint32_t)(layout.family   & 0xFF) << 16)
-       | ((uint32_t)(layout.bionic   & 0xFF) << 24);
+// under?" — both inputs are tiny ints (bodySize ∈ {8,10,12,14}, lineGap
+// ∈ [0,4]) so a stride-by-256 packing is unambiguous and trivially injective.
+static uint16_t encodeLayoutVersion(int bodySize, int lineGap) {
+  return (uint16_t)((bodySize << 8) | (lineGap & 0xFF));
 }
 
 static String pageCachePathForBook(const String& path) {
@@ -50,13 +41,13 @@ static String pageCachePathForBook(const String& path) {
 // `outFile` / `outCount` are left untouched. Both load functions share this
 // gate; only the work that follows differs.
 static bool openAndValidateCache(const String& path, size_t expectedSize,
-                                 const PageCacheLayout& layout,
+                                 int bodySize, int lineGap,
                                  File& outFile, uint16_t& outCount) {
   File f = FS.open(pageCachePathForBook(path), "r");
   if (!f) return false;
 
   uint32_t magic = 0;
-  uint32_t layoutVersion = 0;
+  uint16_t layoutVersion = 0;
   uint32_t fileSize = 0;
   uint16_t count = 0;
 
@@ -66,7 +57,7 @@ static bool openAndValidateCache(const String& path, size_t expectedSize,
   if (f.read((uint8_t*)&count, sizeof(count)) != sizeof(count))                         { f.close(); return false; }
 
   if (magic != kPageCacheMagic
-      || layoutVersion != encodeLayoutVersion(layout)
+      || layoutVersion != encodeLayoutVersion(bodySize, lineGap)
       || fileSize != (uint32_t)expectedSize
       || count == 0) {
     f.close();
@@ -79,11 +70,11 @@ static bool openAndValidateCache(const String& path, size_t expectedSize,
 }
 
 bool loadPageOffsetCacheForBook(const String& path, size_t expectedSize,
-                                const PageCacheLayout& layout,
+                                int bodySize, int lineGap,
                                 PageOffsetTable& out) {
   File f;
   uint16_t count = 0;
-  if (!openAndValidateCache(path, expectedSize, layout, f, count)) return false;
+  if (!openAndValidateCache(path, expectedSize, bodySize, lineGap, f, count)) return false;
   if (count > MAX_PAGES) { f.close(); return false; }
 
   int loaded = 0;
@@ -101,7 +92,7 @@ bool loadPageOffsetCacheForBook(const String& path, size_t expectedSize,
 }
 
 void savePageOffsetCacheForBook(const String& path, size_t fileSize,
-                                const PageCacheLayout& layout,
+                                int bodySize, int lineGap,
                                 const PageOffsetTable& in) {
   if (in.count <= 1) return;
 
@@ -109,7 +100,7 @@ void savePageOffsetCacheForBook(const String& path, size_t fileSize,
   if (!f) return;
 
   uint32_t magic = kPageCacheMagic;
-  uint32_t layoutVersion = encodeLayoutVersion(layout);
+  uint16_t layoutVersion = encodeLayoutVersion(bodySize, lineGap);
   uint32_t size32 = (uint32_t)fileSize;
   uint16_t count16 = (uint16_t)min(in.count, MAX_PAGES);
 
@@ -122,13 +113,13 @@ void savePageOffsetCacheForBook(const String& path, size_t fileSize,
 }
 
 int loadOffsetForPageFromDisk(const String& path, size_t expectedSize,
-                              const PageCacheLayout& layout,
+                              int bodySize, int lineGap,
                               int maxPage, uint32_t* out) {
   if (maxPage < 0) return -1;
 
   File f;
   uint16_t count = 0;
-  if (!openAndValidateCache(path, expectedSize, layout, f, count)) return -1;
+  if (!openAndValidateCache(path, expectedSize, bodySize, lineGap, f, count)) return -1;
 
   int targetPage = (maxPage >= (int)count) ? (int)count - 1 : maxPage;
   size_t entryPos = kHeaderBytes + (size_t)targetPage * sizeof(uint32_t);

@@ -129,8 +129,6 @@ static void handleFiles() {
       out += "<div class='row' style='align-items:end;gap:10px'><div style='flex:1'><input type='text' name='page' value='" + String(savedPage) + "' inputmode='numeric' placeholder='" D_WEB_PAGE_PLACEHOLDER "'></div><div><button type='submit'>" D_WEB_JUMP_BUTTON "</button></div></div>";
       out += "<div class='muted'>" D_WEB_JUMP_HINT "<br><span class='muted'>" D_WEB_JUMP_HINT2 "</span></div></form>";
 
-      out += "<div class='actions small' style='margin-top:8px'><a class='btn secondary small' href='/read?id=" + String(i) + "' style='padding:6px 10px;font-size:13px'>" D_WEB_READ_AND_FIND_LINK "</a></div>";
-
       out += "<form method='POST' action='/move' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
       out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + "' placeholder='" D_WEB_MOVE_PLACEHOLDER "' maxlength='64'>";
