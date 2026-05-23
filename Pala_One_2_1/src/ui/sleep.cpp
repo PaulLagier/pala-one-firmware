@@ -10,20 +10,25 @@
 #include "src/state.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"          // injectButtonEdgeNow, markUserActivity
+#include "lora_driver.h"            // loraSleep
 #include "src/ui/pala_one_sleep_black_icon_v4.h"
 #include "src/ui/screen.h"
+#include "src/ui/screensavers.h"   // multi-slot rotation
 
 namespace Sleep {
 
-// Owned setting + NVS key — file-private.
-static int s_idleSecs = 120;
-static constexpr const char* kKeyIdleSecs = "cfg_sleep";
+// Owned settings + NVS keys — file-private.
+static int  s_idleSecs      = 120;
+static bool s_noScreensaver = false;
+static constexpr const char* kKeyIdleSecs      = "cfg_sleep";
+static constexpr const char* kKeyNoScreensaver = "cfg_noscr";
 
 void loadSettings() {
   int s = prefs.getInt(kKeyIdleSecs, 120);
   if (s < 10)   s = 10;
   if (s > 3600) s = 3600;
   s_idleSecs = s;
+  s_noScreensaver = prefs.getBool(kKeyNoScreensaver, false);
 }
 
 void setIdleTimeout(int secs) {
@@ -35,22 +40,18 @@ void setIdleTimeout(int secs) {
 
 int      idleTimeoutSecs() { return s_idleSecs; }
 uint32_t idleTimeoutMs()   { return (uint32_t)s_idleSecs * 1000UL; }
+bool     noScreensaver()   { return s_noScreensaver; }
 
-// Render the sleep image onto the e-ink before powering down. Tries the
-// user-uploaded /sleep.bin first; falls back to the built-in icon.
+void setNoScreensaver(bool val) {
+  s_noScreensaver = val;
+  prefs.putBool(kKeyNoScreensaver, val);
+}
+
 static void drawSleepScreen() {
   display.fastmodeOff();
   beginPageCanvas();
 
-  File sf = FS.open("/sleep.bin", "r");
-  if (sf && sf.size() >= 3904) {
-    static uint8_t sleepBuf[3904];
-    sf.read(sleepBuf, 3904);
-    sf.close();
-    gfx.fillScreen(1);
-    gfx.drawXBitmap(0, 0, sleepBuf, SCREEN_W, SCREEN_H, 0);
-  } else {
-    if (sf) sf.close();
+  if (!Screensavers::drawNext()) {
     gfx.fillScreen(1);
     gfx.drawXBitmap(0, 0, pala_one_sleep_black_icon_v4_bits, SCREEN_W, SCREEN_H, 0);
   }
@@ -67,8 +68,23 @@ void enter() {
 
   delay(50);
 
-  drawSleepScreen();
-  delay(600);
+  // No-screensaver mode only applies when coming from the reader. If the user
+  // fell asleep in the library or a menu, show the screensaver as normal.
+  // ReaderScreen::onSleep() has already called armResumeOnWake() above, which
+  // writes wake_path to NVS — so checking it here tells us reliably whether
+  // we were reading without coupling sleep.cpp to any screen type.
+  bool wasReading = (prefs.getString("wake_path", "").length() > 0);
+
+  if (s_noScreensaver && wasReading) {
+    // Full refresh of the last page so it sits cleanly on the panel.
+    // The reader's framebuffer content is still intact at this point.
+    display.fastmodeOff();
+    display.update();
+    delay(600);
+  } else {
+    drawSleepScreen();
+    delay(600);
+  }
 
   WiFi.softAPdisconnect(true);
   WiFi.disconnect(true, true);
@@ -77,6 +93,7 @@ void enter() {
   esp_wifi_stop();
   btStop();
 
+  loraSleep();   // put LoRa radio to sleep before Platform::prepareToSleep() claims the SPI pins
   Platform::prepareToSleep();
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
   // INPUT_PULLUP is in the digital IO domain, which powers down in deep sleep.

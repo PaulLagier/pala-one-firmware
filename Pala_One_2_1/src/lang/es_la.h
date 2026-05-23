@@ -256,6 +256,8 @@
 #define D_WEB_LINE_SPACING_2        "2 px &mdash; relajado"
 #define D_WEB_LINE_SPACING_3        "3 px &mdash; suelto"
 #define D_WEB_LINE_SPACING_HINT     "Un pequeño cambio aquí puede facilitar mucho la lectura."
+#define D_WEB_NO_SCREENSAVER_LABEL  "Modo sin salvapantallas"
+#define D_WEB_NO_SCREENSAVER_HINT   "El dispositivo sigue durmiéndose según el temporizador habitual y actualiza la pantalla antes de dormirse. Luego muestra la última página del libro y omite la actualización completa al despertar, para que puedas continuar leyendo con un solo clic sin la interrupción de un refresco de pantalla."
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Guardar ajustes"
 #define D_WEB_SETTINGS_NO_EXTRAS    "Sin archivos extra, scripts ni fuentes."
 #define D_WEB_SCREENSAVER_HEADING   "Salvapantallas"
@@ -346,5 +348,71 @@
 #define D_WEB_BMEXPORT_BOOKMARKS    "Marcapáginas: "
 #define D_WEB_BMEXPORT_BOOKMARK_LBL "Marcapáginas "
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "Sin marcapáginas para este libro"
+
+// ----------------------------------------------------------------------------
+//  Familia de fuente + lectura biónica + retención de posición
+//  (src/web/settings.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_READING_INTRO         "Cambiar la fuente, familia, espaciado de línea o modo biónico mantiene tu lugar en el libro actual &mdash; el dispositivo reorganiza las páginas alrededor del byte que estás leyendo y aterriza en la página que lo contiene."
+#define D_WEB_FONT_FAMILY_LABEL     "Familia de fuente"
+#define D_WEB_FONT_FAMILY_HELVETICA "Helvetica"
+#define D_WEB_FONT_FAMILY_DYSLEXIC  "OpenDyslexic"
+#define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic usa formas de letra más gruesas diseñadas para una lectura más fácil."
+#define D_WEB_BIONIC_LABEL          "Lectura biónica"
+#define D_WEB_BIONIC_HINT           "Resalta en negrita las primeras letras de cada palabra para anclar la mirada."
+#define D_WEB_SETTINGS_APPLY_HINT   "Los cambios se aplican en la próxima página renderizada."
+
+// ----------------------------------------------------------------------------
+//  Tarjeta de salvapantallas en la página de ajustes (src/web/settings.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_SCREENSAVER_CARD_DESC "Administra la imagen (o rotación de imágenes) que se muestra en la pantalla cuando el dispositivo se suspende."
+#define D_WEB_SCREENSAVER_EDITOR_LINK "Abrir editor de salvapantallas"
+#define D_WEB_SCREENSAVER_EDITOR_HINT "Incluye un editor de bitmap en el navegador y hasta 8 ranuras de rotación."
+
+// ----------------------------------------------------------------------------
+//  Editor y administrador multi-ranura de salvapantallas (src/web/screensavers.cpp).
+//  Las cadenas internas del editor en JS (estado / errores) aún NO están i18n'd.
+// ----------------------------------------------------------------------------
+#define D_WEB_SS_TITLE              "Salvapantallas"
+#define D_WEB_SS_SUBTITLE           "Imágenes de suspensión personalizadas, rotación multi-ranura y editor de bitmap en el firmware."
+#define D_WEB_SS_ROTATION_HEADING   "Rotación"
+#define D_WEB_SS_ROTATION_INTRO     "Elige qué se muestra en la pantalla cuando el dispositivo se suspende. Cycle recorre las ranuras pobladas en orden; Shuffle elige al azar sin repeticiones inmediatas."
+#define D_WEB_SS_MODE_LABEL         "Modo"
+#define D_WEB_SS_MODE_SINGLE        "Solo una imagen"
+#define D_WEB_SS_MODE_CYCLE         "Ciclar entre ranuras"
+#define D_WEB_SS_MODE_SHUFFLE       "Mezclar ranuras"
+#define D_WEB_SS_SLOTS_POPULATED    "Ranuras pobladas: "
+#define D_WEB_SS_SAVE_MODE          "Guardar modo"
+#define D_WEB_SS_SLOTS_HEADING      "Ranuras de rotación"
+#define D_WEB_SS_SLOT_LABEL         "Ranura"
+#define D_WEB_SS_SLOT_EMPTY         "vacía"
+#define D_WEB_SS_CONFIRM_DEL_SLOT   "¿Eliminar esta ranura?"
+#define D_WEB_SS_SINGLE_HEADING     "Salvapantallas único"
+#define D_WEB_SS_SINGLE_ALT         "Salvapantallas único"
+#define D_WEB_SS_CONFIRM_DEL_SINGLE "¿Eliminar el salvapantallas único?"
+#define D_WEB_SS_NO_SINGLE          "Sin salvapantallas único cargado."
+#define D_WEB_SS_EDITOR_HEADING     "Editor"
+#define D_WEB_SS_EDITOR_INTRO       "Arrastra una imagen al editor y súbela a una ranura de rotación o como el salvapantallas único heredado. Todas las imágenes se renderizan en 250&times;122 1 bit (3904 bytes)."
+#define D_WEB_SS_SOURCE_IMAGE       "Imagen fuente"
+#define D_WEB_SS_TOLERANCE          "Tolerancia de negro"
+#define D_WEB_SS_INVERT             "Invertir blanco/negro"
+#define D_WEB_SS_PRECISE_CONTROL    "Control preciso"
+#define D_WEB_SS_ZOOM               "Zoom"
+#define D_WEB_SS_MOVE_X             "Mover X"
+#define D_WEB_SS_MOVE_Y             "Mover Y"
+#define D_WEB_SS_PREVIEW_LABEL      "Vista previa (arrastra para mover, pellizca o usa la rueda para zoom)"
+#define D_WEB_SS_RESET_FIT          "Reiniciar ajuste"
+#define D_WEB_SS_NO_IMAGE           "Sin imagen cargada"
+#define D_WEB_SS_SAVE_TO            "Guardar en"
+#define D_WEB_SS_DST_SINGLE         "Salvapantallas único (/sleep.bin)"
+#define D_WEB_SS_DST_AUTO_PREFIX    "Próxima ranura libre (ranura "
+#define D_WEB_SS_DST_AUTO_SUFFIX    ")"
+#define D_WEB_SS_DST_FULL           "(Todas las ranuras llenas)"
+#define D_WEB_SS_DST_SLOT_PREFIX    "Ranura de rotación "
+#define D_WEB_SS_DST_OVERWRITE      " (sobrescribir)"
+#define D_WEB_SS_UPLOAD_EDITED      "Subir imagen editada"
+#define D_WEB_SS_DOWNLOAD_ARIA      "Descargar salvapantallas"
+#define D_WEB_SS_DELETE_ARIA        "Eliminar salvapantallas"
+#define D_WEB_SS_ROTATE             "Girar 90\u00b0"
 
 #endif  // PALA_LANG_ES_LA_H

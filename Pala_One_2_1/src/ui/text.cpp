@@ -3,12 +3,14 @@
 #include "src/hal/display.h"            // u8g2
 #include "src/pure/bookmarks_codec.h"   // kOffsetUnset
 #include "src/storage/page_cache.h"     // on-disk page-offset cache
-#include "src/ui/font.h"                // Font::useBody / bodyLayout / current{BodySize,LineGap}
+#include "src/ui/font.h"                // Font::useBody / bodyLayout / measureBionicLine
 
-// Measure-width adapter so `paginatePage` can ask the u8g2 instance about
-// rendered widths under the current font.
-static int u8g2Measure(const char* s) {
-  return u8g2.getUTF8Width(s);
+// Measure-width adapter for the paginator. Routes through Font::measureBionicLine
+// so the bionic 1-px-per-split-word adjustment is folded into the same width
+// budget the paginator wraps against — without bionic this collapses to a
+// plain getUTF8Width under the Body face.
+static int bodyMeasure(const char* s) {
+  return Font::measureBionicLine(s);
 }
 
 // ============================================================================
@@ -25,12 +27,13 @@ uint32_t drawPageAt(File& f, uint32_t startPos) {
 
   int cursorY = TOP_PAD + m.ascent;
   auto onLine = [&](const char* buf, size_t /*len*/) {
-    u8g2.setCursor(MARGIN_X, cursorY);
-    u8g2.print(buf);
+    // drawBionicLine sets the active u8g2 font back to Body before returning,
+    // so the next line measurement (via bodyMeasure) is consistent.
+    Font::drawBionicLine(MARGIN_X, cursorY, buf);
     cursorY += m.lineH;
   };
 
-  return paginatePage(stream, startPos, m, u8g2Measure, onLine);
+  return paginatePage(stream, startPos, m, bodyMeasure, onLine);
 }
 
 uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
@@ -47,14 +50,14 @@ uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
     out.concat('\n');
   };
 
-  return paginatePage(stream, startPos, m, u8g2Measure, onLine);
+  return paginatePage(stream, startPos, m, bodyMeasure, onLine);
 }
 
 uint32_t nextPageOffset(File& f, uint32_t startPos) {
   FileReadStream stream(f);
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
-  return paginatePage(stream, startPos, m, u8g2Measure, nullptr);
+  return paginatePage(stream, startPos, m, bodyMeasure, nullptr);
 }
 
 // ============================================================================
@@ -68,7 +71,7 @@ uint32_t pageOffsetForPage(File& f, const String& path, int page) {
   // lookups (web bookmark resolve, page-text export) ride along.
   uint32_t off = 0;
   int startPage = loadOffsetForPageFromDisk(path, f.size(),
-                                            Font::currentBodySize(), Font::currentLineGap(),
+                                            Font::layoutForCache(),
                                             page, &off);
   if (startPage < 0) startPage = 0;
 

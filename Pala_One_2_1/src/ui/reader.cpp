@@ -167,7 +167,7 @@ bool openBookByIndex(int idx) {
   g_bookview.pages.offsets[0] = 0;
   g_bookview.pages.eofReached = false;
   loadPageOffsetCacheForBook(path, g_bookview.book.size(),
-                             Font::currentBodySize(), Font::currentLineGap(),
+                             Font::layoutForCache(),
                              g_bookview.pages);
 
   // Resolve the reading position. The byte offset (`_off`) is canonical and
@@ -386,6 +386,6 @@ void persistReaderState() {
   if (!g_bookview.book.isOpen()) return;
   saveProgress();
   savePageOffsetCacheForBook(g_bookview.book.path(), g_bookview.book.size(),
-                             Font::currentBodySize(), Font::currentLineGap(),
+                             Font::layoutForCache(),
                              g_bookview.pages);
 }

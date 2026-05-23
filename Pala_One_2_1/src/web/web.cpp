@@ -6,6 +6,7 @@
 #include "src/web/files.h"
 #include "src/web/list.h"
 #include "src/web/reset.h"
+#include "src/web/screensavers.h"
 #include "src/web/settings.h"
 #include "src/web/upload.h"
 
@@ -21,7 +22,8 @@ void registerWebRoutes() {
   registerBookmarksRoutes();   // /bookmarks, /viewbm, /delbm, /exportbm
   registerListRoutes();        // /list, /list-clear-done
   registerSettingsRoutes();    // /settings, /del-sleep
-  registerUploadRoutes();      // /upload, /upload-sleep
+  registerScreensaverRoutes(); // /screensavers and subroutes
+  registerUploadRoutes();      // /upload, /upload-sleep (legacy)
   registerAppUploadRoutes();   // /upload-app
   registerResetRoutes();       // /reset
 }

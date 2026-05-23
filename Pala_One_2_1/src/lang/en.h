@@ -260,6 +260,8 @@
 #define D_WEB_LINE_SPACING_2        "2 px &mdash; relaxed"
 #define D_WEB_LINE_SPACING_3        "3 px &mdash; loose"
 #define D_WEB_LINE_SPACING_HINT     "A small change here can make text much easier to scan."
+#define D_WEB_NO_SCREENSAVER_LABEL  "No-screensaver mode"
+#define D_WEB_NO_SCREENSAVER_HINT   "Device still sleeps on the normal timer and refreshes the screen before going to sleep. Then it shows the last page of the book, and skips a full refresh on wake, so you can continue reading with a single click of the button without the interruption of a display refresh."
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Save settings"
 #define D_WEB_SETTINGS_NO_EXTRAS    "No extra files, scripts, or fonts."
 #define D_WEB_SCREENSAVER_HEADING   "Screensaver"
@@ -351,5 +353,74 @@
 #define D_WEB_BMEXPORT_BOOKMARKS    "Bookmarks: "
 #define D_WEB_BMEXPORT_BOOKMARK_LBL "Bookmark "
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "No bookmarks for this book"
+
+// ----------------------------------------------------------------------------
+//  Font family + bionic reading + reading-position retention
+//  (src/web/settings.cpp). Layout-affecting settings; changes trigger the
+//  reader to remap its byte-offset cursor under the new layout.
+// ----------------------------------------------------------------------------
+#define D_WEB_READING_INTRO         "Changing the font, family, line spacing, or bionic mode keeps your place in the current book &mdash; the device re-flows pages around the byte you're reading and lands on the page that contains it."
+#define D_WEB_FONT_FAMILY_LABEL     "Font family"
+#define D_WEB_FONT_FAMILY_HELVETICA "Helvetica"
+#define D_WEB_FONT_FAMILY_DYSLEXIC  "OpenDyslexic"
+#define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic uses heavier letter shapes designed for easier scanning."
+#define D_WEB_BIONIC_LABEL          "Bionic reading"
+#define D_WEB_BIONIC_HINT           "Bolds the leading characters of each word to help your eyes anchor."
+#define D_WEB_SETTINGS_APPLY_HINT   "Changes apply to the next page render."
+
+// ----------------------------------------------------------------------------
+//  Screensaver settings card link (src/web/settings.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_SCREENSAVER_CARD_DESC "Manage the image (or multi-image rotation) shown on the e-ink when the device sleeps."
+#define D_WEB_SCREENSAVER_EDITOR_LINK "Open screensaver editor"
+#define D_WEB_SCREENSAVER_EDITOR_HINT "Includes an in-browser bitmap editor and up to 8 rotation slots."
+
+// ----------------------------------------------------------------------------
+//  Screensaver editor + multi-slot manager (src/web/screensavers.cpp).
+//  JS-internal status / error strings emitted by the editor are NOT yet i18n'd;
+//  they live inside the PROGMEM script block. Add D_WEB_SS_JS_* macros and a
+//  data-attribute pass-through if/when that's wanted.
+// ----------------------------------------------------------------------------
+#define D_WEB_SS_TITLE              "Screensavers"
+#define D_WEB_SS_SUBTITLE           "Custom sleep images, multi-slot rotation, and in-firmware bitmap editor."
+#define D_WEB_SS_ROTATION_HEADING   "Rotation"
+#define D_WEB_SS_ROTATION_INTRO     "Pick what shows on the e-ink each time the device sleeps. Cycle walks the populated slots in order; Shuffle picks at random without immediate repeats."
+#define D_WEB_SS_MODE_LABEL         "Mode"
+#define D_WEB_SS_MODE_SINGLE        "Single image only"
+#define D_WEB_SS_MODE_CYCLE         "Cycle through slots"
+#define D_WEB_SS_MODE_SHUFFLE       "Shuffle slots"
+#define D_WEB_SS_SLOTS_POPULATED    "Populated slots: "
+#define D_WEB_SS_SAVE_MODE          "Save mode"
+#define D_WEB_SS_SLOTS_HEADING      "Rotation slots"
+#define D_WEB_SS_SLOT_LABEL         "Slot"
+#define D_WEB_SS_SLOT_EMPTY         "empty"
+#define D_WEB_SS_CONFIRM_DEL_SLOT   "Delete this slot?"
+#define D_WEB_SS_SINGLE_HEADING     "Single screensaver"
+#define D_WEB_SS_SINGLE_ALT         "Single screensaver"
+#define D_WEB_SS_CONFIRM_DEL_SINGLE "Delete the single screensaver?"
+#define D_WEB_SS_NO_SINGLE          "No single screensaver uploaded. Upload via Editor."
+#define D_WEB_SS_EDITOR_HEADING     "Editor"
+#define D_WEB_SS_EDITOR_INTRO       "Drop an image into the editor, then upload it to a rotation slot or as the single legacy screensaver. All images render as 250&times;122 1-bit (3904 bytes)."
+#define D_WEB_SS_SOURCE_IMAGE       "Source image"
+#define D_WEB_SS_TOLERANCE          "Black tolerance"
+#define D_WEB_SS_INVERT             "Invert black/white"
+#define D_WEB_SS_PRECISE_CONTROL    "Precise control"
+#define D_WEB_SS_ZOOM               "Zoom"
+#define D_WEB_SS_MOVE_X             "Move X"
+#define D_WEB_SS_MOVE_Y             "Move Y"
+#define D_WEB_SS_PREVIEW_LABEL      "Preview (drag to move, pinch or scroll to zoom)"
+#define D_WEB_SS_RESET_FIT          "Reset fit"
+#define D_WEB_SS_NO_IMAGE           "No image loaded"
+#define D_WEB_SS_SAVE_TO            "Save to"
+#define D_WEB_SS_DST_SINGLE         "Single screensaver (/sleep.bin)"
+#define D_WEB_SS_DST_AUTO_PREFIX    "Next free rotation slot (slot "
+#define D_WEB_SS_DST_AUTO_SUFFIX    ")"
+#define D_WEB_SS_DST_FULL           "(All rotation slots full)"
+#define D_WEB_SS_DST_SLOT_PREFIX    "Rotation slot "
+#define D_WEB_SS_DST_OVERWRITE      " (overwrite)"
+#define D_WEB_SS_UPLOAD_EDITED      "Upload edited image"
+#define D_WEB_SS_DOWNLOAD_ARIA      "Download screensaver"
+#define D_WEB_SS_DELETE_ARIA        "Delete screensaver"
+#define D_WEB_SS_ROTATE             "Rotate 90\u00b0"
 
 #endif  // PALA_LANG_EN_H

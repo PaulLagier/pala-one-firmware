@@ -13,6 +13,7 @@ extern "C" uint64_t esp_rtc_get_time_us(void);
 #include "src/hal/app_loader.h"       // loadAndRunApp, LoadResult
 #include "src/hal/display.h"          // u8g2, display
 #include "src/hal/input.h"            // g_btns, waitForNextEvent, ButtonEvent
+#include "lora_driver.h"          // loraInit/Sleep/Ready/Recv/Send/NodeId
 #include "pala_api.h"             // PalaAPI
 #include "pala_app.h"             // PALA_CLICK/DOUBLE/TRIPLE/LONG
 #include "src/state.h"                // FS, prefs
@@ -133,6 +134,20 @@ static int api_snprintf_wrap(char* buf, int len, const char* fmt, ...) {
   return r;
 }
 
+// ----------------------------------------------------------------------------
+//  LoRa wrappers (PalaAPI v4)
+// ----------------------------------------------------------------------------
+
+static int api_loraInit(float freq_mhz, float bw_khz, int sf, int cr,
+                        uint8_t sync_word, int tx_power, int preamble, float tcxo_v) {
+  return loraInit(freq_mhz, bw_khz, sf, cr, sync_word, tx_power, preamble, tcxo_v);
+}
+static void     api_loraSleep()                            { loraSleep(); }
+static int      api_loraReady()                            { return loraReady() ? 1 : 0; }
+static int      api_loraRecv(uint8_t* buf, int maxlen)     { return loraRecv(buf, maxlen); }
+static void     api_loraSend(const uint8_t* buf, int len)  { loraSend(buf, len); }
+static uint32_t api_loraNodeId()                           { return loraNodeId(); }
+
 // Per-app key-value storage: each app gets its own `/apps/{key}.dat` file.
 // Key namespacing across apps is the app author's responsibility (the v3
 // contract didn't sandbox by binary name; see docs/APPS_LAYER.md §9).
@@ -181,6 +196,12 @@ void initPalaAPI() {
   s_palaAPI.storageRead       = api_storageRead;
   s_palaAPI.storageWrite      = api_storageWrite;
   s_palaAPI.rtcSeconds        = api_rtcSeconds;
+  s_palaAPI.loraInit          = api_loraInit;
+  s_palaAPI.loraSleep         = api_loraSleep;
+  s_palaAPI.loraReady         = api_loraReady;
+  s_palaAPI.loraRecv          = api_loraRecv;
+  s_palaAPI.loraSend          = api_loraSend;
+  s_palaAPI.loraNodeId        = api_loraNodeId;
 }
 
 // Paint a two-line error toast for a failed load. Lives here (not in
