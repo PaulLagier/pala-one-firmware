@@ -41,7 +41,7 @@ static void applyBodySize(int sz) {
     // Samim 12: Persian/Arabic + Latin/ASCII. No bold variant in U8g2 —
     // s_bold aliases s_body (bold emphasis has no visual effect at this size).
     // Uses _t_all encoding (all Unicode, transparent) rather than _te.
-    case 9:  s_body = u8g2_font_samim_12_t_all; s_bold = u8g2_font_samim_12_t_all; break;
+    case 9:  s_body = u8g2_font_samim_12_t_all; s_bold = u8g2_font_helvB08_te;     break;
     case 10: s_body = u8g2_font_helvR10_te;     s_bold = u8g2_font_helvB10_te;     break;
     case 12: s_body = u8g2_font_helvR12_te;     s_bold = u8g2_font_helvB12_te;     break;
     case 14: s_body = u8g2_font_helvR14_te;     s_bold = u8g2_font_helvB14_te;     break;
@@ -70,12 +70,16 @@ void useAppLarge() { u8g2.setFont(u8g2_font_helvB14_te); }
 const LayoutMetrics& bodyLayout() {
   if (!s_layoutValid) {
     useBody();
-    // Samim 12 (size 9) reports an ascent 1 px taller than its visual cap
-    // height warrants relative to the Helvetica faces. Subtract 1 so a
-    // comparable number of lines fit on screen.
-    s_layout.ascent  = u8g2.getFontAscent() - (s_size == 9 ? 1 : 0);
+    s_layout.ascent  = u8g2.getFontAscent();
     s_layout.descent = u8g2.getFontDescent();
-    s_layout.lineH   = (s_layout.ascent - s_layout.descent) + s_lineGap;
+    // Samim 12 (size 9) reports an ascent 1 px taller than its visual cap
+    // height warrants relative to the Helvetica faces. Subtract 1 from the
+    // line-height calculation so a comparable number of lines fit on screen,
+    // but keep the full ascent for baseline placement — subtracting from
+    // ascent itself shifts the first line's baseline 1 px too high, clipping
+    // the top row of pixels against the panel edge.
+    int ascentForLineH = s_layout.ascent - (s_size == 9 ? 1 : 0);
+    s_layout.lineH   = (ascentForLineH - s_layout.descent) + s_lineGap;
 
     int w = SCREEN_W - (MARGIN_X * 2);
     if (w < 50) w = 50;

@@ -76,9 +76,12 @@ void drawMenuRow(int yBaseline, const String& label, bool selected, int extraInd
 }
 
 int menuLineH() {
-  int ascent = u8g2.getFontAscent() - (Font::currentBodySize() == 9 ? 1 : 0);
+  int ascent  = u8g2.getFontAscent();
   int descent = u8g2.getFontDescent();
-  return (ascent - descent) + Font::currentLineGap() + 1;
+  // Same Samim correction as bodyLayout(): subtract 1 from the value used
+  // for line-height only, not from ascent itself.
+  int ascentForLineH = ascent - (Font::currentBodySize() == 9 ? 1 : 0);
+  return (ascentForLineH - descent) + Font::currentLineGap() + 1;
 }
 
 void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
