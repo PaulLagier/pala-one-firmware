@@ -128,8 +128,19 @@ void setup() {
   updateBatteryCached(true);
 #endif
 
+  // Load Sleep settings early — before display.clear() — so the no-screensaver
+  // flag is available to gate the full-refresh boot clear below.
+  prefs.begin("ereader", false);
+  Sleep::loadSettings();
+
+  // In no-screensaver mode, skip the full-refresh clear on deep-sleep wake so
+  // the last page is not blanked before the fast-mode redraw. On a fresh boot
+  // (or normal screensaver mode) always clear to white first.
+  bool wokeFromSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0);
   display.fastmodeOff();
-  display.clear();
+  if (!wokeFromSleep || !Sleep::noScreensaver()) {
+    display.clear();
+  }
 
   if (!fsBegin()) {
     drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
@@ -142,9 +153,8 @@ void setup() {
     snprintf(AP_SSID, sizeof(AP_SSID), "PALA-%06llX", chipId & 0xFFFFFFULL);
   }
 
-  prefs.begin("ereader", false);
   Font::loadSettings();
-  Sleep::loadSettings();
+  // Sleep::loadSettings() already called above.
   loadBooks();
   loadListItems();
   loadApps();
