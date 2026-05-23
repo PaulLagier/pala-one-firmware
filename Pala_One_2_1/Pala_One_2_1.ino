@@ -25,7 +25,7 @@
 
 // ── Board selection: uncomment the line that matches your hardware ──────────
 // #define BOARD_V1_1
-#define BOARD_V1_2
+// #define BOARD_V1_2
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Language selection: uncomment exactly one (Arduino IDE) ─────────────────
