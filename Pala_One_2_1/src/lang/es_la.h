@@ -238,6 +238,7 @@
 #define D_WEB_READING_HEADING       "Lectura"
 #define D_WEB_FONT_SIZE_LABEL       "Tamaño de fuente"
 #define D_WEB_FONT_SIZE_8           "8px &mdash; diminuto"
+#define D_WEB_FONT_SIZE_9           "9px &mdash; Samim"
 #define D_WEB_FONT_SIZE_10          "10px &mdash; pequeño"
 #define D_WEB_FONT_SIZE_12          "12px &mdash; mediano"
 #define D_WEB_FONT_SIZE_14          "14px &mdash; grande"

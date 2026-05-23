@@ -242,6 +242,7 @@
 #define D_WEB_READING_HEADING       "Reading"
 #define D_WEB_FONT_SIZE_LABEL       "Font size"
 #define D_WEB_FONT_SIZE_8           "8px &mdash; tiny"
+#define D_WEB_FONT_SIZE_9           "9px &mdash; Samim"
 #define D_WEB_FONT_SIZE_10          "10px &mdash; small"
 #define D_WEB_FONT_SIZE_12          "12px &mdash; medium"
 #define D_WEB_FONT_SIZE_14          "14px &mdash; large"

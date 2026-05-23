@@ -9,6 +9,7 @@
 static void handleSettings() {
   int curFont = Font::currentBodySize();
   String sel8  = (curFont == 8)  ? " selected" : "";
+  String sel9  = (curFont == 9)  ? " selected" : "";
   String sel10 = (curFont == 10) ? " selected" : "";
   String sel12 = (curFont == 12) ? " selected" : "";
   String sel14 = (curFont == 14) ? " selected" : "";
@@ -42,6 +43,7 @@ static void handleSettings() {
     "<div class='grid cols-2'>"
     "<div><label for='font'>" D_WEB_FONT_SIZE_LABEL "</label><select id='font' name='font'>"
     "<option value='8'";  out += sel8;  out += ">" D_WEB_FONT_SIZE_8  "</option>"
+    "<option value='9'";  out += sel9;  out += ">" D_WEB_FONT_SIZE_9  "</option>"
     "<option value='10'"; out += sel10; out += ">" D_WEB_FONT_SIZE_10 "</option>"
     "<option value='12'"; out += sel12; out += ">" D_WEB_FONT_SIZE_12 "</option>"
     "<option value='14'"; out += sel14; out += ">" D_WEB_FONT_SIZE_14 "</option>"

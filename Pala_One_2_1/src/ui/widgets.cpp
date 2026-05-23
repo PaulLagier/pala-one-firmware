@@ -76,7 +76,7 @@ void drawMenuRow(int yBaseline, const String& label, bool selected, int extraInd
 }
 
 int menuLineH() {
-  int ascent = u8g2.getFontAscent();
+  int ascent = u8g2.getFontAscent() - (Font::currentBodySize() == 9 ? 1 : 0);
   int descent = u8g2.getFontDescent();
   return (ascent - descent) + Font::currentLineGap() + 1;
 }
