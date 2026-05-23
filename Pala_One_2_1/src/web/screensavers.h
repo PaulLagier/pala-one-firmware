@@ -6,7 +6,7 @@
 //   GET  /screensavers              editor page + slot grid + mode picker
 //   POST /screensavers/upload       multipart upload, query `slot=N` or `single=1`
 //   GET  /screensavers/thumb        ?slot=N or ?single=1 — returns a BMP
-//   GET  /screensavers/download     ?slot=N or ?single=1 — raw 3904-byte .bin
+//   GET  /screensavers/download     ?slot=N or ?single=1 — raw .bin download
 //   POST /screensavers/delete       slot=N or single=1 (removes legacy /sleep.bin)
 //   POST /screensavers/mode         mode=single|cycle|shuffle
 //

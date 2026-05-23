@@ -5,31 +5,6 @@ Pala One — A tiny E-Ink reader project by Paul Lagier
 
 The goal of the project was to create a simple, distraction-free reading device that feels minimal, portable and easy to build while still looking and behaving more like a real product than a typical DIY electronics project.
 
-## Branch notes: `feature_clone`
-
-This folder is **Paul’s dev baseline** plus **screensaver sharing UI** (download/delete icon buttons, editor rotate).
-
-**What it adds**
-
-- **Download** — small icon next to each populated slot (and the legacy single image) fetches the raw 3904-byte `.bin` via `GET /screensavers/download` for sharing between devices.
-- **Delete** — trash icon (not text) with confirm dialog; uses theme CSS variables so icons read clearly in light and dark mode.
-- **Rotate** — **Rotate 90°** control in the in-browser editor; preview and packed upload respect rotation.
-
-**Key files**
-
-| Path | Role |
-|------|------|
-| `Pala_One_2_1/src/web/screensavers.cpp` | Download route, icon slot actions, editor rotate JS |
-| `Pala_One_2_1/src/lang/en.h`, `es_la.h` | `D_WEB_SS_DOWNLOAD_ARIA`, `D_WEB_SS_DELETE_ARIA`, `D_WEB_SS_ROTATE` |
-
-**How to test**
-
-1. Flash firmware from this folder (`Branches/feature_clone`).
-2. Open **Settings → Screensaver editor** (`/screensavers`).
-3. Upload or pick a slot image; confirm **download** saves a `.bin` and **delete** removes it after confirm.
-4. In the editor, load a photo, use **Rotate 90°**, upload, and verify the device sleep image matches.
-5. Toggle **Dark mode** in the web header; confirm download/delete icons remain visible on slot cards.
-
 ## Contributing
 
 If you improve the firmware, add features or fix bugs, feel free to open a pull request.

@@ -123,8 +123,7 @@ static void handleSleepThumb() {
 }
 
 // ============================================================================
-//  GET /screensavers/download — stream the raw 3904-byte XBM bin so users can
-//  share screensavers between devices.
+//  GET /screensavers/download — serve raw 3904-byte .bin for sharing.
 // ============================================================================
 static void handleSleepDownload() {
   uint8_t buf[Screensavers::SCREENSAVER_BYTES];
@@ -141,8 +140,10 @@ static void handleSleepDownload() {
     filename = "sleep.bin";
   } else if (server.hasArg("slot")) {
     int slot = server.arg("slot").toInt();
-    gotBytes = Screensavers::readSlot(slot, buf);
-    filename = "screensaver-" + String(slot) + ".bin";
+    if (slot >= 0 && slot < Screensavers::MAX_SLOTS) {
+      gotBytes = Screensavers::readSlot(slot, buf);
+      filename = "screensaver-slot-" + String(slot) + ".bin";
+    }
   }
 
   if (!gotBytes) {
@@ -150,11 +151,11 @@ static void handleSleepDownload() {
     return;
   }
 
+  server.setContentLength(Screensavers::SCREENSAVER_BYTES);
   server.sendHeader(
     "Content-Disposition",
     String("attachment; filename=\"") + filename + "\""
   );
-  server.setContentLength(Screensavers::SCREENSAVER_BYTES);
   server.send(200, "application/octet-stream", "");
   WiFiClient client = server.client();
   client.write(buf, Screensavers::SCREENSAVER_BYTES);
@@ -301,49 +302,25 @@ static const char kEditorStyle[] PROGMEM =
   ".ss-slot img{width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff;image-rendering:pixelated}"
   ".ss-slot .ss-slot-empty{width:100%;aspect-ratio:250/122;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);border-radius:6px;color:var(--muted);font-size:12px}"
   ".ss-slot-actions{display:flex;gap:6px;width:100%;justify-content:center;align-items:center}"
-  ".ss-icon-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border-radius:8px;background:var(--btn-sec-bg);color:var(--btn-sec-fg);border:1px solid var(--btn-sec-bd);text-decoration:none;cursor:pointer;flex-shrink:0}"
-  ".ss-icon-btn:hover{opacity:.88}"
-  ".ss-icon-btn svg{width:16px;height:16px;display:block}"
-  ".ss-preview-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}"
+  ".btn-icon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border-radius:8px;background:var(--btn-sec-bg);color:var(--btn-sec-fg);border:1px solid var(--btn-sec-bd);text-decoration:none;cursor:pointer;font:inherit;line-height:0}"
+  ".btn-icon svg{width:17px;height:17px;display:block}"
+  ".btn-icon svg path{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}"
+  ".btn-icon.danger{color:var(--danger);border-color:var(--danger)}"
+  ".btn-icon:hover{filter:brightness(0.96)}"
+  "html[data-theme=dark] .btn-icon:hover{filter:brightness(1.08)}"
+  ".ss-editor-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}"
   "@media(max-width:560px){.ss-grid{grid-template-columns:1fr}}"
   "</style>";
 
-static const char kSvgDownload[] PROGMEM =
-  "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 4v9m0 0l3.5-3.5M12 13l-3.5-3.5M5 19h14' "
-  "fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>";
-
-static const char kSvgTrash[] PROGMEM =
-  "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13' "
-  "fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>";
-
-// Download + delete icon buttons for a populated slot or the legacy single image.
-static String slotActionsHtml(bool single, int slot) {
-  String dl = single ? "/screensavers/download?single=1"
-                     : "/screensavers/download?slot=" + String(slot);
-  String fn = single ? "sleep.bin" : ("screensaver-" + String(slot) + ".bin");
-  const char* confirm = single ? D_WEB_SS_CONFIRM_DEL_SINGLE : D_WEB_SS_CONFIRM_DEL_SLOT;
-
-  String out;
-  out.reserve(420);
-  out += "<div class='ss-slot-actions'>";
-  out += "<a class='ss-icon-btn' href='" + dl + "' download='" + fn + "' ";
-  out += "aria-label='" D_WEB_SS_DOWNLOAD_ARIA "' title='" D_WEB_SS_DOWNLOAD_ARIA "'>";
-  out += FPSTR(kSvgDownload);
-  out += "</a>";
-  out += "<form method='POST' action='/screensavers/delete' style='margin:0'>";
-  if (single) {
-    out += "<input type='hidden' name='single' value='1'>";
-  } else {
-    out += "<input type='hidden' name='slot' value='" + String(slot) + "'>";
-  }
-  out += "<button type='submit' class='ss-icon-btn' aria-label='" D_WEB_SS_DELETE_ARIA "' ";
-  out += "title='" D_WEB_SS_DELETE_ARIA "' onclick=\"return confirm('";
-  out += confirm;
-  out += "')\">";
-  out += FPSTR(kSvgTrash);
-  out += "</button></form></div>";
-  return out;
-}
+static const char kIconDownload[] PROGMEM =
+  "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 4v10m0 0l4-4m-4 4l-4-4M5 20h14'/></svg>";
+static const char kIconTrash[] PROGMEM =
+  "<svg viewBox='0 0 24 24' aria-hidden='true'>"
+  "<path d='M4 7h16'/>"
+  "<path d='M8 7V5h8v2'/>"
+  "<path d='M7 7v12h10V7'/>"
+  "<path d='M10 11v5M14 11v5'/>"
+  "</svg>";
 
 static const char kEditorScript[] PROGMEM =
   "<script>(function(){"
@@ -371,16 +348,16 @@ static const char kEditorScript[] PROGMEM =
   "var ctx=canvas.getContext('2d',{willReadFrequently:true});"
   "var work=document.createElement('canvas');work.width=W;work.height=H;"
   "var workCtx=work.getContext('2d',{willReadFrequently:true});"
-  "var sourceImage=null,rotation=0;"
+  "var sourceImage=null;"
   "var isDragging=false,dragStartX=0,dragStartY=0,dragPanX=0,dragPanY=0;"
   "var pointers={};"
   "var pinch={active:false,startDist:0,startZoom:100,startPanX:0,startPanY:0,startMidX:0,startMidY:0};"
   "function clamp(v,a,b){return v<a?a:(v>b?b:v)}"
   "function thr(o){o=clamp(parseInt(o||0,10)||0,-100,100);return clamp(128+Math.round(o*(255-128)/100),0,255)}"
   "function setLbls(){var t=parseInt(tol.value,10)||0;tolLbl.textContent=(t>0?'+':'')+t+'%';zoomLbl.textContent=zoom.value+'%';panXLbl.textContent=panX.value+' px';panYLbl.textContent=panY.value+' px';}"
-  "function effDims(){if(!sourceImage)return {w:1,h:1};var r=rotation%4;return (r===1||r===3)?{w:sourceImage.height,h:sourceImage.width}:{w:sourceImage.width,h:sourceImage.height};}"
   "function fit(){if(!sourceImage)return;zoom.value='100';panX.value='0';panY.value='0';setLbls();render();}"
-  "function drawToWork(){workCtx.fillStyle='#fff';workCtx.fillRect(0,0,W,H);if(!sourceImage)return;var ed=effDims();var base=Math.min(W/ed.w,H/ed.h);var s=base*((parseInt(zoom.value,10)||100)/100);if(!isFinite(s)||s<=0)s=base;var dw=Math.max(1,Math.round(sourceImage.width*s));var dh=Math.max(1,Math.round(sourceImage.height*s));var px=parseInt(panX.value,10)||0,py=parseInt(panY.value,10)||0;workCtx.save();workCtx.translate(W/2+px,H/2+py);workCtx.rotate(rotation*Math.PI/2);workCtx.drawImage(sourceImage,-dw/2,-dh/2,dw,dh);workCtx.restore();}"
+  "function rotate90(){if(!sourceImage)return;var w=sourceImage.width,h=sourceImage.height,rc=document.createElement('canvas');rc.width=h;rc.height=w;var rctx=rc.getContext('2d');rctx.translate(h,0);rctx.rotate(Math.PI/2);rctx.drawImage(sourceImage,0,0);var im=new Image();im.onload=function(){sourceImage=im;fit();};im.onerror=function(){status.textContent='Could not rotate image.';};im.src=rc.toDataURL();}"
+  "function drawToWork(){workCtx.fillStyle='#fff';workCtx.fillRect(0,0,W,H);if(!sourceImage)return;var base=Math.min(W/sourceImage.width,H/sourceImage.height);var s=base*((parseInt(zoom.value,10)||100)/100);if(!isFinite(s)||s<=0)s=base;var dw=Math.max(1,Math.round(sourceImage.width*s));var dh=Math.max(1,Math.round(sourceImage.height*s));var x=((W-dw)/2)+(parseInt(panX.value,10)||0);var y=((H-dh)/2)+(parseInt(panY.value,10)||0);workCtx.drawImage(sourceImage,x,y,dw,dh);}"
   "function toOneBit(){var img=workCtx.getImageData(0,0,W,H),d=img.data,t=thr(tol.value),iv=!!inv.checked;for(var i=0;i<d.length;i+=4){var L=((d[i]*299)+(d[i+1]*587)+(d[i+2]*114))/1000;var w=(L>=t);if(iv)w=!w;var c=w?255:0;d[i]=c;d[i+1]=c;d[i+2]=c;d[i+3]=255;}ctx.putImageData(img,0,0);return img;}"
   "function pack(img){var d=img.data,o=new Uint8Array(TOTAL);for(var y=0;y<H;y++)for(var x=0;x<W;x++){var i=(y*W+x)*4;if(d[i]>=128){var b=(y*ROW)+(x>>3);o[b]=o[b]|(1<<(x&7));}}return o;}"
   "function render(){setLbls();drawToWork();var i=toOneBit();if(!sourceImage){meta.textContent='No image loaded';return null;}meta.textContent='Preview: '+W+'x'+H+'  threshold '+thr(tol.value)+'  bytes '+TOTAL;return i;}"
@@ -388,10 +365,10 @@ static const char kEditorScript[] PROGMEM =
   "function dist(a,b){var dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy);}"
   "function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};}"
   "function startPinch(){var p=pts();if(p.length===2){pinch.active=true;pinch.startDist=Math.max(8,dist(p[0],p[1]));pinch.startZoom=parseInt(zoom.value,10)||100;pinch.startPanX=parseInt(panX.value,10)||0;pinch.startPanY=parseInt(panY.value,10)||0;var m=mid(p[0],p[1]);pinch.startMidX=m.x;pinch.startMidY=m.y;}else pinch.active=false;}"
-  "fileInput.addEventListener('change',function(){var f=fileInput.files&&fileInput.files[0];if(!f){sourceImage=null;rotation=0;render();return;}status.textContent='';var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){sourceImage=im;rotation=0;fit();};im.onerror=function(){status.textContent='Could not decode image.';};im.src=r.result;};r.onerror=function(){status.textContent='Could not read image.';};r.readAsDataURL(f);});"
+  "fileInput.addEventListener('change',function(){var f=fileInput.files&&fileInput.files[0];if(!f){sourceImage=null;render();return;}status.textContent='';var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){sourceImage=im;fit();};im.onerror=function(){status.textContent='Could not decode image.';};im.src=r.result;};r.onerror=function(){status.textContent='Could not read image.';};r.readAsDataURL(f);});"
   "[tol,zoom,panX,panY,inv].forEach(function(el){el.addEventListener('input',render);el.addEventListener('change',render);});"
   "resetBtn.addEventListener('click',function(){fit();status.textContent='';});"
-  "if(rotateBtn)rotateBtn.addEventListener('click',function(){if(!sourceImage)return;rotation=(rotation+1)%4;render();});"
+  "if(rotateBtn)rotateBtn.addEventListener('click',function(){status.textContent='';rotate90();});"
   "canvas.addEventListener('pointerdown',function(e){pointers[e.pointerId]={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);var p=pts();if(p.length===1){isDragging=true;dragStartX=e.clientX;dragStartY=e.clientY;dragPanX=parseInt(panX.value,10)||0;dragPanY=parseInt(panY.value,10)||0;}startPinch();});"
   "canvas.addEventListener('pointermove',function(e){if(!pointers[e.pointerId])return;pointers[e.pointerId].x=e.clientX;pointers[e.pointerId].y=e.clientY;var p=pts();if(pinch.active&&p.length===2){var d=Math.max(8,dist(p[0],p[1])),r=d/pinch.startDist;zoom.value=String(clamp(Math.round(pinch.startZoom*r),10,400));var m=mid(p[0],p[1]);panX.value=String(clamp(pinch.startPanX+Math.round(m.x-pinch.startMidX),-250,250));panY.value=String(clamp(pinch.startPanY+Math.round(m.y-pinch.startMidY),-180,180));render();return;}if(isDragging&&p.length===1){panX.value=String(clamp(dragPanX+Math.round(e.clientX-dragStartX),-250,250));panY.value=String(clamp(dragPanY+Math.round(e.clientY-dragStartY),-180,180));render();}});"
   "function endP(e){delete pointers[e.pointerId];var p=pts();if(p.length===1){isDragging=true;dragStartX=p[0].x;dragStartY=p[0].y;dragPanX=parseInt(panX.value,10)||0;dragPanY=parseInt(panY.value,10)||0;}else isDragging=false;startPinch();}"
@@ -400,6 +377,34 @@ static const char kEditorScript[] PROGMEM =
   "uploadBtn.addEventListener('click',function(){if(!sourceImage){alert('Please choose an image first.');return;}var img=render();if(!img){status.textContent='Preview is not ready yet.';return;}var bytes=pack(img);var fd=new FormData();fd.append('file',new Blob([bytes],{type:'application/octet-stream'}),'sleep-editor.bin');var url='/screensavers/upload';var sel=dstSel?dstSel.value:'auto';if(sel==='single')url+='?single=1';else if(sel!=='auto')url+='?slot='+encodeURIComponent(sel);status.textContent='Uploading...';uploadBtn.disabled=true;fetch(url,{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t||('HTTP '+r.status));});status.textContent='Upload complete. Refreshing...';setTimeout(function(){window.location.href='/screensavers';},600);}).catch(function(e){status.textContent='Upload failed: '+(e&&e.message?e.message:'error');}).finally(function(){uploadBtn.disabled=false;});});"
   "setLbls();render();"
   "})();</script>";
+
+// Download + delete icon buttons for a populated slot or the legacy single image.
+static String screensaverActionsHtml(bool single, int slot) {
+  String out;
+  out.reserve(420);
+  out += "<div class='ss-slot-actions'>";
+  out += "<a class='btn-icon' href='/screensavers/download?";
+  if (single) out += "single=1";
+  else out += "slot=" + String(slot);
+  out += "' download title='" D_WEB_SS_DOWNLOAD_ARIA "' aria-label='" D_WEB_SS_DOWNLOAD_ARIA "'>";
+  out += FPSTR(kIconDownload);
+  out += "</a>";
+  out += "<form method='POST' action='/screensavers/delete' style='margin:0'>";
+  if (single) {
+    out += "<input type='hidden' name='single' value='1'>";
+    out += "<button type='submit' class='btn-icon danger' title='" D_WEB_SS_DELETE_ARIA "' "
+           "aria-label='" D_WEB_SS_DELETE_ARIA "' "
+           "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SINGLE "')\">";
+  } else {
+    out += "<input type='hidden' name='slot' value='" + String(slot) + "'>";
+    out += "<button type='submit' class='btn-icon danger' title='" D_WEB_SS_DELETE_ARIA "' "
+           "aria-label='" D_WEB_SS_DELETE_ARIA "' "
+           "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SLOT "')\">";
+  }
+  out += FPSTR(kIconTrash);
+  out += "</button></form></div>";
+  return out;
+}
 
 // Build the slot grid HTML — one card per slot with thumbnail (when
 // populated) and a delete form. Appended into a containing card by the
@@ -415,7 +420,7 @@ static String slotGridHtml() {
     if (Screensavers::slotExists(i)) {
       out += "<img src='/screensavers/thumb?slot=" + String(i) +
              "' alt='" D_WEB_SS_SLOT_LABEL " " + String(i) + "'>";
-      out += slotActionsHtml(false, i);
+      out += screensaverActionsHtml(false, i);
     } else {
       out += "<div class='ss-slot-empty'>" D_WEB_SS_SLOT_EMPTY "</div>";
     }
@@ -454,7 +459,7 @@ static String editorCardHtml(int nextFreeSlot) {
          "<div class='ss-card ss-preview-wrap'>"
          "<label>" D_WEB_SS_PREVIEW_LABEL "</label>"
          "<div class='ss-preview-stage'><canvas id='ssPreview' width='250' height='122'></canvas></div>"
-         "<div class='ss-preview-tools'>"
+         "<div class='ss-editor-tools' style='align-self:flex-start'>"
          "<button type='button' class='btn secondary' id='ssResetBtn' style='padding:6px 12px;font-size:13px'>" D_WEB_SS_RESET_FIT "</button>"
          "<button type='button' class='btn secondary' id='ssRotateBtn' style='padding:6px 12px;font-size:13px'>" D_WEB_SS_ROTATE "</button>"
          "</div>"
@@ -533,9 +538,9 @@ static void handleSleepEditorPage() {
   if (hasLegacy) {
     out += "<div class='row' style='align-items:center;gap:12px'>"
            "<img src='/screensavers/thumb?single=1' alt='" D_WEB_SS_SINGLE_ALT "' "
-           "style='width:180px;border:1px solid var(--line);border-radius:8px;background:#fff;image-rendering:pixelated'>"
-           + slotActionsHtml(true, 0) +
-           "</div>";
+           "style='width:180px;border:1px solid var(--line);border-radius:8px;background:#fff;image-rendering:pixelated'>";
+    out += screensaverActionsHtml(true, 0);
+    out += "</div>";
   } else {
     out += "<p class='muted'>" D_WEB_SS_NO_SINGLE "</p>";
   }
@@ -552,7 +557,7 @@ void registerScreensaverRoutes() {
   server.on("/screensavers",         HTTP_GET,  handleSleepEditorPage);
   server.on("/screensavers/thumb",     HTTP_GET,  handleSleepThumb);
   server.on("/screensavers/download", HTTP_GET,  handleSleepDownload);
-  server.on("/screensavers/delete",  HTTP_POST, handleSleepDelete);
+  server.on("/screensavers/delete",   HTTP_POST, handleSleepDelete);
   server.on("/screensavers/mode",    HTTP_POST, handleSleepModePost);
   server.on("/screensavers/upload",  HTTP_POST,
             handleScreensaverUploadDone, handleScreensaverUploadStream);

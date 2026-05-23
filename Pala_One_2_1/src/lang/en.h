@@ -395,6 +395,9 @@
 #define D_WEB_SS_SLOT_LABEL         "Slot"
 #define D_WEB_SS_SLOT_EMPTY         "empty"
 #define D_WEB_SS_CONFIRM_DEL_SLOT   "Delete this slot?"
+#define D_WEB_SS_DOWNLOAD_ARIA      "Download screensaver"
+#define D_WEB_SS_DELETE_ARIA        "Delete screensaver"
+#define D_WEB_SS_ROTATE             "Rotate 90\u00b0"
 #define D_WEB_SS_SINGLE_HEADING     "Single screensaver"
 #define D_WEB_SS_SINGLE_ALT         "Single screensaver"
 #define D_WEB_SS_CONFIRM_DEL_SINGLE "Delete the single screensaver?"
@@ -419,8 +422,5 @@
 #define D_WEB_SS_DST_SLOT_PREFIX    "Rotation slot "
 #define D_WEB_SS_DST_OVERWRITE      " (overwrite)"
 #define D_WEB_SS_UPLOAD_EDITED      "Upload edited image"
-#define D_WEB_SS_DOWNLOAD_ARIA      "Download screensaver"
-#define D_WEB_SS_DELETE_ARIA        "Delete screensaver"
-#define D_WEB_SS_ROTATE             "Rotate 90\u00b0"
 
 #endif  // PALA_LANG_EN_H
