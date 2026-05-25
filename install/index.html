@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pala One Installer</title>
-  <script
-    type="module"
-    src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"
-  ></script>
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
   <style>
     :root {
       color-scheme: light dark;
@@ -15,6 +13,7 @@
       --accent-hover: #357abd;
       --accent-dark: #5fa3f0;
     }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       max-width: 640px;
@@ -22,11 +21,26 @@
       padding: 0 1.5rem;
       line-height: 1.5;
     }
-    h1 { margin-bottom: 0.25rem; }
-    .sub { color: #666; margin-top: 0; }
+
+    h1 {
+      margin-bottom: 0.25rem;
+    }
+
+    .sub {
+      color: #666;
+      margin-top: 0;
+    }
+
     /* "switch channel" link lives in the channel-bar; hidden in local-dev
        mode (body.channel-local) because "../" doesn't go anywhere sensible. */
-    body.channel-local .switch-channel { display: none; }
+    body.channel-local .switch-channel,
+    body.channel-local .hosted-only {
+      display: none;
+    }
+
+    body:not(.channel-local) .local-only {
+      display: none;
+    }
 
     .channel-bar {
       display: flex;
@@ -36,6 +50,7 @@
       margin: 0.5rem 0 1.5rem;
       color: #666;
     }
+
     .channel-badge {
       display: inline-block;
       font-size: 0.75rem;
@@ -45,25 +60,44 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
-    .channel-badge.stable { background: #d8efd9; color: #1f6b25; }
+
+    .channel-badge.stable {
+      background: #d8efd9;
+      color: #1f6b25;
+    }
+
     .channel-badge.dev,
-    .channel-badge.local  { background: #fde6c8; color: #8a4a07; }
+    .channel-badge.local {
+      background: #fde6c8;
+      color: #8a4a07;
+    }
 
     .variant {
-      border: 1px solid rgba(127,127,127,0.3);
+      border: 1px solid rgba(127, 127, 127, 0.3);
       border-radius: 8px;
       padding: 1rem 1.25rem;
       margin: 1rem 0;
     }
-    .variant h3 { margin: 0 0 0.25rem; }
-    .variant p { margin: 0.25rem 0 0.75rem; color: #666; }
+
+    .variant h3 {
+      margin: 0 0 0.25rem;
+    }
+
+    .variant p {
+      margin: 0.25rem 0 0.75rem;
+      color: #666;
+    }
+
     .lang-row {
       display: flex;
       flex-wrap: wrap;
       gap: 0.6rem;
       align-items: center;
     }
-    .lang-row esp-web-install-button { display: inline-block; }
+
+    .lang-row esp-web-install-button {
+      display: inline-block;
+    }
 
     /* Style the buttons that sit inside <esp-web-install-button slot="activate">. */
     .lang-row button {
@@ -78,11 +112,25 @@
       cursor: pointer;
       transition: background 0.15s, border-color 0.15s, transform 0.05s;
     }
-    .lang-row button:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-    .lang-row button:active { transform: translateY(1px); }
+
+    .lang-row button:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .lang-row button:active {
+      transform: translateY(1px);
+    }
+
     .lang-row button:focus-visible {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
+    }
+
+    .lang-row button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
     }
 
     .note {
@@ -92,35 +140,49 @@
       padding: 0.75rem 1rem;
       font-size: 0.95rem;
     }
+
     code {
-      background: rgba(127,127,127,0.15);
+      background: rgba(127, 127, 127, 0.15);
       padding: 0.1em 0.35em;
       border-radius: 3px;
     }
-    ol li { margin: 0.4rem 0; }
+
+    ol li {
+      margin: 0.4rem 0;
+    }
 
     /* Walkthrough list — bigger steps, room to breathe, with a lead-in
        sentence rendered bold so the page scans well at a glance. */
-    .walkthrough { padding-left: 1.25rem; }
-    .walkthrough > li { margin: 1rem 0; }
-    .walkthrough > li > strong:first-child {
+    .walkthrough {
+      padding-left: 1.25rem;
+    }
+
+    .walkthrough>li {
+      margin: 1rem 0;
+      color: #444;
+    }
+
+    .walkthrough>li>strong:first-child {
       display: block;
       margin-bottom: 0.15rem;
+      color: #000;
     }
 
     /* Inline callouts inside steps. .tip = blue accent; .warn = yellow. */
     .tip {
-      background: rgba(74,144,226,0.08);
+      background: rgba(74, 144, 226, 0.08);
       border-left: 3px solid var(--accent);
       border-radius: 4px;
       padding: 0.5rem 0.75rem;
       margin: 0.5rem 0 0;
       font-size: 0.9rem;
     }
+
     .tip.warn {
       background: #fff8e1;
       border-left-color: #d4a017;
     }
+
     .read-first {
       color: #666;
       font-size: 0.95rem;
@@ -128,22 +190,190 @@
     }
 
     @media (prefers-color-scheme: dark) {
-      .sub, .variant p, .channel-bar, .read-first { color: #aaa; }
-      .note { background: #2a2a1a; border-color: #5a5a3a; }
-      .channel-badge.stable { background: #1f3a22; color: #9bd6a1; }
+
+      .sub,
+      .variant p,
+      .channel-bar,
+      .read-first {
+        color: #aaa;
+      }
+
+      .note {
+        background: #2a2a1a;
+        border-color: #5a5a3a;
+      }
+
+      .walkthrough>li {
+        color: #bbb;
+      }
+
+      .walkthrough>li>strong:first-child {
+        color: #eee;
+      }
+
+      .channel-badge.stable {
+        background: #1f3a22;
+        color: #9bd6a1;
+      }
+
       .channel-badge.dev,
-      .channel-badge.local  { background: #3a2a14; color: #f0c089; }
-      .lang-row button { border-color: var(--accent); background: var(--accent); }
-      .lang-row button:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
-      .tip { background: rgba(74,144,226,0.15); }
-      .tip.warn { background: #3a2e0a; border-left-color: #d4a017; }
+      .channel-badge.local {
+        background: #3a2a14;
+        color: #f0c089;
+      }
+
+      .lang-row button {
+        border-color: var(--accent);
+        background: var(--accent);
+      }
+
+      .lang-row button:hover {
+        background: var(--accent-dark);
+        border-color: var(--accent-dark);
+      }
+
+      .tip {
+        background: rgba(74, 144, 226, 0.15);
+      }
+
+      .tip.warn {
+        background: #3a2e0a;
+        border-left-color: #d4a017;
+      }
+    }
+
+    /* Branch selector — local-dev mode only */
+    body:not(.channel-local) .branch-bar {
+      display: none;
+    }
+
+    .branch-bar {
+      border: 1px solid rgba(127, 127, 127, 0.3);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .branch-bar h3 {
+      margin: 0 0 0.6rem;
+      font-size: 1rem;
+    }
+
+    .branch-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .branch-controls select {
+      font: inherit;
+      font-size: 0.875rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid rgba(127, 127, 127, 0.4);
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .branch-controls select:first-of-type {
+      flex: 2 1 12rem;
+    }
+
+    .branch-controls .build-btn {
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.875rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+
+    .branch-controls .build-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .branch-controls .build-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .build-info {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 1.25rem 0 0.25rem;
+    }
+
+    .build-info code {
+      font-weight: 400;
+    }
+
+    .remote-url {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 0.5rem;
+      font: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid rgba(127, 127, 127, 0.4);
+    }
+
+    .remote-url::placeholder {
+      color: #999;
+    }
+
+    .build-status {
+      margin-top: 0.6rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: rgba(127, 127, 127, 0.08);
+      max-height: 6rem;
+      overflow-y: auto;
+    }
+
+    .build-status.error {
+      background: #fde8e8;
+      color: #c53030;
+    }
+
+    .build-status.done {
+      background: #d8efd9;
+      color: #1f6b25;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .branch-controls select {
+        border-color: rgba(127, 127, 127, 0.5);
+      }
+
+      .build-status.error {
+        background: #3a1a1a;
+        color: #f8a0a0;
+      }
+
+      .build-status.done {
+        background: #1f3a22;
+        color: #9bd6a1;
+      }
     }
 
     @media (max-width: 480px) {
-      body { margin: 3rem auto 2rem; }
+      body {
+        margin: 3rem auto 2rem;
+      }
     }
   </style>
 </head>
+
 <body class="channel-{{CHANNEL}}">
   <h1>Pala One Installer</h1>
   <p class="sub">Flash the firmware directly from your browser.</p>
@@ -153,105 +383,271 @@
     <a class="switch-channel" href="../">switch channel</a>
   </div>
 
+  <div class="branch-bar">
+    <h3>Build from branch</h3>
+    <div class="branch-controls">
+      <select id="branch-select">
+        <option>Loading…</option>
+      </select>
+      <select id="env-select">
+        <option value="wireless-paper-v1_2-en">V1.2 — English</option>
+        <option value="wireless-paper-v1_2-es">V1.2 — Español</option>
+        <option value="wireless-paper-v1_1-en">V1.1 — English</option>
+        <option value="wireless-paper-v1_1-es">V1.1 — Español</option>
+      </select>
+      <button class="build-btn" id="build-btn" type="button">Build</button>
+    </div>
+    <input id="remote-url" type="text" class="remote-url"
+      placeholder="Or paste a GitHub URL: https://github.com/user/repo/tree/branch">
+    <div id="build-status" class="build-status" hidden></div>
+  </div>
+
   <p class="tip">
     <strong>First time?</strong> Read the <a href="#how-to-install">How to install</a> guide below before clicking!
   </p>
 
-  <div class="variant">
-    <h3>V1.2 board</h3>
-    <p>Newer Heltec Wireless Paper. If your board's silkscreen says <code>V1.2</code>, pick this.</p>
-    <div class="lang-row">
-      <esp-web-install-button manifest="manifest-v1_2-en.json">
-        <button slot="activate">Install V1.2 — English</button>
-        <span slot="unsupported">
-          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
-        </span>
-        <span slot="not-allowed">Open this page over HTTPS.</span>
-      </esp-web-install-button>
-      <esp-web-install-button manifest="manifest-v1_2-es.json">
-        <button slot="activate">Install V1.2 — Español</button>
-        <span slot="unsupported">
-          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
-        </span>
-        <span slot="not-allowed">Open this page over HTTPS.</span>
-      </esp-web-install-button>
-    </div>
+  <p class="build-info local-only" id="build-info">Ready to flash: <code>{{VERSION}}</code></p>
+
+  {{VARIANTS}}
+
+  <!-- Hosted (stable / dev) walkthrough — hidden in local-dev mode -->
+  <div class="hosted-only">
+    <p class="note">
+      Not sure which version you have? Flashing the wrong one won't brick the board — the e-ink panel just won't draw correctly. Try the other variant if the screen looks wrong after the first boot.
+    </p>
+
+    <h2 id="how-to-install">How to install</h2>
+
+    <ol class="walkthrough">
+      <li>
+        <strong>Use Chrome, Edge, or Opera on a desktop computer.</strong>
+        Safari, Firefox, and mobile browsers aren't supported.
+      </li>
+      <li>
+        <strong>Plug your Pala One into your computer</strong>
+        with a USB-C cable that carries data. If you are having issues,
+        it may be that your cable is power-only. Try a different cable if the installer doesn't detect your board.
+      </li>
+      <li>
+        <strong>Click an Install button above</strong>
+        for your board and language. The browser will pop up a serial-port chooser.
+      </li>
+      <li>
+        <strong>Pick your Pala One's serial port.</strong>
+        On <strong>Windows</strong> it's usually <em>not</em> <code>COM1</code>.
+        If you only see <code>COM1</code>, the board isn't plugged in or the
+        cable doesn't carry data. On <strong>Mac / Linux</strong>, look for
+        something like <code>/dev/cu.usbmodem*</code> or <code>/dev/ttyACM*</code>;
+        skip Bluetooth and debug ports.
+      </li>
+      <li>
+        <strong>Confirm Install in the dialog.</strong>
+        Click <strong>Install</strong>, then <strong>Install</strong> again on
+        the confirmation screen.
+        <p class="tip warn">
+          ⚠️ <strong>Re-flashing an already-set-up device?</strong> Leave the
+          <strong>Erase device</strong> checkbox <strong>unchecked</strong> —
+          checking it wipes your books, settings, and saved Wi-Fi.
+        </p>
+      </li>
+      <li>
+        <strong>Wait ~2 minutes while it flashes.</strong>
+        You'll see a progress bar. Don't unplug.
+      </li>
+      <li>
+        <strong>Click "Connect to Wi-Fi" when offered,</strong>
+        then enter your home Wi-Fi credentials. This lets your Pala One join
+        your network so you can upload books to it from any device on the same
+        Wi-Fi. You can skip this, as there is a fallback when there is no
+        Wi-Fi configured or you are away from your network.
+      </li>
+      <li>
+        <strong>You're done!</strong>
+        To upload books, navigate to "Upload" on the Pala One's menu and enter the URL shown on the device into your web browser.
+      </li>
+    </ol>
   </div>
 
-  <div class="variant">
-    <h3>V1.1 board</h3>
-    <p>Older revision of the Heltec Wireless Paper.</p>
-    <div class="lang-row">
-      <esp-web-install-button manifest="manifest-v1_1-en.json">
-        <button slot="activate">Install V1.1 — English</button>
-        <span slot="unsupported">
-          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
-        </span>
-        <span slot="not-allowed">Open this page over HTTPS.</span>
-      </esp-web-install-button>
-      <esp-web-install-button manifest="manifest-v1_1-es.json">
-        <button slot="activate">Install V1.1 — Español</button>
-        <span slot="unsupported">
-          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
-        </span>
-        <span slot="not-allowed">Open this page over HTTPS.</span>
-      </esp-web-install-button>
-    </div>
+  <!-- Local-dev walkthrough — hidden on hosted channels -->
+  <div class="local-only">
+    <h2 id="how-to-install-local">How to install</h2>
+
+    <h3>Requirements</h3>
+    <ul class="walkthrough">
+      <li>
+        <strong>Python 3</strong> with <strong>PlatformIO</strong>
+        (<code>pip install platformio</code>).
+      </li>
+      <li>
+        <strong>Git</strong> — needed to check out branches and fetch from forks.
+      </li>
+      <li>
+        <strong>Chrome, Edge, or Opera</strong> on a desktop computer.
+        Safari, Firefox, and mobile browsers don't support Web Serial.
+      </li>
+    </ul>
+
+    <h3>Steps</h3>
+    <ol class="walkthrough">
+      <li>
+        <strong>Select a branch and board above, then click Build.</strong>
+        Pick a local or remote branch from the dropdown (or paste a GitHub URL),
+        choose your board variant, and click <strong>Build</strong>. The build
+        takes ~2 minutes; progress is shown inline.
+      </li>
+      <li>
+        <strong>Plug your Pala One into your computer</strong>
+        with a USB-C cable that carries data. If the installer doesn't detect
+        your board, try a different cable — it may be power-only.
+      </li>
+      <li>
+        <strong>Click the Install button</strong>
+        for your board. The browser will pop up a serial-port chooser.
+      </li>
+      <li>
+        <strong>Pick your Pala One's serial port.</strong>
+        On <strong>Windows</strong> it's usually <em>not</em> <code>COM1</code>.
+        If you only see <code>COM1</code>, the board isn't plugged in or the
+        cable doesn't carry data. On <strong>Mac / Linux</strong>, look for
+        something like <code>/dev/cu.usbmodem*</code> or <code>/dev/ttyACM*</code>;
+        skip Bluetooth and debug ports.
+      </li>
+      <li>
+        <strong>Confirm Install in the dialog.</strong>
+        Click <strong>Install</strong>, then <strong>Install</strong> again on
+        the confirmation screen.
+        <p class="tip warn">
+          ⚠️ <strong>Re-flashing an already-set-up device?</strong> Leave the
+          <strong>Erase device</strong> checkbox <strong>unchecked</strong> —
+          checking it wipes your books, settings, and saved Wi-Fi.
+        </p>
+      </li>
+      <li>
+        <strong>Wait ~2 minutes while it flashes.</strong>
+        You'll see a progress bar. Don't unplug.
+      </li>
+      <li>
+        <strong>You're done!</strong>
+        To upload books, navigate to "Upload" on the Pala One's menu and enter the URL shown on the device into your web browser.
+      </li>
+    </ol>
   </div>
+  <script>
+    (function () {
+      if (!document.body.classList.contains('channel-local')) return;
 
-  <p class="note">
-    Not sure which version you have? Flashing the wrong one won't brick the board — the e-ink panel just won't draw correctly. Try the other variant if the screen looks wrong after the first boot.
-  </p>
+      var brSel = document.getElementById('branch-select');
+      var envSel = document.getElementById('env-select');
+      var urlIn = document.getElementById('remote-url');
+      var btn = document.getElementById('build-btn');
+      var status = document.getElementById('build-status');
 
-  <h2 id="how-to-install">How to install</h2>
+      fetch('/api/branches')
+        .then(function (r) { return r.json(); })
+        .then(function (list) {
+          brSel.innerHTML = '';
+          list.forEach(function (b) {
+            var o = document.createElement('option');
+            o.value = b.name;
+            o.textContent = b.name + (b.current ? ' ●' : '');
+            if (b.current) o.selected = true;
+            brSel.appendChild(o);
+          });
+        })
+        .catch(function () {
+          brSel.innerHTML = '<option>Failed to load branches</option>';
+        });
 
-  <ol class="walkthrough">
-    <li>
-      <strong>Use Chrome, Edge, or Opera on a desktop computer.</strong>
-      Safari, Firefox, and mobile browsers aren't supported.
-    </li>
-    <li>
-      <strong>Plug your Pala One into your computer</strong>
-      with a USB-C cable that carries data. If you are having issues,
-      it may be that your cable is power-only. Try a different cable if the installer doesn't detect your board.
-    </li>
-    <li>
-      <strong>Click an Install button above</strong>
-      for your board and language. The browser will pop up a serial-port chooser.
-    </li>
-    <li>
-      <strong>Pick your Pala One's serial port.</strong>
-      On <strong>Windows</strong> it's usually <em>not</em> <code>COM1</code>.
-      If you only see <code>COM1</code>, the board isn't plugged in or the
-      cable doesn't carry data. On <strong>Mac / Linux</strong>, look for
-      something like <code>/dev/cu.usbmodem*</code> or <code>/dev/ttyACM*</code>;
-      skip Bluetooth and debug ports.
-    </li>
-    <li>
-      <strong>Confirm Install in the dialog.</strong>
-      Click <strong>Install</strong>, then <strong>Install</strong> again on
-      the confirmation screen.
-      <p class="tip warn">
-        ⚠️ <strong>Re-flashing an already-set-up device?</strong> Leave the
-        <strong>Erase device</strong> checkbox <strong>unchecked</strong> —
-        checking it wipes your books, settings, and saved Wi-Fi.
-      </p>
-    </li>
-    <li>
-      <strong>Wait ~2 minutes while it flashes.</strong>
-      You'll see a progress bar. Don't unplug.
-    </li>
-    <li>
-      <strong>Click "Connect to Wi-Fi" when offered,</strong>
-      then enter your home Wi-Fi credentials. This lets your Pala One join
-      your network so you can upload books to it from any device on the same
-      Wi-Fi. You can skip this, as there is a fallback when there is no
-      Wi-Fi configured or you are away from your network.
-    </li>
-    <li>
-      <strong>You're done!</strong>
-      To upload books, navigate to "Upload" on the Pala One's menu and enter the URL shown on the device into your web browser.
-    </li>
-  </ol>
+      btn.addEventListener('click', function () {
+        btn.disabled = true;
+        status.hidden = false;
+        status.className = 'build-status';
+        status.textContent = 'Starting build…';
+
+        var payload = { envs: [envSel.value] };
+        if (urlIn.value.trim()) {
+          payload.url = urlIn.value.trim();
+        } else {
+          payload.branch = brSel.value;
+        }
+
+        fetch('/api/build', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (d.error) {
+              status.className = 'build-status error';
+              status.textContent = d.error;
+              btn.disabled = false;
+              return;
+            }
+            poll();
+          });
+      });
+
+      function poll() {
+        var iv = setInterval(function () {
+          fetch('/api/status')
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d.status === 'done') {
+                clearInterval(iv);
+                status.className = 'build-status done';
+                status.textContent = 'Build complete — reloading…';
+                setTimeout(function () { location.reload(); }, 1500);
+              } else if (d.status === 'error') {
+                clearInterval(iv);
+                status.className = 'build-status error';
+                status.textContent = d.error;
+                btn.disabled = false;
+              } else {
+                status.textContent = d.log || 'Building…';
+                status.scrollTop = status.scrollHeight;
+              }
+            });
+        }, 2000);
+      }
+    })();
+
+    // Verify firmware is actually available — disable install buttons if not.
+    (function () {
+      var buttons = document.querySelectorAll('esp-web-install-button');
+      var info = document.getElementById('build-info');
+      if (!info) return;
+
+      if (!buttons.length) {
+        info.innerHTML = 'No build available — select a branch and click <strong>Build</strong>.';
+        return;
+      }
+
+      var checks = [];
+      buttons.forEach(function (btn) {
+        checks.push(
+          fetch(btn.getAttribute('manifest'), { method: 'HEAD' })
+            .then(function (r) { return { btn: btn, ok: r.ok }; })
+            .catch(function () { return { btn: btn, ok: false }; })
+        );
+      });
+
+      Promise.all(checks).then(function (results) {
+        var anyOk = false;
+        results.forEach(function (r) {
+          if (!r.ok) {
+            var b = r.btn.querySelector('button[slot="activate"]');
+            if (b) b.disabled = true;
+          } else {
+            anyOk = true;
+          }
+        });
+        if (!anyOk) {
+          info.innerHTML = 'No build available — select a branch and click <strong>Build</strong>.';
+        }
+      });
+    })();
+  </script>
 </body>
+
 </html>
