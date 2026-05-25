@@ -22,6 +22,9 @@ test/build*/
 # Local output of scripts/assemble_site.py (the deployed copy is built by CI)
 site/
 
+# Python bytecode
+__pycache__/
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db
