@@ -44,6 +44,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_app_header.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_streak_log.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_lang_keys.cpp
 )
 
 add_executable(host_tests ${SUT_SRC} ${TEST_SRC})
@@ -65,6 +66,10 @@ else()
   target_compile_options(host_tests PRIVATE -Wall -Wextra -Wpedantic
                                             -Wno-unused-function)
 endif()
+
+set(LANG_DIR_PATH "${CMAKE_SOURCE_DIR}/../Pala_One_2_1/src/lang")
+configure_file(lang_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/lang_config.h @ONLY)
+target_include_directories(host_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 enable_testing()
 add_test(NAME host_tests COMMAND host_tests)
