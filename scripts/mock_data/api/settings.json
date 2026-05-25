@@ -1,0 +1,9 @@
+{
+  "font":          12,
+  "family":        "helv",
+  "sleep":         60,
+  "lgap":          1,
+  "bionic":        false,
+  "noScreensaver": false,
+  "hasSleepImage": true
+}

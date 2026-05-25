@@ -1,0 +1,168 @@
+// Bookmarks screen — two modes selected by URL params:
+//   #/bookmarks                       -> list mode (all books + bookmarks)
+//   #/bookmarks?book=N&idx=M          -> detail mode (page text for one bookmark)
+//
+// Hash changes are reflected in the URL so detail views are shareable and
+// the browser back button does the right thing.
+
+(function () {
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  // -- List mode -------------------------------------------------------------
+  async function renderList(ctx) {
+    var t = ctx.t;
+    ctx.header({
+      title:    t.bookmarks.title,
+      subtitle: t.bookmarks.subtitle,
+      navKey:   "bookmarks"
+    });
+    ctx.container.innerHTML =
+      '<div class="card"><p class="muted">' + t.bookmarks.loading + '</p></div>';
+
+    var data;
+    try {
+      data = await window.palaApi.get("/api/bookmarks");
+    } catch (e) {
+      ctx.container.innerHTML =
+        '<div class="banner-warn">' + escapeHtml(t.errors.server) + ': ' +
+        escapeHtml(e.message || e) + '</div>';
+      return;
+    }
+
+    var books = (data && data.books) || [];
+    if (books.length === 0) {
+      ctx.container.innerHTML =
+        '<div class="card"><p class="muted">' + t.bookmarks.noBooks + '</p></div>';
+      return;
+    }
+
+    // Hide books that have no bookmarks AND no error — the list of files lives
+    // on the files screen, no reason to repeat zero-bookmark cards here.
+    var html = "";
+    var anyShown = false;
+    books.forEach(function (book) {
+      var bms = book.bookmarks || [];
+      if (bms.length === 0 && !book.error) return;
+      anyShown = true;
+      html += '<div class="card"><h2>' + escapeHtml(book.name) + '</h2>';
+      if (book.error) {
+        html += '<p class="muted">' + escapeHtml(t.bookmarks.openFailed) + '</p>';
+      } else {
+        html += '<ul class="list">';
+        bms.forEach(function (bm) {
+          var viewHref = "#/bookmarks?book=" + encodeURIComponent(book.id) +
+                         "&idx="           + encodeURIComponent(bm.idx);
+          html +=
+            '<li><div class="row">' +
+              '<div>' +
+                '<div class="pill">' + t.bookmarks.pillPrefix + (bm.idx + 1) + '</div>' +
+                '<p class="meta" style="margin-top:8px">' + escapeHtml(bm.label) + '</p>' +
+              '</div>' +
+              '<div style="white-space:nowrap">' +
+                '<a class="link" href="' + viewHref + '">' + t.bookmarks.view + '</a> | ' +
+                '<button type="button" class="btn secondary small" ' +
+                  'data-book="' + book.id + '" data-idx="' + bm.idx + '">' +
+                  t.bookmarks.del + '</button>' +
+              '</div>' +
+            '</div></li>';
+        });
+        html += '</ul>';
+        var exportHref = "/api/bookmarks/export?book=" + encodeURIComponent(book.id);
+        html +=
+          '<div class="actions">' +
+            '<a class="btn secondary" href="' + exportHref + '">' +
+              t.bookmarks.downloadAll +
+            '</a>' +
+          '</div>';
+      }
+      html += '</div>';
+    });
+
+    if (!anyShown) {
+      html = '<div class="card"><p class="muted">' + t.bookmarks.noneAcrossLibrary + '</p></div>';
+    }
+    ctx.container.innerHTML = html;
+
+    // Delegate delete clicks. Single listener at the container avoids re-
+    // binding when the list mutates (we redraw on each delete).
+    ctx.container.addEventListener("click", function (ev) {
+      var btn = ev.target.closest('button[data-book]');
+      if (!btn) return;
+      var book = parseInt(btn.dataset.book, 10);
+      var idx  = parseInt(btn.dataset.idx,  10);
+      if (!window.confirm(t.bookmarks.confirmDelete)) return;
+      btn.disabled = true;
+      btn.textContent = "…";
+      window.palaApi.post("/api/bookmarks/delete", { book: book, idx: idx })
+        .then(function () { renderList(ctx); })  // re-fetch + redraw
+        .catch(function (e) {
+          window.alert(t.errors.server + ": " + (e.message || e));
+          btn.disabled = false;
+          btn.textContent = t.bookmarks.del;
+        });
+    });
+  }
+
+  // -- Detail mode -----------------------------------------------------------
+  async function renderDetail(ctx, book, idx) {
+    var t = ctx.t;
+    ctx.header({
+      title:    t.bookmarks.viewTitle,
+      subtitle: t.bookmarks.viewSubtitle,
+      navKey:   "bookmarks"
+    });
+    ctx.container.innerHTML =
+      '<div class="card"><p class="muted">' + t.bookmarks.loading + '</p></div>';
+
+    var data;
+    try {
+      data = await window.palaApi.get(
+        "/api/bookmarks/view?book=" + encodeURIComponent(book) +
+        "&idx="                     + encodeURIComponent(idx)
+      );
+    } catch (e) {
+      ctx.container.innerHTML =
+        '<div class="banner-warn">' + escapeHtml(t.errors.server) + ': ' +
+        escapeHtml(e.message || e) + '</div>' +
+        '<div class="actions"><a class="btn secondary" href="#/bookmarks">' +
+          t.bookmarks.back + '</a></div>';
+      return;
+    }
+
+    var b  = data.book || {};
+    var bm = data.bookmark || {};
+    var exportHref = "/api/bookmarks/export?book=" + encodeURIComponent(b.id);
+
+    ctx.container.innerHTML =
+      '<div class="card">' +
+        '<h2>' + escapeHtml(b.name) + '</h2>' +
+        '<p class="muted">' + t.bookmarks.pillPrefix + ((bm.idx || 0) + 1) + '</p>' +
+        '<pre class="pre" style="margin-top:10px">' + escapeHtml(bm.text) + '</pre>' +
+        '<div class="actions">' +
+          '<a class="btn secondary" href="#/bookmarks">' + t.bookmarks.back + '</a>' +
+          '<a class="btn secondary" href="' + exportHref + '">' + t.bookmarks.downloadAll + '</a>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function render(ctx) {
+    var p   = ctx.params || {};
+    var bk  = p.book;
+    var idx = p.idx;
+    if (bk != null && idx != null && bk !== "" && idx !== "") {
+      renderDetail(ctx, bk, idx);
+    } else {
+      renderList(ctx);
+    }
+  }
+
+  window.palaScreens = window.palaScreens || {};
+  window.palaScreens.bookmarks = { render: render };
+})();

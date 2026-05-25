@@ -1,5 +1,11 @@
 #include "src/web/web.h"
 
+#include "src/web/api_bookmarks.h"
+#include "src/web/api_files.h"
+#include "src/web/api_list.h"
+#include "src/web/api_reset.h"
+#include "src/web/api_settings.h"
+#include "src/web/app.h"
 #include "src/web/apps_upload.h"
 #include "src/web/bookmarks.h"
 #include "src/web/chrome.h"
@@ -15,6 +21,10 @@
 //  function is the single entry point called from setup() to mount them all.
 //  Each `register*Routes` is an `HTTP_GET`/`HTTP_POST` registration on the
 //  shared global `server`.
+//
+//  The SPA-style routes (registerAppRoutes — /app, /api/*) live alongside
+//  the legacy String-built routes during the web-UI rewrite. Old paths
+//  remain reachable until Phase 4 cutover (see plan in commit history).
 // ============================================================================
 void registerWebRoutes() {
   registerChromeRoutes();      // /style.css
@@ -26,4 +36,10 @@ void registerWebRoutes() {
   registerUploadRoutes();      // /upload, /upload-sleep (legacy)
   registerAppUploadRoutes();   // /upload-app
   registerResetRoutes();       // /reset
+  registerAppRoutes();         // /app, /api/info  (SPA rewrite, Phase 0+)
+  registerApiResetRoutes();    // /api/reset
+  registerApiListRoutes();     // /api/list  (GET + POST)
+  registerApiBookmarksRoutes();// /api/bookmarks{,/view,/delete,/export}
+  registerApiSettingsRoutes(); // /api/settings  (GET + POST) + /api/sleep-image/delete
+  registerApiFilesRoutes();    // /api/files + /api/books/* + /api/folders/* + /api/apps/delete
 }
