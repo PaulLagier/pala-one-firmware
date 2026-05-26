@@ -91,7 +91,7 @@
 #include "src/ui/reader.h"
 #include "src/ui/reader_actions.h"  // Gestures::loadSettings
 #include "src/ui/screen.h"
-#include "src/ui/widgets.h"  // drawCenter
+#include "src/ui/widgets.h"  // drawCenter, forceNextMenuFrameFull
 #include "src/ui/screens/about_screen.h"
 #include "src/ui/screens/apps_screen.h"
 #include "src/ui/screens/bookmarks/book_select_screen.h"
@@ -154,29 +154,13 @@ void setup() {
   updateBatteryCached(true);
 #endif
 
-  // Load Sleep and Lock settings early — before display.clear() — so both
-  // flags are available to gate the full-refresh boot clear below.
   prefs.begin("ereader", false);
   Sleep::loadSettings();
   Lock::loadSettings();
 
-  // Skip the full-refresh boot clear when waking from deep sleep AND either:
-  //   (a) the device is locked — the screensaver (with its lock badge) is
-  //       already on the e-ink; clearing to white and then drawing nothing
-  //       leaves a blank screen until the idle timeout fires, OR
-  //   (b) no-screensaver mode is on and we were reading — the last reader
-  //       page sits cleanly on the panel; a clear would briefly flash white
-  //       before the page redraws.
-  // On a fresh boot (not ext0 wake) always clear, regardless of lock state.
-  bool wokeFromSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0);
-  bool wereReading   = (prefs.getString("wake_path", "").length() > 0);
-  display.fastmodeOff();
-  bool skipClear = wokeFromSleep &&
-                   (Lock::isLocked() ||
-                    (Sleep::noScreensaver() && wereReading));
-  if (!skipClear) {
-    display.clear();
-  }
+  // Buffer only — display.clear() flushes the panel immediately (extra cycle).
+  // First draw (library or reader) owns the one post-wake full refresh.
+  display.clearMemory();
 
   if (!fsBegin()) {
     drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
@@ -193,9 +177,7 @@ void setup() {
   Screensavers::loadSettings();
   Statusbar::loadSettings();
   Gestures::loadSettings();
-  // Sleep::loadSettings() and Lock::loadSettings() already ran earlier in
-  // setup() so both flags were available for the boot-clear gate above —
-  // don't reload them here.
+  // Sleep::loadSettings() and Lock::loadSettings() already ran above.
   loadBooks();
   loadListItems();
   loadApps();
@@ -221,7 +203,11 @@ void setup() {
       // force the user to repeat the unlock gesture.
       markUserActivity();
     } else {
-      renderCurrentPage();      // ~300ms draw — wake-press releases during this
+      // Screensaver wake: panel shows sleep art → need one full refresh.
+      // No-screensaver wake: last page is already on the panel (see Sleep::enter);
+      // skip forcing full so renderCurrentPage() can use fast partial mode.
+      if (!Sleep::noScreensaver()) forceNextRenderFull();
+      renderCurrentPage();
       resetInputFrontend();     // discard the wake-press only
     }
   } else {
@@ -229,6 +215,7 @@ void setup() {
     if (Lock::isLocked()) {
       markUserActivity();
     } else {
+      forceNextMenuFrameFull(); // one full refresh — replaces sleep image
       g_libraryScreen.onEnter();
       resetInputFrontend();
     }

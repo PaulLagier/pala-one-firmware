@@ -11,6 +11,10 @@ static const int UI_HEADER_GAP = 6;
 // e-ink ghosting). File-private; nothing outside `prepareMenuFrame` reads it.
 static int s_menuDrawsSinceFull = 0;
 
+void forceNextMenuFrameFull() {
+  s_menuDrawsSinceFull = MENU_FULL_REFRESH_EVERY;
+}
+
 void prepareMenuFrame() {
   bool doFull = (s_menuDrawsSinceFull >= MENU_FULL_REFRESH_EVERY);
   if (doFull) {

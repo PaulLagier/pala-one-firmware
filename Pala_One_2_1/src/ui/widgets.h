@@ -21,6 +21,10 @@ void drawCenter(const char* a, const char* b = nullptr);
 // independently of the reader's full-refresh schedule.
 void prepareMenuFrame();
 
+// One-shot: next prepareMenuFrame() uses fastmodeOff (full refresh). Use after
+// deep sleep / cold boot so the first library draw replaces the sleep image once.
+void forceNextMenuFrameFull();
+
 // Draw one row of a scrollable menu list. Text starts at
 // `UI_LIST_LEFT + extraIndent` on the given baseline; bold if selected.
 // Resets font to Body afterwards. Most callers pass no indent;

@@ -21,10 +21,10 @@ void setIdleTimeout(int secs);
 int      idleTimeoutSecs();   // for the web settings UI selects
 uint32_t idleTimeoutMs();     // for the main loop's sleep deadline check
 
-// No-screensaver mode. When true: Sleep::enter() skips drawSleepScreen() so
-// the last page stays visible on the e-ink panel, and setup() skips the
-// boot-time display.clear() when waking from deep sleep so the panel is not
-// blanked before the page is redrawn in fast mode.
+// No-screensaver mode. When true and sleeping from the reader: Sleep::enter()
+// keeps the last page on the panel (full refresh before sleep, no screensaver
+// image). On wake, setup() does not force a full reader refresh — the partial
+// path in renderCurrentPage() is enough because the page is already visible.
 bool noScreensaver();
 void setNoScreensaver(bool val);
 
