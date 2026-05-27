@@ -161,6 +161,27 @@ label  { display:block; font-weight:600; margin:0 0 6px; }
 .btn-icon.danger        { color:var(--danger); border-color:var(--danger); }
 .btn-icon svg           { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 
+/* ------------------------------------------------------------------------
+ * Read screen — in-browser find + jump UI on top of /readbook-text.
+ * .bv-* prefix scopes these so they can't collide with the book/file
+ * list/row styles elsewhere.
+ * ---------------------------------------------------------------------- */
+.bv-find        { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px; }
+.bv-find input[type=search] { flex:1; min-width:160px; }
+.bv-find .small { padding:6px 12px; font-size:13px; }
+.bv-status      { margin-top:8px; font-size:13px; color:var(--muted); }
+.bv-text {
+  margin-top:14px; max-height:60vh; overflow:auto;
+  padding:12px; border:1px solid var(--line); border-radius:10px;
+  background:var(--pre-bg);
+  white-space:pre-wrap; line-height:1.5;
+  font:14px/1.5 system-ui,sans-serif;
+}
+.find-hit { background:#fff4a3; color:#1f2328; padding:0 1px; border-radius:3px; }
+.find-cur { background:#ff9c2b; color:#1f2328; }
+html[data-theme=dark] .find-hit { background:#3a3220; color:#e8eaef; }
+html[data-theme=dark] .find-cur { background:#b46a0a; color:#fff; }
+
 .row.list-row { align-items:center; gap:10px; padding:8px 0; }
 .row.list-row .grow { flex:1; }
 .empty-hint { color:var(--muted); font-style:italic; padding:14px 0; }

@@ -128,6 +128,12 @@
                 ' &middot; ' + fs.currentPage + b.savedPage +
               '</div>' +
 
+              '<div class="actions" style="margin-top:10px">' +
+                '<a class="btn secondary small" href="#/read?book=' + b.id + '">' +
+                  fs.readAndFind +
+                '</a>' +
+              '</div>' +
+
               '<form data-act="book-jumppage" data-id="' + b.id + '" class="stack small" ' +
                     'style="margin-top:10px">' +
                 '<div class="row" style="align-items:end;gap:10px">' +

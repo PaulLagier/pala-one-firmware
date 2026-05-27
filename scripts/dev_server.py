@@ -48,7 +48,11 @@ _PROXY_TIMEOUT_S = 30.0  # large enough for book uploads on slow links
 # /upload          book upload (multipart, .txt)
 # /upload-app      app binary upload (multipart, .bin)
 # /screensavers/*  thumb / download / upload (binary endpoints used by SPA)
-_DYNAMIC_PREFIXES = ("/api/", "/upload", "/screensavers/")
+# /readbook-text   raw book text streaming  (Read & find screen)
+# /jumpoffset      byte-offset persist      (Read & find screen)
+_DYNAMIC_PREFIXES = (
+    "/api/", "/upload", "/screensavers/", "/readbook-text", "/jumpoffset",
+)
 
 
 def _is_dynamic(path: str) -> bool:
