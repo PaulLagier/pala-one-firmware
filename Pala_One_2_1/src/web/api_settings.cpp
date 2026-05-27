@@ -7,6 +7,7 @@
 #include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
 #include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
+#include "src/ui/reader_actions.h"        // ButtonAction + Gestures
 #include "src/ui/screens/reader_screen.h" // g_readerScreen
 #include "src/ui/sleep.h"
 
@@ -19,6 +20,26 @@ static Font::Family familyFromWire(const char* s) {
                                       : Font::Family::Helvetica;
 }
 
+// Wire string for a gesture binding. Strings (rather than the enum's int
+// values) so the SPA can name things readably without leaking enum integers
+// across the wire.
+static const char* actionToWire(ButtonAction a) {
+  switch (a) {
+    case ACTION_BOOKMARK: return "bookmark";
+    case ACTION_LOCK:     return "lock";
+    case ACTION_MENU:     return "menu";
+    case ACTION_NONE:
+    default:              return "none";
+  }
+}
+static ButtonAction actionFromWire(const char* s) {
+  if (!s) return ACTION_NONE;
+  if (strcmp(s, "bookmark") == 0) return ACTION_BOOKMARK;
+  if (strcmp(s, "lock")     == 0) return ACTION_LOCK;
+  if (strcmp(s, "menu")     == 0) return ACTION_MENU;
+  return ACTION_NONE;
+}
+
 // Serialise the current settings into the destination object. Used by both
 // GET (just dump state) and POST (echo back the resulting state).
 static void writeSettingsTo(JsonObject obj) {
@@ -29,6 +50,11 @@ static void writeSettingsTo(JsonObject obj) {
   obj["bionic"]        = Font::bionicEnabled();
   obj["noScreensaver"] = Sleep::noScreensaver();
   obj["hasSleepImage"] = FS.exists("/sleep.bin");
+
+  JsonObject g = obj["gestures"].to<JsonObject>();
+  g["long"]      = actionToWire(Gestures::actionLong());
+  g["extraLong"] = actionToWire(Gestures::actionExtraLong());
+  g["clickHold"] = actionToWire(Gestures::actionClickHold());
 }
 
 static void sendSettings(int status) {
@@ -85,6 +111,18 @@ static bool applyFromJson(JsonObjectConst body) {
   if (body["noScreensaver"].is<bool>()) {
     bool v = body["noScreensaver"].as<bool>();
     if (v != Sleep::noScreensaver()) Sleep::setNoScreensaver(v);
+  }
+
+  // Gestures — each field individually optional. The setters clamp +
+  // persist internally, so we don't need to read-back to filter no-ops.
+  JsonObjectConst g = body["gestures"].as<JsonObjectConst>();
+  if (!g.isNull()) {
+    if (g["long"].is<const char*>())
+      Gestures::setActionLong(actionFromWire(g["long"].as<const char*>()));
+    if (g["extraLong"].is<const char*>())
+      Gestures::setActionExtraLong(actionFromWire(g["extraLong"].as<const char*>()));
+    if (g["clickHold"].is<const char*>())
+      Gestures::setActionClickHold(actionFromWire(g["clickHold"].as<const char*>()));
   }
 
   return layoutChanged;

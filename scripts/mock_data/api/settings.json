@@ -5,5 +5,10 @@
   "lgap":          1,
   "bionic":        false,
   "noScreensaver": false,
-  "hasSleepImage": true
+  "hasSleepImage": true,
+  "gestures": {
+    "long":      "bookmark",
+    "extraLong": "lock",
+    "clickHold": "menu"
+  }
 }

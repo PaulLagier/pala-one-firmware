@@ -15,10 +15,13 @@
 
   // Static option lists for the selects — values are the wire shape the
   // backend expects, labels come from i18n at render time.
-  var FONT_VALUES   = [8, 10, 12, 14];
-  var SLEEP_VALUES  = [30, 60, 120, 300, 600, 1800];
-  var LGAP_VALUES   = [0, 1, 2, 3];
-  var FAMILY_VALUES = ["helv", "dys"];
+  var FONT_VALUES    = [8, 10, 12, 14];
+  var SLEEP_VALUES   = [30, 60, 120, 300, 600, 1800];
+  var LGAP_VALUES    = [0, 1, 2, 3];
+  var FAMILY_VALUES  = ["helv", "dys"];
+  // Gesture-bindable actions. Order matches the legacy UI; "none" first so
+  // users can blank out a binding from the keyboard with one arrow press.
+  var ACTION_VALUES  = ["none", "bookmark", "lock", "menu"];
 
   function selectHtml(id, name, options, currentValue, hint) {
     var opts = options.map(function (o) {
@@ -74,6 +77,10 @@
         '</form>' +
       '</div>' +
 
+      // Buttons (gesture bindings) — its own form + save button so users
+      // can rebind a hold without touching the reading sliders.
+      gesturesCardHtml(s, state.gestures || {}) +
+
       // Sleep-image management card. Hidden when no custom image exists.
       '<div class="card" id="sleep-image-card"' + (state.hasSleepImage ? '' : ' hidden') + '>' +
         '<h2>' + s.sleepImageHeading + '</h2>' +
@@ -100,9 +107,40 @@
       ev.preventDefault();
       save(ctx);
     });
+    var gForm = ctx.container.querySelector("#gestures-form");
+    if (gForm) {
+      gForm.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        saveGestures(ctx);
+      });
+    }
     ctx.container.querySelector("#delete-sleep").addEventListener("click", function () {
       deleteSleepImage(ctx);
     });
+  }
+
+  function gesturesCardHtml(s, gestures) {
+    var actionOpts = ACTION_VALUES.map(function (v) {
+      return { value: v, label: s.actions[v] };
+    });
+    return (
+      '<div class="card">' +
+        '<h2>' + s.buttonsHeading + '</h2>' +
+        '<p class="muted">' + s.buttonsHint + '</p>' +
+        '<form id="gestures-form" style="margin-top:12px">' +
+          '<div class="grid cols-2">' +
+            selectHtml("btnL",  s.buttonsLong,      actionOpts, gestures.long      || "none", "") +
+            selectHtml("btnXL", s.buttonsExtraLong, actionOpts, gestures.extraLong || "none", "") +
+            selectHtml("btnCH", s.buttonsClickHold, actionOpts, gestures.clickHold || "none", "") +
+          '</div>' +
+          '<div class="actions">' +
+            '<button type="submit" id="save-gestures">' + s.buttonsSave + '</button>' +
+            '<span class="muted">' + s.buttonsLockHint + '</span>' +
+          '</div>' +
+          '<div id="gestures-status"></div>' +
+        '</form>' +
+      '</div>'
+    );
   }
 
   function readForm(ctx) {
@@ -121,6 +159,44 @@
     if (!el) return;
     el.className   = "status " + kind;
     el.textContent = msg;
+  }
+
+  function setGesturesStatus(ctx, kind, msg) {
+    var el = ctx.container.querySelector("#gestures-status");
+    if (!el) return;
+    el.className   = "status " + kind;
+    el.textContent = msg;
+  }
+
+  function readGesturesForm(ctx) {
+    return {
+      gestures: {
+        long:      ctx.container.querySelector("#btnL").value,
+        extraLong: ctx.container.querySelector("#btnXL").value,
+        clickHold: ctx.container.querySelector("#btnCH").value
+      }
+    };
+  }
+
+  async function saveGestures(ctx) {
+    var t = ctx.t;
+    var btn = ctx.container.querySelector("#save-gestures");
+    btn.disabled = true;
+    var prevLabel = btn.textContent;
+    btn.textContent = t.settings.saving;
+    setGesturesStatus(ctx, "busy", t.settings.saving);
+    try {
+      var state = await window.palaApi.post("/api/settings", readGesturesForm(ctx));
+      // Whole-screen redraw so the new bindings stick (and any clamping
+      // the device did is reflected back). Cheaper than threading the
+      // gestures sub-object through renderForm by hand.
+      renderForm(ctx, state);
+      setGesturesStatus(ctx, "ok", t.settings.saved);
+    } catch (e) {
+      btn.disabled    = false;
+      btn.textContent = prevLabel;
+      setGesturesStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
+    }
   }
 
   async function save(ctx) {
