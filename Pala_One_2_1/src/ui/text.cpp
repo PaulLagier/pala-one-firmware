@@ -3,7 +3,7 @@
 #include "src/hal/display.h"            // u8g2
 #include "src/pure/bookmarks_codec.h"   // kOffsetUnset
 #include "src/storage/page_cache.h"     // on-disk page-offset cache
-#include "src/ui/font.h"                // Font::useBody / bodyLayout / measureBionicLine
+#include "src/ui/font.h"                // Font::useBody / bodyLayout / measureBionicLine / layoutForCache
 
 // Measure-width adapter for the paginator. Routes through Font::measureBionicLine
 // so the bionic 1-px-per-split-word adjustment is folded into the same width

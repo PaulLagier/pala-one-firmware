@@ -201,7 +201,22 @@ static void handleScreensaverUploadStream() {
     if (!s_up.tmpFile) s_up.error = "Cannot create temp file";
   }
   else if (up.status == UPLOAD_FILE_WRITE) {
-    if (s_up.tmpFile) s_up.tmpFile.write(up.buf, up.currentSize);
+    if (s_up.error.length() > 0) return;
+    if (s_up.tmpFile && up.currentSize > 0) {
+      if (s_up.tmpFile.size() + up.currentSize > 8192) {
+        s_up.tmpFile.close();
+        if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
+        s_up.error = "Image file is too large";
+        return;
+      }
+      size_t wrote = s_up.tmpFile.write(up.buf, up.currentSize);
+      if (wrote != up.currentSize) {
+        s_up.tmpFile.close();
+        if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
+        s_up.error = "Write failed (disk full?)";
+        return;
+      }
+    }
   }
   else if (up.status == UPLOAD_FILE_END) {
     if (s_up.tmpFile) s_up.tmpFile.close();

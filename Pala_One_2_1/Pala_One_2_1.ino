@@ -89,6 +89,7 @@
 #include "src/ui/font.h"
 #include "src/ui/pala_api_impl.h"
 #include "src/ui/reader.h"
+#include "src/ui/reader_actions.h"  // Gestures::loadSettings
 #include "src/ui/screen.h"
 #include "src/ui/widgets.h"  // drawCenter
 #include "src/ui/screens/about_screen.h"
@@ -101,8 +102,10 @@
 #include "src/ui/screens/reader_screen.h"
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/upload_screen.h"
+#include "src/ui/lock.h"
 #include "src/ui/screensavers.h"
 #include "src/ui/sleep.h"
+#include "src/ui/statusbar.h"
 #include "src/ui/text.h"
 #include "src/ui/toast.h"
 #include "src/web/web.h"
@@ -135,6 +138,14 @@ void setup() {
   pinMode(BTN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN), btnISR, CHANGE);
 
+  // Button held through ext0 wake: its down-edge predates the ISR, so seed
+  // the press state manually. Pass 0 (not millis()) to credit the full boot
+  // time; millis() ≈ 200 here (after delay(200)) would shorten the hold and
+  // misclassify a Long press as Short.
+  if (digitalRead(BTN) == LOW) {
+    g_btns.seedPressOnWake(0);
+  }
+
   u8g2.begin(gfx);
 
 #if HAS_BATTERY
@@ -143,22 +154,27 @@ void setup() {
   updateBatteryCached(true);
 #endif
 
-  // Load Sleep settings early — before display.clear() — so the no-screensaver
-  // flag is available to gate the full-refresh boot clear below.
+  // Load Sleep and Lock settings early — before display.clear() — so both
+  // flags are available to gate the full-refresh boot clear below.
   prefs.begin("ereader", false);
   Sleep::loadSettings();
+  Lock::loadSettings();
 
-  // Skip the full-refresh boot clear only when all three are true:
-  //   (a) waking from deep sleep (not a fresh boot),
-  //   (b) no-screensaver mode is on, and
-  //   (c) we were reading a book (wake_path was set by armResumeOnWake during
-  //       the sleep entry — tryRestoreReadingSession() will consume it later).
-  // If the user fell asleep in a menu the screensaver was shown, so we always
-  // clear normally in that case.
+  // Skip the full-refresh boot clear when waking from deep sleep AND either:
+  //   (a) the device is locked — the screensaver (with its lock badge) is
+  //       already on the e-ink; clearing to white and then drawing nothing
+  //       leaves a blank screen until the idle timeout fires, OR
+  //   (b) no-screensaver mode is on and we were reading — the last reader
+  //       page sits cleanly on the panel; a clear would briefly flash white
+  //       before the page redraws.
+  // On a fresh boot (not ext0 wake) always clear, regardless of lock state.
   bool wokeFromSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0);
   bool wereReading   = (prefs.getString("wake_path", "").length() > 0);
   display.fastmodeOff();
-  if (!wokeFromSleep || !Sleep::noScreensaver() || !wereReading) {
+  bool skipClear = wokeFromSleep &&
+                   (Lock::isLocked() ||
+                    (Sleep::noScreensaver() && wereReading));
+  if (!skipClear) {
     display.clear();
   }
 
@@ -175,6 +191,11 @@ void setup() {
 
   Font::loadSettings();
   Screensavers::loadSettings();
+  Statusbar::loadSettings();
+  Gestures::loadSettings();
+  // Sleep::loadSettings() and Lock::loadSettings() already ran earlier in
+  // setup() so both flags were available for the boot-clear gate above —
+  // don't reload them here.
   loadBooks();
   loadListItems();
   loadApps();
@@ -186,14 +207,31 @@ void setup() {
   // Streak state bootstraps lazily on the first page turn.
   Statistics::loadOnBoot();
 
+  // When locked at boot, we skip the screen draw and leave the sleep image
+  // (with its lock indicator) on the e-ink. Otherwise a short-press wake
+  // would render the reader/library over the screensaver while the loop is
+  // still swallowing input — the device looks alive but ignores presses
+  // until an unlock gesture. The unlock branch in loop() calls
+  // g_currentScreen->draw() to paint the real screen once unlocked.
   if (tryRestoreReadingSession()) {
-    renderCurrentPage();      // ~300ms draw — wake-press releases during this
-    resetInputFrontend();     // then discard the wake-press only
     g_currentScreen = &g_readerScreen;
+    if (Lock::isLocked()) {
+      // Keep the wake-press edges so a click-then-hold can wake AND unlock
+      // in one motion. resetInputFrontend would otherwise drain them and
+      // force the user to repeat the unlock gesture.
+      markUserActivity();
+    } else {
+      renderCurrentPage();      // ~300ms draw — wake-press releases during this
+      resetInputFrontend();     // discard the wake-press only
+    }
   } else {
     g_currentScreen = &g_libraryScreen;
-    g_libraryScreen.onEnter();
-    resetInputFrontend();
+    if (Lock::isLocked()) {
+      markUserActivity();
+    } else {
+      g_libraryScreen.onEnter();
+      resetInputFrontend();
+    }
   }
 
   // Drop to 80 MHz for normal operation — saves significant power.
@@ -207,6 +245,7 @@ void setup() {
   WifiProvisioning::begin();
 }
 
+
 // ============================================================================
 //  Main loop
 // ============================================================================
@@ -215,11 +254,12 @@ void loop() {
   maybeRecoverFromIsrOverflow();
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
-  if (ev.any()) markUserActivity();
 
   // Lifetime button-press counter. peekPressCount is monotonic-up except
   // when the apps API consumes-and-resets — guard by clamping lastSeen to
-  // the current value if it ran backwards.
+  // the current value if it ran backwards. Runs before the lock check so
+  // physical presses count toward lifetime stats even when the UI is
+  // swallowing them.
   {
     static uint32_t lastSeenPressCount = 0;
     uint32_t pc = g_btns.peekPressCount();
@@ -230,9 +270,59 @@ void loop() {
     }
   }
 
-  if (ENABLE_DEEP_SLEEP
-      && g_currentScreen->allowSleep()
-      && !WifiProvisioning::isActive()) {
+  // Locked: swallow all input except unlock gestures (Long/VeryLong/ClickHold).
+  // Does NOT call markUserActivity for non-unlock events so the idle deadline
+  // keeps ticking. cfg_locked persists in NVS so a re-sleep stays locked.
+  //
+  // Wake-press handling: the short press that woke the device re-appears
+  // through the classifier in the first loop iteration. We absorb it silently
+  // (s_lockedWakePressConsumed). A *subsequent* non-unlock press while still
+  // locked means the user deliberately tapped again → re-enter deep sleep
+  // immediately. A short 1500ms locked-idle timeout (independent of the user's
+  // sleep setting) also returns to deep sleep so an accidental wake doesn't
+  // leave the device on indefinitely.
+  {
+    static bool s_lockedWakePressConsumed = false;  // reset each deep-sleep wake
+
+    if (Lock::isLocked()) {
+      if (Lock::isUnlockGesture(ev)) {
+        s_lockedWakePressConsumed = false;
+        Lock::disengage();
+        markUserActivity();
+        Toast::show(D_TOAST_UNLOCKED);
+        // Full refresh to clear screensaver ghosting on unlock.
+        // forceNextRenderFull() overrides the reader's per-page fast-mode
+        // decision so renderCurrentPage() uses fastmodeOff regardless of
+        // pageTurnsSinceFull. display.fastmodeOff() covers non-reader screens.
+        forceNextRenderFull();
+        display.fastmodeOff();
+        g_currentScreen->draw();
+        return;
+      }
+      if (ev.any()) {
+        if (!s_lockedWakePressConsumed) {
+          s_lockedWakePressConsumed = true;   // absorb wake press
+        } else {
+          Sleep::enter();                     // second tap → back to screensaver
+          return;
+        }
+      }
+      // Short locked-idle: re-sleep after 1500ms with no input.
+      // Don't sleep while the button is held — a Long-press unlock gesture
+      // fires on release, so sleeping mid-hold would swallow the gesture.
+      if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
+          && userIdleMs() > 1500 && !g_btns.isPressed()) {
+        Sleep::enter();
+        return;
+      }
+      return;
+    }
+    s_lockedWakePressConsumed = false;  // clear when unlocked so state is fresh on next lock
+  }
+
+  if (ev.any()) markUserActivity();
+
+  if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep() && !WifiProvisioning::isActive()) {
     if (userIdleMs() > Sleep::idleTimeoutMs()) {
       Sleep::enter();
       return;

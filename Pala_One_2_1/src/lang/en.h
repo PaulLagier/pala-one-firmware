@@ -115,6 +115,12 @@
 #define D_TOAST_BOOKMARK_EXISTS     "Bookmark exists"
 #define D_TOAST_BOOKMARK_SAVED      "Bookmark saved"
 
+// ----------------------------------------------------------------------------
+//  Lock / screensaver (src/ui/sleep.cpp, Pala_One_2_1.ino)
+// ----------------------------------------------------------------------------
+#define D_SCREENSAVER_LOCKED        "Locked"
+#define D_TOAST_UNLOCKED            "Unlocked"
+
 // ============================================================================
 //  Web UI (captive portal) — strings embedded in HTML via adjacent-literal
 //  concatenation. All endpoints declare Content-Type: charset=utf-8 already,
@@ -154,6 +160,19 @@
 // ----------------------------------------------------------------------------
 //  Settings page (src/web/settings.cpp)
 // ----------------------------------------------------------------------------
+
+// Buttons / remappable hold-gestures section.
+#define D_WEB_BUTTONS_HEADING       "Buttons"
+#define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The three holds below are remappable."
+#define D_WEB_BUTTONS_LONG          "Long press"
+#define D_WEB_BUTTONS_EXTRA_LONG    "Extra-long press"
+#define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
+#define D_WEB_BUTTONS_SAVE          "Save buttons"
+#define D_WEB_BUTTONS_LOCK_HINT     "If locked, repeat any hold gesture to unlock."
+#define D_WEB_BUTTONS_ACTION_NONE     "None"
+#define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
+#define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
+#define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
 
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)
@@ -199,6 +218,24 @@
 #define D_WEB_BMEXPORT_BOOKMARKS    "Bookmarks: "
 #define D_WEB_BMEXPORT_BOOKMARK_LBL "Bookmark "
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "No bookmarks for this book"
+
+// ----------------------------------------------------------------------------
+//  In-browser reader + find/jump (src/web/find.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_READ_TITLE            "Read"
+#define D_WEB_READ_SUBTITLE         "Browse and search the book in your browser. Use Jump to set the device's resume point."
+#define D_WEB_READ_BYTES_LABEL      "bytes"
+#define D_WEB_READ_CURRENT_PAGE_LABEL "current page:"
+#define D_WEB_READ_FIND_PLACEHOLDER "Find in book"
+#define D_WEB_READ_FIND_ALL         "Find all"
+#define D_WEB_READ_FIND_PREV        "Prev"
+#define D_WEB_READ_FIND_NEXT        "Next"
+#define D_WEB_READ_JUMP_HERE        "Jump to here"
+#define D_WEB_READ_LOADING          "Loading book text..."
+#define D_WEB_READ_PAGE_PLACEHOLDER "Page number"
+#define D_WEB_READ_JUMP_PAGE        "Jump to page"
+#define D_WEB_READ_JUMP_HINT        "Saves the next-open page directly."
+#define D_WEB_READ_AND_FIND_LINK    "Read &amp; find"
 
 // ----------------------------------------------------------------------------
 //  Font family + bionic reading + reading-position retention

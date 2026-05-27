@@ -6,6 +6,7 @@
 #include "src/config.h"
 #include "src/hal/display.h"  // u8g2 instance
 #include "src/state.h"        // prefs
+#include "src/ui/statusbar.h" // Statusbar::reserveH
 
 // OpenDyslexic u8g2 font tables. Vendored alongside the sketch (see
 // Pala_One_2_1/opendyslexic_u8g2_fonts.h). Only referenced from this file.
@@ -116,7 +117,7 @@ const LayoutMetrics& bodyLayout() {
     s_layout.maxWidth = w;
 
     int maxHeight = SCREEN_H - TOP_PAD - BOT_PAD;
-    if (SHOW_PROGRESS_BAR || SHOW_PAGE_NUMBER) maxHeight -= STATUS_H;
+    maxHeight -= Statusbar::reserveH();
 
     s_layout.maxLines = maxHeight / s_layout.lineH;
     if (s_layout.maxLines < 1) s_layout.maxLines = 1;
@@ -163,11 +164,16 @@ Family currentFamily()   { return s_family; }
 bool   bionicEnabled()   { return s_bionic; }
 
 PageCacheLayout layoutForCache() {
+  // Statusbar reserve goes into the cache stamp too — toggling between
+  // Full / Minimal / Hidden modes changes the page's text area (and
+  // therefore `maxLines`), which shifts every page boundary in the cached
+  // offset table. See Statusbar::setMode and page_cache.cpp's magic history.
   return PageCacheLayout{
-    /*bodySize=*/s_size,
-    /*lineGap =*/s_lineGap,
-    /*family  =*/(uint8_t)s_family,
-    /*bionic  =*/(uint8_t)(s_bionic ? 1 : 0),
+    /*bodySize        =*/s_size,
+    /*lineGap         =*/s_lineGap,
+    /*family          =*/(uint8_t)s_family,
+    /*bionic          =*/(uint8_t)(s_bionic ? 1 : 0),
+    /*statusbarReserve=*/(uint8_t)Statusbar::reserveH(),
   };
 }
 
@@ -352,5 +358,7 @@ void drawBionicLine(int x, int y, const char* line) {
   });
   useBody();
 }
+
+void invalidateLayoutCache() { s_layoutValid = false; }
 
 }  // namespace Font

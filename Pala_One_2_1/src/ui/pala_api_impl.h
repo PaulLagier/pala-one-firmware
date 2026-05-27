@@ -15,9 +15,10 @@
 // (re-writes the same pointers).
 void initPalaAPI();
 
-// STAGE-5 STUB: log "would run X" without actually loading the binary.
-// Stage 6 replaces this with the real loader. Exposed so AppsScreen
-// (Stage 7) can wire its launch path against a stable name today.
+// Load and run the app binary at `path` via the native loader. Handles
+// error display (drawCenter + delay) before returning so the caller can
+// simply repaint its own screen. Exposed so AppsScreen can wire its
+// launch path against a stable name.
 void runApp(const char* path);
 
 #endif  // PALA_UI_PALA_API_IMPL_H

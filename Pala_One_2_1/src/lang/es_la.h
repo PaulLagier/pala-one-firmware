@@ -113,6 +113,12 @@
 #define D_TOAST_BOOKMARK_EXISTS     "Marcapáginas ya existe"
 #define D_TOAST_BOOKMARK_SAVED      "Marcapáginas guardado"
 
+// ----------------------------------------------------------------------------
+//  Lock / screensaver
+// ----------------------------------------------------------------------------
+#define D_SCREENSAVER_LOCKED        "Bloqueado"
+#define D_TOAST_UNLOCKED            "Desbloqueado"
+
 // ============================================================================
 //  Web UI
 // ============================================================================
@@ -148,6 +154,19 @@
 // ----------------------------------------------------------------------------
 //  Settings page
 // ----------------------------------------------------------------------------
+
+// Buttons / remappable hold-gestures section.
+#define D_WEB_BUTTONS_HEADING       "Botones"
+#define D_WEB_BUTTONS_HINT          "1 clic = siguiente, 2 = anterior, 3 = inicio. Las tres pulsaciones largas abajo son reasignables."
+#define D_WEB_BUTTONS_LONG          "Pulsación larga"
+#define D_WEB_BUTTONS_EXTRA_LONG    "Pulsación muy larga"
+#define D_WEB_BUTTONS_CLICK_HOLD    "Clic y mantener"
+#define D_WEB_BUTTONS_SAVE          "Guardar botones"
+#define D_WEB_BUTTONS_LOCK_HINT     "Si está bloqueado, repita cualquier pulsación larga para desbloquear."
+#define D_WEB_BUTTONS_ACTION_NONE     "Ninguna"
+#define D_WEB_BUTTONS_ACTION_BOOKMARK "Marcar página"
+#define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
+#define D_WEB_BUTTONS_ACTION_MENU     "Abrir menú"
 
 // ----------------------------------------------------------------------------
 //  Upload routes
@@ -192,6 +211,24 @@
 #define D_WEB_BMEXPORT_BOOKMARKS    "Marcapáginas: "
 #define D_WEB_BMEXPORT_BOOKMARK_LBL "Marcapáginas "
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "Sin marcapáginas para este libro"
+
+// ----------------------------------------------------------------------------
+//  Lector en el navegador + buscar/saltar (src/web/find.cpp).
+// ----------------------------------------------------------------------------
+#define D_WEB_READ_TITLE            "Leer"
+#define D_WEB_READ_SUBTITLE         "Explora y busca el libro en tu navegador. Usa Saltar para fijar el punto de retoma del dispositivo."
+#define D_WEB_READ_BYTES_LABEL      "bytes"
+#define D_WEB_READ_CURRENT_PAGE_LABEL "página actual:"
+#define D_WEB_READ_FIND_PLACEHOLDER "Buscar en el libro"
+#define D_WEB_READ_FIND_ALL         "Buscar todo"
+#define D_WEB_READ_FIND_PREV        "Anterior"
+#define D_WEB_READ_FIND_NEXT        "Siguiente"
+#define D_WEB_READ_JUMP_HERE        "Saltar aquí"
+#define D_WEB_READ_LOADING          "Cargando texto del libro..."
+#define D_WEB_READ_PAGE_PLACEHOLDER "Número de página"
+#define D_WEB_READ_JUMP_PAGE        "Saltar a página"
+#define D_WEB_READ_JUMP_HINT        "Guarda directamente la próxima página de apertura."
+#define D_WEB_READ_AND_FIND_LINK    "Leer y buscar"
 
 // ----------------------------------------------------------------------------
 //  Familia de fuente + lectura biónica + retención de posición

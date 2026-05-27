@@ -39,6 +39,8 @@ struct ButtonState {
   bool tripleClick_ = false;
   bool quadClick_ = false;
   bool longClick_ = false;
+  bool veryLongClick_ = false;   // hold >= VERY_LONG_MS with no preceding click
+  bool clickHoldClick_ = false;  // chord: short click immediately followed by a long hold
 
   // Count of accepted short press-release pairs since the last
   // `consumePressCount()` call. Bypasses multi-click grouping — every
@@ -53,6 +55,8 @@ struct ButtonState {
     tripleClick_ = false;
     quadClick_ = false;
     longClick_ = false;
+    veryLongClick_ = false;
+    clickHoldClick_ = false;
   }
 
   void resetState() {
@@ -84,6 +88,20 @@ struct ButtonState {
     return n;
   }
 
+  // Seed press-down state as if the press started at `startMs`. Called
+  // from setup() when we wake from deep sleep with the button already
+  // physically held — the down-edge happened before our ISR was attached
+  // and is otherwise invisible to the classifier. Without this, the
+  // upcoming release edge has no matching press and gets dropped, so
+  // "click-then-hold on wake" can't form a chord. Safe even if the user
+  // releases mid-call: the natural release edge will close out cleanly.
+  void seedPressOnWake(uint32_t startMs) {
+    stablePressed_     = true;
+    pressArmed_        = true;
+    pressStart_        = startMs;
+    lastStableChange_  = 0;  // first queued edge stays debounce-eligible
+  }
+
   // Read the accumulated raw short-press count without resetting it. Used
   // by the lifetime-stats counter in `loop()`, which diffs against its
   // last-seen value each tick. Independent of `consumePressCount` — the
@@ -92,7 +110,8 @@ struct ButtonState {
   uint32_t peekPressCount() const { return rawPressCount_; }
 
   bool anyClick() const {
-    return shortClick_ || doubleClick_ || tripleClick_ || quadClick_ || longClick_;
+    return shortClick_ || doubleClick_ || tripleClick_ || quadClick_
+        || longClick_ || veryLongClick_ || clickHoldClick_;
   }
 
   // True iff the classifier is mid-sequence — at least one release has been
@@ -110,11 +129,13 @@ extern ButtonState g_btns;
 // dispatcher calls `fromButtonState(g_btns)` once per loop and hands the
 // result to the current screen.
 struct ButtonEvent {
-  enum Kind { None, Short, Double, Triple, Quad, Long } kind = None;
+  enum Kind { None, Short, Double, Triple, Quad, Long, VeryLong, ClickHold } kind = None;
 
   static ButtonEvent fromButtonState(const ButtonState& b) {
     ButtonEvent e;
-    if (b.longClick_)        e.kind = Long;
+    if (b.clickHoldClick_)   e.kind = ClickHold;
+    else if (b.veryLongClick_) e.kind = VeryLong;
+    else if (b.longClick_)   e.kind = Long;
     else if (b.quadClick_)   e.kind = Quad;
     else if (b.tripleClick_) e.kind = Triple;
     else if (b.doubleClick_) e.kind = Double;

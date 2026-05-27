@@ -9,10 +9,15 @@
 //  On-disk page-offset cache (pc_<hash>.bin files in LittleFS root)
 //
 //  Per-book binary file mapping page index -> byte offset, stamped with the
-//  layout (font size + line gap) under which the offsets were computed.
+//  PageCacheLayout under which the offsets were computed.
 //  Load rejects mismatched files; stale entries are silently overwritten on
 //  the next save. No external "invalidate everything" pass needed on font or
-//  file change — layout-correctness is a property of the file format itself.
+//  layout change — layout-correctness is a property of the file format itself.
+//
+//  Layout values come from `Font::layoutForCache()` (see font.h). Anything
+//  that changes how the body paginates (body size, line gap, font family,
+//  bionic, statusbar reserve height) flows into that one struct, so this
+//  module never has to know what specifically affects layout.
 //
 //  The active reader bulk-loads the whole table into `g_bookview.pages` via
 //  `loadPageOffsetCacheForBook`. Cross-book lookups (web bookmark resolve,
@@ -23,16 +28,19 @@
 // Anything that affects page layout — and therefore must invalidate the
 // cache when changed. Body face is identified by the same (size, family,
 // bionic) tuple the Font module exposes; line gap is the user's spacing
-// preference. Packed into the on-disk header at save time; the load path
-// rejects files whose stamp doesn't match the *current* layout.
+// preference; statusbar reserve is how many pixels the bottom statusbar
+// steals from the text area (which changes the page's `maxLines`).
+// Packed into the on-disk header at save time; the load path rejects files
+// whose stamp doesn't match the *current* layout.
 //
 // New fields go at the end and bump the on-disk magic in page_cache.cpp so
 // older caches are silently rejected and re-built on the next save.
 struct PageCacheLayout {
-  int     bodySize;   // 8/10/12/14
-  int     lineGap;    // [0, 4]
-  uint8_t family;     // matches Font::Family numeric value (0 = Helv, 1 = Dys)
-  uint8_t bionic;     // 0 / 1
+  int     bodySize;          // 8/10/12/14
+  int     lineGap;           // [0, 4]
+  uint8_t family;            // matches Font::Family numeric value (0 = Helv, 1 = Dys)
+  uint8_t bionic;            // 0 / 1
+  uint8_t statusbarReserve;  // pixels reserved at the bottom; from Statusbar::reserveH()
 };
 
 // Bulk-load the persisted offset table for `path` into `out`. Layout-stamped
