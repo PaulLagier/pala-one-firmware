@@ -11,9 +11,9 @@
 //   POST /api/folders/delete            body { folder }
 //   POST /api/apps/delete               body { name }        (basename, no slashes)
 //
-// File *upload* still uses the legacy multipart /upload and /upload-app
-// routes (see registerUploadRoutes / registerAppUploadRoutes) — porting
-// those is its own task (Phase 3 / Uploads).
+// File uploads (the actual byte transfer) are POST multipart at /upload and
+// /upload-app — registered separately by registerUploadRoutes() /
+// registerAppUploadRoutes() in upload.cpp / apps_upload.cpp.
 void registerApiFilesRoutes();
 
 #endif  // PALA_WEB_API_FILES_H

@@ -35,11 +35,10 @@ static void handleApiListGet() {
 // ----------------------------------------------------------------------------
 //  POST /api/list  — body: { "items": [ { "text": str, "done": bool }, ... ] }
 //
-//  Mirrors the legacy form-post behaviour in list.cpp: rebuilds g_list from
-//  the payload, skipping blank rows, capped at MAX_LIST_ITEMS, then persists
-//  via saveListItems(). If the device is currently on the list screen and
-//  the new list is empty, transition back to the library so the device
-//  doesn't sit on a blank screen.
+//  Rebuilds g_list from the payload, skipping blank rows, capped at
+//  MAX_LIST_ITEMS, then persists via saveListItems(). If the device is
+//  currently on the list screen and the new list is empty, transition back
+//  to the library so the device doesn't sit on a blank screen.
 // ----------------------------------------------------------------------------
 static void handleApiListPost() {
   const String& body = server.arg("plain");

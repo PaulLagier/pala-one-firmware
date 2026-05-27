@@ -1,5 +1,5 @@
-// Files screen — storage stats, folder management, book library, and apps.
-// Matches the legacy `/files` page surface, minus uploads (still legacy).
+// Files screen — storage stats, folder management, book library, and apps,
+// plus the book + app upload forms.
 
 (function () {
   function esc(s) {
@@ -191,9 +191,9 @@
     html += '</div>';
 
     // -- Upload cards (book + app) ------------------------------------------
-    // Both POST multipart to the existing legacy endpoints (/upload and
-    // /upload-app). Success body is HTML and gets discarded; errors come
-    // back as plain text and we surface them in the status line.
+    // Both POST multipart to /upload and /upload-app respectively. Success
+    // returns a tiny JSON; errors come back as plain text and we surface
+    // them in the status line.
     html += uploadCardHtml(t, "book");
     html += uploadCardHtml(t, "app");
 
@@ -291,7 +291,7 @@
   // ----------------------------------------------------------------------
   //  Upload form wiring. Each card has a `<form data-upload-form>` inside a
   //  `<div data-upload="book|app">`. We POST multipart to the matching
-  //  legacy endpoint and refresh the screen on success.
+  //  endpoint and refresh the screen on success.
   // ----------------------------------------------------------------------
   function wireUploads(ctx) {
     var t  = ctx.t;

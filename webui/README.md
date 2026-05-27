@@ -4,7 +4,7 @@ This folder holds the human-edited source for the device's web admin UI.
 A Python build step (`scripts/build_webui.py`) inlines, gzips, and emits it
 as a `PROGMEM` byte array at `Pala_One_2_1/src/web/generated/webui.gz.h`,
 which is committed and linked into the firmware. The device serves it from
-`/app`.
+the root URL (`/`).
 
 ## Dev loop (no flashing)
 

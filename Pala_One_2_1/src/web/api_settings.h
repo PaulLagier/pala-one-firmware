@@ -8,9 +8,6 @@
 //                                            the new state.
 //   POST /api/sleep-image/delete        -> wipes /sleep.bin (no body), returns
 //                                            { ok: true, hasSleepImage: false }.
-//
-// Legacy /settings (GET form + POST) and /del-sleep keep working until the
-// Phase 4 cutover.
 void registerApiSettingsRoutes();
 
 #endif  // PALA_WEB_API_SETTINGS_H

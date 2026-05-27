@@ -1,23 +1,21 @@
-// Screensavers screen — port of the legacy /screensavers editor.
+// Screensavers screen — bitmap editor + rotation manager.
 //
 // Four sections from top to bottom:
 //   1. Bitmap editor (file picker, sliders, 250x122 preview, destination, upload).
 //   2. Rotation mode (single / cycle / shuffle) + populated count.
 //   3. Slot grid (8 cards with thumbnails, download + delete buttons).
-//   4. Legacy single image (/sleep.bin) with its own delete button.
+//   4. Single image (/sleep.bin), the legacy "one screensaver" slot.
 //
-// The editor's "1-bit pack" pipeline is unchanged from the original
-// (kEditorScript in src/web/screensavers.cpp): load image, draw to a 250x122
-// work canvas at zoom+pan, threshold, and pack to 3904 bytes.
-//
-// Binary endpoints (thumb / download / upload) keep their legacy URLs —
-// they survive Phase 4 cutover unchanged.
+// The editor's "1-bit pack" pipeline: load image, draw to a 250x122 work
+// canvas at user-selected zoom+pan, threshold to 1 bit, and pack to 3904
+// bytes. The byte format matches what the device's e-ink driver consumes
+// (250x122 px, 1-bit, LSB-first, 32 bytes per row).
 
 (function () {
   // --- Constants tied to the device's e-ink panel + bitmap format. ----------
   var W = 250, H = 122, ROW = 32, TOTAL = H * ROW;   // 3904 bytes total
 
-  // Inline icon SVGs (download arrow / trash). Match the legacy editor.
+  // Inline icon SVGs (download arrow / trash) used by the slot grid.
   var ICON_DOWNLOAD =
     "<svg viewBox='0 0 24 24' aria-hidden='true'>" +
       "<path d='M12 4v10m0 0l4-4m-4 4l-4-4M5 20h14'/>" +
@@ -48,7 +46,7 @@
     var ss = t.screensavers;
 
     // Destination select options:
-    //   - "single"        legacy /sleep.bin
+    //   - "single"        /sleep.bin (single-image legacy slot)
     //   - "auto"          first free slot (label inserts the slot number)
     //   - "0".."MAX-1"    explicit slot (mark with " (overwrite)" when used)
     var dstOpts = '';

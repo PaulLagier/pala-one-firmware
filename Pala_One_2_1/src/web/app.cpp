@@ -18,8 +18,6 @@
 //  GET /
 //  Serves the gzipped SPA shell straight out of PROGMEM. Browsers all
 //  speak gzip, so Accept-Encoding negotiation is a formality we skip.
-//  Pre-Phase-4 this lived at /app while the legacy String-built routes
-//  owned /; cutover swapped them.
 // ----------------------------------------------------------------------------
 static void handleApp() {
   server.sendHeader("Content-Encoding", "gzip");

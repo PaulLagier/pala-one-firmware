@@ -11,8 +11,7 @@
 #include "src/ui/text.h"             // resolveBookmarkOffset, extractPageText, readBookmarkLabelAtOffset
 
 // ----------------------------------------------------------------------------
-//  Shared helpers — these mirror the legacy handlers in bookmarks.cpp so the
-//  SPA sees identical data. Folded into one source of truth in Phase 4.
+//  Shared helpers used by the list + per-bookmark views.
 // ----------------------------------------------------------------------------
 
 // Lift one bookmark's label snippet out of the open book file. Caller owns
@@ -57,8 +56,8 @@ static int queryInt(const char* name) {
 // ----------------------------------------------------------------------------
 //  GET /api/bookmarks
 //  All books, each with their bookmarks + label snippets. Books with no
-//  bookmarks are included with an empty array so the SPA can show "no
-//  bookmarks for this book" if useful (matches legacy behaviour).
+//  bookmarks are included with an empty array so the SPA can decide
+//  whether to surface them.
 // ----------------------------------------------------------------------------
 static void handleApiBookmarksList() {
   JsonDocument doc;

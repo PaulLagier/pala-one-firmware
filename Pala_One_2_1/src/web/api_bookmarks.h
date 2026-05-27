@@ -6,9 +6,6 @@
 //   GET  /api/bookmarks/view?book=N&idx=M        -> single bookmark with page text
 //   POST /api/bookmarks/delete                   -> body { "book": N, "idx": M }, returns { "ok": true }
 //   GET  /api/bookmarks/export?book=N            -> text/plain attachment download
-//
-// Legacy /bookmarks, /viewbm, /delbm, /exportbm keep working through
-// registerBookmarksRoutes() until the Phase 4 cutover.
 void registerApiBookmarksRoutes();
 
 #endif  // PALA_WEB_API_BOOKMARKS_H

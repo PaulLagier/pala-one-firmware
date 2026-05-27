@@ -1,11 +1,10 @@
 /* ============================================================================
  * Pala One web UI stylesheet.
  *
- * Lifted from the legacy src/web/chrome.cpp PROGMEM stylesheet — same look,
- * same custom-property theming, same localStorage.palaTheme contract — so
- * users who toggled the theme on the old pages keep that preference here.
- *
- * The theme is applied by app.js setting html[data-theme=...] before paint.
+ * Custom-property theming: `:root` holds the light palette; the dark palette
+ * lives behind `html[data-theme=dark]`. Theme is set by app.js *before* first
+ * paint (reads localStorage.palaTheme) so there's no flash of the wrong
+ * palette on load.
  * ========================================================================== */
 
 :root {
@@ -111,8 +110,8 @@ label  { display:block; font-weight:600; margin:0 0 6px; }
 
 /* ------------------------------------------------------------------------
  * Screensavers editor — bitmap converter UI, slot grid, icon buttons.
- * Ported from the legacy /screensavers PROGMEM stylesheet. ss-* prefix
- * keeps these from colliding with the generic .grid / .card classes.
+ * ss-* prefix keeps these from colliding with the generic .grid / .card
+ * classes elsewhere in the SPA.
  * ---------------------------------------------------------------------- */
 .ss-wrap        { display:grid; gap:12px; }
 .ss-card        { border:1px solid var(--line-soft); border-radius:12px; padding:10px 11px; background:var(--stat-bg); }

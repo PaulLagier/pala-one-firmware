@@ -2,18 +2,19 @@
 //
 // Screens register themselves on window.palaScreens via screens/*.js. Routes
 // come from location.hash: '' / '#/' -> home, '#/reset' -> reset, etc.
-// Each screen exports `render({ container, header, t, info })`:
+// Each screen exports `render({ container, header, t, info, params })`:
 //   - container: the <main> element to render into
 //   - header({ title, subtitle, navKey }): updates the page chrome
 //   - t: the resolved-language i18n dictionary
 //   - info: the /api/info payload (lang + fw + build)
+//   - params: query parameters from the hash (e.g. ?book=0&idx=1)
 //
-// Locale resolution (also used by the placeholder during Phase 0):
+// Locale precedence:
 //   explicit user override > device language > browser language > 'en'.
 
 (function () {
-  // --- Pre-paint theme (matches the legacy chrome.cpp behaviour so users'
-  //     existing localStorage.palaTheme preference carries over). -----------
+  // --- Pre-paint theme — applied before first paint to avoid FOUC. The
+  //     `palaTheme` localStorage key is the user's per-browser preference.
   (function applyThemeEarly() {
     var k = "palaTheme";
     var html = document.documentElement;
@@ -59,9 +60,7 @@
   }
 
   function buildNav(els, t) {
-    // Phase 3+: list the SPA-ported screens here. Legacy screens still link
-    // out to their full-page URLs (rendered by the screen's body, not nav)
-    // until each one is ported.
+    // Order here drives the visible nav order in the page chrome.
     var items = [
       { key: "home",         href: "#/",             label: t.nav.home         },
       { key: "files",        href: "#/files",        label: t.nav.files        },

@@ -6,10 +6,9 @@
 #include "src/ui/screens/library_screen.h"   // resetLibraryNav
 #include "src/ui/toast.h"
 
-// Same factory-reset core as the legacy handler in reset.cpp — keep the
-// behaviour bit-identical so the SPA-side cutover is a pure transport
-// change. When the legacy route is deleted in Phase 4, fold this into a
-// single source of truth.
+// Wipe NVS + format the LittleFS partition, then re-mount it and rebuild
+// the catalog. Leaves the device running in a clean state; no reboot —
+// the caller can land back on the library screen immediately.
 static void doFactoryReset() {
   Toast::reset();
   resetLibraryNav();

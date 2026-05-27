@@ -1,6 +1,6 @@
 // Reset screen — POSTs /api/reset after a confirm() prompt and shows the
-// outcome inline. First screen ported off the legacy String-built handler;
-// validates the whole SPA + JSON pipeline end-to-end.
+// outcome inline. On success the device has wiped storage + NVS but stays
+// running, so we swap the card for a success banner instead of redirecting.
 
 (function () {
   function render(ctx) {

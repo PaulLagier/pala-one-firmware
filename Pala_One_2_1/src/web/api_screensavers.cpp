@@ -5,8 +5,7 @@
 #include "src/state.h"
 #include "src/ui/screensavers.h"
 
-// Wire string for Screensavers::Mode. Mirrors the legacy /screensavers/mode
-// form contract so the SPA can talk to either endpoint with the same value.
+// Wire-format mapping between the JSON "mode" string and Screensavers::Mode.
 static const char* modeToWire(Screensavers::Mode m) {
   switch (m) {
     case Screensavers::Mode::Cycle:   return "cycle";

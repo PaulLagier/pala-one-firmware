@@ -53,11 +53,11 @@ static void handleApiSettingsGet() {
 //  fields are left unchanged — this is PATCH-flavoured even though the
 //  method is POST.
 //
-//  Matches the legacy handler's reader-recovery behaviour: if a layout-
-//  affecting field changes while the reader screen is active, snapshot the
-//  current byte offset, reset the in-memory page table, and re-locate the
-//  cursor on the page that contains the saved byte. The on-disk page cache
-//  is layout-stamped so it self-invalidates on next load.
+//  Reader-recovery: if a layout-affecting field changes while the reader
+//  screen is active, snapshot the current byte offset, reset the in-memory
+//  page table, and re-locate the cursor on the page that contains the
+//  saved byte. The on-disk page cache is layout-stamped so it self-
+//  invalidates on next load.
 // ----------------------------------------------------------------------------
 static bool applyFromJson(JsonObjectConst body) {
   bool layoutChanged = false;
@@ -104,7 +104,8 @@ static void handleApiSettingsPost() {
     return;
   }
 
-  // Snapshot reader state before settings change (parity with legacy).
+  // Snapshot the reader's current byte offset before applying changes so
+  // we can re-land on the same byte under the new layout.
   bool readerActive =
       (g_currentScreen == &g_readerScreen) &&
       g_bookview.book.isOpen();

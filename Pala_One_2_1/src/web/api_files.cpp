@@ -76,7 +76,7 @@ static void handleApiFilesList() {
     b["name"]   = g_library.books[i].name;
     b["size"]   = (uint32_t)g_library.books[i].size;
     b["folder"] = g_library.books[i].folder;
-    // 1-based for display, matching the legacy form value.
+    // 1-based for display (the on-disk value is 0-based).
     int savedPage = savedPageForBookPath(String(g_library.books[i].path)) + 1;
     if (savedPage < 1) savedPage = 1;
     b["savedPage"] = savedPage;
@@ -168,7 +168,7 @@ static void handleApiBookMove() {
 }
 
 // ----------------------------------------------------------------------------
-//  POST /api/books/jumppage  body { id, page }   (1-based, matches legacy UX)
+//  POST /api/books/jumppage  body { id, page }   (page is 1-based)
 //  Persists both the page number (display hint) and the canonical byte
 //  offset that the reader uses on next open.
 // ----------------------------------------------------------------------------
@@ -265,7 +265,7 @@ static void handleApiAppDelete() {
     return;
   }
   String name = nameC;
-  // Path-traversal guard, matches the legacy handleDeleteApp checks.
+  // Path-traversal guard: name must be a bare basename, not a path.
   if (name.indexOf('/') >= 0 || name.indexOf('\\') >= 0 || !name.endsWith(".bin")) {
     server.send(400, "text/plain; charset=utf-8", "invalid name");
     return;

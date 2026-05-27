@@ -14,11 +14,10 @@
 // ============================================================================
 //  Web routes — entry point called from setup() to mount everything.
 //
-//  Post-Phase-4: the legacy String-built handlers (chrome, files, bookmarks,
-//  list, settings, reset) are gone. The SPA at `/` (served by app.cpp) calls
-//  /api/* for state and actions, plus three surviving binary endpoints under
-//  the `/screensavers/` and `/upload*` paths for multipart uploads + raw
-//  bitmap thumbnails / downloads.
+//  The SPA at `/` (served by app.cpp) calls /api/* for state and actions.
+//  Three companion paths handle bytes that aren't JSON: /upload and
+//  /upload-app for multipart file uploads, /screensavers/{thumb,download,
+//  upload} for raw bitmap I/O.
 // ============================================================================
 void registerWebRoutes() {
   registerAppRoutes();             // /, /api/info  (SPA shell + boot info)
