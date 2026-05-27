@@ -20,10 +20,7 @@ window.__pala_i18n.es = {
   home: {
     title:         "Pala One",
     subtitleFw:    "Firmware",
-    portedHeading: "Panel web",
-    legacyHeading: "Páginas clásicas (aún no migradas)",
-    legacyNote:    "Estas siguen usando el panel antiguo y se abrirán como páginas completas.",
-    legacy: {}
+    portedHeading: "Panel web"
   },
   screensavers: {
     title:                "Salvapantallas",

@@ -85,12 +85,12 @@
         '</div>' +
       '</div>' +
 
-      // Pointer to the still-legacy screensaver editor.
+      // Quick link to the screensaver editor on its dedicated SPA screen.
       '<div class="card">' +
         '<h2>' + s.screensaverHeading + '</h2>' +
         '<p class="muted">' + s.screensaverCardDesc + '</p>' +
         '<div class="actions">' +
-          '<a class="btn" href="/screensavers">' + s.screensaverEditorLink + '</a>' +
+          '<a class="btn" href="#/screensavers">' + s.screensaverEditorLink + '</a>' +
           '<span class="muted">' + s.screensaverEditorHint + '</span>' +
         '</div>' +
       '</div>';

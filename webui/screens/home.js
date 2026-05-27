@@ -1,10 +1,5 @@
-// Home screen — SPA landing page during the rewrite.
-//
-// Lists the screens that have been ported to the SPA (linked via the hash
-// router) and the screens that still live at their legacy full-page URLs.
-// As each screen lands in the SPA we move its entry from `legacy` to
-// `ported` (here and in app.js' buildNav). Once everything is ported and
-// Phase 4 swaps `/` to serve this SPA, the legacy card can be deleted.
+// Home screen — SPA landing page. Simple nav grid into every other screen.
+// Subtitle shows the running firmware version (from /api/info).
 
 (function () {
   function render(ctx) {
@@ -17,9 +12,7 @@
       navKey:   "home"
     });
 
-    var html = "";
-
-    html +=
+    ctx.container.innerHTML =
       '<div class="card">' +
         '<h2>' + t.home.portedHeading + '</h2>' +
         '<ul class="list">' +
@@ -31,8 +24,6 @@
           '<li><a class="link" href="#/reset">'        + t.nav.reset        + '</a></li>' +
         '</ul>' +
       '</div>';
-
-    ctx.container.innerHTML = html;
   }
 
   window.palaScreens = window.palaScreens || {};

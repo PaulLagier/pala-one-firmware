@@ -12,7 +12,7 @@
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
 #include "src/web/apps_upload.h"  // resetAppUpload()
-#include "src/web/upload.h"       // resetBookUpload() / resetSleepUpload()
+#include "src/web/upload.h"       // resetBookUpload()
 
 // How long to wait for an STA association before falling back to AP. Long
 // enough for a typical 2.4 GHz home network (~1-3s); short enough that an
@@ -117,7 +117,6 @@ void UploadScreen::onEnter() {
 
 void UploadScreen::beginSession() {
   resetBookUpload();
-  resetSleepUpload();
   resetAppUpload();
 
   // Tell WifiProvisioning to keep its hands off the radio for the duration
@@ -156,7 +155,6 @@ void UploadScreen::stopSessionToLibrary() {
   WifiProvisioning::notifyUploadSession(false);
 
   resetBookUpload();
-  resetSleepUpload();
   resetAppUpload();
 
   loadBooks();

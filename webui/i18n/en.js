@@ -24,10 +24,7 @@ window.__pala_i18n.en = {
   home: {
     title:         "Pala One",
     subtitleFw:    "Firmware",
-    portedHeading: "Web admin",
-    legacyHeading: "Classic pages (not yet ported)",
-    legacyNote:    "These still use the old web UI and will open as full pages.",
-    legacy: {}
+    portedHeading: "Web admin"
   },
   screensavers: {
     title:                "Screensavers",

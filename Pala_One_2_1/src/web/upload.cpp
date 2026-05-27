@@ -6,11 +6,20 @@
 #include "src/pure/text_util.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
-#include "src/web/chrome.h"
 
 // ============================================================================
-//  Per-session state. File-static because the route handlers below are the
-//  only readers; the screen reaches it only through the reset functions.
+//  Book upload endpoint.
+//
+//  Two handlers per route: a streaming chunk receiver (`*Stream`) and a final
+//  response handler (`*Done`). The stream handler maintains a 4-byte UTF-8
+//  tail across chunks so a multibyte codepoint isn't split mid-character;
+//  each chunk is normalized + compacted before being written to the temp
+//  file. On END, atomic rename into place. On error, the temp file is
+//  removed so a truncated upload never gets promoted to a finalized book.
+//
+//  The Done handler returns JSON; the SPA at /#/files consumes it (it only
+//  cares about status, not the body — but a stable shape keeps automation
+//  honest).
 // ============================================================================
 namespace {
 struct BookUpload {
@@ -26,37 +35,13 @@ struct BookUpload {
   bool   compactLastWasSpace = false;
   int    compactNewlineCount = 0;
 };
-
-struct SleepUpload {
-  File   tmpFile;
-  String tmpPath;
-  bool   ok = false;
-  String error;
-};
-
-BookUpload  s_book;
-SleepUpload s_sleep;
+BookUpload s_book;
 }  // namespace
 
 void resetBookUpload() {
   if (s_book.tmpFile) s_book.tmpFile.close();
   s_book = BookUpload{};
 }
-
-void resetSleepUpload() {
-  if (s_sleep.tmpFile) s_sleep.tmpFile.close();
-  s_sleep = SleepUpload{};
-}
-
-// ============================================================================
-//  Book upload
-//
-//  Two handlers per route: a streaming chunk receiver (`*Stream`) and a final
-//  response handler (`*Done`). The stream handler maintains a 4-byte UTF-8
-//  tail across chunks so a multibyte codepoint isn't split mid-character;
-//  each chunk is normalized + compacted before being written to the temp
-//  file. On END, atomic rename into place.
-// ============================================================================
 
 static void handleUploadDone() {
   if (!s_book.ok) {
@@ -66,35 +51,19 @@ static void handleUploadDone() {
                   : String(D_WEB_UPLOAD_ERR_FALLBACK));
     return;
   }
-
   loadBooks();   // refresh after the stream handler appended the new book
 
-  String finalPath = "/books/" + s_book.finalName;
-  size_t storedSize = 0;
-  File stored = FS.open(finalPath, "r");
-  if (stored) {
-    storedSize = stored.size();
-    stored.close();
-  }
-
-  String inner;
-  inner.reserve(1200);
-  inner += "<div class='card'><h2>" D_WEB_UPLOAD_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_UPLOAD_COMPLETE_DESC "</p>";
-  inner += "<div class='stats'>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOK_LABEL  "</span><b>" + htmlEscape(s_book.finalName) + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOKS_NOW   "</span><b>" + String(g_library.bookCount)    + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe())  + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a><a class='btn secondary' href='/files'>" D_WEB_OPEN_FILES_BUTTON "</a></div></div>";
-  inner += storageCardHtml();
-
-  String page = successPage(
-    D_WEB_UPLOAD_COMPLETE_HEADING,
-    D_WEB_UPLOAD_BOOK_SAVED,
-    D_WEB_UPLOAD_FINISHED,
-    inner
-  );
-  server.send(200, "text/html; charset=utf-8", page);
+  // Tiny, stable JSON. Includes the final on-disk name so the client can
+  // surface it if it wants (the SPA currently just re-fetches /api/files).
+  String body;
+  body.reserve(64 + s_book.finalName.length());
+  body  = "{\"ok\":true,\"name\":\"";
+  // Final name comes from sanitizeUploadedFilename so it has no quote / slash
+  // characters that would need escaping here.
+  body += s_book.finalName;
+  body += "\"}";
+  server.sendHeader("Cache-Control", "no-store");
+  server.send(200, "application/json; charset=utf-8", body);
 }
 
 static void handleUploadBookStream() {
@@ -220,76 +189,6 @@ static void handleUploadBookStream() {
   }
 }
 
-// ============================================================================
-//  Sleep image upload — straight binary, must be exactly 3904 bytes.
-// ============================================================================
-
-static void handleUploadSleepDone() {
-  if (!s_sleep.ok) {
-    server.send(400, "text/plain; charset=utf-8",
-                s_sleep.error.length()
-                  ? s_sleep.error
-                  : String(D_WEB_SLEEP_UPLOAD_ERR_FALLBACK));
-    return;
-  }
-
-  String inner;
-  inner.reserve(500);
-  inner += "<div class='card'><h2>" D_WEB_SLEEP_UPLOAD_HEADING "</h2><p class='muted'>" D_WEB_SLEEP_UPLOAD_DESC "</p><div class='actions'><a class='btn' href='/settings'>" D_WEB_BACK_TO_SETTINGS "</a><a class='btn secondary' href='/'>" D_WEB_NAV_HOME "</a></div></div>";
-
-  String page = successPage(
-    D_WEB_UPLOAD_COMPLETE_HEADING,
-    D_WEB_SLEEP_UPLOAD_SUBTITLE,
-    D_WEB_SLEEP_UPLOAD_BANNER,
-    inner
-  );
-  server.send(200, "text/html; charset=utf-8", page);
-}
-
-static void handleUploadSleepStream() {
-  HTTPUpload& upS = server.upload();
-
-  if (upS.status == UPLOAD_FILE_START) {
-    s_sleep.ok = false;
-    s_sleep.error = "";
-    s_sleep.tmpPath = "/sleep.bin.tmp";
-    if (FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
-    s_sleep.tmpFile = FS.open(s_sleep.tmpPath, "w");
-    if (!s_sleep.tmpFile) s_sleep.error = D_WEB_SLEEP_ERR_TEMP;
-  }
-  else if (upS.status == UPLOAD_FILE_WRITE) {
-    if (s_sleep.tmpFile) s_sleep.tmpFile.write(upS.buf, upS.currentSize);
-  }
-  else if (upS.status == UPLOAD_FILE_END) {
-    if (s_sleep.tmpFile) s_sleep.tmpFile.close();
-    File f = FS.open(s_sleep.tmpPath, "r");
-    size_t sz = f ? f.size() : 0;
-    if (f) f.close();
-
-    if (sz != 3904) {
-      if (FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
-      s_sleep.error = D_WEB_SLEEP_ERR_SIZE;
-      s_sleep.ok = false;
-    } else {
-      if (FS.exists("/sleep.bin")) FS.remove("/sleep.bin");
-      if (FS.rename(s_sleep.tmpPath, "/sleep.bin")) s_sleep.ok = true;
-      else {
-        if (FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
-        s_sleep.error = D_WEB_SLEEP_ERR_SAVE;
-      }
-    }
-    s_sleep.tmpPath = "";
-  }
-  else if (upS.status == UPLOAD_FILE_ABORTED) {
-    if (s_sleep.tmpFile) s_sleep.tmpFile.close();
-    if (s_sleep.tmpPath.length() > 0 && FS.exists(s_sleep.tmpPath)) FS.remove(s_sleep.tmpPath);
-    s_sleep.error = D_WEB_SLEEP_ERR_ABORTED;
-    s_sleep.ok = false;
-    s_sleep.tmpPath = "";
-  }
-}
-
 void registerUploadRoutes() {
-  server.on("/upload",       HTTP_POST, handleUploadDone,      handleUploadBookStream);
-  server.on("/upload-sleep", HTTP_POST, handleUploadSleepDone, handleUploadSleepStream);
+  server.on("/upload", HTTP_POST, handleUploadDone, handleUploadBookStream);
 }
