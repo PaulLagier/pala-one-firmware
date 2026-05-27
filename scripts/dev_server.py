@@ -40,12 +40,27 @@ MOCK_DIR  = REPO_ROOT / "scripts" / "mock_data"
 
 # Set in main() before serving begins.
 _DEVICE: str | None = None
-_PROXY_TIMEOUT_S = 10.0
+_PROXY_TIMEOUT_S = 30.0  # large enough for book uploads on slow links
+
+# Path prefixes that should NOT be served from webui/ -- they're firmware
+# endpoints handled either by proxy (real device) or mock (canned files).
+# /api/*           SPA JSON endpoints
+# /upload          book upload (multipart, .txt)
+# /upload-app      app binary upload (multipart, .bin)
+# /screensavers/*  thumb / download / upload (binary endpoints used by SPA)
+_DYNAMIC_PREFIXES = ("/api/", "/upload", "/screensavers/")
+
+
+def _is_dynamic(path: str) -> bool:
+    p = path.split("?", 1)[0]
+    return any(p == pre.rstrip("/") or p.startswith(pre) for pre in _DYNAMIC_PREFIXES)
 
 
 def _proxy(handler: "DevHandler", method: str) -> None:
     """Forward the current request to the device and stream the response."""
     body: bytes | None = None
+    # Read the request body for any method that might carry one. Multipart
+    # uploads can be MBs; SPA file/app uploads land here.
     if method in ("POST", "PUT", "PATCH"):
         length = int(handler.headers.get("Content-Length") or 0)
         body = handler.rfile.read(length) if length else None
@@ -115,21 +130,21 @@ class DevHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(WEBUI_DIR), **kwargs)
 
-    def _dispatch_api(self, method: str) -> None:
+    def _dispatch_dynamic(self, method: str) -> None:
         if _DEVICE:
             _proxy(self, method)
         else:
             _mock(self, method)
 
     def do_GET(self):
-        if self.path.startswith("/api/"):
-            return self._dispatch_api("GET")
+        if _is_dynamic(self.path):
+            return self._dispatch_dynamic("GET")
         super().do_GET()
 
     def do_POST(self):
-        if self.path.startswith("/api/"):
-            return self._dispatch_api("POST")
-        self.send_error(405, "static dev server only handles GET for non-/api paths")
+        if _is_dynamic(self.path):
+            return self._dispatch_dynamic("POST")
+        self.send_error(405, "static dev server only handles GET for non-dynamic paths")
 
 
 def main() -> int:

@@ -4,6 +4,7 @@
 #include "src/web/api_files.h"
 #include "src/web/api_list.h"
 #include "src/web/api_reset.h"
+#include "src/web/api_screensavers.h"
 #include "src/web/api_settings.h"
 #include "src/web/app.h"
 #include "src/web/apps_upload.h"
@@ -42,4 +43,5 @@ void registerWebRoutes() {
   registerApiBookmarksRoutes();// /api/bookmarks{,/view,/delete,/export}
   registerApiSettingsRoutes(); // /api/settings  (GET + POST) + /api/sleep-image/delete
   registerApiFilesRoutes();    // /api/files + /api/books/* + /api/folders/* + /api/apps/delete
+  registerApiScreensaversRoutes(); // /api/screensavers (GET + mode + delete)
 }

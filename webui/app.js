@@ -63,12 +63,13 @@
     // out to their full-page URLs (rendered by the screen's body, not nav)
     // until each one is ported.
     var items = [
-      { key: "home",      href: "#/",          label: t.nav.home      },
-      { key: "files",     href: "#/files",     label: t.nav.files     },
-      { key: "bookmarks", href: "#/bookmarks", label: t.nav.bookmarks },
-      { key: "list",      href: "#/list",      label: t.nav.list      },
-      { key: "settings",  href: "#/settings",  label: t.nav.settings  },
-      { key: "reset",     href: "#/reset",     label: t.nav.reset     }
+      { key: "home",         href: "#/",             label: t.nav.home         },
+      { key: "files",        href: "#/files",        label: t.nav.files        },
+      { key: "bookmarks",    href: "#/bookmarks",    label: t.nav.bookmarks    },
+      { key: "list",         href: "#/list",         label: t.nav.list         },
+      { key: "screensavers", href: "#/screensavers", label: t.nav.screensavers },
+      { key: "settings",     href: "#/settings",     label: t.nav.settings     },
+      { key: "reset",        href: "#/reset",        label: t.nav.reset        }
     ];
     els.nav.innerHTML = "";
     items.forEach(function (it) {

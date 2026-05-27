@@ -23,26 +23,14 @@
       '<div class="card">' +
         '<h2>' + t.home.portedHeading + '</h2>' +
         '<ul class="list">' +
-          '<li><a class="link" href="#/files">'     + t.nav.files     + '</a></li>' +
-          '<li><a class="link" href="#/bookmarks">' + t.nav.bookmarks + '</a></li>' +
-          '<li><a class="link" href="#/list">'      + t.nav.list      + '</a></li>' +
-          '<li><a class="link" href="#/settings">'  + t.nav.settings  + '</a></li>' +
-          '<li><a class="link" href="#/reset">'     + t.nav.reset     + '</a></li>' +
+          '<li><a class="link" href="#/files">'        + t.nav.files        + '</a></li>' +
+          '<li><a class="link" href="#/bookmarks">'    + t.nav.bookmarks    + '</a></li>' +
+          '<li><a class="link" href="#/list">'         + t.nav.list         + '</a></li>' +
+          '<li><a class="link" href="#/screensavers">' + t.nav.screensavers + '</a></li>' +
+          '<li><a class="link" href="#/settings">'     + t.nav.settings     + '</a></li>' +
+          '<li><a class="link" href="#/reset">'        + t.nav.reset        + '</a></li>' +
         '</ul>' +
       '</div>';
-
-    var legacyLinks = [
-      { href: "/screensavers", label: t.home.legacy.screensavers }
-    ];
-    html +=
-      '<div class="card">' +
-        '<h2>' + t.home.legacyHeading + '</h2>' +
-        '<p class="muted">' + t.home.legacyNote + '</p>' +
-        '<ul class="list">';
-    legacyLinks.forEach(function (l) {
-      html += '<li><a class="link" href="' + l.href + '">' + l.label + '</a></li>';
-    });
-    html += '</ul></div>';
 
     ctx.container.innerHTML = html;
   }

@@ -33,8 +33,36 @@
     return body ? JSON.parse(body) : null;
   }
 
+  // Multipart upload helper. Uses XHR (not fetch) so we can wire
+  // upload-progress events for a UI indicator. Resolves with the response
+  // text on 2xx; rejects with an Error whose .message is the response body
+  // (typically a useful plain-text reason) on 4xx/5xx.
+  function upload(path, formData, onProgress) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", path);
+      if (onProgress) {
+        xhr.upload.addEventListener("progress", function (ev) {
+          if (ev.lengthComputable) onProgress(ev.loaded / ev.total, ev.loaded, ev.total);
+        });
+      }
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(xhr.responseText || "");
+        } else {
+          var err = new Error(xhr.responseText || (xhr.status + " " + xhr.statusText));
+          err.status = xhr.status;
+          reject(err);
+        }
+      };
+      xhr.onerror = function () { reject(new Error("network error")); };
+      xhr.send(formData);
+    });
+  }
+
   window.palaApi = {
-    get:  function (path)       { return request(path, { method: "GET" }); },
-    post: function (path, body) { return request(path, { method: "POST", body: body }); }
+    get:    function (path)       { return request(path, { method: "GET" }); },
+    post:   function (path, body) { return request(path, { method: "POST", body: body }); },
+    upload: upload
   };
 })();

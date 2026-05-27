@@ -1,0 +1,17 @@
+{
+  "mode":      "cycle",
+  "populated": 2,
+  "max":       8,
+  "hasSingle": true,
+  "firstFree": 2,
+  "slots": [
+    { "id": 0, "exists": true  },
+    { "id": 1, "exists": true  },
+    { "id": 2, "exists": false },
+    { "id": 3, "exists": false },
+    { "id": 4, "exists": false },
+    { "id": 5, "exists": false },
+    { "id": 6, "exists": false },
+    { "id": 7, "exists": false }
+  ]
+}

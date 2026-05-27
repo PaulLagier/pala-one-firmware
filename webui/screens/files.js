@@ -190,18 +190,42 @@
     }
     html += '</div>';
 
-    // -- Upload pointer (until uploads are ported) --------------------------
-    html +=
-      '<div class="card">' +
-        '<h2>' + fs.uploadHeading + '</h2>' +
-        '<p class="muted">' + fs.uploadDesc + '</p>' +
-        '<div class="actions">' +
-          '<a class="btn secondary" href="/">' + fs.uploadOpenLegacy + '</a>' +
-        '</div>' +
-      '</div>';
+    // -- Upload cards (book + app) ------------------------------------------
+    // Both POST multipart to the existing legacy endpoints (/upload and
+    // /upload-app). Success body is HTML and gets discarded; errors come
+    // back as plain text and we surface them in the status line.
+    html += uploadCardHtml(t, "book");
+    html += uploadCardHtml(t, "app");
 
     ctx.container.innerHTML = html;
     wireActions(ctx);
+    wireUploads(ctx);
+  }
+
+  function uploadCardHtml(t, kind) {
+    var fs = t.files;
+    var headings = {
+      book: { h: fs.uploadBookHeading,   d: fs.uploadBookDesc,   b: fs.uploadBookButton,   accept: ".txt,text/plain", name: "file" },
+      app:  { h: fs.uploadAppHeading,    d: fs.uploadAppDesc,    b: fs.uploadAppButton,    accept: ".bin",            name: "file" }
+    };
+    var c = headings[kind];
+    return (
+      '<div class="card" data-upload="' + kind + '">' +
+        '<h2>' + c.h + '</h2>' +
+        '<p class="muted">' + c.d + '</p>' +
+        '<form data-upload-form style="margin-top:14px" enctype="multipart/form-data" accept-charset="UTF-8">' +
+          '<input type="file" name="' + c.name + '" accept="' + c.accept + '" required>' +
+          '<div class="actions">' +
+            '<button type="submit">' + c.b + '</button>' +
+            '<span class="muted" data-progress></span>' +
+          '</div>' +
+          '<div class="bar" data-bar hidden style="margin-top:10px">' +
+            '<span style="width:0%"></span>' +
+          '</div>' +
+          '<div data-status></div>' +
+        '</form>' +
+      '</div>'
+    );
   }
 
   // ----------------------------------------------------------------------
@@ -261,6 +285,61 @@
         if (!window.confirm(fs.confirmDeleteApp)) return;
         call("/api/apps/delete", { name: btn.dataset.name });
       }
+    });
+  }
+
+  // ----------------------------------------------------------------------
+  //  Upload form wiring. Each card has a `<form data-upload-form>` inside a
+  //  `<div data-upload="book|app">`. We POST multipart to the matching
+  //  legacy endpoint and refresh the screen on success.
+  // ----------------------------------------------------------------------
+  function wireUploads(ctx) {
+    var t  = ctx.t;
+    var fs = t.files;
+    var ENDPOINTS = { book: "/upload", app: "/upload-app" };
+
+    ctx.container.querySelectorAll('[data-upload]').forEach(function (card) {
+      var kind = card.dataset.upload;
+      var form = card.querySelector('[data-upload-form]');
+      var btn  = card.querySelector('button[type=submit]');
+      var prog = card.querySelector('[data-progress]');
+      var bar  = card.querySelector('[data-bar]');
+      var barFill = bar.querySelector('span');
+      var status  = card.querySelector('[data-status]');
+
+      form.addEventListener('submit', async function (ev) {
+        ev.preventDefault();
+        var file = form.querySelector('input[type=file]').files[0];
+        if (!file) return;
+
+        btn.disabled    = true;
+        status.className = "";
+        status.textContent = "";
+        prog.textContent = "";
+        bar.hidden = false;
+        barFill.style.width = "0%";
+
+        var fd = new FormData(form);
+        try {
+          await window.palaApi.upload(ENDPOINTS[kind], fd, function (frac, loaded, total) {
+            var pct = Math.round(frac * 100);
+            barFill.style.width = pct + "%";
+            prog.textContent = pct + "%";
+          });
+          status.className   = "status ok";
+          status.textContent = (kind === "book") ? fs.uploadBookOk : fs.uploadAppOk;
+          // Reset the input so the user can immediately do another upload.
+          form.reset();
+          await load(ctx);  // re-fetch storage + library + apps
+        } catch (e) {
+          status.className   = "status err";
+          status.textContent = (t.errors.server || "Server error") + ": " + (e.message || e);
+        } finally {
+          btn.disabled = false;
+          bar.hidden   = true;
+          prog.textContent = "";
+        }
+      });
     });
   }
 

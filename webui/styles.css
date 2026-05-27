@@ -109,6 +109,59 @@ label  { display:block; font-weight:600; margin:0 0 6px; }
 .stack { display:grid; gap:8px; }
 .small { font-size:13px; }
 
+/* ------------------------------------------------------------------------
+ * Screensavers editor — bitmap converter UI, slot grid, icon buttons.
+ * Ported from the legacy /screensavers PROGMEM stylesheet. ss-* prefix
+ * keeps these from colliding with the generic .grid / .card classes.
+ * ---------------------------------------------------------------------- */
+.ss-wrap        { display:grid; gap:12px; }
+.ss-card        { border:1px solid var(--line-soft); border-radius:12px; padding:10px 11px; background:var(--stat-bg); }
+.ss-grid        { display:grid; gap:10px; grid-template-columns:repeat(2, minmax(0,1fr)); }
+.ss-grid > div  { min-width:0; }
+.ss-grid .full  { grid-column:1 / -1; }
+@media (max-width:560px) { .ss-grid { grid-template-columns:1fr; } }
+
+.ss-adv         { border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:var(--card); }
+.ss-adv summary { cursor:pointer; font-weight:600; list-style:none; }
+.ss-adv summary::-webkit-details-marker { display:none; }
+.ss-adv summary:after        { content:'\25BE'; float:right; color:var(--muted); }
+.ss-adv[open] summary:after  { content:'\25B4'; }
+.ss-adv-body    { margin-top:10px; }
+
+.ss-label-row   { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:0 0 6px; }
+.ss-value       { font-size:12px; color:var(--muted); white-space:nowrap; }
+
+.ss-preview-wrap  { display:flex; flex-direction:column; gap:8px; min-height:240px; }
+.ss-preview-stage { flex:1; display:flex; align-items:center; justify-content:center; min-height:140px; }
+.ss-preview-stage canvas {
+  width:100%; max-width:520px;
+  border:1px solid var(--line); border-radius:10px; background:#fff;
+  image-rendering:pixelated; touch-action:none;
+}
+.ss-meta, .ss-status { font-size:12px; color:var(--muted); }
+
+.ss-slots { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
+.ss-slot  { border:1px solid var(--line-soft); border-radius:10px; padding:8px; background:var(--stat-bg);
+            display:flex; flex-direction:column; gap:6px; align-items:center; }
+.ss-slot img { width:100%; height:auto; border:1px solid var(--line); border-radius:6px; background:#fff; image-rendering:pixelated; }
+.ss-slot .ss-slot-empty {
+  width:100%; aspect-ratio:250/122;
+  display:flex; align-items:center; justify-content:center;
+  border:1px dashed var(--line); border-radius:6px; color:var(--muted); font-size:12px;
+}
+.ss-slot-actions { display:flex; gap:8px; align-items:center; justify-content:center; width:100%; margin-top:4px; }
+
+.btn-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; margin:0;
+  border:1px solid var(--line); border-radius:10px;
+  background:var(--card); color:inherit; text-decoration:none; cursor:pointer;
+  transition:background .2s ease;
+}
+.btn-icon:hover         { background:var(--line-soft); }
+.btn-icon.danger        { color:var(--danger); border-color:var(--danger); }
+.btn-icon svg           { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
 .row.list-row { align-items:center; gap:10px; padding:8px 0; }
 .row.list-row .grow { flex:1; }
 .empty-hint { color:var(--muted); font-style:italic; padding:14px 0; }
