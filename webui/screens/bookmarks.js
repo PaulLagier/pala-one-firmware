@@ -89,9 +89,14 @@
       html = '<div class="card"><p class="muted">' + t.bookmarks.noneAcrossLibrary + '</p></div>';
     }
     ctx.container.innerHTML = html;
+  }
 
-    // Delegate delete clicks. Single listener at the container avoids re-
-    // binding when the list mutates (we redraw on each delete).
+  // Delete-click handler. Installed once by render() — `ctx.container`
+  // outlives every innerHTML reassignment, so re-binding inside
+  // renderList() (as we used to) stacks a new listener on every refresh
+  // and ends up firing N confirm dialogs after N–1 deletes.
+  function wireDeleteHandler(ctx) {
+    var t = ctx.t;
     ctx.container.addEventListener("click", function (ev) {
       var btn = ev.target.closest('button[data-book]');
       if (!btn) return;
@@ -153,6 +158,11 @@
   }
 
   function render(ctx) {
+    // Wire the delete-button delegate ONCE per screen entry. List mode
+    // re-renders into ctx.container on every delete; the container element
+    // itself is reused, so binding inside renderList() leaks listeners.
+    wireDeleteHandler(ctx);
+
     var p   = ctx.params || {};
     var bk  = p.book;
     var idx = p.idx;

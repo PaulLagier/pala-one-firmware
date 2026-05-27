@@ -475,27 +475,35 @@
   }
 
   // ---------------------------------------------------------------------
-  //  Mode + delete handlers (delegated at the container).
+  //  Mode-form submit handler. Re-bound on every load() because the
+  //  #ssModeForm element is freshly created on each render — the listener
+  //  dies with the old form when innerHTML is replaced.
   // ---------------------------------------------------------------------
-  function wireModeAndDeletes(ctx) {
+  function wireModeForm(ctx) {
+    var t = ctx.t;
+    var modeForm = ctx.container.querySelector('#ssModeForm');
+    if (!modeForm) return;
+    modeForm.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      var val = ctx.container.querySelector('#ssMode').value;
+      try {
+        await window.palaApi.post('/api/screensavers/mode', { mode: val });
+        await load(ctx);
+      } catch (e) {
+        window.alert((t.errors.server || 'Server error') + ': ' + (e.message || e));
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  //  Delete-button delegate. Installed ONCE per screen entry by render():
+  //  ctx.container outlives every innerHTML reassignment, so re-binding on
+  //  each load() leaks listeners (N deletes → N+1 confirm dialogs on the
+  //  next click).
+  // ---------------------------------------------------------------------
+  function wireDeleteHandler(ctx) {
     var t = ctx.t, ss = t.screensavers;
-    var c = ctx.container;
-
-    var modeForm = c.querySelector('#ssModeForm');
-    if (modeForm) {
-      modeForm.addEventListener('submit', async function (ev) {
-        ev.preventDefault();
-        var val = c.querySelector('#ssMode').value;
-        try {
-          await window.palaApi.post('/api/screensavers/mode', { mode: val });
-          await load(ctx);
-        } catch (e) {
-          window.alert((t.errors.server || 'Server error') + ': ' + (e.message || e));
-        }
-      });
-    }
-
-    c.addEventListener('click', async function (ev) {
+    ctx.container.addEventListener('click', async function (ev) {
       var btn = ev.target.closest('[data-act="ss-delete"]');
       if (!btn) return;
       var single = btn.dataset.single === '1';
@@ -543,10 +551,13 @@
       singleCardHtml(t, state, bust);
 
     wireEditor(ctx, state);
-    wireModeAndDeletes(ctx);
+    wireModeForm(ctx);   // mode form is freshly created each load — re-bind
   }
 
-  function render(ctx) { load(ctx); }
+  function render(ctx) {
+    wireDeleteHandler(ctx);   // once per screen entry — see comment above
+    load(ctx);
+  }
 
   window.palaScreens = window.palaScreens || {};
   window.palaScreens.screensavers = { render: render };

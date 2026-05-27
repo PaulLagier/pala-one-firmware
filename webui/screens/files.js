@@ -71,7 +71,7 @@
     html +=
       '<div class="card">' +
         '<h2>' + fs.createFolderHeading + '</h2>' +
-        '<form id="folder-create" class="stack" style="margin-top:12px">' +
+        '<form id="folder-create" data-act="folder-create" class="stack" style="margin-top:12px">' +
           '<input type="text" name="folder" placeholder="' + esc(fs.createFolderPlaceholder) +
             '" maxlength="64">' +
           '<div class="actions">' +
@@ -204,7 +204,8 @@
     html += uploadCardHtml(t, "app");
 
     ctx.container.innerHTML = html;
-    wireActions(ctx);
+    // Container-level submit/click delegates are wired ONCE in render(),
+    // not on each refresh — see wireActionHandlers().
     wireUploads(ctx);
   }
 
@@ -235,10 +236,13 @@
   }
 
   // ----------------------------------------------------------------------
-  //  Event wiring — single delegated handler at the container level so we
-  //  don't lose listeners when we re-render after a mutation.
+  //  Event wiring — container-level delegated handlers. Installed ONCE per
+  //  screen entry by render(); the container element outlives every
+  //  innerHTML reassignment, so re-wiring on each refresh would stack a
+  //  fresh listener every time and end up firing N confirm dialogs after
+  //  N–1 deletes.
   // ----------------------------------------------------------------------
-  function wireActions(ctx) {
+  function wireActionHandlers(ctx) {
     var t = ctx.t;
     var fs = t.files;
 
@@ -271,11 +275,6 @@
         call("/api/books/move", { id: id2, folder: dest });
       }
     });
-
-    // The folder-create form is wired by the submit delegate above; give
-    // it an id the delegate can find.
-    var fc = ctx.container.querySelector("#folder-create");
-    if (fc) fc.dataset.act = "folder-create";
 
     ctx.container.addEventListener("click", function (ev) {
       var btn = ev.target.closest("button[data-act]");
@@ -349,7 +348,10 @@
     });
   }
 
-  function render(ctx) { load(ctx); }
+  function render(ctx) {
+    wireActionHandlers(ctx);   // once per screen entry, see comment above
+    load(ctx);
+  }
 
   window.palaScreens = window.palaScreens || {};
   window.palaScreens.files = { render: render };
