@@ -116,8 +116,15 @@ def build() -> bool:
     bundled = _inline_assets(raw)
     bundled_bytes = bundled.encode("utf-8")
     # mtime=0 keeps output byte-stable across rebuilds so the CI diff-check
-    # only flips when source actually changed.
+    # only flips when source actually changed. We also pin the OS byte
+    # (header byte 9) to 0xff "unknown" because Python's gzip module writes
+    # it based on the host platform (0x00 on Windows, 0x03 on Unix, etc.)
+    # — without this, the same source produces different bytes on CI vs a
+    # dev machine and the freshness check randomly fails.
     gz = gzip.compress(bundled_bytes, compresslevel=9, mtime=0)
+    gz = bytearray(gz)
+    gz[9] = 0xff
+    gz = bytes(gz)
     header = _emit_c_header(gz, len(bundled_bytes))
     existing = OUT_H.read_text(encoding="utf-8") if OUT_H.exists() else None
     if existing == header:
