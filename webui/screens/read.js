@@ -10,12 +10,7 @@
 // the SPA.
 
 (function () {
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var html = window.palaHtml.html;
 
   // -- local mutable state (per-screen instance) ----------------------------
   var rawText = "";
@@ -32,17 +27,15 @@
     var bookId = parseInt(p.book, 10);
     if (isNaN(bookId)) {
       ctx.header({ title: t_.read.title, subtitle: "", navKey: "files" });
-      ctx.container.innerHTML =
-        '<div class="card"><p class="muted">' + esc(t_.read.errNoBook) + '</p>' +
-          '<div class="actions"><a class="btn secondary" href="#/files">' +
-            esc(t_.bookmarks.back) + '</a></div>' +
-        '</div>';
+      ctx.container.innerHTML = html`<div class="card"><p class="muted">${t_.read.errNoBook}</p>
+        <div class="actions"><a class="btn secondary" href="#/files">${t_.bookmarks.back}</a></div>
+      </div>`;
       return;
     }
 
     ctx.header({ title: t_.read.title, subtitle: t_.read.subtitle, navKey: "files" });
     ctx.container.innerHTML =
-      '<div class="card"><p class="muted">' + esc(t_.read.loading) + '</p></div>';
+      html`<div class="card"><p class="muted">${t_.read.loading}</p></div>`;
 
     // Fetch the books list and find ours. Cheaper than a dedicated
     // /api/books/:id endpoint and the SPA tends to have this hot in cache.
@@ -51,17 +44,14 @@
       meta = await window.palaApi.get("/api/files");
     } catch (e) {
       ctx.container.innerHTML =
-        '<div class="banner-warn">' + esc(t_.errors.server) + ': ' +
-        esc(e.message || e) + '</div>';
+        html`<div class="banner-warn">${t_.errors.server}: ${e.message || e}</div>`;
       return;
     }
     book = (meta.books || []).filter(function (b) { return b.id === bookId; })[0];
     if (!book) {
-      ctx.container.innerHTML =
-        '<div class="card"><p class="muted">' + esc(t_.read.errBookNotFound) + '</p>' +
-          '<div class="actions"><a class="btn secondary" href="#/files">' +
-            esc(t_.bookmarks.back) + '</a></div>' +
-        '</div>';
+      ctx.container.innerHTML = html`<div class="card"><p class="muted">${t_.read.errBookNotFound}</p>
+        <div class="actions"><a class="btn secondary" href="#/files">${t_.bookmarks.back}</a></div>
+      </div>`;
       return;
     }
 
@@ -71,38 +61,29 @@
 
   function renderShell(ctx) {
     var r = t_.read;
-    ctx.container.innerHTML =
-      '<div class="card">' +
-        '<h2>' + esc(book.name) + '</h2>' +
-        '<div class="meta">' +
-          book.size + ' ' + esc(r.bytesLabel) + ' · ' +
-          esc(r.currentPageLabel) + ' ' + book.savedPage +
-        '</div>' +
+    // Find UI, then jump-by-page form (mirrors the files screen's jump form).
+    ctx.container.innerHTML = html`<div class="card">
+      <h2>${book.name}</h2>
+      <div class="meta">${book.size} ${r.bytesLabel} · ${r.currentPageLabel} ${book.savedPage}</div>
 
-        // Find UI
-        '<div class="bv-find">' +
-          '<input id="bvFind" type="search" placeholder="' + esc(r.findPlaceholder) +
-            '" autocomplete="off">' +
-          '<button type="button" class="btn small"           id="bvFindBtn">' + esc(r.findAll) + '</button>' +
-          '<button type="button" class="btn secondary small" id="bvFindPrev">▲ ' + esc(r.findPrev) + '</button>' +
-          '<button type="button" class="btn secondary small" id="bvFindNext">▼ ' + esc(r.findNext) + '</button>' +
-          '<button type="button" class="btn small"           id="bvJumpBtn">' + esc(r.jumpHere) + '</button>' +
-        '</div>' +
-        '<div class="bv-status" id="bvFindStat">' + esc(r.statLoading) + '</div>' +
-        '<div class="bv-status" id="bvJumpStat"></div>' +
+      <div class="bv-find">
+        <input id="bvFind" type="search" placeholder="${r.findPlaceholder}" autocomplete="off">
+        <button type="button" class="btn small"           id="bvFindBtn">${r.findAll}</button>
+        <button type="button" class="btn secondary small" id="bvFindPrev">▲ ${r.findPrev}</button>
+        <button type="button" class="btn secondary small" id="bvFindNext">▼ ${r.findNext}</button>
+        <button type="button" class="btn small"           id="bvJumpBtn">${r.jumpHere}</button>
+      </div>
+      <div class="bv-status" id="bvFindStat">${r.statLoading}</div>
+      <div class="bv-status" id="bvJumpStat"></div>
 
-        // Jump-by-page (mirrors /#/files\'s jump form)
-        '<form id="bvJumpPage" class="bv-find" ' +
-              'style="margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px">' +
-          '<input type="text" name="page" inputmode="numeric" ' +
-                 'placeholder="' + esc(r.pagePlaceholder) + '" ' +
-                 'value="' + book.savedPage + '" style="max-width:140px">' +
-          '<button type="submit" class="btn small">' + esc(r.jumpPage) + '</button>' +
-          '<span class="muted small">' + esc(r.jumpHint) + '</span>' +
-        '</form>' +
+      <form id="bvJumpPage" class="bv-find" style="margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px">
+        <input type="text" name="page" inputmode="numeric" placeholder="${r.pagePlaceholder}" value="${book.savedPage}" style="max-width:140px">
+        <button type="submit" class="btn small">${r.jumpPage}</button>
+        <span class="muted small">${r.jumpHint}</span>
+      </form>
 
-        '<div id="bvText" class="bv-text"></div>' +
-      '</div>';
+      <div id="bvText" class="bv-text"></div>
+    </div>`;
 
     refs = {
       text:      ctx.container.querySelector("#bvText"),
@@ -124,20 +105,18 @@
       refs.text.textContent = rawText;
       return;
     }
-    // Build the highlighted innerHTML by walking hits in order. esc() each
-    // chunk so we don't accidentally inject markup from book content.
-    var html = "", last = 0;
+    // Build the highlighted innerHTML by walking hits in order. Plain-string
+    // chunks are escaped by the html helper (resolve()), so we never inject
+    // markup from book content; the <span> wrappers are the only live HTML.
+    var parts = [], last = 0;
     for (var i = 0; i < hits.length; i++) {
       var h = hits[i];
-      html += esc(rawText.slice(last, h.start));
-      html += '<span class="find-hit' + (i === curHit ? ' find-cur' : '') +
-              '" data-i="' + i + '">' +
-              esc(rawText.slice(h.start, h.end)) +
-              '</span>';
+      parts.push(rawText.slice(last, h.start));
+      parts.push(html`<span class="${i === curHit ? "find-hit find-cur" : "find-hit"}" data-i="${i}">${rawText.slice(h.start, h.end)}</span>`);
       last = h.end;
     }
-    html += esc(rawText.slice(last));
-    refs.text.innerHTML = html;
+    parts.push(rawText.slice(last));
+    refs.text.innerHTML = html`${parts}`;
   }
 
   function gotoHit(i) {

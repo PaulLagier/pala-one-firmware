@@ -6,14 +6,7 @@
 // the browser back button does the right thing.
 
 (function () {
-  function escapeHtml(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var html = window.palaHtml.html;
 
   // -- List mode -------------------------------------------------------------
   async function renderList(ctx) {
@@ -24,71 +17,69 @@
       navKey:   "bookmarks"
     });
     ctx.container.innerHTML =
-      '<div class="card"><p class="muted">' + t.bookmarks.loading + '</p></div>';
+      html`<div class="card"><p class="muted">${t.bookmarks.loading}</p></div>`;
 
     var data;
     try {
       data = await window.palaApi.get("/api/bookmarks");
     } catch (e) {
       ctx.container.innerHTML =
-        '<div class="banner-warn">' + escapeHtml(t.errors.server) + ': ' +
-        escapeHtml(e.message || e) + '</div>';
+        html`<div class="banner-warn">${t.errors.server}: ${e.message || e}</div>`;
       return;
     }
 
     var books = (data && data.books) || [];
     if (books.length === 0) {
       ctx.container.innerHTML =
-        '<div class="card"><p class="muted">' + t.bookmarks.noBooks + '</p></div>';
+        html`<div class="card"><p class="muted">${t.bookmarks.noBooks}</p></div>`;
       return;
     }
 
     // Hide books that have no bookmarks AND no error — the list of files lives
     // on the files screen, no reason to repeat zero-bookmark cards here.
-    var html = "";
-    var anyShown = false;
-    books.forEach(function (book) {
+    var cards = books.map(function (book) {
       var bms = book.bookmarks || [];
-      if (bms.length === 0 && !book.error) return;
-      anyShown = true;
-      html += '<div class="card"><h2>' + escapeHtml(book.name) + '</h2>';
+      if (bms.length === 0 && !book.error) return "";  // resolve() drops ""
+
       if (book.error) {
-        html += '<p class="muted">' + escapeHtml(t.bookmarks.openFailed) + '</p>';
-      } else {
-        html += '<ul class="list">';
-        bms.forEach(function (bm) {
-          var viewHref = "#/bookmarks?book=" + encodeURIComponent(book.id) +
-                         "&idx="           + encodeURIComponent(bm.idx);
-          html +=
-            '<li><div class="row">' +
-              '<div>' +
-                '<div class="pill">' + t.bookmarks.pillPrefix + (bm.idx + 1) + '</div>' +
-                '<p class="meta" style="margin-top:8px">' + escapeHtml(bm.label) + '</p>' +
-              '</div>' +
-              '<div style="white-space:nowrap">' +
-                '<a class="link" href="' + viewHref + '">' + t.bookmarks.view + '</a> | ' +
-                '<button type="button" class="btn secondary small" ' +
-                  'data-book="' + book.id + '" data-idx="' + bm.idx + '">' +
-                  t.bookmarks.del + '</button>' +
-              '</div>' +
-            '</div></li>';
-        });
-        html += '</ul>';
-        var exportHref = "/api/bookmarks/export?book=" + encodeURIComponent(book.id);
-        html +=
-          '<div class="actions">' +
-            '<a class="btn secondary" href="' + exportHref + '">' +
-              t.bookmarks.downloadAll +
-            '</a>' +
-          '</div>';
+        return html`<div class="card">
+          <h2>${book.name}</h2>
+          <p class="muted">${t.bookmarks.openFailed}</p>
+        </div>`;
       }
-      html += '</div>';
+
+      var items = bms.map(function (bm) {
+        var viewHref = "#/bookmarks?book=" + encodeURIComponent(book.id) +
+                       "&idx="             + encodeURIComponent(bm.idx);
+        return html`<li><div class="row">
+          <div>
+            <div class="pill">${t.bookmarks.pillPrefix}${bm.idx + 1}</div>
+            <p class="meta" style="margin-top:8px">${bm.label}</p>
+          </div>
+          <div style="white-space:nowrap">
+            <a class="link" href="${viewHref}">${t.bookmarks.view}</a> |
+            <button type="button" class="btn secondary small"
+                    data-book="${book.id}" data-idx="${bm.idx}">${t.bookmarks.del}</button>
+          </div>
+        </div></li>`;
+      });
+
+      var exportHref = "/api/bookmarks/export?book=" + encodeURIComponent(book.id);
+      return html`<div class="card">
+        <h2>${book.name}</h2>
+        <ul class="list">${items}</ul>
+        <div class="actions">
+          <a class="btn secondary" href="${exportHref}">${t.bookmarks.downloadAll}</a>
+        </div>
+      </div>`;
     });
 
-    if (!anyShown) {
-      html = '<div class="card"><p class="muted">' + t.bookmarks.noneAcrossLibrary + '</p></div>';
-    }
-    ctx.container.innerHTML = html;
+    var anyShown = books.some(function (b) {
+      return (b.bookmarks || []).length > 0 || b.error;
+    });
+    ctx.container.innerHTML = anyShown
+      ? html`${cards}`
+      : html`<div class="card"><p class="muted">${t.bookmarks.noneAcrossLibrary}</p></div>`;
   }
 
   // Delete-click handler. Installed once by render() — `ctx.container`
@@ -124,7 +115,7 @@
       navKey:   "bookmarks"
     });
     ctx.container.innerHTML =
-      '<div class="card"><p class="muted">' + t.bookmarks.loading + '</p></div>';
+      html`<div class="card"><p class="muted">${t.bookmarks.loading}</p></div>`;
 
     var data;
     try {
@@ -133,11 +124,11 @@
         "&idx="                     + encodeURIComponent(idx)
       );
     } catch (e) {
-      ctx.container.innerHTML =
-        '<div class="banner-warn">' + escapeHtml(t.errors.server) + ': ' +
-        escapeHtml(e.message || e) + '</div>' +
-        '<div class="actions"><a class="btn secondary" href="#/bookmarks">' +
-          t.bookmarks.back + '</a></div>';
+      ctx.container.innerHTML = html`
+        <div class="banner-warn">${t.errors.server}: ${e.message || e}</div>
+        <div class="actions">
+          <a class="btn secondary" href="#/bookmarks">${t.bookmarks.back}</a>
+        </div>`;
       return;
     }
 
@@ -145,16 +136,15 @@
     var bm = data.bookmark || {};
     var exportHref = "/api/bookmarks/export?book=" + encodeURIComponent(b.id);
 
-    ctx.container.innerHTML =
-      '<div class="card">' +
-        '<h2>' + escapeHtml(b.name) + '</h2>' +
-        '<p class="muted">' + t.bookmarks.pillPrefix + ((bm.idx || 0) + 1) + '</p>' +
-        '<pre class="pre" style="margin-top:10px">' + escapeHtml(bm.text) + '</pre>' +
-        '<div class="actions">' +
-          '<a class="btn secondary" href="#/bookmarks">' + t.bookmarks.back + '</a>' +
-          '<a class="btn secondary" href="' + exportHref + '">' + t.bookmarks.downloadAll + '</a>' +
-        '</div>' +
-      '</div>';
+    ctx.container.innerHTML = html`<div class="card">
+      <h2>${b.name}</h2>
+      <p class="muted">${t.bookmarks.pillPrefix}${(bm.idx || 0) + 1}</p>
+      <pre class="pre" style="margin-top:10px">${bm.text}</pre>
+      <div class="actions">
+        <a class="btn secondary" href="#/bookmarks">${t.bookmarks.back}</a>
+        <a class="btn secondary" href="${exportHref}">${t.bookmarks.downloadAll}</a>
+      </div>
+    </div>`;
   }
 
   function render(ctx) {

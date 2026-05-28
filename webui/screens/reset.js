@@ -3,6 +3,8 @@
 // running, so we swap the card for a success banner instead of redirecting.
 
 (function () {
+  var html = window.palaHtml.html;
+
   function render(ctx) {
     var t = ctx.t;
     ctx.header({
@@ -11,19 +13,16 @@
       navKey:   "reset"
     });
 
-    ctx.container.innerHTML =
-      '<div class="card">' +
-        '<h2>' + t.reset.confirmHeading + '</h2>' +
-        '<p><strong>' + t.reset.warn + '</strong></p>' +
-        '<p class="muted">' + t.reset.detail + '</p>' +
-        '<div class="actions">' +
-          '<button class="btn danger" id="btn-reset" type="button">' +
-            t.reset.button +
-          '</button>' +
-          '<a class="btn secondary" href="#/">' + t.reset.cancel + '</a>' +
-        '</div>' +
-        '<div id="reset-status" class="muted" style="margin-top:12px"></div>' +
-      '</div>';
+    ctx.container.innerHTML = html`<div class="card">
+      <h2>${t.reset.confirmHeading}</h2>
+      <p><strong>${t.reset.warn}</strong></p>
+      <p class="muted">${t.reset.detail}</p>
+      <div class="actions">
+        <button class="btn danger" id="btn-reset" type="button">${t.reset.button}</button>
+        <a class="btn secondary" href="#/">${t.reset.cancel}</a>
+      </div>
+      <div id="reset-status" class="muted" style="margin-top:12px"></div>
+    </div>`;
 
     var btn    = ctx.container.querySelector("#btn-reset");
     var status = ctx.container.querySelector("#reset-status");
@@ -43,13 +42,12 @@
         await window.palaApi.post("/api/reset");
         // On success the device has wiped storage + NVS but stayed running,
         // so swap the card for a success banner instead of redirecting.
-        ctx.container.innerHTML =
-          '<div class="banner-ok">' + t.reset.success + '</div>' +
-          '<div class="card"><p class="muted">' + t.reset.successDetail + '</p>' +
-            '<div class="actions">' +
-              '<a class="btn" href="#/">' + t.reset.goHome + '</a>' +
-            '</div>' +
-          '</div>';
+        ctx.container.innerHTML = html`<div class="banner-ok">${t.reset.success}</div>
+          <div class="card"><p class="muted">${t.reset.successDetail}</p>
+            <div class="actions">
+              <a class="btn" href="#/">${t.reset.goHome}</a>
+            </div>
+          </div>`;
       } catch (e) {
         btn.disabled    = false;
         btn.textContent = t.reset.button;

@@ -6,12 +6,7 @@
 // the resulting state so we can refresh the form without a second GET.
 
 (function () {
-  function escapeHtml(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var html = window.palaHtml.html, raw = window.palaHtml.raw;
 
   // Static option lists for the selects — values are the wire shape the
   // backend expects, labels come from i18n at render time.
@@ -25,15 +20,14 @@
 
   function selectHtml(id, name, options, currentValue, hint) {
     var opts = options.map(function (o) {
-      var sel = (String(o.value) === String(currentValue)) ? " selected" : "";
-      return '<option value="' + escapeHtml(o.value) + '"' + sel + '>' +
-             escapeHtml(o.label) + '</option>';
-    }).join("");
-    return '<div>' +
-      '<label for="' + id + '">' + escapeHtml(name) + '</label>' +
-      '<select id="' + id + '">' + opts + '</select>' +
-      '<div class="hint">' + escapeHtml(hint) + '</div>' +
-    '</div>';
+      var sel = (String(o.value) === String(currentValue)) ? raw(" selected") : "";
+      return html`<option value="${o.value}"${sel}>${o.label}</option>`;
+    });
+    return html`<div>
+      <label for="${id}">${name}</label>
+      <select id="${id}">${opts}</select>
+      <div class="hint">${hint}</div>
+    </div>`;
   }
 
   function renderForm(ctx, state) {
@@ -44,63 +38,56 @@
     var lgapOpts   = LGAP_VALUES.map(function (v)  { return { value: v, label: s.lineGaps[v]    }; });
     var familyOpts = FAMILY_VALUES.map(function (v){ return { value: v, label: s.families[v]    }; });
 
-    ctx.container.innerHTML =
-      '<div class="card">' +
-        '<h2>' + s.readingHeading + '</h2>' +
-        '<p class="muted">' + s.readingIntro + '</p>' +
-        '<form id="settings-form" style="margin-top:12px">' +
-          '<div class="grid cols-2">' +
-            selectHtml("font",   s.fontSize,    fontOpts,   state.font,   s.fontSizeHint)   +
-            selectHtml("family", s.fontFamily,  familyOpts, state.family, s.familyHint)     +
-            selectHtml("sleep",  s.sleepAfter,  sleepOpts,  state.sleep,  s.sleepHint)      +
-            selectHtml("lgap",   s.lineSpacing, lgapOpts,   state.lgap,   s.lineSpacingHint) +
-            '<div class="span-2">' +
-              '<label class="check-row">' +
-                '<input type="checkbox" id="bionic"' + (state.bionic ? " checked" : "") + '>' +
-                '<span>' + s.bionicLabel + '</span>' +
-              '</label>' +
-              '<div class="hint">' + s.bionicHint + '</div>' +
-            '</div>' +
-            '<div class="span-2">' +
-              '<label class="check-row">' +
-                '<input type="checkbox" id="noScreensaver"' + (state.noScreensaver ? " checked" : "") + '>' +
-                '<span>' + s.noScreensaverLabel + '</span>' +
-              '</label>' +
-              '<div class="hint">' + s.noScreensaverHint + '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="actions">' +
-            '<button type="submit" id="save">' + s.save + '</button>' +
-            '<span class="muted">' + s.applyHint + '</span>' +
-          '</div>' +
-          '<div id="settings-status"></div>' +
-        '</form>' +
-      '</div>' +
-
-      // Buttons (gesture bindings) — its own form + save button so users
-      // can rebind a hold without touching the reading sliders.
-      gesturesCardHtml(s, state.gestures || {}) +
-
-      // Sleep-image management card. Hidden when no custom image exists.
-      '<div class="card" id="sleep-image-card"' + (state.hasSleepImage ? '' : ' hidden') + '>' +
-        '<h2>' + s.sleepImageHeading + '</h2>' +
-        '<p class="muted">' + s.sleepImagePresent + '</p>' +
-        '<div class="actions">' +
-          '<button type="button" class="btn secondary" id="delete-sleep">' +
-            s.deleteSleepImage +
-          '</button>' +
-        '</div>' +
-      '</div>' +
-
-      // Quick link to the screensaver editor on its dedicated SPA screen.
-      '<div class="card">' +
-        '<h2>' + s.screensaverHeading + '</h2>' +
-        '<p class="muted">' + s.screensaverCardDesc + '</p>' +
-        '<div class="actions">' +
-          '<a class="btn" href="#/screensavers">' + s.screensaverEditorLink + '</a>' +
-          '<span class="muted">' + s.screensaverEditorHint + '</span>' +
-        '</div>' +
-      '</div>';
+    // Cards top to bottom: reading settings, gesture bindings (own form so a
+    // hold can be rebound without touching the sliders), sleep-image
+    // management (hidden when no custom image), and a link to the editor.
+    ctx.container.innerHTML = html`<div class="card">
+      <h2>${s.readingHeading}</h2>
+      <p class="muted">${s.readingIntro}</p>
+      <form id="settings-form" style="margin-top:12px">
+        <div class="grid cols-2">
+          ${selectHtml("font",   s.fontSize,    fontOpts,   state.font,   s.fontSizeHint)}
+          ${selectHtml("family", s.fontFamily,  familyOpts, state.family, s.familyHint)}
+          ${selectHtml("sleep",  s.sleepAfter,  sleepOpts,  state.sleep,  s.sleepHint)}
+          ${selectHtml("lgap",   s.lineSpacing, lgapOpts,   state.lgap,   s.lineSpacingHint)}
+          <div class="span-2">
+            <label class="check-row">
+              <input type="checkbox" id="bionic"${state.bionic ? raw(" checked") : ""}>
+              <span>${s.bionicLabel}</span>
+            </label>
+            <div class="hint">${s.bionicHint}</div>
+          </div>
+          <div class="span-2">
+            <label class="check-row">
+              <input type="checkbox" id="noScreensaver"${state.noScreensaver ? raw(" checked") : ""}>
+              <span>${s.noScreensaverLabel}</span>
+            </label>
+            <div class="hint">${s.noScreensaverHint}</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" id="save">${s.save}</button>
+          <span class="muted">${s.applyHint}</span>
+        </div>
+        <div id="settings-status"></div>
+      </form>
+    </div>
+    ${gesturesCardHtml(s, state.gestures || {})}
+    <div class="card" id="sleep-image-card"${state.hasSleepImage ? "" : raw(" hidden")}>
+      <h2>${s.sleepImageHeading}</h2>
+      <p class="muted">${s.sleepImagePresent}</p>
+      <div class="actions">
+        <button type="button" class="btn secondary" id="delete-sleep">${s.deleteSleepImage}</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>${s.screensaverHeading}</h2>
+      <p class="muted">${s.screensaverCardDesc}</p>
+      <div class="actions">
+        <a class="btn" href="#/screensavers">${s.screensaverEditorLink}</a>
+        <span class="muted">${s.screensaverEditorHint}</span>
+      </div>
+    </div>`;
 
     var form = ctx.container.querySelector("#settings-form");
     form.addEventListener("submit", function (ev) {
@@ -123,24 +110,22 @@
     var actionOpts = ACTION_VALUES.map(function (v) {
       return { value: v, label: s.actions[v] };
     });
-    return (
-      '<div class="card">' +
-        '<h2>' + s.buttonsHeading + '</h2>' +
-        '<p class="muted">' + s.buttonsHint + '</p>' +
-        '<form id="gestures-form" style="margin-top:12px">' +
-          '<div class="grid cols-2">' +
-            selectHtml("btnL",  s.buttonsLong,      actionOpts, gestures.long      || "none", "") +
-            selectHtml("btnXL", s.buttonsExtraLong, actionOpts, gestures.extraLong || "none", "") +
-            selectHtml("btnCH", s.buttonsClickHold, actionOpts, gestures.clickHold || "none", "") +
-          '</div>' +
-          '<div class="actions">' +
-            '<button type="submit" id="save-gestures">' + s.buttonsSave + '</button>' +
-            '<span class="muted">' + s.buttonsLockHint + '</span>' +
-          '</div>' +
-          '<div id="gestures-status"></div>' +
-        '</form>' +
-      '</div>'
-    );
+    return html`<div class="card">
+      <h2>${s.buttonsHeading}</h2>
+      <p class="muted">${s.buttonsHint}</p>
+      <form id="gestures-form" style="margin-top:12px">
+        <div class="grid cols-2">
+          ${selectHtml("btnL",  s.buttonsLong,      actionOpts, gestures.long      || "none", "")}
+          ${selectHtml("btnXL", s.buttonsExtraLong, actionOpts, gestures.extraLong || "none", "")}
+          ${selectHtml("btnCH", s.buttonsClickHold, actionOpts, gestures.clickHold || "none", "")}
+        </div>
+        <div class="actions">
+          <button type="submit" id="save-gestures">${s.buttonsSave}</button>
+          <span class="muted">${s.buttonsLockHint}</span>
+        </div>
+        <div id="gestures-status"></div>
+      </form>
+    </div>`;
   }
 
   function readForm(ctx) {
@@ -241,14 +226,13 @@
       navKey:   "settings"
     });
     ctx.container.innerHTML =
-      '<div class="card"><p class="muted">' + ctx.t.settings.loading + '</p></div>';
+      html`<div class="card"><p class="muted">${ctx.t.settings.loading}</p></div>`;
     try {
       var state = await window.palaApi.get("/api/settings");
       renderForm(ctx, state);
     } catch (e) {
       ctx.container.innerHTML =
-        '<div class="banner-warn">' + escapeHtml(ctx.t.errors.server) +
-        ': ' + escapeHtml(e.message || e) + '</div>';
+        html`<div class="banner-warn">${ctx.t.errors.server}: ${e.message || e}</div>`;
     }
   }
 

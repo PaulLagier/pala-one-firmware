@@ -2,12 +2,7 @@
 // plus the book + app upload forms.
 
 (function () {
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var html = window.palaHtml.html;
 
   function humanBytes(n) {
     if (n < 1024) return n + " B";
@@ -30,180 +25,140 @@
       navKey:   "files"
     });
     ctx.container.innerHTML =
-      '<div class="card"><p class="muted">' + t.files.loading + '</p></div>';
+      html`<div class="card"><p class="muted">${t.files.loading}</p></div>`;
     try {
       var data = await window.palaApi.get("/api/files");
       renderAll(ctx, data);
     } catch (e) {
       ctx.container.innerHTML =
-        '<div class="banner-warn">' + esc(t.errors.server) + ': ' +
-        esc(e.message || e) + '</div>';
+        html`<div class="banner-warn">${t.errors.server}: ${e.message || e}</div>`;
     }
   }
 
   function renderAll(ctx, data) {
     var t  = ctx.t;
     var fs = t.files;
-    var html = "";
 
     // -- Storage card --------------------------------------------------------
     var s = data.storage || { total: 0, used: 0, free: 0, pct: 0 };
     var booksCount = (data.books || []).length;
-    html +=
-      '<div class="card">' +
-        '<h2>' + fs.storageHeading + '</h2>' +
-        '<div class="stats">' +
-          '<div class="stat"><span class="muted">' + fs.storageBooks + '</span><b>' + booksCount    + '</b></div>' +
-          '<div class="stat"><span class="muted">' + fs.storageUsed  + '</span><b>' + humanBytes(s.used)  + '</b></div>' +
-          '<div class="stat"><span class="muted">' + fs.storageFree  + '</span><b>' + humanBytes(s.free)  + '</b></div>' +
-          '<div class="stat"><span class="muted">' + fs.storageTotal + '</span><b>' + humanBytes(s.total) + '</b></div>' +
-        '</div>' +
-        '<div class="bar"><span style="width:' + (s.pct || 0) + '%"></span></div>' +
-        '<div class="muted" style="margin-top:8px">' + (s.pct || 0) + fs.storagePctSuffix + '</div>' +
-      '</div>';
+    var lowStorage = (s.total === 0 || s.free < 8192);
 
-    if (s.total === 0 || s.free < 8192) {
-      html = html.replace('<div class="card">',
-        '<div class="banner-warn">' + esc(fs.storageWarn) + '</div><div class="card">');
-    }
+    var storageCard = html`<div class="card">
+      <h2>${fs.storageHeading}</h2>
+      <div class="stats">
+        <div class="stat"><span class="muted">${fs.storageBooks}</span><b>${booksCount}</b></div>
+        <div class="stat"><span class="muted">${fs.storageUsed}</span><b>${humanBytes(s.used)}</b></div>
+        <div class="stat"><span class="muted">${fs.storageFree}</span><b>${humanBytes(s.free)}</b></div>
+        <div class="stat"><span class="muted">${fs.storageTotal}</span><b>${humanBytes(s.total)}</b></div>
+      </div>
+      <div class="bar"><span style="width:${s.pct || 0}%"></span></div>
+      <div class="muted" style="margin-top:8px">${s.pct || 0}${fs.storagePctSuffix}</div>
+    </div>`;
 
     // -- Folder management ---------------------------------------------------
-    html +=
-      '<div class="card">' +
-        '<h2>' + fs.createFolderHeading + '</h2>' +
-        '<form id="folder-create" data-act="folder-create" class="stack" style="margin-top:12px">' +
-          '<input type="text" name="folder" placeholder="' + esc(fs.createFolderPlaceholder) +
-            '" maxlength="64">' +
-          '<div class="actions">' +
-            '<button type="submit">' + fs.createFolderButton + '</button>' +
-            '<span class="muted">' + fs.createFolderHint + '</span>' +
-          '</div>' +
-        '</form>' +
-      '</div>';
+    var folderCreateCard = html`<div class="card">
+      <h2>${fs.createFolderHeading}</h2>
+      <form id="folder-create" data-act="folder-create" class="stack" style="margin-top:12px">
+        <input type="text" name="folder" placeholder="${fs.createFolderPlaceholder}" maxlength="64">
+        <div class="actions">
+          <button type="submit">${fs.createFolderButton}</button>
+          <span class="muted">${fs.createFolderHint}</span>
+        </div>
+      </form>
+    </div>`;
 
     var folders = data.folders || [];
-    html += '<div class="card"><h2>' + fs.foldersHeading + '</h2>';
-    if (folders.length === 0) {
-      html += '<p class="muted">' + fs.noFolders + '</p>';
-    } else {
-      html += '<ul class="list">';
-      folders.forEach(function (folder) {
-        html +=
-          '<li><div class="row">' +
-            '<div><span class="pill">' + esc(prettyFolder(folder, fs.rootLabel)) + '</span></div>' +
-            '<div>' +
-              '<button type="button" class="btn secondary small" ' +
-                'data-act="folder-delete" data-folder="' + esc(folder) + '">' +
-                fs.deleteButton +
-              '</button>' +
-            '</div>' +
-          '</div></li>';
-      });
-      html += '</ul>';
-    }
-    html += '</div>';
+    var foldersCard = html`<div class="card">
+      <h2>${fs.foldersHeading}</h2>
+      ${folders.length === 0
+        ? html`<p class="muted">${fs.noFolders}</p>`
+        : html`<ul class="list">${folders.map(function (folder) {
+            return html`<li><div class="row">
+              <div><span class="pill">${prettyFolder(folder, fs.rootLabel)}</span></div>
+              <div>
+                <button type="button" class="btn secondary small"
+                        data-act="folder-delete" data-folder="${folder}">${fs.deleteButton}</button>
+              </div>
+            </div></li>`;
+          })}</ul>`}
+    </div>`;
 
     // -- Library books -------------------------------------------------------
     var books  = data.books  || [];
     var limits = data.limits || { maxBooks: 0, maxFolders: 0 };
-    html += '<div class="card"><h2>' + fs.libraryHeading + '</h2>';
-    if (books.length >= limits.maxBooks) {
-      html += '<p style="color:#b91c1c;font-weight:600">' + fs.libraryFullWarn + '</p>';
-    }
-    if (folders.length >= limits.maxFolders) {
-      html += '<p style="color:#b91c1c;font-weight:600">' + fs.folderLimitWarn + '</p>';
-    }
-    if (books.length === 0) {
-      html += '<p class="muted">' + fs.noBooks + '</p>';
-    } else {
-      html += '<ul class="list">';
-      books.forEach(function (b) {
-        var folderLabel = prettyFolder(b.folder, fs.rootLabel);
-        html +=
-          '<li><div class="row">' +
-            '<div style="flex:1">' +
-              '<h3>' + esc(b.name) + '</h3>' +
-              '<div class="meta">' +
-                b.size + fs.bytesLabel + ' &middot; ' + fs.folderLabel + esc(folderLabel) +
-                ' &middot; ' + fs.currentPage + b.savedPage +
-              '</div>' +
+    var booksCard = html`<div class="card">
+      <h2>${fs.libraryHeading}</h2>
+      ${books.length >= limits.maxBooks
+        ? html`<p style="color:#b91c1c;font-weight:600">${fs.libraryFullWarn}</p>` : ""}
+      ${folders.length >= limits.maxFolders
+        ? html`<p style="color:#b91c1c;font-weight:600">${fs.folderLimitWarn}</p>` : ""}
+      ${books.length === 0
+        ? html`<p class="muted">${fs.noBooks}</p>`
+        : html`<ul class="list">${books.map(function (b) {
+            var folderLabel = prettyFolder(b.folder, fs.rootLabel);
+            return html`<li><div class="row">
+              <div style="flex:1">
+                <h3>${b.name}</h3>
+                <div class="meta">${b.size}${fs.bytesLabel} &middot; ${fs.folderLabel}${folderLabel} &middot; ${fs.currentPage}${b.savedPage}</div>
 
-              '<div class="actions" style="margin-top:10px">' +
-                '<a class="btn secondary small" href="#/read?book=' + b.id + '">' +
-                  fs.readAndFind +
-                '</a>' +
-              '</div>' +
+                <div class="actions" style="margin-top:10px">
+                  <a class="btn secondary small" href="#/read?book=${b.id}">${fs.readAndFind}</a>
+                </div>
 
-              '<form data-act="book-jumppage" data-id="' + b.id + '" class="stack small" ' +
-                    'style="margin-top:10px">' +
-                '<div class="row" style="align-items:end;gap:10px">' +
-                  '<div style="flex:1">' +
-                    '<input type="text" name="page" value="' + b.savedPage +
-                      '" inputmode="numeric" placeholder="' + esc(fs.pagePlaceholder) + '">' +
-                  '</div>' +
-                  '<div><button type="submit">' + fs.jumpButton + '</button></div>' +
-                '</div>' +
-                '<div class="muted">' + fs.jumpHint + '<br>' +
-                  '<span class="muted">' + fs.jumpHint2 + '</span></div>' +
-              '</form>' +
+                <form data-act="book-jumppage" data-id="${b.id}" class="stack small" style="margin-top:10px">
+                  <div class="row" style="align-items:end;gap:10px">
+                    <div style="flex:1">
+                      <input type="text" name="page" value="${b.savedPage}" inputmode="numeric" placeholder="${fs.pagePlaceholder}">
+                    </div>
+                    <div><button type="submit">${fs.jumpButton}</button></div>
+                  </div>
+                  <div class="muted">${fs.jumpHint}<br><span class="muted">${fs.jumpHint2}</span></div>
+                </form>
 
-              '<form data-act="book-move" data-id="' + b.id + '" class="stack small" ' +
-                    'style="margin-top:10px">' +
-                '<input type="text" name="folder" value="' + esc(b.folder) +
-                  '" placeholder="' + esc(fs.movePlaceholder) + '" maxlength="64">' +
-                '<div class="actions">' +
-                  '<button type="submit">' + fs.moveButton + '</button>' +
-                  '<span class="muted">' + fs.moveHint + '</span>' +
-                '</div>' +
-              '</form>' +
-            '</div>' +
+                <form data-act="book-move" data-id="${b.id}" class="stack small" style="margin-top:10px">
+                  <input type="text" name="folder" value="${b.folder}" placeholder="${fs.movePlaceholder}" maxlength="64">
+                  <div class="actions">
+                    <button type="submit">${fs.moveButton}</button>
+                    <span class="muted">${fs.moveHint}</span>
+                  </div>
+                </form>
+              </div>
 
-            '<div>' +
-              '<button type="button" class="btn secondary small" ' +
-                'data-act="book-delete" data-id="' + b.id + '">' +
-                fs.deleteButton +
-              '</button>' +
-            '</div>' +
-          '</div></li>';
-      });
-      html += '</ul>';
-    }
-    html += '</div>';
+              <div>
+                <button type="button" class="btn secondary small" data-act="book-delete" data-id="${b.id}">${fs.deleteButton}</button>
+              </div>
+            </div></li>`;
+          })}</ul>`}
+    </div>`;
 
     // -- Apps ---------------------------------------------------------------
     var apps = data.apps || [];
-    html += '<div class="card"><h2>' + fs.appsHeading + '</h2>';
-    if (apps.length === 0) {
-      html += '<p class="muted">' + fs.noApps + '</p>';
-    } else {
-      html += '<ul class="list">';
-      apps.forEach(function (a) {
-        html +=
-          '<li><div class="row">' +
-            '<div>' +
-              '<h3>' + esc(a.name) + '</h3>' +
-              '<div class="meta">' + a.size + fs.bytesLabel + ' &middot; ' + esc(a.fileName) + '</div>' +
-            '</div>' +
-            '<div>' +
-              '<button type="button" class="btn secondary small" ' +
-                'data-act="app-delete" data-name="' + esc(a.fileName) + '">' +
-                fs.deleteButton +
-              '</button>' +
-            '</div>' +
-          '</div></li>';
-      });
-      html += '</ul>';
-    }
-    html += '</div>';
+    var appsCard = html`<div class="card">
+      <h2>${fs.appsHeading}</h2>
+      ${apps.length === 0
+        ? html`<p class="muted">${fs.noApps}</p>`
+        : html`<ul class="list">${apps.map(function (a) {
+            return html`<li><div class="row">
+              <div>
+                <h3>${a.name}</h3>
+                <div class="meta">${a.size}${fs.bytesLabel} &middot; ${a.fileName}</div>
+              </div>
+              <div>
+                <button type="button" class="btn secondary small" data-act="app-delete" data-name="${a.fileName}">${fs.deleteButton}</button>
+              </div>
+            </div></li>`;
+          })}</ul>`}
+    </div>`;
 
     // -- Upload cards (book + app) ------------------------------------------
     // Both POST multipart to /upload and /upload-app respectively. Success
     // returns a tiny JSON; errors come back as plain text and we surface
     // them in the status line.
-    html += uploadCardHtml(t, "book");
-    html += uploadCardHtml(t, "app");
+    var warnBanner = lowStorage
+      ? html`<div class="banner-warn">${fs.storageWarn}</div>` : "";
 
-    ctx.container.innerHTML = html;
+    ctx.container.innerHTML = html`${warnBanner}${storageCard}${folderCreateCard}${foldersCard}${booksCard}${appsCard}${uploadCardHtml(t, "book")}${uploadCardHtml(t, "app")}`;
     // Container-level submit/click delegates are wired ONCE in render(),
     // not on each refresh — see wireActionHandlers().
     wireUploads(ctx);
@@ -216,23 +171,21 @@
       app:  { h: fs.uploadAppHeading,    d: fs.uploadAppDesc,    b: fs.uploadAppButton,    accept: ".bin",            name: "file" }
     };
     var c = headings[kind];
-    return (
-      '<div class="card" data-upload="' + kind + '">' +
-        '<h2>' + c.h + '</h2>' +
-        '<p class="muted">' + c.d + '</p>' +
-        '<form data-upload-form style="margin-top:14px" enctype="multipart/form-data" accept-charset="UTF-8">' +
-          '<input type="file" name="' + c.name + '" accept="' + c.accept + '" required>' +
-          '<div class="actions">' +
-            '<button type="submit">' + c.b + '</button>' +
-            '<span class="muted" data-progress></span>' +
-          '</div>' +
-          '<div class="bar" data-bar hidden style="margin-top:10px">' +
-            '<span style="width:0%"></span>' +
-          '</div>' +
-          '<div data-status></div>' +
-        '</form>' +
-      '</div>'
-    );
+    return html`<div class="card" data-upload="${kind}">
+      <h2>${c.h}</h2>
+      <p class="muted">${c.d}</p>
+      <form data-upload-form style="margin-top:14px" enctype="multipart/form-data" accept-charset="UTF-8">
+        <input type="file" name="${c.name}" accept="${c.accept}" required>
+        <div class="actions">
+          <button type="submit">${c.b}</button>
+          <span class="muted" data-progress></span>
+        </div>
+        <div class="bar" data-bar hidden style="margin-top:10px">
+          <span style="width:0%"></span>
+        </div>
+        <div data-status></div>
+      </form>
+    </div>`;
   }
 
   // ----------------------------------------------------------------------

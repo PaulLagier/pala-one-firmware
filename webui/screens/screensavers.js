@@ -28,12 +28,7 @@
       "<path d='M10 11v5M14 11v5'/>" +
     "</svg>";
 
-  function esc(s) {
-    return String(s == null ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
+  var html = window.palaHtml.html, raw = window.palaHtml.raw;
 
   // Cache-buster appended to thumbnail URLs so a fresh upload doesn't show
   // a stale image. Different per render call.
@@ -49,190 +44,145 @@
     //   - "single"        /sleep.bin (single-image legacy slot)
     //   - "auto"          first free slot (label inserts the slot number)
     //   - "0".."MAX-1"    explicit slot (mark with " (overwrite)" when used)
-    var dstOpts = '';
-    dstOpts += '<option value="single">' + esc(ss.dstSingle) + '</option>';
+    var dstOpts = [html`<option value="single">${ss.dstSingle}</option>`];
     if (state.firstFree >= 0) {
-      dstOpts += '<option value="auto" selected>' +
-                 esc(ss.dstAutoPrefix) + state.firstFree + esc(ss.dstAutoSuffix) +
-                 '</option>';
+      dstOpts.push(html`<option value="auto" selected>${ss.dstAutoPrefix}${state.firstFree}${ss.dstAutoSuffix}</option>`);
     } else {
-      dstOpts += '<option value="auto" disabled>' + esc(ss.dstFull) + '</option>';
+      dstOpts.push(html`<option value="auto" disabled>${ss.dstFull}</option>`);
     }
     (state.slots || []).forEach(function (s) {
-      dstOpts += '<option value="' + s.id + '">' +
-                 esc(ss.dstSlotPrefix) + s.id +
-                 (s.exists ? esc(ss.dstOverwrite) : '') +
-                 '</option>';
+      dstOpts.push(html`<option value="${s.id}">${ss.dstSlotPrefix}${s.id}${s.exists ? ss.dstOverwrite : ''}</option>`);
     });
 
-    return (
-      '<div class="card">' +
-        '<h2>' + esc(ss.editorHeading) + '</h2>' +
-        '<p class="muted">' + esc(ss.editorIntro) + '</p>' +
-        '<div class="ss-wrap">' +
+    return html`<div class="card">
+      <h2>${ss.editorHeading}</h2>
+      <p class="muted">${ss.editorIntro}</p>
+      <div class="ss-wrap">
 
-          '<div class="ss-card ss-grid">' +
-            '<div class="full">' +
-              '<div class="ss-label-row"><label for="ssEditFile">' + esc(ss.sourceImage) + '</label></div>' +
-              '<input id="ssEditFile" type="file" accept="image/*">' +
-            '</div>' +
-            '<div class="full">' +
-              '<div class="ss-label-row">' +
-                '<label for="ssTolerance">' + esc(ss.tolerance) + '</label>' +
-                '<span class="ss-value" id="ssToleranceLabel">0%</span>' +
-              '</div>' +
-              '<input id="ssTolerance" type="range" min="-100" max="100" value="0">' +
-            '</div>' +
-            '<div class="full">' +
-              '<label class="check-row" style="font-weight:500">' +
-                '<input id="ssInvert" type="checkbox">' +
-                '<span>' + esc(ss.invert) + '</span>' +
-              '</label>' +
-            '</div>' +
-            '<div class="full">' +
-              '<details class="ss-adv">' +
-                '<summary>' + esc(ss.preciseControl) + '</summary>' +
-                '<div class="ss-adv-body ss-grid">' +
-                  '<div>' +
-                    '<div class="ss-label-row">' +
-                      '<label for="ssZoom">' + esc(ss.zoom) + '</label>' +
-                      '<span class="ss-value" id="ssZoomLabel">100%</span>' +
-                    '</div>' +
-                    '<input id="ssZoom" type="range" min="10" max="400" value="100">' +
-                  '</div>' +
-                  '<div>' +
-                    '<div class="ss-label-row">' +
-                      '<label for="ssPanX">' + esc(ss.moveX) + '</label>' +
-                      '<span class="ss-value" id="ssPanXLabel">0 px</span>' +
-                    '</div>' +
-                    '<input id="ssPanX" type="range" min="-250" max="250" value="0">' +
-                  '</div>' +
-                  '<div class="full">' +
-                    '<div class="ss-label-row">' +
-                      '<label for="ssPanY">' + esc(ss.moveY) + '</label>' +
-                      '<span class="ss-value" id="ssPanYLabel">0 px</span>' +
-                    '</div>' +
-                    '<input id="ssPanY" type="range" min="-180" max="180" value="0">' +
-                  '</div>' +
-                '</div>' +
-              '</details>' +
-            '</div>' +
-          '</div>' +
+        <div class="ss-card ss-grid">
+          <div class="full">
+            <div class="ss-label-row"><label for="ssEditFile">${ss.sourceImage}</label></div>
+            <input id="ssEditFile" type="file" accept="image/*">
+          </div>
+          <div class="full">
+            <div class="ss-label-row">
+              <label for="ssTolerance">${ss.tolerance}</label>
+              <span class="ss-value" id="ssToleranceLabel">0%</span>
+            </div>
+            <input id="ssTolerance" type="range" min="-100" max="100" value="0">
+          </div>
+          <div class="full">
+            <label class="check-row" style="font-weight:500">
+              <input id="ssInvert" type="checkbox">
+              <span>${ss.invert}</span>
+            </label>
+          </div>
+          <div class="full">
+            <details class="ss-adv">
+              <summary>${ss.preciseControl}</summary>
+              <div class="ss-adv-body ss-grid">
+                <div>
+                  <div class="ss-label-row">
+                    <label for="ssZoom">${ss.zoom}</label>
+                    <span class="ss-value" id="ssZoomLabel">100%</span>
+                  </div>
+                  <input id="ssZoom" type="range" min="10" max="400" value="100">
+                </div>
+                <div>
+                  <div class="ss-label-row">
+                    <label for="ssPanX">${ss.moveX}</label>
+                    <span class="ss-value" id="ssPanXLabel">0 px</span>
+                  </div>
+                  <input id="ssPanX" type="range" min="-250" max="250" value="0">
+                </div>
+                <div class="full">
+                  <div class="ss-label-row">
+                    <label for="ssPanY">${ss.moveY}</label>
+                    <span class="ss-value" id="ssPanYLabel">0 px</span>
+                  </div>
+                  <input id="ssPanY" type="range" min="-180" max="180" value="0">
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
 
-          '<div class="ss-card ss-preview-wrap">' +
-            '<label>' + esc(ss.previewLabel) + '</label>' +
-            '<div class="ss-preview-stage">' +
-              '<canvas id="ssPreview" width="250" height="122"></canvas>' +
-            '</div>' +
-            '<button type="button" class="btn secondary" id="ssResetBtn" ' +
-              'style="align-self:flex-start;padding:6px 12px;font-size:13px">' +
-              esc(ss.resetFit) +
-            '</button>' +
-            '<div class="ss-meta" id="ssMeta">' + esc(ss.noImage) + '</div>' +
-          '</div>' +
+        <div class="ss-card ss-preview-wrap">
+          <label>${ss.previewLabel}</label>
+          <div class="ss-preview-stage">
+            <canvas id="ssPreview" width="250" height="122"></canvas>
+          </div>
+          <button type="button" class="btn secondary" id="ssResetBtn" style="align-self:flex-start;padding:6px 12px;font-size:13px">${ss.resetFit}</button>
+          <div class="ss-meta" id="ssMeta">${ss.noImage}</div>
+        </div>
 
-          '<div class="ss-card">' +
-            '<div class="ss-label-row"><label for="ssDestination">' + esc(ss.saveTo) + '</label></div>' +
-            '<select id="ssDestination">' + dstOpts + '</select>' +
-          '</div>' +
+        <div class="ss-card">
+          <div class="ss-label-row"><label for="ssDestination">${ss.saveTo}</label></div>
+          <select id="ssDestination">${dstOpts}</select>
+        </div>
 
-          '<div class="actions">' +
-            '<button type="button" class="btn" id="ssUploadBtn">' + esc(ss.uploadEdited) + '</button>' +
-            '<span class="ss-status" id="ssUploadStatus"></span>' +
-          '</div>' +
+        <div class="actions">
+          <button type="button" class="btn" id="ssUploadBtn">${ss.uploadEdited}</button>
+          <span class="ss-status" id="ssUploadStatus"></span>
+        </div>
 
-        '</div>' +
-      '</div>'
-    );
+      </div>
+    </div>`;
   }
 
   function modeCardHtml(t, state) {
     var ss = t.screensavers;
     function opt(v, label) {
-      return '<option value="' + v + '"' + (state.mode === v ? ' selected' : '') + '>' +
-             esc(label) + '</option>';
+      return html`<option value="${v}"${state.mode === v ? raw(' selected') : ''}>${label}</option>`;
     }
-    return (
-      '<div class="card">' +
-        '<h2>' + esc(ss.rotationHeading) + '</h2>' +
-        '<p class="muted">' + esc(ss.rotationIntro) + '</p>' +
-        '<form id="ssModeForm" class="stack" style="margin-top:12px">' +
-          '<div class="grid cols-2">' +
-            '<div>' +
-              '<label for="ssMode">' + esc(ss.modeLabel) + '</label>' +
-              '<select id="ssMode">' +
-                opt('single',  ss.modeSingle) +
-                opt('cycle',   ss.modeCycle)  +
-                opt('shuffle', ss.modeShuffle) +
-              '</select>' +
-              '<div class="hint">' + esc(ss.slotsPopulated) + state.populated + '/' + state.max + '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="actions">' +
-            '<button type="submit">' + esc(ss.saveMode) + '</button>' +
-          '</div>' +
-        '</form>' +
-      '</div>'
-    );
+    return html`<div class="card">
+      <h2>${ss.rotationHeading}</h2>
+      <p class="muted">${ss.rotationIntro}</p>
+      <form id="ssModeForm" class="stack" style="margin-top:12px">
+        <div class="grid cols-2">
+          <div>
+            <label for="ssMode">${ss.modeLabel}</label>
+            <select id="ssMode">${opt('single', ss.modeSingle)}${opt('cycle', ss.modeCycle)}${opt('shuffle', ss.modeShuffle)}</select>
+            <div class="hint">${ss.slotsPopulated}${state.populated}/${state.max}</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit">${ss.saveMode}</button>
+        </div>
+      </form>
+    </div>`;
   }
 
   function slotActionsHtml(t, isSingle, slot, bust) {
     var ss = t.screensavers;
     var dlHref = '/screensavers/download?' +
                  (isSingle ? 'single=1' : ('slot=' + slot));
-    return (
-      '<div class="ss-slot-actions">' +
-        '<a class="btn-icon" href="' + dlHref + '" download ' +
-          'title="' + esc(ss.downloadAria) + '" aria-label="' + esc(ss.downloadAria) + '">' +
-          ICON_DOWNLOAD +
-        '</a>' +
-        '<button type="button" class="btn-icon danger" ' +
-          'data-act="ss-delete"' +
-          (isSingle ? ' data-single="1"' : ' data-slot="' + slot + '"') +
-          ' title="' + esc(ss.deleteAria) + '" aria-label="' + esc(ss.deleteAria) + '">' +
-          ICON_TRASH +
-        '</button>' +
-      '</div>'
-    );
+    return html`<div class="ss-slot-actions">
+      <a class="btn-icon" href="${dlHref}" download title="${ss.downloadAria}" aria-label="${ss.downloadAria}">${raw(ICON_DOWNLOAD)}</a>
+      <button type="button" class="btn-icon danger" data-act="ss-delete"${isSingle ? raw(' data-single="1"') : raw(' data-slot="' + slot + '"')} title="${ss.deleteAria}" aria-label="${ss.deleteAria}">${raw(ICON_TRASH)}</button>
+    </div>`;
   }
 
   function slotsCardHtml(t, state, bust) {
     var ss = t.screensavers;
-    var html = '<div class="card"><h2>' + esc(ss.slotsHeading) + '</h2><div class="ss-slots">';
-    (state.slots || []).forEach(function (s) {
-      html += '<div class="ss-slot">';
-      html += '<div class="muted small">' + esc(ss.slotLabel) + ' ' + s.id + '</div>';
-      if (s.exists) {
-        html +=
-          '<img src="/screensavers/thumb?slot=' + s.id + '&_=' + bust + '" ' +
-               'alt="' + esc(ss.slotLabel) + ' ' + s.id + '">' +
-          slotActionsHtml(t, false, s.id, bust);
-      } else {
-        html += '<div class="ss-slot-empty">' + esc(ss.slotEmpty) + '</div>';
-      }
-      html += '</div>';
-    });
-    html += '</div></div>';
-    return html;
+    return html`<div class="card"><h2>${ss.slotsHeading}</h2><div class="ss-slots">${(state.slots || []).map(function (s) {
+      return html`<div class="ss-slot">
+        <div class="muted small">${ss.slotLabel} ${s.id}</div>
+        ${s.exists
+          ? html`<img src="/screensavers/thumb?slot=${s.id}&_=${bust}" alt="${ss.slotLabel} ${s.id}">${slotActionsHtml(t, false, s.id, bust)}`
+          : html`<div class="ss-slot-empty">${ss.slotEmpty}</div>`}
+      </div>`;
+    })}</div></div>`;
   }
 
   function singleCardHtml(t, state, bust) {
     var ss = t.screensavers;
-    var html = '<div class="card"><h2>' + esc(ss.singleHeading) + '</h2>';
-    if (state.hasSingle) {
-      html +=
-        '<div class="row" style="align-items:center;gap:12px">' +
-          '<img src="/screensavers/thumb?single=1&_=' + bust + '" alt="' + esc(ss.singleAlt) + '" ' +
-               'style="width:180px;border:1px solid var(--line);border-radius:8px;background:#fff;image-rendering:pixelated">' +
-          '<button type="button" class="btn secondary" data-act="ss-delete" data-single="1">' +
-            esc(ss.deleteSingle) +
-          '</button>' +
-        '</div>';
-    } else {
-      html += '<p class="muted">' + esc(ss.noSingle) + '</p>';
-    }
-    html += '</div>';
-    return html;
+    return html`<div class="card"><h2>${ss.singleHeading}</h2>${state.hasSingle
+      ? html`<div class="row" style="align-items:center;gap:12px">
+          <img src="/screensavers/thumb?single=1&_=${bust}" alt="${ss.singleAlt}" style="width:180px;border:1px solid var(--line);border-radius:8px;background:#fff;image-rendering:pixelated">
+          <button type="button" class="btn secondary" data-act="ss-delete" data-single="1">${ss.deleteSingle}</button>
+        </div>`
+      : html`<p class="muted">${ss.noSingle}</p>`}</div>`;
   }
 
   // ---------------------------------------------------------------------
@@ -531,24 +481,19 @@
       navKey:   "screensavers"
     });
     ctx.container.innerHTML =
-      '<div class="card"><p class="muted">' + esc(t.screensavers.loading) + '</p></div>';
+      html`<div class="card"><p class="muted">${t.screensavers.loading}</p></div>`;
 
     var state;
     try {
       state = await window.palaApi.get('/api/screensavers');
     } catch (e) {
       ctx.container.innerHTML =
-        '<div class="banner-warn">' + esc(t.errors.server) + ': ' +
-        esc(e.message || e) + '</div>';
+        html`<div class="banner-warn">${t.errors.server}: ${e.message || e}</div>`;
       return;
     }
 
     var bust = nextBust();
-    ctx.container.innerHTML =
-      editorCardHtml(t, state) +
-      modeCardHtml(t, state) +
-      slotsCardHtml(t, state, bust) +
-      singleCardHtml(t, state, bust);
+    ctx.container.innerHTML = html`${editorCardHtml(t, state)}${modeCardHtml(t, state)}${slotsCardHtml(t, state, bust)}${singleCardHtml(t, state, bust)}`;
 
     wireEditor(ctx, state);
     wireModeForm(ctx);   // mode form is freshly created each load — re-bind

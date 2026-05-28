@@ -10,6 +10,8 @@
 // off on save.
 
 (function () {
+  var html = window.palaHtml.html, raw = window.palaHtml.raw;
+
   // -- local mutable model --------------------------------------------------
   // Each entry: { text: string, done: boolean }. Mirrors the wire shape.
   var state = { items: [], max: 16 };
@@ -27,31 +29,18 @@
 
   function renderRows() {
     if (state.items.length === 0) {
-      refs.rows.innerHTML = '<div class="empty-hint">' + t_.list.empty + '</div>';
+      refs.rows.innerHTML = html`<div class="empty-hint">${t_.list.empty}</div>`;
     } else {
-      var html = "";
-      for (var i = 0; i < state.items.length; i++) {
-        var it = state.items[i];
-        html +=
-          '<div class="row list-row" data-idx="' + i + '">' +
-            '<div><input type="checkbox" data-role="done"' + (it.done ? " checked" : "") + '></div>' +
-            '<div class="grow"><input type="text" data-role="text" maxlength="64" ' +
-              'placeholder="' + t_.list.placeholder + '" value="' + escapeAttr(it.text) + '"></div>' +
-            '<div><button type="button" class="btn secondary small" data-role="delete" ' +
-              'aria-label="' + t_.list.deleteOne + '">×</button></div>' +
-          '</div>';
-      }
-      refs.rows.innerHTML = html;
+      refs.rows.innerHTML = html`${state.items.map(function (it, i) {
+        return html`<div class="row list-row" data-idx="${i}">
+          <div><input type="checkbox" data-role="done"${it.done ? raw(" checked") : ""}></div>
+          <div class="grow"><input type="text" data-role="text" maxlength="64" placeholder="${t_.list.placeholder}" value="${it.text}"></div>
+          <div><button type="button" class="btn secondary small" data-role="delete" aria-label="${t_.list.deleteOne}">×</button></div>
+        </div>`;
+      })}`;
     }
     refs.add.disabled = state.items.length >= state.max;
     refs.counter.textContent = state.items.length + " / " + state.max;
-  }
-
-  function escapeAttr(s) {
-    return String(s).replace(/&/g, "&amp;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;");
   }
 
   // Read DOM back into state. Called before any save / mutation so live
@@ -132,22 +121,21 @@
       subtitle: t_.list.subtitle,
       navKey:   "list"
     });
-    ctx.container.innerHTML =
-      '<div class="card">' +
-        '<h2>' + t_.list.editHeading + '</h2>' +
-        '<p class="muted">' + t_.list.editDesc + '</p>' +
-        '<div id="list-rows" style="margin-top:10px"></div>' +
-        '<div class="actions">' +
-          '<button type="button" class="btn secondary" id="list-add">' + t_.list.add + '</button>' +
-          '<span class="muted" id="list-counter"></span>' +
-        '</div>' +
-        '<div class="actions">' +
-          '<button type="button" class="btn"           id="list-save">'  + t_.list.save  + '</button>' +
-          '<button type="button" class="btn secondary" id="list-clear">' + t_.list.clear + '</button>' +
-        '</div>' +
-        '<p class="muted" style="margin-top:8px">' + t_.list.hint + '</p>' +
-        '<div id="list-status"></div>' +
-      '</div>';
+    ctx.container.innerHTML = html`<div class="card">
+      <h2>${t_.list.editHeading}</h2>
+      <p class="muted">${t_.list.editDesc}</p>
+      <div id="list-rows" style="margin-top:10px"></div>
+      <div class="actions">
+        <button type="button" class="btn secondary" id="list-add">${t_.list.add}</button>
+        <span class="muted" id="list-counter"></span>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn"           id="list-save">${t_.list.save}</button>
+        <button type="button" class="btn secondary" id="list-clear">${t_.list.clear}</button>
+      </div>
+      <p class="muted" style="margin-top:8px">${t_.list.hint}</p>
+      <div id="list-status"></div>
+    </div>`;
 
     refs = {
       rows:    ctx.container.querySelector("#list-rows"),
