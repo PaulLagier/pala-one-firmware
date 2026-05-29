@@ -24,6 +24,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Save PR number before any build step so pr-deploy.yml can post a
+      # failure comment even when a later step errors.
+      - name: Save PR number
+        run: echo "${{ github.event.number }}" > pr-number.txt
+
       - uses: actions/setup-python@v5
         with:
           python-version-file: .python-version
@@ -59,15 +64,18 @@ jobs:
             --channel pr \
             --version "pr-${{ github.event.number }}-${GITHUB_SHA::7}"
 
-      - name: Prepare artifact
-        run: |
-          mkdir -p artifact/installer
-          echo "${{ github.event.number }}" > artifact/pr-number.txt
-          cp -r site/pr/* artifact/installer/
+      # pr-number is uploaded unconditionally so pr-deploy.yml can post a
+      # failure comment even when the build itself errors.
+      - name: Upload PR number
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-number
+          path: pr-number.txt
 
-      - name: Upload artifact
+      - name: Upload installer bundle
         uses: actions/upload-artifact@v4
         with:
           name: pr-installer-bundle
-          path: artifact/
+          path: site/pr/
           retention-days: 30

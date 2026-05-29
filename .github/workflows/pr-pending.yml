@@ -30,9 +30,8 @@ jobs:
             const marker = '<!-- pr-web-flasher -->';
             const body = [
               marker,
-              `## Web Flasher — PR #${prNumber}`,
-              `🔨 **Building firmware from \`${sha}\`...** The flash link will appear here when the build completes (~10–15 min).`,
-              `[View build progress](${actionsUrl})`,
+              `## 🟡 Web Flasher`,
+              `Building from \`${sha}\`… (~10–15 min)\n\n[View build progress →](${actionsUrl})`,
             ].join('\n\n');
 
             const { data: comments } = await github.rest.issues.listComments({
