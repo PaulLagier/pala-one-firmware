@@ -31,7 +31,7 @@ jobs:
             const body = [
               marker,
               `## 🟡 Web Flasher`,
-              `Building from \`${sha}\`… (~10–15 min)\n\n[View build progress →](${actionsUrl})`,
+              `Building from \`${sha}\`…\n\n[View build progress →](${actionsUrl})`,
             ].join('\n\n');
 
             const { data: comments } = await github.rest.issues.listComments({
