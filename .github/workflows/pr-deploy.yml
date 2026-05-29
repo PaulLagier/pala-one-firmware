@@ -1,0 +1,100 @@
+name: PR Deploy
+
+# Downloads the artifact produced by pr-build.yml, deploys it to the
+# gh-pages branch at pr/<N>/, and updates the bot comment with the flasher
+# URL. Triggered via workflow_run so it runs with base-repo permissions even
+# when the triggering PR came from a fork. No fork code is executed here.
+#
+# The PR number is read from pr-number.txt in the artifact because
+# workflow_run suppresses pull_requests[] for fork PRs.
+
+on:
+  workflow_run:
+    workflows: ["PR Build"]
+    types: [completed]
+
+permissions:
+  actions: read          # download artifacts from the triggering run
+  contents: write        # push to gh-pages
+  pull-requests: write   # update the bot comment
+
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pr-installer-bundle
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./artifacts
+
+      - name: Read PR number
+        id: pr
+        run: |
+          number=$(cat artifacts/pr-number.txt)
+          [[ "$number" =~ ^[0-9]+$ ]] || { echo "invalid PR number: $number"; exit 1; }
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./artifacts/installer
+          destination_dir: pr/${{ steps.pr.outputs.number }}
+          keep_files: true
+          commit_message: "Deploy PR #${{ steps.pr.outputs.number }} preview"
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Update bot comment with flasher URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = parseInt('${{ steps.pr.outputs.number }}', 10);
+            const sha = '${{ github.event.workflow_run.head_sha }}'.slice(0, 7);
+            // Assumes the default GitHub Pages URL. If this repo ever adopts a
+            // custom Pages domain, update this to match.
+            const baseUrl =
+              `https://${context.repo.owner}.github.io/${context.repo.repo}`;
+            const flasherUrl = `${baseUrl}/pr/${prNumber}/`;
+            const marker = '<!-- pr-web-flasher -->';
+            const body = [
+              marker,
+              `## Web Flasher — PR #${prNumber}`,
+              `**[Flash this build →](${flasherUrl})**`,
+              `Built from commit \`${sha}\`. All four board/language variants are included.`,
+              `> ⚠️ This is a preview build, not stable firmware. Only flash if you trust the PR author.`,
+              `> Requires Chrome, Edge, or Opera on desktop with your Pala One plugged in via USB-C.`,
+            ].join('\n\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }

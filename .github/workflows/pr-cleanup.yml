@@ -1,0 +1,39 @@
+name: PR Cleanup
+
+# Removes the PR's preview directory from gh-pages when the PR is closed
+# (merged or abandoned). Uses pull_request_target for write access, but
+# only checks out the gh-pages branch — no fork code is ever executed.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove PR preview directory
+        run: |
+          set -euo pipefail
+          PR="${{ github.event.number }}"
+          if [ -d "pr/${PR}" ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git rm -rf "pr/${PR}"
+            git commit -m "Remove PR #${PR} preview"
+            git push origin gh-pages
+          else
+            echo "No preview directory for PR #${PR}, nothing to clean up"
+          fi

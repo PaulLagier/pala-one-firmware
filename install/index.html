@@ -47,7 +47,19 @@
     }
     .channel-badge.stable { background: #d8efd9; color: #1f6b25; }
     .channel-badge.dev,
-    .channel-badge.local  { background: #fde6c8; color: #8a4a07; }
+    .channel-badge.local,
+    .channel-badge.pr     { background: #fde6c8; color: #8a4a07; }
+    body.channel-pr .switch-channel { display: none; }
+
+    .pr-warning { display: none; }
+    body.channel-pr .pr-warning {
+      background: #fff3cd;
+      border: 1px solid #d4a017;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+      display: block;
+    }
 
     .variant {
       border: 1px solid rgba(127,127,127,0.3);
@@ -132,7 +144,9 @@
       .note { background: #2a2a1a; border-color: #5a5a3a; }
       .channel-badge.stable { background: #1f3a22; color: #9bd6a1; }
       .channel-badge.dev,
-      .channel-badge.local  { background: #3a2a14; color: #f0c089; }
+      .channel-badge.local,
+      .channel-badge.pr     { background: #3a2a14; color: #f0c089; }
+      body.channel-pr .pr-warning { background: #3a2e0a; border-color: #d4a017; }
       .lang-row button { border-color: var(--accent); background: var(--accent); }
       .lang-row button:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
       .tip { background: rgba(74,144,226,0.15); }
@@ -145,6 +159,10 @@
   </style>
 </head>
 <body class="channel-{{CHANNEL}}">
+  <div class="pr-warning">
+    ⚠️ <strong>Preview build</strong> — this firmware comes from a pull request,
+    not a stable release. Only flash if you trust the PR author.
+  </div>
   <h1>Pala One Installer</h1>
   <p class="sub">Flash the firmware directly from your browser.</p>
   <div class="channel-bar">

@@ -1,0 +1,73 @@
+name: PR Build
+
+# Builds all four firmware variants for a PR and uploads them as a workflow
+# artifact. Triggered by the standard pull_request event so GITHUB_TOKEN is
+# read-only — safe to run fork code here.
+#
+# The privileged deploy step lives in pr-deploy.yml, triggered via
+# workflow_run once this job completes. The PR number is smuggled through
+# the artifact (pr-number.txt) because workflow_run suppresses
+# pull_requests[] for fork PRs as a security boundary.
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Build firmware (V1.2 EN)
+        run: pio run -e wireless-paper-v1_2-en
+
+      - name: Build firmware (V1.2 ES)
+        run: pio run -e wireless-paper-v1_2-es
+
+      - name: Build firmware (V1.1 EN)
+        run: pio run -e wireless-paper-v1_1-en
+
+      - name: Build firmware (V1.1 ES)
+        run: pio run -e wireless-paper-v1_1-es
+
+      - name: Assemble installer
+        run: |
+          python scripts/assemble_site.py \
+            --channel pr \
+            --version "pr-${{ github.event.number }}-${GITHUB_SHA::7}"
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p artifact/installer
+          echo "${{ github.event.number }}" > artifact/pr-number.txt
+          cp -r site/pr/* artifact/installer/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-installer-bundle
+          path: artifact/
+          retention-days: 30
