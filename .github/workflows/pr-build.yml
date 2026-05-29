@@ -1,12 +1,11 @@
 name: PR Build
 
-# Builds all four firmware variants in parallel, then fans-in to a single
-# assemble job that packages the installer site. Triggered by the standard
-# pull_request event so GITHUB_TOKEN is read-only — safe to run fork code.
+# Builds all four firmware variants and uploads an installer artifact.
+# Uses pull_request (read-only token) so fork code never runs with write
+# access. The privileged deploy lives in pr-deploy.yml, triggered via
+# workflow_run once this workflow completes.
 #
-# The privileged deploy step lives in pr-deploy.yml, triggered via
-# workflow_run once this workflow completes. The PR number is smuggled
-# through an artifact (pr-number) because workflow_run suppresses
+# The PR number is written into the artifact because workflow_run suppresses
 # pull_requests[] for fork PRs as a security boundary.
 
 on:
@@ -18,13 +17,6 @@ permissions:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        variant:
-          - wireless-paper-v1_2-en
-          - wireless-paper-v1_2-es
-          - wireless-paper-v1_1-en
-          - wireless-paper-v1_1-es
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,54 +40,17 @@ jobs:
       - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      - name: Build
-        run: pio run -e ${{ matrix.variant }}
+      - name: Build firmware (V1.2 EN)
+        run: pio run -e wireless-paper-v1_2-en
 
-      - name: Collect build outputs
-        run: |
-          mkdir -p artifacts
-          cp .pio/build/${{ matrix.variant }}/firmware.bin   artifacts/
-          cp .pio/build/${{ matrix.variant }}/bootloader.bin artifacts/
-          cp .pio/build/${{ matrix.variant }}/partitions.bin artifacts/
-          cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin \
-             artifacts/
+      - name: Build firmware (V1.2 ES)
+        run: pio run -e wireless-paper-v1_2-es
 
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-${{ matrix.variant }}
-          path: artifacts/
-          retention-days: 1
+      - name: Build firmware (V1.1 EN)
+        run: pio run -e wireless-paper-v1_1-en
 
-  assemble:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version-file: .python-version
-
-      - name: Download firmware artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: firmware-*
-          path: downloads
-          merge-multiple: false
-
-      - name: Reconstruct PlatformIO build tree
-        run: |
-          for dir in downloads/firmware-*; do
-            variant="${dir#downloads/firmware-}"
-            mkdir -p ".pio/build/$variant"
-            cp "$dir/firmware.bin"   ".pio/build/$variant/"
-            cp "$dir/bootloader.bin" ".pio/build/$variant/"
-            cp "$dir/partitions.bin" ".pio/build/$variant/"
-          done
-          mkdir -p ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
-          cp "$(find downloads -name boot_app0.bin | head -1)" \
-             ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/
+      - name: Build firmware (V1.1 ES)
+        run: pio run -e wireless-paper-v1_1-es
 
       - name: Assemble installer
         run: |
@@ -103,21 +58,15 @@ jobs:
             --channel pr \
             --version "pr-${{ github.event.number }}-${GITHUB_SHA::7}"
 
-      # pr-number uploaded unconditionally so pr-deploy.yml can post a
-      # failure comment even when a build step errors.
-      - name: Save PR number
-        run: echo "${{ github.event.number }}" > pr-number.txt
+      - name: Prepare artifact
+        run: |
+          mkdir -p artifact/installer
+          echo "${{ github.event.number }}" > artifact/pr-number.txt
+          cp -r site/pr/* artifact/installer/
 
-      - name: Upload PR number
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-number
-          path: pr-number.txt
-
-      - name: Upload installer bundle
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pr-installer-bundle
-          path: site/pr/
+          path: artifact/
           retention-days: 30

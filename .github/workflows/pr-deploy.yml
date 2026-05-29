@@ -1,13 +1,13 @@
 name: PR Deploy
 
 # Downloads the artifact produced by pr-build.yml, deploys it to the
-# gh-pages branch at pr/<N>/, and updates the bot comment with the flasher
-# URL. Triggered via workflow_run so it runs with base-repo permissions even
+# gh-pages branch at pr/<N>/, and posts a bot comment with the flash URL.
+# Triggered via workflow_run so it runs with base-repo permissions even
 # when the triggering PR came from a fork. No fork code is executed here.
 #
-# The PR number is read from the pr-number artifact (uploaded unconditionally
-# by pr-build.yml) because workflow_run suppresses pull_requests[] for fork
-# PRs, and because the number must be available even on build failure.
+# The PR number is read from pr-number.txt in the artifact because
+# workflow_run suppresses pull_requests[] for fork PRs as a security
+# boundary.
 
 on:
   workflow_run:
@@ -17,7 +17,7 @@ on:
 permissions:
   actions: read          # download artifacts from the triggering run
   contents: write        # push to gh-pages
-  pull-requests: write   # update the bot comment
+  pull-requests: write   # post/update comment
 
 concurrency:
   group: gh-pages-deploy
@@ -25,12 +25,13 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Download PR number
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: pr-number
+          name: pr-installer-bundle
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ./artifacts
@@ -42,17 +43,7 @@ jobs:
           [[ "$number" =~ ^[0-9]+$ ]] || { echo "invalid PR number: $number"; exit 1; }
           echo "number=$number" >> "$GITHUB_OUTPUT"
 
-      - name: Download installer bundle
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
-        uses: actions/download-artifact@v4
-        with:
-          name: pr-installer-bundle
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ./artifacts/installer
-
       - name: Deploy to gh-pages
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -64,37 +55,24 @@ jobs:
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Update bot comment
+      - name: Post or update comment
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = parseInt('${{ steps.pr.outputs.number }}', 10);
             const sha = '${{ github.event.workflow_run.head_sha }}'.slice(0, 7);
-            const success = '${{ github.event.workflow_run.conclusion }}' === 'success';
+            // Assumes the default GitHub Pages URL. Update if this repo uses
+            // a custom Pages domain.
+            const baseUrl =
+              `https://${context.repo.owner}.github.io/${context.repo.repo}`;
+            const flasherUrl = `${baseUrl}/pr/${prNumber}/`;
             const marker = '<!-- pr-web-flasher -->';
-
-            let body;
-            if (success) {
-              // Assumes the default GitHub Pages URL. If this repo ever adopts a
-              // custom Pages domain, update this to match.
-              const baseUrl =
-                `https://${context.repo.owner}.github.io/${context.repo.repo}`;
-              const flasherUrl = `${baseUrl}/pr/${prNumber}/`;
-              body = [
-                marker,
-                `## 🟢 Web Flasher`,
-                `**[Open web flasher →](${flasherUrl})**`,
-                `> ⚠️ Preview build — not stable firmware. Only flash if you trust the PR author.\n> Requires Chrome, Edge, or Opera on desktop with a USB-C data cable.`,
-              ].join('\n\n');
-            } else {
-              const runUrl =
-                `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${{ github.event.workflow_run.id }}`;
-              body = [
-                marker,
-                `## 🔴 Web Flasher`,
-                `Build failed for \`${sha}\`. [View logs →](${runUrl})`,
-              ].join('\n\n');
-            }
+            const body = [
+              marker,
+              `## 🟢 Web Flasher`,
+              `**[Open web flasher →](${flasherUrl})**`,
+              `> ⚠️ Preview build — not stable firmware. Only flash if you trust the PR author.\n> Requires Chrome, Edge, or Opera on desktop with a USB-C data cable.`,
+            ].join('\n\n');
 
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
