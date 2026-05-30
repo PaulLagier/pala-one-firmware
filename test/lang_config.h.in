@@ -1,0 +1,2 @@
+#pragma once
+#define LANG_DIR "@LANG_DIR_PATH@"

@@ -44,6 +44,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_app_header.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_streak_log.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_lang_keys.cpp
 )
 
 add_executable(host_tests ${SUT_SRC} ${TEST_SRC})
@@ -65,6 +66,28 @@ else()
   target_compile_options(host_tests PRIVATE -Wall -Wextra -Wpedantic
                                             -Wno-unused-function)
 endif()
+
+set(LANG_DIR_PATH "${CMAKE_SOURCE_DIR}/../Pala_One_2_1/src/lang")
+configure_file(lang_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/lang_config.h @ONLY)
+target_include_directories(host_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
+# Regenerate language headers from JSON sources before compiling.
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+set(GEN_LANG_SCRIPT "${CMAKE_SOURCE_DIR}/../scripts/gen_lang.py")
+set(GEN_LANG_STAMP "${CMAKE_CURRENT_BINARY_DIR}/gen_lang.stamp")
+
+add_custom_command(
+  OUTPUT ${GEN_LANG_STAMP}
+  COMMAND ${Python3_EXECUTABLE} ${GEN_LANG_SCRIPT} --lang-dir "${LANG_DIR_PATH}"
+  COMMAND ${CMAKE_COMMAND} -E touch ${GEN_LANG_STAMP}
+  DEPENDS ${GEN_LANG_SCRIPT}
+          ${LANG_DIR_PATH}/en.json
+          ${LANG_DIR_PATH}/es_la.json
+  COMMENT "Generating language headers from JSON"
+  VERBATIM
+)
+add_custom_target(gen_lang ALL DEPENDS ${GEN_LANG_STAMP})
+add_dependencies(host_tests gen_lang)
 
 enable_testing()
 add_test(NAME host_tests COMMAND host_tests)
