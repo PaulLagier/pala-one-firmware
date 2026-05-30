@@ -11,8 +11,18 @@ static const int UI_HEADER_GAP = 6;
 // e-ink ghosting). File-private; nothing outside `prepareMenuFrame` reads it.
 static int s_menuDrawsSinceFull = 0;
 
+// One-shot override: when set, the next `prepareMenuFrame` does a full
+// refresh regardless of the counter. Set by `forceNextMenuFrameFull` at
+// transitions into a menu overlay so the underlying screen (typically the
+// reader page) doesn't ghost through a partial refresh.
+static bool s_forceMenuFrameFull = false;
+
+void forceNextMenuFrameFull() { s_forceMenuFrameFull = true; }
+
 void prepareMenuFrame() {
-  bool doFull = (s_menuDrawsSinceFull >= MENU_FULL_REFRESH_EVERY);
+  bool doFull = s_forceMenuFrameFull
+             || (s_menuDrawsSinceFull >= MENU_FULL_REFRESH_EVERY);
+  s_forceMenuFrameFull = false;
   if (doFull) {
     display.fastmodeOff();
     s_menuDrawsSinceFull = 0;

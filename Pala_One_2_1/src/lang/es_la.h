@@ -168,6 +168,13 @@
 #define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
 #define D_WEB_BUTTONS_ACTION_MENU     "Abrir menú"
 
+// Device personalization card (src/web/settings.cpp).
+#define D_WEB_DEVICE_HEADING        "Dispositivo"
+#define D_WEB_DEVICE_INTRO          "Personaliza el nombre que aparece en el encabezado de la biblioteca."
+#define D_WEB_HEADER_TITLE_LABEL    "Título del encabezado"
+#define D_WEB_HEADER_TITLE_HINT     "Se muestra arriba de la pantalla de biblioteca. Deja vacío para ocultarlo."
+#define D_WEB_HEADER_TITLE_RESET    "Restaurar predeterminado"
+
 // ----------------------------------------------------------------------------
 //  Upload routes
 // ----------------------------------------------------------------------------

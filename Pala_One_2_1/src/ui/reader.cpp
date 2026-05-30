@@ -27,6 +27,25 @@ static bool s_forceNextFull = false;
 
 void forceNextRenderFull() { s_forceNextFull = true; }
 
+// Deferred-repagination flag. Set by `markPagesDirtyForLayoutChange` when a
+// mid-session layout change (currently only Statusbar mode cycling) has
+// invalidated the in-memory page offset table. Consumed at the top of
+// `prepareForRender` so the rebase happens once, on the next reader draw,
+// rather than inside the setting cycle.
+//
+// Two reasons to defer rather than rebase inside `Statusbar::setMode`:
+//   1. Batching — cycling Full -> Minimal -> Hidden marks dirty three times
+//      but only needs one rebase, on the eventual redraw.
+//   2. Decoupling — `setMode` stays a plain setting write with no reader /
+//      page-table coupling at call time; the reader owns the table and
+//      rebases on its own schedule.
+// (`repaginateForLayoutChange` is now O(1) — see its definition — so the old
+// "slow re-walk blocks the loop" hazard is gone, but deferral is still the
+// cleaner shape and keeps the menu's per-click feedback instant.)
+static bool s_pagesLayoutDirty = false;
+
+void markPagesDirtyForLayoutChange() { s_pagesLayoutDirty = true; }
+
 // Auto-save throttle bookkeeping. Private to this translation unit — only
 // the save-progress functions and `resetSaveThrottle` touch it, and only
 // the reader calls them on its hot path (preview never auto-saves).
@@ -253,6 +272,13 @@ static void drawStatusBar(uint32_t startOffset) {
 // (modulo pageTurnsSinceFull, which is render-side bookkeeping).
 static bool prepareForRender() {
   if (g_bookview.book.size() == 0) return false;
+  // Consume any deferred layout-change repagination *before* extending the
+  // page table — otherwise `ensureOffsetsUpTo` would happily extend the
+  // stale table with new-layout offsets glued onto old-layout offsets.
+  if (s_pagesLayoutDirty) {
+    s_pagesLayoutDirty = false;
+    repaginateForLayoutChange();
+  }
   ensureOffsetsUpTo(g_bookview.cursor.pageIndex);
   if (g_bookview.pages.count <= 0) return false;
 
@@ -353,28 +379,40 @@ bool retreatPage() {
 void repaginateForLayoutChange() {
   if (!g_bookview.book.isOpen()) return;
 
-  // Remember the byte offset of the current page so we can find the
-  // matching page under the new layout. Offsets are file-position-based
-  // and invariant under any layout change.
-  uint32_t savedOffset = 0;
-  if (g_bookview.cursor.pageIndex >= 0
-      && g_bookview.cursor.pageIndex < g_bookview.pages.count) {
-    savedOffset = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+  // Fast rebase, NOT a full re-walk. A mid-session layout change (Statusbar
+  // mode cycling) shifts every page boundary, but the byte offset of the page
+  // we're *on* is layout-invariant — it's where the current page's first word
+  // sits in the file. Earlier versions relocated that offset by paginating the
+  // book from page 0 (reset table + findPageForOffset). Deep in a book that's
+  // hundreds of file reads + line layouts and blocks the loop for seconds:
+  // that was the menu-close freeze.
+  //
+  // Instead, keep the offsets we already have as back-history and just drop
+  // everything past the current page. The current page redraws from its
+  // unchanged offset (exactly correct under the new layout); pages ahead get
+  // recomputed under the new layout lazily by tryExtendPageTable as the reader
+  // advances. O(1), no file I/O here.
+  //
+  // Trade-off: the retained back-history offsets are still the *old* layout's
+  // boundaries, so paging back across the change point can show a slightly
+  // different break than a from-scratch paginate would. That's a one-boundary
+  // cosmetic nit versus a frozen UI, and the page *number* stays put — which
+  // is what users expect when toggling a display option mid-book.
+  if (g_bookview.pages.count < 1) {
+    g_bookview.pages.count = 1;
+    g_bookview.pages.offsets[0] = 0;
   }
+  int cur = g_bookview.cursor.pageIndex;
+  if (cur < 0) cur = 0;
+  if (cur >= g_bookview.pages.count) cur = g_bookview.pages.count - 1;
 
-  // Reset the in-memory table to the empty seed and let the disk cache
-  // populate it if it happens to be valid for the new layout. The cache
-  // file's layout stamp will mismatch in the actually-changed case and
-  // the load is a no-op; ensureOffsetsUpTo will rebuild on the next render.
-  g_bookview.pages.count = 1;
-  g_bookview.pages.offsets[0] = 0;
-  g_bookview.pages.eofReached = false;
-  loadPageOffsetCacheForBook(g_bookview.book.path(), g_bookview.book.size(),
-                             Font::layoutForCache(),
-                             g_bookview.pages);
-
-  g_bookview.cursor.pageIndex = findPageForOffset(savedOffset);
-  g_bookview.cursor.pageTurnsSinceFull = 0;
+  g_bookview.cursor.pageIndex = cur;
+  g_bookview.pages.count      = cur + 1;   // keep [0..cur], discard stale forward
+  g_bookview.pages.eofReached = false;     // forward re-extension may be needed
+  // NB: pageTurnsSinceFull is intentionally left alone. The screen layer forces
+  // a full e-ink refresh on menu close to clear the overlay; that decision is
+  // owned there, and zeroing the counter here would silently downgrade it to a
+  // partial refresh (ghosting the menu behind the page).
   resetSaveThrottle();
 }
 

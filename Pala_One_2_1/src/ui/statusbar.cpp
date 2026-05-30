@@ -3,7 +3,7 @@
 #include "src/config.h"     // STATUS_H
 #include "src/state.h"      // prefs
 #include "src/ui/font.h"    // Font::invalidateLayoutCache
-#include "src/ui/reader.h"  // repaginateForLayoutChange
+#include "src/ui/reader.h"  // markPagesDirtyForLayoutChange
 
 namespace Statusbar {
 
@@ -38,10 +38,13 @@ void setMode(Mode m) {
   prefs.putInt(kKey, (int)s_mode);
   // Layout's `maxLines` is computed from `SCREEN_H - reserveH()`, so a mode
   // change shifts pagination. Invalidate the font's layout-metrics cache
-  // and the reader's in-memory page-offset table together — they would
-  // otherwise hold offsets computed under the old reserve.
+  // (cheap — recomputed on the next bodyLayout()) and mark the reader's
+  // in-memory page-offset table as stale so the next reader render rebases
+  // it. Deferring (rather than rebasing here) keeps `setMode` a plain setting
+  // write and collapses rapid cycles into one rebase on the next render — see
+  // markPagesDirtyForLayoutChange / repaginateForLayoutChange in reader.cpp.
   Font::invalidateLayoutCache();
-  repaginateForLayoutChange();
+  markPagesDirtyForLayoutChange();
 }
 
 void cycleMode() {

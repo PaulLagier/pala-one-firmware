@@ -25,6 +25,11 @@ bool isActive() { return s_active; }
 
 void open() {
   s_active = true;
+  // First paint of the menu sits over whatever the reader last drew. Use a
+  // full refresh so reader text doesn't ghost through the partial-refresh
+  // overlay; subsequent in-menu redraws (statusbar cycles) go through
+  // prepareMenuFrame's normal fastmode path for snappy feedback.
+  forceNextMenuFrameFull();
   draw();
 }
 

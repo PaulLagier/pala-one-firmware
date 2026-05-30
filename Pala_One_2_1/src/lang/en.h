@@ -174,6 +174,13 @@
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
 #define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
 
+// Device personalization card (src/web/settings.cpp).
+#define D_WEB_DEVICE_HEADING        "Device"
+#define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
+#define D_WEB_HEADER_TITLE_LABEL    "Header title"
+#define D_WEB_HEADER_TITLE_HINT     "Shown at the top of the library screen. Leave empty for no title."
+#define D_WEB_HEADER_TITLE_RESET    "Reset to default"
+
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)
 // ----------------------------------------------------------------------------

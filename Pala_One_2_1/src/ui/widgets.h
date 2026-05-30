@@ -21,6 +21,13 @@ void drawCenter(const char* a, const char* b = nullptr);
 // independently of the reader's full-refresh schedule.
 void prepareMenuFrame();
 
+// Force the *next* call to `prepareMenuFrame` to do a full refresh,
+// regardless of the periodic counter. Used at transitions into a menu
+// overlay where the previous screen (e.g. the reader page) would otherwise
+// ghost through a partial refresh. No-op if a full refresh would have
+// happened anyway.
+void forceNextMenuFrameFull();
+
 // Draw one row of a scrollable menu list. Text starts at
 // `UI_LIST_LEFT + extraIndent` on the given baseline; bold if selected.
 // Resets font to Body afterwards. Most callers pass no indent;
