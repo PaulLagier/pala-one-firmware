@@ -73,6 +73,7 @@
       </form>
     </div>
     ${gesturesCardHtml(s, state.gestures || {})}
+    ${libraryCardHtml(s, state.headerTitle || "", state.headerTitleDefault || "")}
     <div class="card" id="sleep-image-card"${state.hasSleepImage ? "" : raw(" hidden")}>
       <h2>${s.sleepImageHeading}</h2>
       <p class="muted">${s.sleepImagePresent}</p>
@@ -101,6 +102,15 @@
         saveGestures(ctx);
       });
     }
+    var hForm = ctx.container.querySelector("#header-title-form");
+    if (hForm) {
+      hForm.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        saveHeaderTitle(ctx);
+      });
+      ctx.container.querySelector("#header-title-reset")
+        .addEventListener("click", function () { resetHeaderTitle(ctx); });
+    }
     ctx.container.querySelector("#delete-sleep").addEventListener("click", function () {
       deleteSleepImage(ctx);
     });
@@ -124,6 +134,28 @@
           <span class="muted">${s.buttonsLockHint}</span>
         </div>
         <div id="gestures-status"></div>
+      </form>
+    </div>`;
+  }
+
+  function libraryCardHtml(s, current, defaultTitle) {
+    var placeholder = (s.headerTitlePlaceholder || "")
+      .replace("{default}", defaultTitle || "");
+    return html`<div class="card">
+      <h2>${s.libraryHeading}</h2>
+      <p class="muted">${s.libraryIntro}</p>
+      <form id="header-title-form" style="margin-top:12px">
+        <div>
+          <label for="headerTitle">${s.headerTitleLabel}</label>
+          <input type="text" id="headerTitle" maxlength="31"
+                 value="${current}" placeholder="${placeholder}">
+          <div class="hint">${s.headerTitleHint}</div>
+        </div>
+        <div class="actions">
+          <button type="submit" id="save-header-title">${s.headerTitleSave}</button>
+          <button type="button" class="btn secondary" id="header-title-reset">${s.headerTitleReset}</button>
+        </div>
+        <div id="header-title-status"></div>
       </form>
     </div>`;
   }
@@ -161,6 +193,46 @@
         clickHold: ctx.container.querySelector("#btnCH").value
       }
     };
+  }
+
+  function setHeaderTitleStatus(ctx, kind, msg) {
+    var el = ctx.container.querySelector("#header-title-status");
+    if (!el) return;
+    el.className   = "status " + kind;
+    el.textContent = msg;
+  }
+
+  async function saveHeaderTitle(ctx) {
+    var t = ctx.t;
+    var btn = ctx.container.querySelector("#save-header-title");
+    btn.disabled = true;
+    var prevLabel = btn.textContent;
+    btn.textContent = t.settings.saving;
+    setHeaderTitleStatus(ctx, "busy", t.settings.saving);
+    try {
+      var val = ctx.container.querySelector("#headerTitle").value;
+      var state = await window.palaApi.post("/api/settings", { headerTitle: val });
+      // Re-render with the server's resulting state (e.g. trimmed value).
+      renderForm(ctx, state);
+      setHeaderTitleStatus(ctx, "ok", t.settings.saved);
+    } catch (e) {
+      btn.disabled    = false;
+      btn.textContent = prevLabel;
+      setHeaderTitleStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
+    }
+  }
+
+  async function resetHeaderTitle(ctx) {
+    var t = ctx.t;
+    if (!window.confirm(t.settings.headerTitleResetConfirm)) return;
+    setHeaderTitleStatus(ctx, "busy", t.settings.saving);
+    try {
+      var state = await window.palaApi.post("/api/settings", { headerTitleReset: true });
+      renderForm(ctx, state);
+      setHeaderTitleStatus(ctx, "ok", t.settings.saved);
+    } catch (e) {
+      setHeaderTitleStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
+    }
   }
 
   async function saveGestures(ctx) {

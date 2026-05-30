@@ -6,6 +6,8 @@
   "bionic":        false,
   "noScreensaver": false,
   "hasSleepImage": true,
+  "headerTitle":        "My library",
+  "headerTitleDefault": "Pala One",
   "gestures": {
     "long":      "bookmark",
     "extraLong": "lock",

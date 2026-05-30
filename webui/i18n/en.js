@@ -201,7 +201,15 @@ window.__pala_i18n.en = {
     screensaverHeading:   "Screensaver",
     screensaverCardDesc:  "Manage the image (or multi-image rotation) shown on the e-ink when the device sleeps.",
     screensaverEditorLink:"Open screensaver editor",
-    screensaverEditorHint:"Includes an in-browser bitmap editor and up to 8 rotation slots."
+    screensaverEditorHint:"Includes an in-browser bitmap editor and up to 8 rotation slots.",
+    libraryHeading:        "Library header",
+    libraryIntro:          "Customise the title shown at the top of the library screen on the device.",
+    headerTitleLabel:      "Header title",
+    headerTitleHint:       "Leave empty to hide the title entirely. Max 31 characters.",
+    headerTitlePlaceholder:"Default: {default}",
+    headerTitleSave:       "Save",
+    headerTitleReset:      "Reset to default",
+    headerTitleResetConfirm:"Reset the header title to the device default?"
   },
   bookmarks: {
     title:              "Bookmarks",

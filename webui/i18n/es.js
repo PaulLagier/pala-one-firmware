@@ -197,7 +197,15 @@ window.__pala_i18n.es = {
     screensaverHeading:   "Salvapantallas",
     screensaverCardDesc:  "Administre la imagen (o rotación de varias imágenes) que se muestra en la tinta electrónica cuando el dispositivo se suspende.",
     screensaverEditorLink:"Abrir editor de salvapantallas",
-    screensaverEditorHint:"Incluye un editor de bitmap en el navegador y hasta 8 ranuras de rotación."
+    screensaverEditorHint:"Incluye un editor de bitmap en el navegador y hasta 8 ranuras de rotación.",
+    libraryHeading:        "Encabezado de la biblioteca",
+    libraryIntro:          "Personalice el título que aparece arriba en la pantalla de biblioteca del dispositivo.",
+    headerTitleLabel:      "Título del encabezado",
+    headerTitleHint:       "Deja vacío para ocultarlo. Máximo 31 caracteres.",
+    headerTitlePlaceholder:"Predeterminado: {default}",
+    headerTitleSave:       "Guardar",
+    headerTitleReset:      "Restaurar predeterminado",
+    headerTitleResetConfirm:"¿Restaurar el título del encabezado al valor predeterminado del dispositivo?"
   },
   bookmarks: {
     title:              "Marcapáginas",

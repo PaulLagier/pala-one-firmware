@@ -2,10 +2,12 @@
 
 #include <ArduinoJson.h>
 
+#include "src/config.h"                   // LIB_HEADER_TITLE (compile-time default)
 #include "src/state.h"
 #include "src/storage/book_metadata.h"   // saveSavedPage
 #include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
+#include "src/ui/header_title.h"
 #include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
 #include "src/ui/reader_actions.h"        // ButtonAction + Gestures
 #include "src/ui/screens/reader_screen.h" // g_readerScreen
@@ -50,6 +52,11 @@ static void writeSettingsTo(JsonObject obj) {
   obj["bionic"]        = Font::bionicEnabled();
   obj["noScreensaver"] = Sleep::noScreensaver();
   obj["hasSleepImage"] = FS.exists("/sleep.bin");
+  // headerTitleDefault lets the SPA show a "Reset to default" affordance
+  // without having to hard-code LIB_HEADER_TITLE (which includes the build
+  // git hash on PlatformIO).
+  obj["headerTitle"]        = HeaderTitle::current();
+  obj["headerTitleDefault"] = LIB_HEADER_TITLE;
 
   JsonObject g = obj["gestures"].to<JsonObject>();
   g["long"]      = actionToWire(Gestures::actionLong());
@@ -111,6 +118,18 @@ static bool applyFromJson(JsonObjectConst body) {
   if (body["noScreensaver"].is<bool>()) {
     bool v = body["noScreensaver"].as<bool>();
     if (v != Sleep::noScreensaver()) Sleep::setNoScreensaver(v);
+  }
+
+  // Header title — `headerTitleReset:true` wins over `headerTitle` so the
+  // SPA's "Reset" button works even if the text field is also sent. Empty
+  // string = hide the header (per HeaderTitle's spec); missing both fields
+  // = unchanged.
+  if (body["headerTitleReset"].is<bool>() && body["headerTitleReset"].as<bool>()) {
+    HeaderTitle::resetToDefault();
+  } else if (body["headerTitle"].is<const char*>()) {
+    String s = body["headerTitle"].as<const char*>();
+    s.trim();
+    HeaderTitle::set(s.c_str());
   }
 
   // Gestures — each field individually optional. The setters clamp +
