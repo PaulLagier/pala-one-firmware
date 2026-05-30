@@ -7,7 +7,6 @@
 #include "src/state.h"                        // FS, server
 #include "src/storage/app_catalog.h"          // g_apps, loadApps
 #include "src/storage/fs_util.h"              // fsFreeBytesSafe
-#include "src/web/chrome.h"                   // successPage, htmlEscape, humanBytes
 
 // ============================================================================
 //  Per-session state. File-static because the route handlers below are the
@@ -55,30 +54,15 @@ static void handleUploadAppDone() {
 
   loadApps();  // refresh so AppsScreen sees the new entry on next entry
 
-  String finalPath = String("/apps/") + s.finalName;
-  size_t storedSize = 0;
-  File stored = FS.open(finalPath, "r");
-  if (stored) { storedSize = stored.size(); stored.close(); }
-
-  String inner;
-  inner.reserve(900);
-  inner += "<div class='card'><h2>" D_WEB_APP_INSTALLED_HEADING "</h2>";
-  inner += "<p class='muted'>" D_WEB_APP_INSTALLED_DESC "</p>";
-  inner += "<div class='stats'>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_APP_LABEL          "</span><b>" + htmlEscape(s.finalName)      + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)        + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_APPS_NOW           "</span><b>" + String(g_apps.count)          + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe()) + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
-  inner += storageCardHtml();
-
-  String page = successPage(
-    D_WEB_APP_INSTALLED_HEADING,
-    D_WEB_APP_INSTALLED_SUBTITLE,
-    D_WEB_APP_INSTALLED_BANNER,
-    inner
-  );
-  server.send(200, "text/html; charset=utf-8", page);
+  // Stable JSON shape; the SPA only consults status, but `name` is handy
+  // for any caller that wants it.
+  String body;
+  body.reserve(48 + s.finalName.length());
+  body  = "{\"ok\":true,\"name\":\"";
+  body += s.finalName;
+  body += "\"}";
+  server.sendHeader("Cache-Control", "no-store");
+  server.send(200, "application/json; charset=utf-8", body);
 }
 
 // Map an AppHeaderStatus into a user-facing message. Mirrors the
@@ -215,25 +199,6 @@ static void handleUploadAppStream() {
   }
 }
 
-static void handleDeleteApp() {
-  if (!server.hasArg("name")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_NAME);
-    return;
-  }
-  String name = server.arg("name");
-  if (name.indexOf('/') >= 0 || name.indexOf('\\') >= 0 || !name.endsWith(".bin")) {
-    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_INVALID_NAME);
-    return;
-  }
-  String path = String("/apps/") + name;
-  if (FS.exists(path)) FS.remove(path);
-  loadApps();   // refresh catalog so the next read sees the deletion
-
-  server.sendHeader("Location", "/files");
-  server.send(303);
-}
-
 void registerAppUploadRoutes() {
   server.on("/upload-app", HTTP_POST, handleUploadAppDone, handleUploadAppStream);
-  server.on("/del-app",    HTTP_POST, handleDeleteApp);   // POST: destructive
 }

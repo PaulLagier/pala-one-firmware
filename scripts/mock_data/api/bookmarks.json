@@ -1,0 +1,24 @@
+{
+  "books": [
+    {
+      "id":   0,
+      "name": "The Time Machine",
+      "bookmarks": [
+        { "idx": 0, "page": 3,  "label": "The Time Traveller (for so it will be convenient to speak of him)..." },
+        { "idx": 1, "page": 47, "label": "I am afraid I cannot convey the peculiar sensations of time travelling." }
+      ]
+    },
+    {
+      "id":   1,
+      "name": "Pride and Prejudice",
+      "bookmarks": [
+        { "idx": 0, "page": 12, "label": "It is a truth universally acknowledged, that a single man..." }
+      ]
+    },
+    {
+      "id":   2,
+      "name": "A Tale Without Bookmarks",
+      "bookmarks": []
+    }
+  ]
+}

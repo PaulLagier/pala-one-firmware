@@ -1,0 +1,43 @@
+<!doctype html>
+<html data-theme='light'>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width,initial-scale=1'>
+  <meta name='color-scheme' content='light dark'>
+  <title>Pala One</title>
+  <link rel='stylesheet' href='styles.css'>
+</head>
+<body>
+  <div class='wrap'>
+    <div class='top'>
+      <div>
+        <h1 id='page-title'>Pala One</h1>
+        <div class='muted' id='page-subtitle'></div>
+      </div>
+      <div class='top-side'>
+        <div class='nav' id='page-nav'></div>
+        <button type='button' class='btn secondary theme-toggle'
+                onclick='palaToggleTheme()' title='Light or dark appearance'>
+          <span class='tgl'>Dark mode</span>
+          <span class='tgd'>Light mode</span>
+        </button>
+      </div>
+    </div>
+    <main id='content'></main>
+  </div>
+
+  <script src='i18n/en.js'></script>
+  <script src='i18n/es.js'></script>
+  <script src='api.js'></script>
+  <script src='html.js'></script>
+  <script src='screens/home.js'></script>
+  <script src='screens/files.js'></script>
+  <script src='screens/bookmarks.js'></script>
+  <script src='screens/list.js'></script>
+  <script src='screens/read.js'></script>
+  <script src='screens/screensavers.js'></script>
+  <script src='screens/settings.js'></script>
+  <script src='screens/reset.js'></script>
+  <script src='app.js'></script>
+</body>
+</html>
