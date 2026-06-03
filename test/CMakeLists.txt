@@ -25,6 +25,7 @@ set(SUT_SRC
   ${FW_SRC}/pure/app_header.cpp
   ${FW_SRC}/pure/hold_gesture.cpp
   ${FW_SRC}/pure/streak_log.cpp
+  ${FW_SRC}/pure/reading_time_log.cpp
   ${FW_SRC}/storage/book_metadata.cpp
   ${FW_SRC}/storage/list_items.cpp
 )
@@ -44,6 +45,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_app_header.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_streak_log.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_reading_time_log.cpp
 )
 
 add_executable(host_tests ${SUT_SRC} ${TEST_SRC})

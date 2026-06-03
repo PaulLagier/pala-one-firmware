@@ -47,6 +47,16 @@
 #define D_STATS_LIFETIME_PAGES_FMT     "Pages turned: %llu"
 #define D_STATS_LIFETIME_PRESSES_FMT   "Button presses: %llu"
 
+// Reading-time page (page 2 of the statistics screen). %s is a duration
+// formatted by the screen (e.g. "1h 23m" or "45m").
+#define D_STATS_TIME_HEADING           "Reading time"
+#define D_STATS_TIME_TODAY_FMT         "Today: %s"
+#define D_STATS_TIME_WEEK_FMT          "Week:  %s"
+#define D_STATS_TIME_MONTH_FMT         "Month: %s"
+#define D_STATS_TIME_YEAR_FMT          "Year:  %s"
+#define D_STATS_TIME_AVG_FMT           "Avg/day: %s"
+#define D_STATS_BACK_HINT              "Click to go back"
+
 // ----------------------------------------------------------------------------
 //  List screen (src/ui/screens/list_screen.cpp)
 // ----------------------------------------------------------------------------

@@ -8,13 +8,31 @@
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
 
+static const int STATS_PAGE_COUNT = 2;
+
+// Format a duration in seconds as a compact "Hh Mm" (or just "Mm" under an
+// hour). Seconds are dropped — page-granularity reading time doesn't need
+// them, and the e-ink rows are narrow.
+static void fmtDuration(char* out, size_t n, uint64_t secs) {
+  uint64_t mins = secs / 60;
+  uint64_t hours = mins / 60;
+  unsigned m = (unsigned)(mins % 60);
+  if (hours > 0) snprintf(out, n, "%lluh %um", (unsigned long long)hours, m);
+  else           snprintf(out, n, "%um", m);
+}
+
 void StatisticsScreen::onEnter() {
+  page_ = 0;
   draw();
 }
 
 void StatisticsScreen::draw() {
   StatisticsSnapshot s = Statistics::snapshot();
+  if (page_ == 0) drawStreakPage(s);
+  else            drawTimePage(s);
+}
 
+void StatisticsScreen::drawStreakPage(const StatisticsSnapshot& s) {
   prepareMenuFrame();
   Font::useBody();
   int ascent = u8g2.getFontAscent();
@@ -71,6 +89,52 @@ void StatisticsScreen::draw() {
   display.update();
 }
 
+void StatisticsScreen::drawTimePage(const StatisticsSnapshot& s) {
+  prepareMenuFrame();
+  Font::useBody();
+  int ascent = u8g2.getFontAscent();
+  int lineH  = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 1;
+  int y = drawSectionHeader(D_STATS_TIME_HEADING);
+
+  char dur[24];
+  char buf[64];
+
+  struct Row { const char* fmt; uint64_t secs; bool bold; };
+  const Row rows[] = {
+    { D_STATS_TIME_TODAY_FMT, s.todayReadSecs,     true  },
+    { D_STATS_TIME_WEEK_FMT,  s.weekReadSecs,      false },
+    { D_STATS_TIME_MONTH_FMT, s.monthReadSecs,     false },
+    { D_STATS_TIME_YEAR_FMT,  s.yearReadSecs,      false },
+    { D_STATS_TIME_AVG_FMT,   s.avgPerDayReadSecs, false },
+  };
+
+  for (const Row& r : rows) {
+    fmtDuration(dur, sizeof(dur), r.secs);
+    snprintf(buf, sizeof(buf), r.fmt, dur);
+    if (r.bold) Font::useBold();
+    else        Font::useBody();
+    u8g2.setCursor(MARGIN_X, y);
+    u8g2.print(buf);
+    y += lineH;
+  }
+  Font::useBody();
+
+  // Footer hint — page 1 has no bitmap, so the bottom strip is free. Centered
+  // above the statusbar reserve so the single-button "click returns" is
+  // discoverable.
+  int hintW = u8g2.getUTF8Width(D_STATS_BACK_HINT);
+  u8g2.setCursor((SCREEN_W - hintW) / 2, SCREEN_H - STATUS_H - 2);
+  u8g2.print(D_STATS_BACK_HINT);
+
+  display.update();
+}
+
 void StatisticsScreen::onButton(const ButtonEvent& e) {
-  if (e.any()) nextScreen = &g_libraryScreen;
+  if (!e.any()) return;
+  if (page_ + 1 < STATS_PAGE_COUNT) {
+    page_++;
+    draw();
+  } else {
+    nextScreen = &g_libraryScreen;
+  }
 }

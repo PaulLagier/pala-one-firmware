@@ -48,6 +48,16 @@
 #define D_STATS_LIFETIME_PAGES_FMT     "Páginas leídas: %llu"
 #define D_STATS_LIFETIME_PRESSES_FMT   "Pulsaciones: %llu"
 
+// Reading-time page (page 2 of the statistics screen). %s is a duration
+// formatted by the screen (e.g. "1h 23m" or "45m").
+#define D_STATS_TIME_HEADING           "Tiempo de lectura"
+#define D_STATS_TIME_TODAY_FMT         "Hoy:    %s"
+#define D_STATS_TIME_WEEK_FMT          "Semana: %s"
+#define D_STATS_TIME_MONTH_FMT         "Mes:    %s"
+#define D_STATS_TIME_YEAR_FMT          "Año:    %s"
+#define D_STATS_TIME_AVG_FMT           "Prom/día: %s"
+#define D_STATS_BACK_HINT              "Clic para volver"
+
 // ----------------------------------------------------------------------------
 //  List screen
 // ----------------------------------------------------------------------------

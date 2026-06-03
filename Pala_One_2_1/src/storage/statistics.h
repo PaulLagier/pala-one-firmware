@@ -40,6 +40,17 @@ struct StatisticsSnapshot {
   uint32_t lastLoggedDay;      // STREAK_DAY_UNSET if never logged
   uint32_t bitmapHead;
   uint32_t bitmap;             // bit i = "logged on day (bitmapHead - i)"
+
+  // Reading time (seconds). today/week/month/year are the current buckets
+  // (0 once the bucket rolls over with no fresh reading); avg* divide the
+  // lifetime total by elapsed days/weeks since tracking began.
+  uint64_t totalReadSecs;
+  uint32_t todayReadSecs;
+  uint32_t weekReadSecs;
+  uint32_t monthReadSecs;
+  uint32_t yearReadSecs;
+  uint32_t avgPerDayReadSecs;
+  uint32_t avgPerWeekReadSecs;
 };
 
 namespace Statistics {
