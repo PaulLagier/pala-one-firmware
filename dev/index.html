@@ -149,12 +149,12 @@
   <p class="sub">Flash the firmware directly from your browser.</p>
   <div class="channel-bar">
     <span class="channel-badge dev">dev</span>
-    <span>build: <code>v2.1-172-ge1db975</code></span>
+    <span>build: <code>v2.1-174-gdf619a3</code></span>
     <a class="switch-channel" href="../">switch channel</a>
   </div>
 
   <p class="tip">
-    <strong>First time?</strong> Read the <a href="#how-to-install">How to install</a> guide below before clicking!
+    <strong>First time?</strong> Read the <a href="#how-to-install">How to install</a> and <a href="#troubleshooting">Troubleshooting</a> guides below before clicking!
   </p>
 
   <p class="tip warn">
@@ -213,8 +213,8 @@
 
   <ol class="walkthrough">
     <li>
-      <strong>Use Chrome, Edge, or Opera on a desktop computer.</strong>
-      Safari, Firefox, and mobile browsers aren't supported.
+      <strong>Use a desktop browser such as Chrome, Edge, Opera.</strong>
+      Firefox is unstable and may need you to approve its serial-device permission prompt before flashing.
     </li>
     <li>
       <strong>Plug your Pala One into your computer</strong>
@@ -259,6 +259,35 @@
     <li>
       <strong>You're done!</strong>
       To upload books, navigate to "Upload" on the Pala One's menu and enter the URL shown on the device into your web browser.
+    </li>
+  </ol>
+
+  <h2 id="troubleshooting">Troubleshooting</h2>
+
+  <ol class="walkthrough">
+    <li>
+      <strong>Browser says Web Serial is not supported.</strong>
+      Use desktop Chrome, Edge, Opera. Firefox is unstable and may need the serial permission prompt approved before the installer can connect.
+    </li>
+    <li>
+      <strong>The board does not appear in the serial-port list.</strong>
+      Try a different USB-C cable, then unplug and reconnect the board. If it still does not show up, the cable may be power-only.
+    </li>
+    <li>
+      <strong>The install dialog stops or fails partway through.</strong>
+      Close the dialog, reconnect the board, and try the same install button again. Make sure you selected the correct V1.1 or V1.2 variant.
+    </li>
+    <li>
+      <strong>The screen looks wrong after the first boot.</strong>
+      Flash the other board variant (V1.1 or V1.2) and reboot. The wrong firmware variant will not brick the board, but the display may not render correctly.
+    </li>
+    <li>
+      <strong>You're upgrading from an older firmware and want to keep your data.</strong>
+      The installer warns you when data is at risk. For v2.x to v3.x upgrades, books, apps, and screensavers are lost because the partition layout changed.
+    </li>
+    <li>
+      <strong>The device appears stuck after flashing, sometimes in a screensaver or menu and no longer accepts input.</strong>
+      This has been reported with Arduino IDE, PlatformIO, and the web flasher. It does not happen on every flash, but when it does occur, reflashing the device again usually resolves it.
     </li>
   </ol>
 </body>
