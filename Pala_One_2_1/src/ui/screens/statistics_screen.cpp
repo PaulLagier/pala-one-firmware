@@ -92,8 +92,9 @@ void StatisticsScreen::drawStreakPage(const StatisticsSnapshot& s) {
 void StatisticsScreen::drawTimePage(const StatisticsSnapshot& s) {
   prepareMenuFrame();
   Font::useBody();
-  int ascent = u8g2.getFontAscent();
-  int lineH  = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 1;
+  // Compact, fixed row spacing — independent of the reader's line-gap setting
+  // so the five rows plus the footer hint always fit and never overlap.
+  int lineH  = (u8g2.getFontAscent() - u8g2.getFontDescent()) + 2;
   int y = drawSectionHeader(D_STATS_TIME_HEADING);
 
   char dur[24];
@@ -119,22 +120,21 @@ void StatisticsScreen::drawTimePage(const StatisticsSnapshot& s) {
   }
   Font::useBody();
 
-  // Footer hint — page 1 has no bitmap, so the bottom strip is free. Centered
-  // above the statusbar reserve so the single-button "click returns" is
-  // discoverable.
-  int hintW = u8g2.getUTF8Width(D_STATS_BACK_HINT);
-  u8g2.setCursor((SCREEN_W - hintW) / 2, SCREEN_H - STATUS_H - 2);
-  u8g2.print(D_STATS_BACK_HINT);
-
   display.update();
 }
 
 void StatisticsScreen::onButton(const ButtonEvent& e) {
-  if (!e.any()) return;
-  if (page_ + 1 < STATS_PAGE_COUNT) {
-    page_++;
-    draw();
-  } else {
-    nextScreen = &g_libraryScreen;
+  switch (e.kind) {
+    case ButtonEvent::Short:
+      // One click cycles back and forth through the stats pages.
+      page_ = (page_ + 1) % STATS_PAGE_COUNT;
+      draw();
+      break;
+    case ButtonEvent::Double:
+      // Two clicks exit to the library.
+      nextScreen = &g_libraryScreen;
+      break;
+    default:
+      break;  // ignore long / triple / hold gestures
   }
 }

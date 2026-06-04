@@ -55,7 +55,6 @@
 #define D_STATS_TIME_MONTH_FMT         "Month: %s"
 #define D_STATS_TIME_YEAR_FMT          "Year:  %s"
 #define D_STATS_TIME_AVG_FMT           "Avg/day: %s"
-#define D_STATS_BACK_HINT              "Click to go back"
 
 // ----------------------------------------------------------------------------
 //  List screen (src/ui/screens/list_screen.cpp)

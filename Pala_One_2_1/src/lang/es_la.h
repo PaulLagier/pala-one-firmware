@@ -56,7 +56,6 @@
 #define D_STATS_TIME_MONTH_FMT         "Mes:    %s"
 #define D_STATS_TIME_YEAR_FMT          "Año:    %s"
 #define D_STATS_TIME_AVG_FMT           "Prom/día: %s"
-#define D_STATS_BACK_HINT              "Clic para volver"
 
 // ----------------------------------------------------------------------------
 //  List screen
