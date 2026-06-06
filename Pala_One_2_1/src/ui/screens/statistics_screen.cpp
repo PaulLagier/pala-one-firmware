@@ -48,7 +48,6 @@ void StatisticsScreen::draw() {
   snprintf(buf, sizeof(buf), D_STATS_LIFETIME_PRESSES_FMT, (unsigned long long)s.buttonPresses);
   u8g2.setCursor(MARGIN_X, y);
   u8g2.print(buf);
-  y += lineH;
 
   // Bottom row: 30-day bitmap. Each cell = 1 day. Right-most cell = today
   // (bit 0). A filled rect means "logged that day"; an outlined rect means

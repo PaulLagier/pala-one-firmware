@@ -38,8 +38,8 @@ static void handleBookmarksWeb() {
   if (g_library.bookCount == 0) out += "<div class='card'><p class='muted'>" D_WEB_NO_BOOKS_YET "</p></div>";
 
   for (int i = 0; i < g_library.bookCount; i++) {
-    String bookPath = String(g_library.books[i].path);
-    String key = prefKeyForBook(bookPath);
+    String filePath = String(g_library.books[i].path);
+    String key = prefKeyForBook(filePath);
     uint16_t pages[MAX_BOOKMARKS];
     uint32_t offsets[MAX_BOOKMARKS];
     uint8_t count = loadBookmarksForKey(key, pages, offsets);
@@ -53,7 +53,7 @@ static void handleBookmarksWeb() {
       continue;
     }
 
-    File f = FS.open(bookPath, "r");
+    File f = FS.open(filePath, "r");
     if (!f) {
       out += "<p class='muted'>" D_WEB_BOOKMARKS_OPEN_FAILED_CARD "</p></div>";
       continue;
@@ -63,9 +63,7 @@ static void handleBookmarksWeb() {
 
     for (int j = 0; j < count; j++) {
       int targetPage = (int)pages[j];
-      if (targetPage < 0) targetPage = 0;
-
-      uint32_t pageOff = resolveBookmarkOffset(bookPath, (uint16_t)targetPage, offsets[j]);
+      uint32_t pageOff = resolveBookmarkOffset(filePath, (uint16_t)targetPage, offsets[j]);
       FileReadStream fs(f);
       String sn = readBookmarkLabelAtOffset(fs, pageOff, targetPage);
       out += "<li><div class='row'><div><div class='pill'>" D_WEB_BOOKMARK_PILL_PREFIX;
@@ -144,13 +142,13 @@ static void handleViewBookmarkWeb() {
   }
 
   int page = (int)pages[idx];
-  String bookPath = String(g_library.books[b].path);
-  File vf = FS.open(bookPath, "r");
+  String filePath = String(g_library.books[b].path);
+  File vf = FS.open(filePath, "r");
   String txt;
   if (!vf) {
     txt = D_WEB_BOOKMARK_OPEN_FAILED_DOT;
   } else {
-    uint32_t off = resolveBookmarkOffset(bookPath, (uint16_t)page, offsets[idx]);
+    uint32_t off = resolveBookmarkOffset(filePath, (uint16_t)page, offsets[idx]);
     txt.reserve(900);
     (void)extractPageText(vf, off, txt);
     vf.close();
@@ -187,8 +185,8 @@ static void handleExportBookmarksWeb() {
     return;
   }
 
-  String bookPath = String(g_library.books[b].path);
-  String key = prefKeyForBook(bookPath);
+  String filePath = String(g_library.books[b].path);
+  String key = prefKeyForBook(filePath);
   uint16_t pages[MAX_BOOKMARKS];
   uint32_t offsets[MAX_BOOKMARKS];
   uint8_t count = loadBookmarksForKey(key, pages, offsets);
@@ -198,13 +196,13 @@ static void handleExportBookmarksWeb() {
     return;
   }
 
-  File f = FS.open(bookPath, "r");
+  File f = FS.open(filePath, "r");
   if (!f) {
     server.send(500, "text/plain; charset=utf-8", D_WEB_BOOKMARKS_OPEN_FAILED_CARD);
     return;
   }
 
-  String exportName = stripTxtExt(lastPathComponent(bookPath));
+  String exportName = stripTxtExt(lastPathComponent(filePath));
   exportName.replace(' ', '_');
   exportName += "_bookmarks.txt";
 
@@ -212,7 +210,7 @@ static void handleExportBookmarksWeb() {
   out.reserve(8192);
 
   out += D_WEB_BMEXPORT_BOOK;
-  out += stripTxtExt(lastPathComponent(bookPath));
+  out += stripTxtExt(lastPathComponent(filePath));
   out += "\n";
 
   out += D_WEB_BMEXPORT_BOOKMARKS;
@@ -221,12 +219,10 @@ static void handleExportBookmarksWeb() {
 
   for (int i = 0; i < count; i++) {
     int targetPage = (int)pages[i];
-    if (targetPage < 0) targetPage = 0;
-
-    uint32_t pageOff = resolveBookmarkOffset(bookPath, (uint16_t)targetPage, offsets[i]);
+    uint32_t pageOff = resolveBookmarkOffset(filePath, (uint16_t)targetPage, offsets[i]);
     FileReadStream fs(f);
     String label = readBookmarkLabelAtOffset(fs, pageOff, targetPage);
-    String txt = readPageTextForWeb(bookPath, targetPage);
+    String txt = readPageTextForWeb(filePath, targetPage);
 
     out += "==================================================\n";
     out += D_WEB_BMEXPORT_BOOKMARK_LBL;

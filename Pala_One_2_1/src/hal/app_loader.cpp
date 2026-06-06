@@ -56,7 +56,7 @@ LoadResult loadAndRunApp(const char* path, const PalaAPI* api,
   if (!s_appExecBuf) { f.close(); return LoadResult::OutOfMemory; }
   s_appExecSize = fileSize;
 
-  uint8_t* dataBuf = (uint8_t*)MAP_IRAM_TO_DRAM((uint32_t)s_appExecBuf);
+  uint8_t* dataBuf = reinterpret_cast<uint8_t*>(MAP_IRAM_TO_DRAM(reinterpret_cast<uint32_t>(s_appExecBuf)));
 
   size_t bytesRead = f.read(dataBuf, fileSize);
   f.close();
@@ -83,12 +83,12 @@ LoadResult loadAndRunApp(const char* path, const PalaAPI* api,
   // SRAM, so adding the DRAM base is correct for both consumers.
   PalaAppHeader hdr;
   memcpy(&hdr, dataBuf, sizeof(hdr));
-  uint32_t base = (uint32_t)dataBuf;
+  uint32_t base = reinterpret_cast<uint32_t>(dataBuf);
   if (hdr.reloc_count > 0) {
-    uint32_t* relocs = (uint32_t*)(dataBuf + hdr.reloc_offset);
+    const uint32_t* relocs = reinterpret_cast<const uint32_t*>(dataBuf + hdr.reloc_offset);
     for (uint32_t i = 0; i < hdr.reloc_count; i++) {
       uint32_t off = relocs[i];
-      *(uint32_t*)(dataBuf + off) += base;
+      *reinterpret_cast<uint32_t*>(dataBuf + off) += base;
     }
   }
 
@@ -96,7 +96,7 @@ LoadResult loadAndRunApp(const char* path, const PalaAPI* api,
   // buffer we got from heap_caps_malloc); call-and-return goes through
   // the I-bus, so we hand the app the original `s_appExecBuf` cast.
   pala_app_entry_t entry =
-      (pala_app_entry_t)((uint8_t*)s_appExecBuf + hdr.entry_offset);
+      reinterpret_cast<pala_app_entry_t>(reinterpret_cast<uint8_t*>(s_appExecBuf) + hdr.entry_offset);
 
   // Bracket the app call with input-frontend resets so the click that
   // launched the app doesn't leak into the app's first frame, and any

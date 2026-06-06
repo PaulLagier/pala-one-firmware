@@ -7,11 +7,33 @@
 #include "src/storage/page_cache.h"       // deletePageCacheForBook
 #include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
+#include "src/ui/header_title.h"
 #include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
 #include "src/ui/reader_actions.h"        // ButtonAction + Gestures
 #include "src/ui/screens/reader_screen.h" // g_readerScreen — active-reader check
+#include "src/ui/lock.h"
 #include "src/ui/sleep.h"
 #include "src/web/chrome.h"
+
+// ----------------------------------------------------------------------------
+//  HTML escaping for user-supplied text rendered in attributes
+// ----------------------------------------------------------------------------
+static String htmlAttrEscape(const char* raw) {
+  String out;
+  out.reserve(strlen(raw) + 8);
+  while (*raw) {
+    switch (*raw) {
+      case '&':  out += "&amp;";  break;
+      case '"':  out += "&quot;"; break;
+      case '\'': out += "&#39;";  break;
+      case '<':  out += "&lt;";   break;
+      case '>':  out += "&gt;";   break;
+      default:   out += *raw;     break;
+    }
+    raw++;
+  }
+  return out;
+}
 
 // ----------------------------------------------------------------------------
 //  Helpers for the remappable-button section
@@ -72,14 +94,27 @@ static void handleSettings() {
   bool curBionic   = Font::bionicEnabled();
   String bChecked  = curBionic ? " checked" : "";
 
-  bool hasSleepImg = FS.exists("/sleep.bin");
-
   String out = webPageStart(
     D_WEB_SETTINGS_TITLE,
     D_WEB_SETTINGS_SUBTITLE_PREFIX FW_VERSION D_WEB_SETTINGS_SUBTITLE_SUFFIX,
-    "<a href='/'>" D_WEB_SETTINGS_BACK_NAV "</a>"
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a>"
   );
-  out.reserve(out.length() + 4000);
+  out.reserve(out.length() + 4500);
+
+  // Device personalization card — separate form, no layout-remap interaction.
+  out += "<div class='card'><h2>" D_WEB_DEVICE_HEADING "</h2>";
+  out += "<p class='muted'>" D_WEB_DEVICE_INTRO "</p>";
+  out += "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>";
+  out += "<div><label for='hdr'>" D_WEB_HEADER_TITLE_LABEL "</label>";
+  out += "<input type='text' id='hdr' name='hdr' maxlength='31' value='";
+  out += htmlAttrEscape(HeaderTitle::current());
+  out += "' placeholder='" LIB_HEADER_TITLE "'>";
+  out += "<div class='hint'>" D_WEB_HEADER_TITLE_HINT "</div></div>";
+  out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
+  out += "<input type='checkbox' name='hdr_rst' value='1' style='width:auto'>";
+  out += "<span>" D_WEB_HEADER_TITLE_RESET "</span></label>";
+  out += "<div class='actions' style='margin-top:14px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button></div>";
+  out += "</form></div>";
 
   out +=
     "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
@@ -121,6 +156,13 @@ static void handleSettings() {
   out +=
     "><span>" D_WEB_NO_SCREENSAVER_LABEL "</span></label>"
     "<div class='hint'>" D_WEB_NO_SCREENSAVER_HINT "</div></div>"
+    "<div style='margin-top:10px'>"
+    "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
+    "<input type='checkbox' name='lckslp' id='lckslp' style='width:auto'";
+  if (Sleep::lockOnSleep()) out += " checked";
+  out +=
+    "><span>" D_WEB_LOCK_ON_SLEEP_LABEL "</span></label>"
+    "<div class='hint'>" D_WEB_LOCK_ON_SLEEP_HINT "</div></div>"
     "<input type='hidden' name='noscr_form' value='1'>"
     "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button>"
     "<span class='muted'>" D_WEB_SETTINGS_APPLY_HINT "</span></div>"
@@ -137,14 +179,6 @@ static void handleSettings() {
   out += "</div><div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
   out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
   out += "</div></form></div>";
-
-  out +=
-    "<div class='card'><h2>" D_WEB_SCREENSAVER_HEADING "</h2>"
-    "<p class='muted'>" D_WEB_SCREENSAVER_CARD_DESC "</p>"
-    "<div class='actions' style='margin-top:8px'>"
-    "<a class='btn' href='/screensavers'>" D_WEB_SCREENSAVER_EDITOR_LINK "</a>"
-    "<span class='muted'>" D_WEB_SCREENSAVER_EDITOR_HINT "</span>"
-    "</div></div>";
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
@@ -229,6 +263,19 @@ static void handleSettingsPost() {
   if (server.hasArg("noscr_form")) {
     bool ns = server.hasArg("noscr");
     if (ns != Sleep::noScreensaver()) Sleep::setNoScreensaver(ns);
+    bool ls = server.hasArg("lckslp");
+    if (ls != Sleep::lockOnSleep()) Sleep::setLockOnSleep(ls);
+  }
+
+  // Header title — its own form card.
+  if (server.hasArg("hdr")) {
+    if (server.hasArg("hdr_rst")) {
+      HeaderTitle::resetToDefault();
+    } else {
+      String hdr = server.arg("hdr");
+      hdr.trim();
+      HeaderTitle::set(hdr.c_str());
+    }
   }
 
   // Gesture bindings — `setAction*` clamp internally, but we still check

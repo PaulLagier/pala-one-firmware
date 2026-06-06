@@ -1,5 +1,7 @@
 #include "src/web/files.h"
 
+#include <WiFi.h>
+
 #include "src/config.h"
 #include "src/state.h"
 #include "src/pure/hashing.h"
@@ -13,14 +15,48 @@
 #include "src/web/chrome.h"
 
 // ============================================================================
-//  /            — landing page (storage card + upload form)
-//  /files       — file/folder browser
-//  /del         — POST: delete book
-//  /mkdir       — POST: create folder
-//  /rmdir       — POST: delete (empty) folder
-//  /move        — POST: move book to a different folder
-//  /jumppage    — POST: set the page that opens next on device
+//  /               — landing page (storage card + upload form)
+//  /files          — file/folder browser
+//  /download-book  — GET: stream book .txt as attachment (?id=N)
+//  /del            — POST: delete book
+//  /mkdir          — POST: create folder
+//  /rmdir          — POST: delete (empty) folder
+//  /move           — POST: move book to a different folder
+//  /jumppage       — POST: set the page that opens next on device
 // ============================================================================
+
+static void handleDownloadBook() {
+  if (!server.hasArg("id")) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
+    return;
+  }
+  int id = server.arg("id").toInt();
+  if (id < 0 || id >= g_library.bookCount) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
+    return;
+  }
+
+  String path = String(g_library.books[id].path);
+  File f = FS.open(path, "r");
+  if (!f) {
+    server.send(404, "text/plain; charset=utf-8", "Not found");
+    return;
+  }
+
+  String filename = lastPathComponent(path);
+  server.setContentLength(f.size());
+  server.sendHeader("Content-Disposition",
+                    "attachment; filename=\"" + filename + "\"");
+  server.send(200, "text/plain; charset=utf-8", "");
+
+  WiFiClient client = server.client();
+  uint8_t buf[512];
+  while (f.available()) {
+    size_t n = f.read(buf, sizeof(buf));
+    if (n > 0) client.write(buf, n);
+  }
+  f.close();
+}
 
 static void handleRoot() {
   String subtitle = D_WEB_HOME_FW_PREFIX;
@@ -37,7 +73,7 @@ static void handleRoot() {
   String out = webPageStart(
     D_WEB_HOME_TITLE,
     subtitle,
-    "<a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/list'>" D_WEB_NAV_LIST "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a><a href='/reset'>" D_WEB_NAV_FACTORY_RESET "</a>"
+    "<a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/list'>" D_WEB_NAV_LIST "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a><a href='/reset'>" D_WEB_NAV_FACTORY_RESET "</a>"
   );
 
   out += storageCardHtml();
@@ -72,7 +108,7 @@ static void handleFiles() {
   String out = webPageStart(
     D_WEB_FILES_HEADING,
     D_WEB_FILES_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
     true
   );
 
@@ -109,9 +145,9 @@ static void handleFiles() {
   } else {
     out += "<ul class='list'>";
     for (int i = 0; i < g_library.bookCount; i++) {
-      String bookPath = String(g_library.books[i].path);
+      String filePath = String(g_library.books[i].path);
       String folderLabel = g_library.books[i].folder[0] ? prettyRelativeLabel(g_library.books[i].folder) : String(D_WEB_BOOK_ROOT);
-      int savedPage = savedPageForBookPath(bookPath) + 1;
+      int savedPage = savedPageForBookPath(filePath) + 1;
       if (savedPage < 1) savedPage = 1;
 
       out += "<li><div class='row'><div><h3>";
@@ -135,8 +171,11 @@ static void handleFiles() {
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
       out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + "' placeholder='" D_WEB_MOVE_PLACEHOLDER "' maxlength='64'>";
       out += "<div class='actions'><button type='submit'>" D_WEB_MOVE_BUTTON "</button><span class='muted'>" D_WEB_MOVE_HINT "</span></div></form></div>";
-      out += "<div><form method='POST' action='/del' style='display:inline'><input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
+      out += "<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
+      out += "<a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
+      out += "<form method='POST' action='/del' style='margin:0'><input type='hidden' name='id' value='" + String(i) + "'>";
+      out += "<button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form>";
+      out += "</div></div></li>";
     }
     out += "</ul>";
   }
@@ -161,10 +200,13 @@ static void handleFiles() {
       out += String((int)sz);
       out += D_WEB_BOOK_BYTES_LABEL " &middot; ";
       out += htmlEscape(fileName);
-      out += "</div></div><div><form method='POST' action='/del-app' style='display:inline'>";
+      out += "</div></div><div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
+      out += "<a class='btn secondary' href='/download-app?name=" + htmlEscape(fileName) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
+      out += "<form method='POST' action='/del-app' style='margin:0'>";
       out += "<input type='hidden' name='name' value='";
       out += htmlEscape(fileName);
-      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_APP "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
+      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_APP "')\">" D_WEB_DELETE_BUTTON "</button></form>";
+      out += "</div></div></li>";
     }
     out += "</ul>";
   }
@@ -338,8 +380,9 @@ static void handleJumpPageWeb() {
 }
 
 void registerFilesRoutes() {
-  server.on("/",         HTTP_GET,  handleRoot);
-  server.on("/files",    HTTP_GET,  handleFiles);
+  server.on("/",             HTTP_GET,  handleRoot);
+  server.on("/files",        HTTP_GET,  handleFiles);
+  server.on("/download-book", HTTP_GET, handleDownloadBook);
   server.on("/del",      HTTP_POST, handleDelete);          // POST: prevents accidental deletion via browser prefetch
   server.on("/mkdir",    HTTP_POST, handleCreateFolder);
   server.on("/rmdir",    HTTP_POST, handleDeleteFolder);    // POST: destructive

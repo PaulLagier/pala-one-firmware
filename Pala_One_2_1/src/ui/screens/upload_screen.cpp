@@ -73,7 +73,6 @@ void UploadScreen::draw() {
     if (net_.fallbackUrl.length() > 0) {
       u8g2.setCursor(MARGIN_X, y);
       u8g2.print(net_.fallbackUrl.c_str());
-      y += 14;
     }
   } else {
     Font::useBold();
@@ -104,7 +103,6 @@ void UploadScreen::draw() {
     Font::useBody();
     u8g2.setCursor(MARGIN_X, y);
     u8g2.print(net_.primaryUrl.c_str());
-    y += 18;
   }
 
   display.update();

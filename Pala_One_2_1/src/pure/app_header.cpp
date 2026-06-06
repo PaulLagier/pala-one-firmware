@@ -50,7 +50,7 @@ bool validateRelocEntries(const void* buf, size_t fileSize) {
 
   // validateAppHeader has been called first (precondition), so the table
   // itself is in range. Walk entries with memcpy to stay alignment-safe.
-  const uint8_t* base = (const uint8_t*)buf;
+  const uint8_t* base = reinterpret_cast<const uint8_t*>(buf);
   for (uint32_t i = 0; i < hdr.reloc_count; i++) {
     uint32_t off;
     memcpy(&off, base + hdr.reloc_offset + i * 4u, sizeof(uint32_t));

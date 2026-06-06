@@ -46,7 +46,7 @@ size_t encodeList(const ListData& data, uint8_t* outBuf) {
   for (int i = 0; i < data.count && i < MAX_LIST_ITEMS; i++) {
     outBuf[pos++] = data.items[i].done ? 1 : 0;
     std::memset(&outBuf[pos], 0, MAX_LIST_TEXT + 1);
-    std::strncpy((char*)&outBuf[pos], data.items[i].text, MAX_LIST_TEXT);
+    std::strncpy(reinterpret_cast<char*>(&outBuf[pos]), data.items[i].text, MAX_LIST_TEXT);
     pos += (MAX_LIST_TEXT + 1);
   }
   return pos;

@@ -1,3 +1,10 @@
+// Implementation of the Improv Serial Wi-Fi provisioning wrapper.
+//
+// The on-device protocol work is done by jnthas/Improv-WiFi-Library
+// (<ImprovWiFiLibrary.h>, pinned in platformio.ini) — this file owns the
+// ImprovWiFi instance, wires its callbacks, drives it from loop(), and
+// coordinates Wi-Fi ownership with the upload session. See the header for the
+// "what / why" of Improv and the listening model.
 #include "src/hal/wifi_provisioning.h"
 
 #include <ImprovWiFiLibrary.h>

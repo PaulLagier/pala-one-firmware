@@ -27,12 +27,14 @@ static PalaAPI s_palaAPI;
 // (the apps API v3 didn't define one); treated as "no event".
 static uint8_t toPalaCode(ButtonEvent::Kind k) {
   switch (k) {
-    case ButtonEvent::Short:  return PALA_CLICK;
-    case ButtonEvent::Double: return PALA_DOUBLE;
-    case ButtonEvent::Triple: return PALA_TRIPLE;
-    case ButtonEvent::Long:   return PALA_LONG;
-    case ButtonEvent::Quad:   return 0;  // no PALA_QUAD in v3
-    case ButtonEvent::None:   return 0;
+    case ButtonEvent::Short:     return PALA_CLICK;
+    case ButtonEvent::Double:    return PALA_DOUBLE;
+    case ButtonEvent::Triple:    return PALA_TRIPLE;
+    case ButtonEvent::Long:      return PALA_LONG;
+    case ButtonEvent::Quad:      return 0;  // no PALA_QUAD in v3
+    case ButtonEvent::VeryLong:  return 0;  // no PALA_VERYLONG in v3
+    case ButtonEvent::ClickHold: return 0;  // no PALA_CLICKHOLD in v3
+    case ButtonEvent::None:      return 0;
   }
   return 0;
 }
@@ -135,25 +137,42 @@ static int api_snprintf_wrap(char* buf, int len, const char* fmt, ...) {
 
 // Per-app key-value storage: each app gets its own `/apps/{key}.dat` file.
 // Key namespacing across apps is the app author's responsibility (the v3
-// contract didn't sandbox by binary name; see docs/APPS_LAYER.md §9).
-// `/` and other path characters in `key` are NOT sanitized — preserves v3
-// behavior. A future API bump could tighten this.
+// contract didn't sandbox by binary name). Path separators in `key` are
+// replaced with '_' to prevent directory traversal.
+
+// Strip path-separator characters so app-supplied keys cannot escape /apps/.
+static void sanitizeStorageKey(char* out, size_t outLen, const char* key) {
+  size_t j = 0;
+  for (size_t i = 0; key[i] && j < outLen - 1; i++) {
+    char c = key[i];
+    if (c == '/' || c == '\\') c = '_';
+    out[j++] = c;
+  }
+  out[j] = '\0';
+}
+
 static int api_storageRead(const char* key, void* buf, int maxlen) {
+  if (!key || !key[0]) return -1;
+  char safeKey[54];
+  sanitizeStorageKey(safeKey, sizeof(safeKey), key);
   char path[64];
-  snprintf(path, sizeof(path), "/apps/%s.dat", key);
+  snprintf(path, sizeof(path), "/apps/%s.dat", safeKey);
   File f = FS.open(path, "r");
   if (!f) return -1;
-  int n = f.read((uint8_t*)buf, maxlen);
+  int n = f.read(reinterpret_cast<uint8_t*>(buf), maxlen);
   f.close();
   return n;
 }
 
 static int api_storageWrite(const char* key, const void* buf, int len) {
+  if (!key || !key[0]) return -1;
+  char safeKey[54];
+  sanitizeStorageKey(safeKey, sizeof(safeKey), key);
   char path[64];
-  snprintf(path, sizeof(path), "/apps/%s.dat", key);
+  snprintf(path, sizeof(path), "/apps/%s.dat", safeKey);
   File f = FS.open(path, "w");
   if (!f) return -1;
-  int n = f.write((const uint8_t*)buf, len);
+  int n = f.write(reinterpret_cast<const uint8_t*>(buf), len);
   f.close();
   return n;
 }

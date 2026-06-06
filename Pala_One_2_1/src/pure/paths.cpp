@@ -125,8 +125,6 @@ String sanitizeUploadedAppFilename(String fname) {
         (c >= '0' && c <= '9') ||
         c == '_' || c == '-') {
       clean += (char)c;
-    } else if (c == ' ') {
-      clean += '_';
     } else {
       clean += '_';
     }

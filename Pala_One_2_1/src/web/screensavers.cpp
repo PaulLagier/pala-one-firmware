@@ -231,7 +231,22 @@ static void handleScreensaverUploadStream() {
     if (!s_up.tmpFile) s_up.error = "Cannot create temp file";
   }
   else if (up.status == UPLOAD_FILE_WRITE) {
-    if (s_up.tmpFile) s_up.tmpFile.write(up.buf, up.currentSize);
+    if (s_up.error.length() > 0) return;
+    if (s_up.tmpFile && up.currentSize > 0) {
+      if (s_up.tmpFile.size() + up.currentSize > 8192) {
+        s_up.tmpFile.close();
+        if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
+        s_up.error = "Image file is too large";
+        return;
+      }
+      size_t wrote = s_up.tmpFile.write(up.buf, up.currentSize);
+      if (wrote != up.currentSize) {
+        s_up.tmpFile.close();
+        if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
+        s_up.error = "Write failed (disk full?)";
+        return;
+      }
+    }
   }
   else if (up.status == UPLOAD_FILE_END) {
     if (s_up.tmpFile) s_up.tmpFile.close();
@@ -300,7 +315,7 @@ static const char kEditorStyle[] PROGMEM =
   ".ss-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}"
   ".ss-slot{border:1px solid var(--line-soft);border-radius:10px;padding:8px;background:var(--stat-bg);display:flex;flex-direction:column;gap:6px;align-items:center}"
   ".ss-slot-actions{display:flex;gap:8px;align-items:center;justify-content:center;width:100%;margin-top:4px}"
-  ".btn-icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;margin:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:inherit;text-decoration:none;cursor:pointer;transition:background .2s ease}"
+  ".btn-icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;margin:0;border:1px solid var(--line);border-radius:10px;background:var(--card);color:inherit;text-decoration:none;cursor:pointer;transition:background .2s ease}"
   ".btn-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}"
   ".btn-icon:hover{background:var(--line-soft); }"
   ".btn-icon.danger{color:var(--danger);border-color:var(--danger)}"
@@ -311,6 +326,8 @@ static const char kEditorStyle[] PROGMEM =
 
 static const char kIconDownload[] PROGMEM =
   "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 4v10m0 0l4-4m-4 4l-4-4M5 20h14'/></svg>";
+static const char kIconUpload[] PROGMEM =
+  "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M12 20v-10m0 0l4 4m-4-4l-4 4M5 4h14'/></svg>";
 static const char kIconTrash[] PROGMEM =
   "<svg viewBox='0 0 24 24' aria-hidden='true'>"
   "<path d='M4 7h16'/>"
@@ -372,55 +389,70 @@ static const char kEditorScript[] PROGMEM =
   "setLbls();render();"
   "})();</script>";
 
-// Download + delete icon buttons for a populated slot or the legacy single image.
-static String screensaverActionsHtml(bool single, int slot) {
+// Upload + (when populated) download + delete icon buttons for a slot or the
+// legacy single image. Upload is always shown so an empty slot can be filled
+// from a previously downloaded .bin without going through the image editor.
+static String screensaverActionsHtml(bool single, int slot, bool populated) {
   String out;
-  out.reserve(420);
+  out.reserve(560);
   out += "<div class='ss-slot-actions'>";
-  out += "<a class='btn-icon' href='/screensavers/download?";
-  if (single) out += "single=1";
-  else out += "slot=" + String(slot);
-  out += "' download title='" D_WEB_SS_DOWNLOAD_ARIA "' aria-label='" D_WEB_SS_DOWNLOAD_ARIA "'>";
-  out += FPSTR(kIconDownload);
-  out += "</a>";
-  out += "<form method='POST' action='/screensavers/delete' style='margin:0'>";
-  if (single) {
-    out += "<input type='hidden' name='single' value='1'>";
-    out += "<button type='submit' class='btn-icon danger' title='" D_WEB_SS_DELETE_ARIA "' "
-           "aria-label='" D_WEB_SS_DELETE_ARIA "' "
-           "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SINGLE "')\">";
-  } else {
-    out += "<input type='hidden' name='slot' value='" + String(slot) + "'>";
-    out += "<button type='submit' class='btn-icon danger' title='" D_WEB_SS_DELETE_ARIA "' "
-           "aria-label='" D_WEB_SS_DELETE_ARIA "' "
-           "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SLOT "')\">";
+
+  // Upload: label wraps a hidden file input so clicking the icon opens the
+  // file picker; onchange auto-submits the form to the existing upload route.
+  String uploadUrl = String("/screensavers/upload?") +
+                     (single ? "single=1" : "slot=" + String(slot));
+  out += "<form method='POST' action='" + uploadUrl + "' enctype='multipart/form-data' style='margin:0'>";
+  out += "<label class='btn-icon' title='" D_WEB_SS_UPLOAD_ARIA "' aria-label='" D_WEB_SS_UPLOAD_ARIA "'>";
+  out += "<input type='file' name='file' accept='.bin' style='display:none' onchange='this.form.submit()'>";
+  out += FPSTR(kIconUpload);
+  out += "</label></form>";
+
+  if (populated) {
+    out += "<a class='btn-icon' href='/screensavers/download?";
+    if (single) out += "single=1";
+    else out += "slot=" + String(slot);
+    out += "' download title='" D_WEB_SS_DOWNLOAD_ARIA "' aria-label='" D_WEB_SS_DOWNLOAD_ARIA "'>";
+    out += FPSTR(kIconDownload);
+    out += "</a>";
+    out += "<form method='POST' action='/screensavers/delete' style='margin:0'>";
+    if (single) {
+      out += "<input type='hidden' name='single' value='1'>";
+      out += "<button type='submit' class='btn-icon danger' title='" D_WEB_SS_DELETE_ARIA "' "
+             "aria-label='" D_WEB_SS_DELETE_ARIA "' "
+             "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SINGLE "')\">";
+    } else {
+      out += "<input type='hidden' name='slot' value='" + String(slot) + "'>";
+      out += "<button type='submit' class='btn-icon danger' title='" D_WEB_SS_DELETE_ARIA "' "
+             "aria-label='" D_WEB_SS_DELETE_ARIA "' "
+             "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SLOT "')\">";
+    }
+    out += FPSTR(kIconTrash);
+    out += "</button></form>";
   }
-  out += FPSTR(kIconTrash);
-  out += "</button></form></div>";
+
+  out += "</div>";
   return out;
 }
 
 // Build the slot grid HTML — one card per slot with thumbnail (when
 // populated) and a delete form. Appended into a containing card by the
 // editor handler.
-// Build the slot grid HTML — one card per slot with thumbnail (when
-// populated) and a delete form. Appended into a containing card by the
-// editor handler.
 static String slotGridHtml() {
   String out;
-  out.reserve(2000);
+  out.reserve(6000);  // 8 slots × ~700 bytes each
   out += "<div class='ss-slots'>";
   for (int i = 0; i < Screensavers::MAX_SLOTS; i++) {
+    bool exists = Screensavers::slotExists(i);
     out += "<div class='ss-slot'><div class='muted small'>" D_WEB_SS_SLOT_LABEL " ";
     out += String(i);
     out += "</div>";
-    if (Screensavers::slotExists(i)) {
+    if (exists) {
       out += "<img src='/screensavers/thumb?slot=" + String(i) +
              "' alt='" D_WEB_SS_SLOT_LABEL " " + String(i) + "'>";
-      out += screensaverActionsHtml(false, i);
     } else {
       out += "<div class='ss-slot-empty'>" D_WEB_SS_SLOT_EMPTY "</div>";
     }
+    out += screensaverActionsHtml(false, i, exists);
     out += "</div>";
   }
   out += "</div>";
@@ -497,7 +529,7 @@ static void handleSleepEditorPage() {
   String out = webPageStart(
     D_WEB_SS_TITLE,
     D_WEB_SS_SUBTITLE,
-    "<a href='/'>" D_WEB_SETTINGS_BACK_NAV "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
     true
   );
   out.reserve(out.length() + 8000);
@@ -532,14 +564,12 @@ static void handleSleepEditorPage() {
   if (hasLegacy) {
     out += "<div class='row' style='align-items:center;gap:12px'>"
            "<img src='/screensavers/thumb?single=1' alt='" D_WEB_SS_SINGLE_ALT "' "
-           "style='width:180px;border:1px solid var(--line);border-radius:8px;background:#fff;image-rendering:pixelated'>"
-           "<form method='POST' action='/screensavers/delete'>"
-           "<input type='hidden' name='single' value='1'>"
-           "<button type='submit' class='btn secondary' "
-           "onclick=\"return confirm('" D_WEB_SS_CONFIRM_DEL_SINGLE "')\">" D_WEB_DELETE_BUTTON "</button>"
-           "</form></div>";
+           "style='width:180px;border:1px solid var(--line);border-radius:8px;background:#fff;image-rendering:pixelated'>";
+    out += screensaverActionsHtml(true, -1, true);
+    out += "</div>";
   } else {
     out += "<p class='muted'>" D_WEB_SS_NO_SINGLE "</p>";
+    out += screensaverActionsHtml(true, -1, false);
   }
   out += "</div>";
 

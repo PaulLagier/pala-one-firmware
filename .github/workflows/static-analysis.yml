@@ -1,0 +1,37 @@
+name: Static analysis
+
+# Runs on every push (all branches) and every pull request.
+# The deploy workflow only triggers on dev/tags and does not cover PRs,
+# so this is a separate job to catch issues before they land on main.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cppcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      # One environment is enough — all 4 leaf envs share the same source
+      # tree; only preprocessor defines differ (board revision, language).
+      - name: Run cppcheck via pio check
+        run: pio check -e wireless-paper-v1_2-en --fail-on-defect low

@@ -55,7 +55,6 @@ String readBookmarkLabelAtOffset(IReadStream& in, uint32_t off, int page) {
     }
   }
 
-  if (inWord) words++;
   label.trim();
   if (label.length() == 0) label = "Page";
   label += " - p. ";

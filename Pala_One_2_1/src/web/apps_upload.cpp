@@ -1,5 +1,7 @@
 #include "src/web/apps_upload.h"
 
+#include <WiFi.h>
+
 #include "src/config.h"                       // MAX_APPS, MAX_APP_BINARY
 #include "pala_app.h"                     // PalaAppHeader, PALA_APP_MAGIC
 #include "src/pure/app_header.h"              // validateAppHeader / status enum
@@ -215,6 +217,37 @@ static void handleUploadAppStream() {
   }
 }
 
+static void handleDownloadApp() {
+  if (!server.hasArg("name")) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_NAME);
+    return;
+  }
+  String name = server.arg("name");
+  if (name.indexOf('/') >= 0 || name.indexOf('\\') >= 0 || !name.endsWith(".bin")) {
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_INVALID_NAME);
+    return;
+  }
+  String path = String("/apps/") + name;
+  File f = FS.open(path, "r");
+  if (!f) {
+    server.send(404, "text/plain; charset=utf-8", "App not found");
+    return;
+  }
+
+  server.setContentLength(f.size());
+  server.sendHeader("Content-Disposition",
+                    "attachment; filename=\"" + name + "\"");
+  server.send(200, "application/octet-stream", "");
+
+  WiFiClient client = server.client();
+  uint8_t buf[512];
+  while (f.available()) {
+    size_t n = f.read(buf, sizeof(buf));
+    if (n > 0) client.write(buf, n);
+  }
+  f.close();
+}
+
 static void handleDeleteApp() {
   if (!server.hasArg("name")) {
     server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_NAME);
@@ -234,6 +267,7 @@ static void handleDeleteApp() {
 }
 
 void registerAppUploadRoutes() {
-  server.on("/upload-app", HTTP_POST, handleUploadAppDone, handleUploadAppStream);
-  server.on("/del-app",    HTTP_POST, handleDeleteApp);   // POST: destructive
+  server.on("/upload-app",    HTTP_POST, handleUploadAppDone, handleUploadAppStream);
+  server.on("/del-app",       HTTP_POST, handleDeleteApp);    // POST: destructive
+  server.on("/download-app",  HTTP_GET,  handleDownloadApp);
 }

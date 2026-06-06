@@ -112,9 +112,7 @@ const LayoutMetrics& bodyLayout() {
     s_layout.descent = u8g2.getFontDescent();
     s_layout.lineH   = (s_layout.ascent - s_layout.descent) + s_lineGap;
 
-    int w = SCREEN_W - (MARGIN_X * 2);
-    if (w < 50) w = 50;
-    s_layout.maxWidth = w;
+    s_layout.maxWidth = SCREEN_W - (MARGIN_X * 2);
 
     int maxHeight = SCREEN_H - TOP_PAD - BOT_PAD;
     maxHeight -= Statusbar::reserveH();

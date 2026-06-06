@@ -27,7 +27,7 @@ static bool nameFromHeader(const String& absPath, char* out) {
   bool ok = false;
   if (hf.size() >= sizeof(PalaAppHeader)) {
     PalaAppHeader hdr;
-    if (hf.read((uint8_t*)&hdr, sizeof(hdr)) == (int)sizeof(hdr) &&
+    if (hf.read(reinterpret_cast<uint8_t*>(&hdr), sizeof(hdr)) == static_cast<int>(sizeof(hdr)) &&
         hdr.magic == PALA_APP_MAGIC) {
       // hdr.name is 32 bytes — may not be NUL-terminated; clamp.
       char tmp[MAX_APP_NAME + 1];

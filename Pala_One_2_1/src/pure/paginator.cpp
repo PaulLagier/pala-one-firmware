@@ -20,13 +20,13 @@ uint32_t paginatePage(IReadStream& in,
 
   int linesUsed = 0;
   char line[kLineMax];      size_t lineLen = 0;
-  char token[kTokenMax];    size_t tokLen  = 0;
+  char token[kTokenMax] = {}; size_t tokLen  = 0;
   char scratch[kScratchMax];
 
   uint32_t lineStartPos  = startPos;
   uint32_t tokenStartPos = startPos;
 
-  auto trimTrailing = [](char* buf, size_t& len) {
+  auto trimTrailing = [](const char* buf, size_t& len) {
     while (len > 0 && buf[len - 1] == ' ') len--;
   };
 

@@ -27,8 +27,8 @@ void adcSetupOnce() {
 }
 
 static int cmpUint16(const void* a, const void* b) {
-  uint16_t aa = *(const uint16_t*)a;
-  uint16_t bb = *(const uint16_t*)b;
+  uint16_t aa = *reinterpret_cast<const uint16_t*>(a);
+  uint16_t bb = *reinterpret_cast<const uint16_t*>(b);
   if (aa < bb) return -1;
   if (aa > bb) return 1;
   return 0;
@@ -127,7 +127,7 @@ void updateBatteryCached(bool force) {
     s_battery.pctShown = s_battery.pctRaw;
   } else {
     if (s_battery.pctRaw < s_battery.pctShown) {
-      if ((s_battery.pctShown - s_battery.pctRaw) >= 1) s_battery.pctShown--;
+      s_battery.pctShown--;
     } else if (s_battery.pctRaw > s_battery.pctShown + 2) {
       s_battery.pctShown++;
     }

@@ -22,8 +22,10 @@ namespace Sleep {
 // Owned settings + NVS keys — file-private.
 static int  s_idleSecs      = 120;
 static bool s_noScreensaver = false;
+static bool s_lockOnSleep   = false;
 static constexpr const char* kKeyIdleSecs      = "cfg_sleep";
 static constexpr const char* kKeyNoScreensaver = "cfg_noscr";
+static constexpr const char* kKeyLockOnSleep   = "cfg_lck_slp";
 
 void loadSettings() {
   int s = prefs.getInt(kKeyIdleSecs, 120);
@@ -31,6 +33,7 @@ void loadSettings() {
   if (s > 3600) s = 3600;
   s_idleSecs = s;
   s_noScreensaver = prefs.getBool(kKeyNoScreensaver, false);
+  s_lockOnSleep   = prefs.getBool(kKeyLockOnSleep,   false);
 }
 
 void setIdleTimeout(int secs) {
@@ -43,10 +46,16 @@ void setIdleTimeout(int secs) {
 int      idleTimeoutSecs() { return s_idleSecs; }
 uint32_t idleTimeoutMs()   { return (uint32_t)s_idleSecs * 1000UL; }
 bool     noScreensaver()   { return s_noScreensaver; }
+bool     lockOnSleep()     { return s_lockOnSleep; }
 
 void setNoScreensaver(bool val) {
   s_noScreensaver = val;
   prefs.putBool(kKeyNoScreensaver, val);
+}
+
+void setLockOnSleep(bool val) {
+  s_lockOnSleep = val;
+  prefs.putBool(kKeyLockOnSleep, val);
 }
 
 // Draw a padlock icon in the top-right corner so a user who has locked the
@@ -114,6 +123,12 @@ void enter() {
   // writes wake_path to NVS — so checking it here tells us reliably whether
   // we were reading without coupling sleep.cpp to any screen type.
   bool wasReading = (prefs.getString("wake_path", "").length() > 0);
+
+  // Engage the lock BEFORE drawing so the badge gates (Lock::isLocked()) in
+  // both branches below see the new state. If we flipped it after the draw,
+  // the framebuffer flushed to the panel would render unlocked and the badge
+  // wouldn't appear until the next refresh (e.g. a button press on wake).
+  if (s_lockOnSleep) Lock::engage();
 
   if (s_noScreensaver && wasReading) {
     // Full refresh of the last page so it sits cleanly on the panel.

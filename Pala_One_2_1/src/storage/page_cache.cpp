@@ -67,10 +67,10 @@ static bool openAndValidateCache(const String& path, size_t expectedSize,
   uint32_t fileSize = 0;
   uint16_t count = 0;
 
-  if (f.read((uint8_t*)&magic, sizeof(magic)) != sizeof(magic))                         { f.close(); return false; }
-  if (f.read((uint8_t*)&layoutVersion, sizeof(layoutVersion)) != sizeof(layoutVersion)) { f.close(); return false; }
-  if (f.read((uint8_t*)&fileSize, sizeof(fileSize)) != sizeof(fileSize))                { f.close(); return false; }
-  if (f.read((uint8_t*)&count, sizeof(count)) != sizeof(count))                         { f.close(); return false; }
+  if (f.read(reinterpret_cast<uint8_t*>(&magic), sizeof(magic)) != sizeof(magic))                         { f.close(); return false; }
+  if (f.read(reinterpret_cast<uint8_t*>(&layoutVersion), sizeof(layoutVersion)) != sizeof(layoutVersion)) { f.close(); return false; }
+  if (f.read(reinterpret_cast<uint8_t*>(&fileSize), sizeof(fileSize)) != sizeof(fileSize))                { f.close(); return false; }
+  if (f.read(reinterpret_cast<uint8_t*>(&count), sizeof(count)) != sizeof(count))                         { f.close(); return false; }
 
   if (magic != kPageCacheMagic
       || layoutVersion != encodeLayoutVersion(layout)
@@ -96,7 +96,7 @@ bool loadPageOffsetCacheForBook(const String& path, size_t expectedSize,
   int loaded = 0;
   for (uint16_t i = 0; i < count; i++) {
     uint32_t off = 0;
-    if (f.read((uint8_t*)&off, sizeof(off)) != sizeof(off)) break;
+    if (f.read(reinterpret_cast<uint8_t*>(&off), sizeof(off)) != sizeof(off)) break;
     out.offsets[i] = off;
     loaded++;
   }
@@ -120,11 +120,11 @@ void savePageOffsetCacheForBook(const String& path, size_t fileSize,
   uint32_t size32 = (uint32_t)fileSize;
   uint16_t count16 = (uint16_t)min(in.count, MAX_PAGES);
 
-  f.write((const uint8_t*)&magic, sizeof(magic));
-  f.write((const uint8_t*)&layoutVersion, sizeof(layoutVersion));
-  f.write((const uint8_t*)&size32, sizeof(size32));
-  f.write((const uint8_t*)&count16, sizeof(count16));
-  f.write((const uint8_t*)in.offsets, count16 * sizeof(uint32_t));
+  f.write(reinterpret_cast<const uint8_t*>(&magic), sizeof(magic));
+  f.write(reinterpret_cast<const uint8_t*>(&layoutVersion), sizeof(layoutVersion));
+  f.write(reinterpret_cast<const uint8_t*>(&size32), sizeof(size32));
+  f.write(reinterpret_cast<const uint8_t*>(&count16), sizeof(count16));
+  f.write(reinterpret_cast<const uint8_t*>(in.offsets), count16 * sizeof(uint32_t));
   f.close();
 }
 
@@ -142,7 +142,7 @@ int loadOffsetForPageFromDisk(const String& path, size_t expectedSize,
   if (!f.seek(entryPos)) { f.close(); return -1; }
 
   uint32_t off = 0;
-  if (f.read((uint8_t*)&off, sizeof(off)) != sizeof(off)) { f.close(); return -1; }
+  if (f.read(reinterpret_cast<uint8_t*>(&off), sizeof(off)) != sizeof(off)) { f.close(); return -1; }
   f.close();
 
   *out = off;

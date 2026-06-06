@@ -102,6 +102,7 @@
 #include "src/ui/screens/reader_screen.h"
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/upload_screen.h"
+#include "src/ui/header_title.h"
 #include "src/ui/lock.h"
 #include "src/ui/screensavers.h"
 #include "src/ui/sleep.h"
@@ -129,6 +130,7 @@ Screen* g_currentScreen = &g_libraryScreen;
 // ============================================================================
 //  Setup
 // ============================================================================
+// cppcheck-suppress unusedFunction
 void setup() {
   Serial.begin(115200);
   delay(200);
@@ -138,13 +140,12 @@ void setup() {
   pinMode(BTN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN), btnISR, CHANGE);
 
-  // If we just woke from deep sleep via ext0 and the button is still being
-  // held, the press started BEFORE the ISR was attached — its down-edge
-  // never made it into the queue. Seed the input state so the upcoming
-  // release edge is classified as a real press, not silently dropped.
-  // Required for "click-then-hold on wake" to form a single chord gesture.
+  // Button held through ext0 wake: its down-edge predates the ISR, so seed
+  // the press state manually. Pass 0 (not millis()) to credit the full boot
+  // time; millis() ≈ 200 here (after delay(200)) would shorten the hold and
+  // misclassify a Long press as Short.
   if (digitalRead(BTN) == LOW) {
-    g_btns.seedPressOnWake(millis());
+    g_btns.seedPressOnWake(0);
   }
 
   u8g2.begin(gfx);
@@ -194,6 +195,7 @@ void setup() {
   Screensavers::loadSettings();
   Statusbar::loadSettings();
   Gestures::loadSettings();
+  HeaderTitle::loadSettings();
   // Sleep::loadSettings() and Lock::loadSettings() already ran earlier in
   // setup() so both flags were available for the boot-clear gate above —
   // don't reload them here.
@@ -292,6 +294,10 @@ void loop() {
         markUserActivity();
         Toast::show(D_TOAST_UNLOCKED);
         // Full refresh to clear screensaver ghosting on unlock.
+        // forceNextRenderFull() overrides the reader's per-page fast-mode
+        // decision so renderCurrentPage() uses fastmodeOff regardless of
+        // pageTurnsSinceFull. display.fastmodeOff() covers non-reader screens.
+        forceNextRenderFull();
         display.fastmodeOff();
         g_currentScreen->draw();
         return;
@@ -305,7 +311,10 @@ void loop() {
         }
       }
       // Short locked-idle: re-sleep after 1500ms with no input.
-      if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep() && userIdleMs() > 1500) {
+      // Don't sleep while the button is held — a Long-press unlock gesture
+      // fires on release, so sleeping mid-hold would swallow the gesture.
+      if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
+          && userIdleMs() > 1500 && !g_btns.isPressed()) {
         Sleep::enter();
         return;
       }

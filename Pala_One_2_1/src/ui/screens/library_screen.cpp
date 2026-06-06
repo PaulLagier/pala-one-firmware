@@ -1,6 +1,7 @@
 #include "src/ui/screens/library_screen.h"
 
 #include "src/hal/display.h"
+#include "src/ui/header_title.h"
 #include "src/pure/library_nav.h"         // buildLibraryEntries
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
@@ -178,7 +179,7 @@ void LibraryScreen::draw() {
   if (s_cursor < 0) s_cursor = 0;
   if (s_cursor >= s_entryCount) s_cursor = max(0, s_entryCount - 1);
 
-  int y = drawSectionHeader(LIB_HEADER_TITLE);
+  int y = drawSectionHeader(HeaderTitle::current());
 
   drawScrollableList(y, s_entryCount, s_cursor,
     [&](int idx, int rowY, bool selected, int /*budget*/) {

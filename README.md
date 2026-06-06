@@ -58,6 +58,24 @@ Out of the box, a first visit defaults to **light**. To change the firmware defa
 
 The build-time default only affects the *first* visit from a given browser — once the toggle is used, the localStorage choice wins from then on.
 
+## Device lock
+
+The device can be locked to stop accidental input (page turns, menu, navigation) while it rests in a bag or pocket. The locked state is persisted to NVS (`cfg_locked`), so a device that fully powers down comes back locked.
+
+Locking is a remappable button action. In the web UI under **Settings → Buttons** you can bind each of the three hold gestures — long press, very-long press, click-hold — to *None*, *Bookmark*, *Lock device*, or *Menu*. Out-of-box defaults:
+
+- **Long press** → Bookmark
+- **Very-long press** (≥ 2 s) → Lock device
+- **Click-hold** → Menu
+
+So by default you lock with a very-long press. Unlocking is intentionally **permissive**: *any* long, very-long, or click-hold press unlocks the device and shows an "Unlocked" toast — after a deep-sleep wake the firmware can't reconstruct a specific chord, so it accepts any hold gesture rather than risk locking you out. While locked, the sleep screen shows a small padlock badge in the top-right corner.
+
+## Wi-Fi provisioning (Improv)
+
+Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`. Provisioning runs only while a USB host is actually present, so there's no battery cost otherwise.
+
+Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`. See `Pala_One_2_1/src/hal/wifi_provisioning.{h,cpp}` and `src/hal/wifi.cpp`.
+
 ## Building the firmware
 
 The same sources build under either toolchain.
@@ -69,6 +87,7 @@ The same sources build under either toolchain.
    - [`heltec-eink-modules`](https://github.com/todd-herbert/heltec-eink-modules) (todd-herbert fork)
    - **Adafruit GFX Library** (Adafruit)
    - **U8g2_for_Adafruit_GFX** (olikraus)
+   - [`Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library) (jnthas) — serial Wi-Fi provisioning; PlatformIO installs it automatically, Arduino IDE users add it by URL
 3. Open `Pala_One_2_1/Pala_One_2_1.ino`. Uncomment exactly one of `BOARD_V1_1` / `BOARD_V1_2` at the top.
 4. Tools → Partition Scheme → **Custom** (the sketch ships its own `partitions.csv`).
 5. Verify / Upload.
@@ -259,10 +278,20 @@ Return from `app_main` to exit back to the Apps menu. Apps decide their own exit
 ## Features
 
 - TXT book support
-- Adjustable font size
-- Adjustable line spacing
-- Deep sleep mode
+- Adjustable font size and line spacing
+- Font family choice (Helvetica / OpenDyslexic)
+- Bionic reading mode
 - Reading progress saving
+- Bookmarks (on-device and over the web UI)
+- In-book text search (web UI)
+- Todo list
+- Device lock (see [Device lock](#device-lock))
+- Remappable button gestures
+- Custom screensaver image
+- Adjustable idle sleep timeout
+- Wi-Fi provisioning (Improv) + captive-portal web UI
+- User-installable apps (see [Apps](#apps))
+- Deep sleep mode
 - USB-C charging
 - Lightweight portable design
 - Open-source firmware
