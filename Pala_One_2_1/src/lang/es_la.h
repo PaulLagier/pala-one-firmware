@@ -35,11 +35,11 @@
 // ----------------------------------------------------------------------------
 #define D_ACTION_NONE_LABEL     "Ninguna" // AI translation
 #define D_ACTION_NEXT_LABEL     "Siguiente" // AI translation
-#define D_ACTION_OPEN_LABEL     "Abrir/Seleccionar" // AI translation
+#define D_ACTION_PREV_LABEL     "Anterior" // AI translation
+#define D_ACTION_OK_MENU_LABEL  "Ok/Menù" // AI translation
 #define D_ACTION_BOOKMARK_LABEL "Marcador" // AI translation
 #define D_ACTION_HOME_LABEL     "Inicio" // AI translation
 #define D_ACTION_LOCK_LABEL     "Bloquear" // AI translation
-#define D_ACTION_MENU_LABEL     "Menú" // AI translation
 #define D_ACTION_ROTATE_LABEL   "Girar pantalla" // AI translation
 
 // ----------------------------------------------------------------------------

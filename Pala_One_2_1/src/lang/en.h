@@ -30,11 +30,11 @@
 // ----------------------------------------------------------------------------
 #define D_ACTION_NONE_LABEL     "None"
 #define D_ACTION_NEXT_LABEL     "Next"
-#define D_ACTION_OPEN_LABEL     "Open/Select"
+#define D_ACTION_PREV_LABEL     "Previous"
+#define D_ACTION_OK_MENU_LABEL  "Ok/Menu"
 #define D_ACTION_BOOKMARK_LABEL "Bookmark"
 #define D_ACTION_HOME_LABEL     "Home"
 #define D_ACTION_LOCK_LABEL     "Lock"
-#define D_ACTION_MENU_LABEL     "Menu"
 #define D_ACTION_ROTATE_LABEL   "Flip screen"
 
 // ----------------------------------------------------------------------------
