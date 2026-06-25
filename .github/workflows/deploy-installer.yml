@@ -67,6 +67,21 @@ jobs:
       - name: Install PlatformIO and esptool
         run: pip install --upgrade platformio esptool
 
+      # Guardrail: the SPA bundle (Pala_One_2_1/src/web/generated/webui.gz.h)
+      # is committed so Arduino IDE users get a prebuilt header — Arduino IDE
+      # has no pre-build hook. PlatformIO regenerates the header on every
+      # `pio run` via scripts/build_webui.py. To prevent the committed copy
+      # from drifting away from the webui/ sources, regenerate here and fail
+      # the build if it would change. Devs fix by running the script locally
+      # and committing the result.
+      - name: Verify webui.gz.h is up to date
+        run: |
+          python scripts/build_webui.py
+          if ! git diff --exit-code Pala_One_2_1/src/web/generated/; then
+            echo "::error::webui.gz.h is stale. Run \`python scripts/build_webui.py\` and commit the result."
+            exit 1
+          fi
+
       - name: Resolve channel and version
         id: meta
         run: |
