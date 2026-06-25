@@ -20,15 +20,18 @@
 //    ClickHold = Menu     — easy chord, doesn't fight short-click paging
 // ============================================================================
 
-enum ButtonAction {
-  ACTION_NONE     = 0,
-  ACTION_BOOKMARK = 1,
-  ACTION_LOCK     = 2,
-  ACTION_MENU     = 3,
-  ACTION_ROTATE   = 4,
+enum ButtonAction
+{
+  ACTION_NONE = 0,     // No action
+  ACTION_NEXT = 1,     // Next item/page
+  ACTION_PREV = 2,     // Previous item/page
+  ACTION_OK_MENU = 3,  // Select current item or open book menu
+  ACTION_LOCK = 4,     // Lock/unlock device
+  ACTION_HOME = 5,     // Go to main menu
+  ACTION_BOOKMARK = 6, // Bookmark current page
+  ACTION_ROTATE = 7,   // Flip screen rotation
+  // Keep ACTION_ROTATE as the one with highest index or adjust Gestures::clamp accordingly
 };
-
-
 
 namespace Gestures {
 
