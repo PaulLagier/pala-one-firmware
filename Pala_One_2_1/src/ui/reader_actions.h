@@ -55,10 +55,17 @@ void setActionExtraLong(ButtonAction a);
 void setActionClickHold(ButtonAction a);
 void setLegacyControls(bool legacy);
 
-// Convenience: which action (if any) is currently bound to the gesture
-// kind that just fired. Returns ACTION_NONE for non-remappable kinds
-// (Quad, None).
-ButtonAction actionFor(ButtonEvent::Kind kind);
+bool legacyControlsOn();
+
+// Helps dealing with the conflict between legacy and standard actions/gestures
+// If the user as selected legacy actions (Gestures::legacyControlsOn()) then the function returns true if the kind of
+// event `e` matches `legacyGesture`. Otherwise it checks if event `e` is associated with action `targetAction`
+bool resolveLegacyAction(const ButtonEvent &e, const ButtonEvent::Kind &legacyGesture, ButtonAction targetAction);
+
+    // Convenience: which action (if any) is currently bound to the gesture
+    // kind that just fired. Returns ACTION_NONE for non-remappable kinds
+    // (Quad, None).
+    ButtonAction actionFor(ButtonEvent::Kind kind);
 
 }  // namespace Gestures
 

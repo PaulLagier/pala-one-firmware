@@ -62,6 +62,17 @@ void setLegacyControls(bool legacy) {
   prefs.putBool(kKeyLegacyControls, legacy); 
 }
 
+bool legacyControlsOn() {
+  return s_legacyControls;
+}
+
+bool resolveLegacyAction(const ButtonEvent &e, const ButtonEvent::Kind &legacyGesture, ButtonAction targetAction)
+{
+  ButtonAction ac = Gestures::actionFor(e.kind);
+  bool legacyCont = Gestures::legacyControlsOn();
+  return (legacyCont && e.kind == legacyGesture) || (!legacyCont && ac == targetAction);
+}
+
 ButtonAction actionFor(ButtonEvent::Kind kind) {
   switch (kind) {
     case ButtonEvent::Short:      return s_short;
