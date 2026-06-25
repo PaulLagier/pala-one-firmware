@@ -39,18 +39,25 @@ namespace Gestures {
 void loadSettings();
 
 // Current bound action for each remappable gesture.
+ButtonAction actionShort();
+ButtonAction actionDouble();
+ButtonAction actionTriple(); 
 ButtonAction actionLong();       // plain long press (>= LONG_MS, < VERY_LONG_MS, no preceding click)
 ButtonAction actionExtraLong();  // very-long press (>= VERY_LONG_MS, no preceding click)
 ButtonAction actionClickHold();  // short click then immediate long hold
 
 // Apply + persist a binding. Out-of-range values clamp to ACTION_NONE.
+void setActionShort(ButtonAction a);
+void setActionDouble(ButtonAction a);
+void setActionTriple(ButtonAction a);
 void setActionLong(ButtonAction a);
 void setActionExtraLong(ButtonAction a);
 void setActionClickHold(ButtonAction a);
+void setLegacyControls(bool legacy);
 
 // Convenience: which action (if any) is currently bound to the gesture
 // kind that just fired. Returns ACTION_NONE for non-remappable kinds
-// (Short, Double, Triple, Quad, None).
+// (Quad, None).
 ButtonAction actionFor(ButtonEvent::Kind kind);
 
 }  // namespace Gestures
