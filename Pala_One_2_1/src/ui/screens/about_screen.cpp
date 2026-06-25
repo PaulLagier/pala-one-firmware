@@ -12,12 +12,18 @@ void AboutScreen::onEnter() {
 
 static String actionLabel(ButtonAction action) {
   switch (action) {
+    case ACTION_NEXT:
+      return D_ACTION_NEXT_LABEL;
+    case ACTION_PREV:
+      return D_ACTION_PREV_LABEL;
+    case ACTION_HOME:
+      return D_ACTION_HOME_LABEL;
     case ACTION_BOOKMARK:
       return D_ACTION_BOOKMARK_LABEL;
     case ACTION_LOCK:
       return D_ACTION_LOCK_LABEL;
-    case ACTION_MENU:
-      return D_ACTION_MENU_LABEL;
+    case ACTION_OK_MENU:
+      return D_ACTION_OK_MENU_LABEL;
     case ACTION_ROTATE:
       return D_ACTION_ROTATE_LABEL;
     case ACTION_NONE:
@@ -37,9 +43,9 @@ void AboutScreen::draw() {
   const int rowNumber = 7;
   String rows[rowNumber][2] = {
       {D_ABOUT_FIRMWARE_PREFIX, FW_VERSION},
-      {D_ABOUT_GESTURE_CLICK, D_ACTION_NEXT_LABEL},
-      {D_ABOUT_GESTURE_CLICK_2, D_ACTION_OPEN_LABEL},
-      {D_ABOUT_GESTURE_CLICK_3, D_ACTION_HOME_LABEL},
+      {D_ABOUT_GESTURE_CLICK, actionLabel(Gestures::actionShort())},
+      {D_ABOUT_GESTURE_CLICK_2, actionLabel(Gestures::actionDouble())},
+      {D_ABOUT_GESTURE_CLICK_3, actionLabel(Gestures::actionTriple())},
       {D_ABOUT_GESTURE_HOLD, actionLabel(Gestures::actionLong())},
       {D_ABOUT_GESTURE_LONG_HOLD, actionLabel(Gestures::actionExtraLong())},
       {D_ABOUT_GESTURE_CLICK_HOLD, actionLabel(Gestures::actionClickHold())},
