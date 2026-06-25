@@ -33,7 +33,7 @@ static void performReaderAction(ButtonAction action) {
       Lock::engage();
       Sleep::enter();   // does not return
       break;
-    case ACTION_MENU:
+    case ACTION_OK_MENU:
       ReaderMenu::open();
       break;
     case ACTION_ROTATE:
