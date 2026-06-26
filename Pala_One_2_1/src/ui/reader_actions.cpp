@@ -28,7 +28,7 @@ static ButtonAction clamp(int v) {
 }
 
 void loadSettings() {
-  s_short    = clamp(prefs.getInt(kKeyLong,      ACTION_NEXT));
+  s_short    = clamp(prefs.getInt(kKeyShort,      ACTION_NEXT));
   s_double    = clamp(prefs.getInt(kKeyDouble,      ACTION_PREV));
   s_triple    = clamp(prefs.getInt(kKeyTriple,      ACTION_HOME));
   s_long      = clamp(prefs.getInt(kKeyLong,      ACTION_OK_MENU));
