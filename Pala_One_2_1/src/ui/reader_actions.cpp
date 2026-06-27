@@ -70,7 +70,13 @@ bool resolveLegacyAction(const ButtonEvent &e, const ButtonEvent::Kind &legacyGe
 {
   ButtonAction ac = Gestures::actionFor(e.kind);
   bool legacyCont = Gestures::legacyControlsOn();
-  return (legacyCont && e.kind == legacyGesture) || (!legacyCont && ac == targetAction);
+  if (legacyCont) {
+    return e.kind == legacyGesture;
+  }
+  else {
+    return ac == targetAction;
+  }
+  // return (legacyCont && e.kind == legacyGesture) || (!legacyCont && ac == targetAction);
 }
 
 ButtonAction actionFor(ButtonEvent::Kind kind) {
