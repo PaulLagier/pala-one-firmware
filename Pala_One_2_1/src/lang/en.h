@@ -357,6 +357,7 @@
 #define D_WEB_BUTTONS_ACTION_NEXT "Next item/page"
 #define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"
 #define D_WEB_BUTTONS_ACTION_HOME "Go to main menu"
+#define D_WEB_BUTTONS_LEGACY_HINT "If enabled, mapping single, double and triple clicks has no effect."
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Device"
 #define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
@@ -477,7 +478,7 @@
 #define D_WEB_BIONIC_LABEL          "Bionic reading"
 #define D_WEB_BIONIC_HINT           "Bolds the leading characters of each word to help your eyes anchor."
 #define D_WEB_SETTINGS_APPLY_HINT   "Changes apply to the next page render."
-#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Enable legacy controls (if enabled, mapping single, double and triple clicks has no effect)."
+#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Enable legacy controls"
 
 // ----------------------------------------------------------------------------
 

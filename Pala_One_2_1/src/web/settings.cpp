@@ -184,11 +184,6 @@ static void handleSettings() {
   // don't share POST state with the reading-form's reader-cursor remap.
   out += "<div class='card'><h2>" D_WEB_BUTTONS_HEADING "</h2>";
 
-  String legacyControlsOn = Gestures::legacyControlsOn()?"checked":"";
-  // Toggle for legacy controls
-  out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
-  out += "<input type='checkbox' name='legacy_cont' value='1' " + legacyControlsOn + " style='width:auto'>";
-  out += "<span> " D_WEB_SETTINGS_LEGACY_CONTROLS "</span></label>";
 
   out += "<p class='muted'>" D_WEB_BUTTONS_HINT "</p>";
   out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
@@ -198,6 +193,12 @@ static void handleSettings() {
   appendActionSelect(out, "btnL",  D_WEB_BUTTONS_LONG,       (int)Gestures::actionLong());
   appendActionSelect(out, "btnXL", D_WEB_BUTTONS_EXTRA_LONG, (int)Gestures::actionExtraLong());
   appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
+  
+  String legacyControlsOn = Gestures::legacyControlsOn()?"checked":"";
+  // Toggle for legacy controls
+  out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
+  out += "<input type='checkbox' name='legacy_cont' value='1' " + legacyControlsOn + " style='width:auto'>";
+  out += "<span> " D_WEB_SETTINGS_LEGACY_CONTROLS "</span></label>";
   out += "</div><div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
   out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
   out += "</div></form></div>";
@@ -332,9 +333,10 @@ static void handleSettingsPost() {
     Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());
   }
 
-    // Gestures::setLegacyControls(true);
+  // Gestures::setLegacyControls(true);
   if (server.hasArg("legacy_cont")) {
     Gestures::setLegacyControls(true);
+    
   }
   else {
     Gestures::setLegacyControls(false);

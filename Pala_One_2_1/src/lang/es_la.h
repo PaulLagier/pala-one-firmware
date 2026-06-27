@@ -351,6 +351,7 @@
 #define D_WEB_BUTTONS_ACTION_NEXT "Siguiente elemento/página" // AI translated
 #define D_WEB_BUTTONS_ACTION_PREV "Elemento/página anterior" // AI translated
 #define D_WEB_BUTTONS_ACTION_HOME "Ir al menú principal" // AI translated
+#define D_WEB_BUTTONS_LEGACY_HINT "Si está habilitado, el mapeo de los clics único, doble y triple no tiene efecto." //AI translated
 
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Dispositivo"
@@ -469,7 +470,7 @@
 #define D_WEB_BIONIC_LABEL          "Lectura biónica"
 #define D_WEB_BIONIC_HINT           "Resalta en negrita las primeras letras de cada palabra para anclar la mirada."
 #define D_WEB_SETTINGS_APPLY_HINT   "Los cambios se aplican en la próxima página renderizada."
-#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Habilitar los controles heredados (si está habilitado, el mapeo de los clics único, doble y triple no tiene efecto)." // AI translated
+#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Habilitar los controles heredados" // AI translated
 
 // ----------------------------------------------------------------------------
 
