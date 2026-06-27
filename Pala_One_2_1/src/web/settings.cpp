@@ -99,11 +99,28 @@ static void handleSettings() {
   bool curBionic   = Font::bionicEnabled();
   String bChecked  = curBionic ? " checked" : "";
 
+  String alertText;
+  if (server.hasArg("alert"))
+  {
+    if (server.arg("alert") == "buttons_invalid")
+    {
+      alertText = D_WEB_MISSING_REQUIRED_BUTTON_MSG;
+    }
+  }
+
   String out = webPageStart(
     D_WEB_SETTINGS_TITLE,
     D_WEB_SETTINGS_SUBTITLE_PREFIX FW_VERSION D_WEB_SETTINGS_SUBTITLE_SUFFIX,
     "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a>"
   );
+  if (alertText.length() > 0)
+  {
+    out += "<script>window.onload=function(){alert(";
+    out += "'";
+    out += alertText;
+    out += "'";
+    out += ");};</script>";
+  }
   out.reserve(out.length() + 4500);
 
   // Device personalization card — separate form, no layout-remap interaction.
@@ -184,7 +201,6 @@ static void handleSettings() {
   // don't share POST state with the reading-form's reader-cursor remap.
   out += "<div class='card'><h2>" D_WEB_BUTTONS_HEADING "</h2>";
 
-
   out += "<p class='muted'>" D_WEB_BUTTONS_HINT "</p>";
   out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
   appendActionSelect(out, "btnS",  D_WEB_BUTTONS_SHORT,       (int)Gestures::actionShort());
@@ -207,6 +223,32 @@ static void handleSettings() {
   server.send(200, "text/html; charset=utf-8", out);
 }
 
+static bool validateRequiredActionsOnPost() {
+  // Collect submitted remap values (only if the keys exist).
+  // Your HTML always submits these fields, but an attacker/client may omit them.
+  if (!server.hasArg("btnS") || !server.hasArg("btnD") || !server.hasArg("btnT") ||
+      !server.hasArg("btnL") || !server.hasArg("btnXL") || !server.hasArg("btnCH")) {
+    return false;
+  }
+
+  int v[6] = {
+    server.arg("btnS").toInt(),
+    server.arg("btnD").toInt(),
+    server.arg("btnT").toInt(),
+    server.arg("btnL").toInt(),
+    server.arg("btnXL").toInt(),
+    server.arg("btnCH").toInt(),
+  };
+
+  bool hasNext = false, hasHome = false, hasOkMenu = false;
+  for (int i = 0; i < 6; i++) {
+    if (v[i] == (int)ACTION_NEXT) hasNext = true;
+    else if (v[i] == (int)ACTION_HOME) hasHome = true;
+    else if (v[i] == (int)ACTION_OK_MENU) hasOkMenu = true;
+  }
+
+  return hasNext && hasHome && hasOkMenu;
+}
 // Apply pending form changes. Returns true if any layout-affecting setting
 // (font size, family, line gap, bionic) was modified — caller uses this to
 // decide whether to remap the reader's byte-offset cursor afterwards.
@@ -242,6 +284,7 @@ static bool applySettingsForm() {
 }
 
 static void handleSettingsPost() {
+
   // Snapshot the reader's current byte offset before applying changes, so
   // we can re-land on the same byte under the new layout. The on-disk page
   // cache self-invalidates via its layout stamp (see page_cache.cpp), so the
@@ -314,24 +357,43 @@ static void handleSettingsPost() {
   // Gesture bindings — `setAction*` clamp internally, but we still check
   // `hasArg` because the page submits this section as a separate form
   // (so a Reading POST won't carry these keys at all).
-  if (server.hasArg("btnS")) {
-    Gestures::setActionShort((ButtonAction)server.arg("btnS").toInt());
+
+  // Gesture bindings
+  if (server.hasArg("btnS") || server.hasArg("btnD") || server.hasArg("btnT") ||
+      server.hasArg("btnL") || server.hasArg("btnXL") || server.hasArg("btnCH"))
+  {
+
+    // Enforce required action contract.
+    if (!validateRequiredActionsOnPost())
+    {
+      server.sendHeader("Location", "/settings?alert=buttons_invalid");
+      server.send(302, "text/plain", "");
+      return;
+    }
+    else
+    {
+      if (server.hasArg("btnS")) {
+        Gestures::setActionShort((ButtonAction)server.arg("btnS").toInt());
+      }
+      if (server.hasArg("btnD")) {
+        Gestures::setActionDouble((ButtonAction)server.arg("btnD").toInt());
+      }
+      if (server.hasArg("btnT")) {
+        Gestures::setActionTriple((ButtonAction)server.arg("btnT").toInt());
+      }
+      if (server.hasArg("btnL")) {
+        Gestures::setActionLong((ButtonAction)server.arg("btnL").toInt());
+      }
+      if (server.hasArg("btnXL")) {
+        Gestures::setActionExtraLong((ButtonAction)server.arg("btnXL").toInt());
+      }
+      if (server.hasArg("btnCH")) {
+        Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());
+      }
+    }
   }
-  if (server.hasArg("btnD")) {
-    Gestures::setActionDouble((ButtonAction)server.arg("btnD").toInt());
-  }
-  if (server.hasArg("btnT")) {
-    Gestures::setActionTriple((ButtonAction)server.arg("btnT").toInt());
-  }
-  if (server.hasArg("btnL")) {
-    Gestures::setActionLong((ButtonAction)server.arg("btnL").toInt());
-  }
-  if (server.hasArg("btnXL")) {
-    Gestures::setActionExtraLong((ButtonAction)server.arg("btnXL").toInt());
-  }
-  if (server.hasArg("btnCH")) {
-    Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());
-  }
+
+
 
   // Gestures::setLegacyControls(true);
   if (server.hasArg("legacy_cont")) {
