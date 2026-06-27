@@ -77,7 +77,7 @@ void ListScreen::onButton(const ButtonEvent& e) {
       return;
     }
     
-    if (!Gestures::legacyControlsOn() && e.kind == ACTION_PREV){
+    if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) == ACTION_PREV){
       
       g_list.selectedIndex--;
       if (g_list.selectedIndex < 0) g_list.selectedIndex = g_list.count - 1;

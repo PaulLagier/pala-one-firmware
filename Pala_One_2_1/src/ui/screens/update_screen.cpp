@@ -242,9 +242,9 @@ void UpdateScreen::draw() {
 void UpdateScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
 
-  // Reboot prompt — only 2x is accepted; device has no manual reboot option.
+  // Reboot prompt.
   if (phase_ == Phase::RebootPrompt) {
-    if (e.kind == ButtonEvent::Double) {
+    if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_OK_MENU)) {
       esp_restart();
     }
     return;

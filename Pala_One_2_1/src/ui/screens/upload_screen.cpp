@@ -180,7 +180,7 @@ void UploadScreen::onButton(const ButtonEvent& e) {
   }
 
   if (!Gestures::legacyControlsOn()) {
-    if (e.kind == ACTION_HOME) {
+    if (Gestures::actionFor(e.kind) == ACTION_HOME) {
       stopSessionToLibrary();
     }
   }
