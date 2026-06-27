@@ -60,9 +60,12 @@ static void appendActionSelect(String& out, const char* nameId, const char* labe
   out += nameId;
   out += "'>";
   appendActionOption(out, ACTION_NONE,     D_WEB_BUTTONS_ACTION_NONE,     current);
-  appendActionOption(out, ACTION_BOOKMARK, D_WEB_BUTTONS_ACTION_BOOKMARK, current);
+  appendActionOption(out, ACTION_NEXT, D_WEB_BUTTONS_ACTION_NEXT, current);
+  appendActionOption(out, ACTION_PREV, D_WEB_BUTTONS_ACTION_PREV, current);
+  appendActionOption(out, ACTION_OK_MENU,     D_WEB_BUTTONS_ACTION_OK_MENU,     current);
   appendActionOption(out, ACTION_LOCK,     D_WEB_BUTTONS_ACTION_LOCK,     current);
-  appendActionOption(out, ACTION_MENU,     D_WEB_BUTTONS_ACTION_MENU,     current);
+  appendActionOption(out, ACTION_HOME, D_WEB_BUTTONS_ACTION_HOME, current);
+  appendActionOption(out, ACTION_BOOKMARK, D_WEB_BUTTONS_ACTION_BOOKMARK, current);
   appendActionOption(out, ACTION_ROTATE,   D_WEB_BUTTONS_ACTION_ROTATE,   current);
   out += "</select></div>";
 }
@@ -180,8 +183,18 @@ static void handleSettings() {
   // Buttons card — submitted as a separate form so the gesture bindings
   // don't share POST state with the reading-form's reader-cursor remap.
   out += "<div class='card'><h2>" D_WEB_BUTTONS_HEADING "</h2>";
+
+  String legacyControlsOn = Gestures::legacyControlsOn()?"checked":"";
+  // Toggle for legacy controls
+  out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
+  out += "<input type='checkbox' name='legacy_cont' value='1' " + legacyControlsOn + " style='width:auto'>";
+  out += "<span> " D_WEB_SETTINGS_LEGACY_CONTROLS "</span></label>";
+
   out += "<p class='muted'>" D_WEB_BUTTONS_HINT "</p>";
   out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
+  appendActionSelect(out, "btnS",  D_WEB_BUTTONS_SHORT,       (int)Gestures::actionShort());
+  appendActionSelect(out, "btnD",  D_WEB_BUTTONS_DOUBLE,       (int)Gestures::actionDouble());
+  appendActionSelect(out, "btnT",  D_WEB_BUTTONS_TRIPLE,       (int)Gestures::actionTriple());
   appendActionSelect(out, "btnL",  D_WEB_BUTTONS_LONG,       (int)Gestures::actionLong());
   appendActionSelect(out, "btnXL", D_WEB_BUTTONS_EXTRA_LONG, (int)Gestures::actionExtraLong());
   appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
@@ -300,6 +313,15 @@ static void handleSettingsPost() {
   // Gesture bindings — `setAction*` clamp internally, but we still check
   // `hasArg` because the page submits this section as a separate form
   // (so a Reading POST won't carry these keys at all).
+  if (server.hasArg("btnS")) {
+    Gestures::setActionShort((ButtonAction)server.arg("btnS").toInt());
+  }
+  if (server.hasArg("btnD")) {
+    Gestures::setActionDouble((ButtonAction)server.arg("btnD").toInt());
+  }
+  if (server.hasArg("btnT")) {
+    Gestures::setActionTriple((ButtonAction)server.arg("btnT").toInt());
+  }
   if (server.hasArg("btnL")) {
     Gestures::setActionLong((ButtonAction)server.arg("btnL").toInt());
   }
@@ -310,7 +332,15 @@ static void handleSettingsPost() {
     Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());
   }
 
-  server.sendHeader("Location", "/settings");
+    // Gestures::setLegacyControls(true);
+  if (server.hasArg("legacy_cont")) {
+    Gestures::setLegacyControls(true);
+  }
+  else {
+    Gestures::setLegacyControls(false);
+  }
+
+    server.sendHeader("Location", "/settings");
   server.send(302, "text/plain", "");
 }
 
