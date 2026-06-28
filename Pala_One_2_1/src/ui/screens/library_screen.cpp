@@ -18,7 +18,7 @@
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/upload_screen.h"
 #include "src/ui/widgets.h"
-
+#include "src/ui/reader_actions.h"
 // ============================================================================
 //  Library screen nav state
 //
@@ -197,15 +197,27 @@ void LibraryScreen::draw() {
 void LibraryScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
 
-  if (e.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
     if (s_entryCount > 0) {
       s_cursor = (s_cursor + 1) % s_entryCount;
     }
     draw();
     return;
   }
+  
+  // Goes to the previous element (not supported in legacy)
+  if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) == ACTION_PREV) {
+    if (s_entryCount > 0) {
+      s_cursor = (s_cursor - 1) % s_entryCount;
+    }
+    draw();
+    return;
+  }
 
-  if (e.kind != ButtonEvent::Double) return;
+  if (Gestures::legacyControlsOn() && e.kind != ButtonEvent::Double) 
+    return;
+  if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) != ACTION_OK_MENU)
+    return;
 
   if (s_cursor < 0 || s_cursor >= s_entryCount) {
     draw();

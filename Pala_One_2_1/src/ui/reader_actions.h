@@ -39,19 +39,33 @@ namespace Gestures {
 void loadSettings();
 
 // Current bound action for each remappable gesture.
+ButtonAction actionShort();
+ButtonAction actionDouble();
+ButtonAction actionTriple(); 
 ButtonAction actionLong();       // plain long press (>= LONG_MS, < VERY_LONG_MS, no preceding click)
 ButtonAction actionExtraLong();  // very-long press (>= VERY_LONG_MS, no preceding click)
 ButtonAction actionClickHold();  // short click then immediate long hold
 
 // Apply + persist a binding. Out-of-range values clamp to ACTION_NONE.
+void setActionShort(ButtonAction a);
+void setActionDouble(ButtonAction a);
+void setActionTriple(ButtonAction a);
 void setActionLong(ButtonAction a);
 void setActionExtraLong(ButtonAction a);
 void setActionClickHold(ButtonAction a);
+void setLegacyControls(bool legacy);
 
-// Convenience: which action (if any) is currently bound to the gesture
-// kind that just fired. Returns ACTION_NONE for non-remappable kinds
-// (Short, Double, Triple, Quad, None).
-ButtonAction actionFor(ButtonEvent::Kind kind);
+bool legacyControlsOn();
+
+// Helps dealing with the conflict between legacy and standard actions/gestures
+// If the user as selected legacy actions (Gestures::legacyControlsOn()) then the function returns true if the kind of
+// event `e` matches `legacyGesture`. Otherwise it checks if event `e` is associated with action `targetAction`
+bool resolveLegacyAction(const ButtonEvent &e, const ButtonEvent::Kind &legacyGesture, ButtonAction targetAction);
+
+    // Convenience: which action (if any) is currently bound to the gesture
+    // kind that just fired. Returns ACTION_NONE for non-remappable kinds
+    // (Quad, None).
+    ButtonAction actionFor(ButtonEvent::Kind kind);
 
 }  // namespace Gestures
 
