@@ -322,7 +322,7 @@
 #define D_WEB_SCREENSAVER_DEFAULT   "Using built-in screensaver."
 #define D_WEB_SLEEP_IMAGE_LABEL     "Sleep image file"
 #define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Upload image"
-#define D_WEB_MISSING_REQUIRED_BUTTON_MSG "The following actions must always be present: " D_WEB_BUTTONS_ACTION_HOME ", " D_WEB_BUTTONS_ACTION_NEXT ", " D_WEB_BUTTONS_ACTION_OK_MENU
+#define D_WEB_MISSING_REQUIRED_BUTTON_MSG "The following actions must always be present: " D_WEB_BUTTONS_ACTION_HOME ", " D_WEB_BUTTONS_ACTION_NEXT ", " D_WEB_BUTTONS_ACTION_MENU
 
 // Buttons / remappable hold-gestures section.
 #define D_WEB_BUTTONS_HEADING       "Buttons"
@@ -338,7 +338,7 @@
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
-#define D_WEB_BUTTONS_ACTION_OK_MENU     "OK/Open menu(Context dependent)"
+#define D_WEB_BUTTONS_ACTION_MENU     "OK/Open menu(Context dependent)"
 #define D_WEB_BUTTONS_ACTION_ROTATE   "Flip screen orientation"
 #define D_WEB_BUTTONS_ACTION_NEXT "Next item/page"
 #define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"

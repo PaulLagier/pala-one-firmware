@@ -244,7 +244,7 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
 
   // Reboot prompt.
   if (phase_ == Phase::RebootPrompt) {
-    if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_OK_MENU)) {
+    if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
       esp_restart();
     }
     return;
@@ -272,7 +272,7 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_OK_MENU))
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU))
   {
     if (focusItem_ == 0) {
       stableChan_ = true;

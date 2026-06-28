@@ -58,7 +58,7 @@ void BookmarkBookSelectScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_OK_MENU)) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
     g_bookmarkSession.selectedIndex = 0;
     nextScreen = &g_bmListScreen;
     return;

@@ -62,7 +62,7 @@ static void appendActionSelect(String& out, const char* nameId, const char* labe
   appendActionOption(out, ACTION_NONE,     D_WEB_BUTTONS_ACTION_NONE,     current);
   appendActionOption(out, ACTION_NEXT, D_WEB_BUTTONS_ACTION_NEXT, current);
   appendActionOption(out, ACTION_PREV, D_WEB_BUTTONS_ACTION_PREV, current);
-  appendActionOption(out, ACTION_OK_MENU,     D_WEB_BUTTONS_ACTION_OK_MENU,     current);
+  appendActionOption(out, ACTION_MENU,     D_WEB_BUTTONS_ACTION_MENU,     current);
   appendActionOption(out, ACTION_LOCK,     D_WEB_BUTTONS_ACTION_LOCK,     current);
   appendActionOption(out, ACTION_HOME, D_WEB_BUTTONS_ACTION_HOME, current);
   appendActionOption(out, ACTION_BOOKMARK, D_WEB_BUTTONS_ACTION_BOOKMARK, current);
@@ -244,7 +244,7 @@ static bool validateRequiredActionsOnPost() {
   for (int i = 0; i < 6; i++) {
     if (v[i] == (int)ACTION_NEXT) hasNext = true;
     else if (v[i] == (int)ACTION_HOME) hasHome = true;
-    else if (v[i] == (int)ACTION_OK_MENU) hasOkMenu = true;
+    else if (v[i] == (int)ACTION_MENU) hasOkMenu = true;
   }
 
   return hasNext && hasHome && hasOkMenu;

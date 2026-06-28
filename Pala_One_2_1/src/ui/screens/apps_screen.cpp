@@ -65,7 +65,7 @@ void AppsScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_OK_MENU)) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
     if (g_apps.count == 0) return;
     if (s_cursor < 0 || s_cursor >= g_apps.count) return;
 

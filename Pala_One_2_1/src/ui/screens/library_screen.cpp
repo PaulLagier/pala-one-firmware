@@ -216,7 +216,7 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
 
   if (Gestures::legacyControlsOn() && e.kind != ButtonEvent::Double) 
     return;
-  if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) != ACTION_OK_MENU)
+  if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) != ACTION_MENU)
     return;
 
   if (s_cursor < 0 || s_cursor >= s_entryCount) {

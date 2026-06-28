@@ -23,7 +23,7 @@ void BookmarkPreviewScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (Gestures::resolveLegacyAction(e, ButtonEvent::Long, ACTION_OK_MENU)) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Long, ACTION_MENU)) {
     // Commit — keep the book open, hand off to reader. Force-save progress
     // at the bookmark's page so a sleep-before-render still resumes here.
     persistReaderState();

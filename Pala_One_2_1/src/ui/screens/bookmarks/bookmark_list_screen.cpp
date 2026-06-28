@@ -83,7 +83,7 @@ void BookmarkListScreen::onButton(const ButtonEvent& e) {
       
   }
 
-  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_OK_MENU)) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
     if (g_bookmarkSession.count == 0) return;
 
     if (openBookByIndex(g_bookmarkSession.bookIndex)) {

@@ -85,7 +85,7 @@ void ListScreen::onButton(const ButtonEvent& e) {
       return;
     }
     
-    if (Gestures::resolveLegacyAction(e, ButtonEvent::Long, ACTION_OK_MENU)){
+    if (Gestures::resolveLegacyAction(e, ButtonEvent::Long, ACTION_MENU)){
       if (g_list.selectedIndex >= 0 && g_list.selectedIndex < g_list.count) {
         g_list.items[g_list.selectedIndex].done = g_list.items[g_list.selectedIndex].done ? 0 : 1;
         saveListItems();
