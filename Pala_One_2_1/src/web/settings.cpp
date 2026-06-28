@@ -231,7 +231,7 @@ static bool validateRequiredActionsOnPost() {
     return false;
   }
 
-  int v[6] = {
+  const int v[6] = {
     server.arg("btnS").toInt(),
     server.arg("btnD").toInt(),
     server.arg("btnT").toInt(),
