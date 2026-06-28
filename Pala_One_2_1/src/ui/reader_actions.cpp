@@ -15,7 +15,7 @@ static constexpr const char* kKeyClickHold = "cfg_btnCH";
 static ButtonAction s_short    = ACTION_NEXT;
 static ButtonAction s_double    = ACTION_PREV;
 static ButtonAction s_triple     = ACTION_HOME;
-static ButtonAction s_long      = ACTION_OK_MENU;
+static ButtonAction s_long      = ACTION_MENU;
 static ButtonAction s_extraLong = ACTION_LOCK;
 static ButtonAction s_clickHold = ACTION_BOOKMARK;
 
@@ -28,7 +28,7 @@ void loadSettings() {
   s_short    = clamp(prefs.getInt(kKeyLong,      ACTION_NEXT));
   s_double    = clamp(prefs.getInt(kKeyDouble,      ACTION_PREV));
   s_triple    = clamp(prefs.getInt(kKeyTriple,      ACTION_HOME));
-  s_long      = clamp(prefs.getInt(kKeyLong,      ACTION_OK_MENU));
+  s_long      = clamp(prefs.getInt(kKeyLong,      ACTION_MENU));
   s_extraLong = clamp(prefs.getInt(kKeyExtraLong, ACTION_LOCK));
   s_clickHold = clamp(prefs.getInt(kKeyClickHold, ACTION_BOOKMARK));
 }

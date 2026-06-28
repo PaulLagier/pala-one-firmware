@@ -25,7 +25,7 @@ enum ButtonAction
   ACTION_NONE = 0,     // No action
   ACTION_NEXT = 1,     // Next item/page
   ACTION_PREV = 2,     // Previous item/page
-  ACTION_OK_MENU = 3,  // Select current item or open book menu
+  ACTION_MENU = 3,  // Select current item or open book menu
   ACTION_LOCK = 4,     // Lock/unlock device
   ACTION_HOME = 5,     // Go to main menu
   ACTION_BOOKMARK = 6, // Bookmark current page
