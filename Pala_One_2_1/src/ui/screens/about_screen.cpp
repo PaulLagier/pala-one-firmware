@@ -4,6 +4,7 @@
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
+#include "src/ui/reader_actions.h"
 
 void AboutScreen::onEnter() {
   draw();
@@ -36,5 +37,11 @@ void AboutScreen::draw() {
 }
 
 void AboutScreen::onButton(const ButtonEvent& e) {
-  if (e.any()) nextScreen = &g_libraryScreen;
-}
+  if (Gestures::legacyControlsOn()){
+    if (e.any()) nextScreen = &g_libraryScreen;
+  }
+  else {
+    if (Gestures::actionFor(e.kind) == ACTION_HOME) {
+      nextScreen = &g_libraryScreen;
+    }
+  }}
