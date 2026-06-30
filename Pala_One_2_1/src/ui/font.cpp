@@ -35,6 +35,7 @@ static int    s_size    = 10;
 static int    s_lineGap = 0;
 static Family s_family  = Family::Helvetica;
 static bool   s_bionic  = false;
+static bool   s_halfGaps = false;
 
 // Layout-metrics cache. Invalid after the mutators below; recomputed on the
 // next bodyLayout() call.
@@ -46,6 +47,7 @@ static constexpr const char* kKeyBodySize   = "cfg_font";
 static constexpr const char* kKeyLineGap    = "cfg_lgap";
 static constexpr const char* kKeyFamily     = "cfg_font_fam";
 static constexpr const char* kKeyBionic     = "cfg_bionic";
+static constexpr const char* kKeyHalfGaps   = "cfg_hgap";
 
 // Pick the (regular, bold) pair for a given size + family. Centralized so
 // applyBodySize and applyFamily share one switch. Returns true if `sz` was
@@ -111,6 +113,7 @@ const LayoutMetrics& bodyLayout() {
     s_layout.ascent  = u8g2.getFontAscent();
     s_layout.descent = u8g2.getFontDescent();
     s_layout.lineH   = (s_layout.ascent - s_layout.descent) + s_lineGap;
+    s_layout.paragraphGapH = s_halfGaps ? (s_layout.lineH / 2) : s_layout.lineH;
 
     s_layout.maxWidth = SCREEN_W - (MARGIN_X * 2);
 
@@ -130,6 +133,7 @@ void loadSettings() {
   applyBodySize(prefs.getInt(kKeyBodySize, 10));
   applyLineGap(prefs.getInt(kKeyLineGap, 0));
   s_bionic = (prefs.getInt(kKeyBionic, 0) != 0);
+  s_halfGaps = (prefs.getInt(kKeyHalfGaps, 0) != 0);
 }
 
 void setBodySize(int sz) {
@@ -156,10 +160,20 @@ void setBionic(bool on) {
   prefs.putInt(kKeyBionic, on ? 1 : 0);
 }
 
+void setHalfParagraphGaps(bool on) {
+  if (s_halfGaps == on) return;
+  s_halfGaps = on;
+  // Changing paragraph height changes page layout so drop the
+  // cached metrics and invalidate caches.
+  s_layoutValid = false;
+  prefs.putInt(kKeyHalfGaps, on ? 1 : 0);
+}
+
 int    currentBodySize() { return s_size; }
 int    currentLineGap()  { return s_lineGap; }
 Family currentFamily()   { return s_family; }
 bool   bionicEnabled()   { return s_bionic; }
+bool   halfParagraphGapsEnabled() { return s_halfGaps; }
 
 PageCacheLayout layoutForCache() {
   // Statusbar reserve goes into the cache stamp too — toggling between
@@ -171,6 +185,7 @@ PageCacheLayout layoutForCache() {
     /*lineGap         =*/s_lineGap,
     /*family          =*/(uint8_t)s_family,
     /*bionic          =*/(uint8_t)(s_bionic ? 1 : 0),
+    /*halfGaps        =*/(uint8_t)(s_halfGaps ? 1 : 0),
     /*statusbarReserve=*/(uint8_t)Statusbar::reserveH(),
   };
 }
