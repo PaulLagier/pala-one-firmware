@@ -272,6 +272,18 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
+  if (Gestures::isNonLegacyAction(e, ACTION_PREV))
+  {
+    bool hasInstall = (phase_ == Phase::UpdateAvailable ||
+                       phase_ == Phase::DownloadFailed);
+    focusItem_--;
+    if (focusItem_ < 0) {
+      focusItem_ = hasInstall ? 3 : 2;
+    }
+    draw();
+    return;
+  }
+
   if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU))
   {
     if (focusItem_ == 0) {
