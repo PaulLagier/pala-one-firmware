@@ -207,8 +207,11 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
   
   // Goes to the previous element (not supported in legacy)
   if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
-    if (s_entryCount > 0) {
-      s_cursor = (s_cursor - 1) % s_entryCount;
+    s_cursor--;
+
+    if (s_cursor < 0)
+    {
+      s_cursor = s_entryCount - 1;
     }
     draw();
     return;
