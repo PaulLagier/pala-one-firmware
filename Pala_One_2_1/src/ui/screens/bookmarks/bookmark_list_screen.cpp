@@ -73,7 +73,7 @@ void BookmarkListScreen::onButton(const ButtonEvent& e) {
   }
 
 
-  if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) == ACTION_PREV) {
+  if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
     if (g_bookmarkSession.count > 0) {
       g_bookmarkSession.selectedIndex--;
       if (g_bookmarkSession.selectedIndex < 0) g_bookmarkSession.selectedIndex = (int)g_bookmarkSession.count - 1;
@@ -124,10 +124,9 @@ void BookmarkListScreen::onButton(const ButtonEvent& e) {
   else {
     // In this case the behaviour of ACTION_HOME is slightly different (go back to the previous menu)
     // instead of the standard "go to main menu" to retain the legacy behaviour of "ButtonEvent::Long"
-    if (Gestures::actionFor(e.kind) == ACTION_HOME) {
+    if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
       nextScreen = &g_bmBookSelectScreen;
       return;
     }
   }
-
 }

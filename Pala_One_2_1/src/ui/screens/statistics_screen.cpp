@@ -77,7 +77,7 @@ void StatisticsScreen::onButton(const ButtonEvent& e) {
     if (e.any()) nextScreen = &g_libraryScreen;
   }
   else {
-    if (Gestures::actionFor(e.kind) == ACTION_HOME) {
+    if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
       nextScreen = &g_libraryScreen;
     }
   }

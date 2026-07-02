@@ -79,6 +79,17 @@ bool resolveLegacyAction(const ButtonEvent &e, const ButtonEvent::Kind &legacyGe
   // return (legacyCont && e.kind == legacyGesture) || (!legacyCont && ac == targetAction);
 }
 
+
+bool isNonLegacyAction(const ButtonEvent &e, ButtonAction action) {
+  if (legacyControlsOn()) {
+    return false;
+  }
+  if (actionFor(e.kind) == action) {
+    return true;
+  }
+  return false;
+}
+
 ButtonAction actionFor(ButtonEvent::Kind kind) {
   switch (kind) {
     case ButtonEvent::Short:      return s_short;

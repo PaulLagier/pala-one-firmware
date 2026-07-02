@@ -62,11 +62,14 @@ bool legacyControlsOn();
 // event `e` matches `legacyGesture`. Otherwise it checks if event `e` is associated with action `targetAction`
 bool resolveLegacyAction(const ButtonEvent &e, const ButtonEvent::Kind &legacyGesture, ButtonAction targetAction);
 
-    // Convenience: which action (if any) is currently bound to the gesture
-    // kind that just fired. Returns ACTION_NONE for non-remappable kinds
-    // (Quad, None).
-    ButtonAction actionFor(ButtonEvent::Kind kind);
+// Returns true if legacy actions are off and ButtonEvent `e` matches the ButtonAction `action` 
+bool isNonLegacyAction(const ButtonEvent &e, ButtonAction action);
 
-}  // namespace Gestures
+// Convenience: which action (if any) is currently bound to the gesture
+// kind that just fired. Returns ACTION_NONE for non-remappable kinds
+// (Quad, None).
+ButtonAction actionFor(ButtonEvent::Kind kind);
+
+} // namespace Gestures
 
 #endif  // PALA_UI_READER_ACTIONS_H

@@ -57,7 +57,7 @@ void AppsScreen::onButton(const ButtonEvent& e) {
   }
   
   // Goes to the previous element (not supported in legacy)
-  if (Gestures::actionFor(e.kind) == ACTION_PREV) {
+  if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
     if (g_apps.count > 0) {
       s_cursor = (s_cursor - 1) % g_apps.count;
     }
