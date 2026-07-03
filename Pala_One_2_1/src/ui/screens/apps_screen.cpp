@@ -6,7 +6,7 @@
 #include "src/ui/pala_api_impl.h"          // runApp
 #include "src/ui/screens/library_screen.h" // g_libraryScreen
 #include "src/ui/widgets.h"
-
+#include "src/ui/reader_actions.h"
 // Cursor persists across visits — entering Apps doesn't reset to 0,
 // matching how LibraryScreen / ListScreen behave.
 static int s_cursor = 0;
@@ -43,20 +43,29 @@ void AppsScreen::draw() {
 void AppsScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
 
-  if (e.kind == ButtonEvent::Triple) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Triple, ACTION_HOME)) {
     nextScreen = &g_libraryScreen;
     return;
   }
 
-  if (e.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
     if (g_apps.count > 0) {
       s_cursor = (s_cursor + 1) % g_apps.count;
     }
     draw();
     return;
   }
+  
+  // Goes to the previous element (not supported in legacy)
+  if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
+    if (g_apps.count > 0) {
+      s_cursor = (s_cursor - 1) % g_apps.count;
+    }
+    draw();
+    return;
+  }
 
-  if (e.kind == ButtonEvent::Double) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
     if (g_apps.count == 0) return;
     if (s_cursor < 0 || s_cursor >= g_apps.count) return;
 

@@ -331,10 +331,14 @@
 #define D_WEB_SCREENSAVER_DEFAULT   "Usando salvapantallas predeterminado."
 #define D_WEB_SLEEP_IMAGE_LABEL     "Archivo de imagen de suspensión"
 #define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Subir imagen"
+#define D_WEB_MISSING_REQUIRED_BUTTON_MSG "Las siguientes acciones siempre deben estar presentes:" D_WEB_BUTTONS_ACTION_HOME ", " D_WEB_BUTTONS_ACTION_NEXT ", " D_WEB_BUTTONS_ACTION_MENU
 
 // Buttons / remappable hold-gestures section.
 #define D_WEB_BUTTONS_HEADING       "Botones"
-#define D_WEB_BUTTONS_HINT          "1 clic = siguiente, 2 = anterior, 3 = inicio. Las tres pulsaciones largas abajo son reasignables."
+#define D_WEB_BUTTONS_HINT          "Puedes reasignar los patrones de clic a diferentes acciones." //AI tranlsated
+#define D_WEB_BUTTONS_SHORT         "Clic único" // AI translated
+#define D_WEB_BUTTONS_DOUBLE        "Clic doble" // AI translated
+#define D_WEB_BUTTONS_TRIPLE        "Clic trilple" // AI translated
 #define D_WEB_BUTTONS_LONG          "Pulsación larga"
 #define D_WEB_BUTTONS_EXTRA_LONG    "Pulsación muy larga"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Clic y mantener"
@@ -343,8 +347,12 @@
 #define D_WEB_BUTTONS_ACTION_NONE     "Ninguna"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Marcar página"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
-#define D_WEB_BUTTONS_ACTION_MENU     "Abrir menú"
+#define D_WEB_BUTTONS_ACTION_MENU     "OK/Abrir el menú (depende del contexto)"
 #define D_WEB_BUTTONS_ACTION_ROTATE  "Voltear orientación de la pantalla" // Translate by ChatGPT
+#define D_WEB_BUTTONS_ACTION_NEXT "Siguiente elemento/página" // AI translated
+#define D_WEB_BUTTONS_ACTION_PREV "Elemento/página anterior" // AI translated
+#define D_WEB_BUTTONS_ACTION_HOME "Ir al menú principal" // AI translated
+#define D_WEB_BUTTONS_LEGACY_HINT "Si está habilitado, el mapeo de los clics único, doble y triple no tiene efecto." //AI translated
 
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Dispositivo"
@@ -463,6 +471,7 @@
 #define D_WEB_BIONIC_LABEL          "Lectura biónica"
 #define D_WEB_BIONIC_HINT           "Resalta en negrita las primeras letras de cada palabra para anclar la mirada."
 #define D_WEB_SETTINGS_APPLY_HINT   "Los cambios se aplican en la próxima página renderizada."
+#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Habilitar los controles heredados" // AI translated
 
 // ----------------------------------------------------------------------------
 

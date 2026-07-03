@@ -13,6 +13,7 @@
 #include "src/ui/widgets.h"
 #include "src/web/apps_upload.h"  // resetAppUpload()
 #include "src/web/upload.h"       // resetBookUpload() / resetSleepUpload()
+#include "src/ui/reader_actions.h"
 
 // How long to wait for an STA association before falling back to AP. Long
 // enough for a typical 2.4 GHz home network (~1-3s); short enough that an
@@ -174,8 +175,14 @@ void UploadScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Short || e.kind == ButtonEvent::Triple) {
+  if (Gestures::legacyControlsOn() && (e.kind == ButtonEvent::Short || e.kind == ButtonEvent::Triple)) {
     stopSessionToLibrary();
+  }
+
+  if (!Gestures::legacyControlsOn()) {
+    if (Gestures::actionFor(e.kind) == ACTION_HOME) {
+      stopSessionToLibrary();
+    }
   }
 }
 

@@ -18,7 +18,9 @@
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/upload_screen.h"
 #include "src/ui/widgets.h"
-
+#include "src/ui/reader_actions.h"
+#include "src/ui/lock.h"
+#include "src/ui/sleep.h"
 // ============================================================================
 //  Library screen nav state
 //
@@ -197,15 +199,43 @@ void LibraryScreen::draw() {
 void LibraryScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
 
-  if (e.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
     if (s_entryCount > 0) {
       s_cursor = (s_cursor + 1) % s_entryCount;
     }
     draw();
     return;
   }
+  
+  // Goes to the previous element (not supported in legacy)
+  if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
+    s_cursor--;
 
-  if (e.kind != ButtonEvent::Double) return;
+    if (s_cursor < 0)
+    {
+      s_cursor = s_entryCount - 1;
+    }
+    draw();
+    return;
+  }
+
+  if (Gestures::isNonLegacyAction(e, ACTION_LOCK)) {
+    Lock::engage();
+    Sleep::enter();
+    return;
+  }
+  if (Gestures::isNonLegacyAction(e, ACTION_ROTATE)) {
+    ScreenSettings::toggleScreenRotation();
+  }
+  if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
+    s_cursor = 0;
+    draw();
+  }
+
+  if (Gestures::legacyControlsOn() && e.kind != ButtonEvent::Double) 
+    return;
+  if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) != ACTION_MENU)
+    return;
 
   if (s_cursor < 0 || s_cursor >= s_entryCount) {
     draw();
