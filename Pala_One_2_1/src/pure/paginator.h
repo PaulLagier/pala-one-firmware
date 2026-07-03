@@ -13,6 +13,8 @@ struct LayoutMetrics {
   int lineH = 0;
   int maxWidth = 0;
   int maxLines = 1;
+  // Height to be used for a paragraph gap. Either lineH or lineH/2.
+  int paragraphGapH = 0;
 };
 
 // Measure the rendered width (in pixels) of a UTF-8 string under the layout's

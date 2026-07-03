@@ -98,6 +98,8 @@ static void handleSettings() {
 
   bool curBionic   = Font::bionicEnabled();
   String bChecked  = curBionic ? " checked" : "";
+  bool curHalfGaps = Font::halfParagraphGapsEnabled();
+  String hgChecked = curHalfGaps ? " checked" : "";
 
   String alertText;
   if (server.hasArg("alert"))
@@ -177,6 +179,9 @@ static void handleSettings() {
     "<div class='full' style='grid-column:1/-1'><label style='display:flex;gap:10px;align-items:center;font-weight:600'>"
     "<input type='checkbox' name='bionic' value='1'"; out += bChecked; out += "><span>" D_WEB_BIONIC_LABEL "</span></label>"
     "<div class='hint'>" D_WEB_BIONIC_HINT "</div></div>"
+    "<div class='full' style='grid-column:1/-1'><label style='display:flex;gap:10px;align-items:center;font-weight:600'>"
+    "<input type='checkbox' name='hgap' value='1'"; out += hgChecked; out += "><span>" D_WEB_PARA_GAP_LABEL "</span></label>"
+    "<div class='hint'>" D_WEB_PARA_GAP_HINT "</div></div>"
     "</div>"
     "<div style='margin-top:14px'>"
     "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
@@ -278,6 +283,11 @@ static bool applySettingsForm() {
   bool wantBionic = server.hasArg("bionic");
   if (wantBionic != Font::bionicEnabled()) {
     Font::setBionic(wantBionic);
+    layoutChanged = true;
+  }
+  bool wantHalfGaps = server.hasArg("hgap");
+  if (wantHalfGaps != Font::halfParagraphGapsEnabled()) {
+    Font::setHalfParagraphGaps(wantHalfGaps);
     layoutChanged = true;
   }
   return layoutChanged;

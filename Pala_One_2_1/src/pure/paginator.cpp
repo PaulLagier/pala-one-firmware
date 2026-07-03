@@ -18,7 +18,16 @@ uint32_t paginatePage(IReadStream& in,
                       const LineCallback& onLine) {
   in.seek(startPos);
 
-  int linesUsed = 0;
+  // Vertical layout is tracked in PIXELS (usedH), not whole-line counts, so a
+  // blank line between paragraphs can consume a fractional gap (e.g. a
+  // half-height paragraph break) instead of a full empty line. budgetH is the
+  // usable text height; a full text line costs m.lineH, a paragraph gap costs
+  // gapH. The page-fill test (pageFull) is identical in the draw and measure
+  // passes (both advance usedH the same way), so page offsets stay
+  // deterministic for back-nav and the on-disk offset cache.
+  const int budgetH = m.maxLines * m.lineH;
+  const int gapH    = (m.paragraphGapH > 0) ? m.paragraphGapH : m.lineH;
+  int usedH = 0;
   char line[kLineMax];      size_t lineLen = 0;
   char token[kTokenMax] = {}; size_t tokLen  = 0;
   char scratch[kScratchMax];
@@ -40,9 +49,13 @@ uint32_t paginatePage(IReadStream& in,
   };
 
   auto emit = [&](const char* buf, size_t len) {
-    linesUsed++;
+    usedH += m.lineH;
     if (onLine) onLine(buf, len);
   };
+
+  // True once there's no room left for another full text line calculated
+  // according to pixel budgets.
+  auto pageFull = [&]() -> bool { return usedH + m.lineH > budgetH; };
 
   auto flushLine = [&]() {
     trimTrailing(line, lineLen);
@@ -92,7 +105,7 @@ uint32_t paginatePage(IReadStream& in,
       emit(token, fitLen);
       token[fitLen] = saved;
 
-      if (linesUsed >= m.maxLines)
+      if (pageFull())
         return safeReturn(tokenStartPos + (uint32_t)fitLen);
 
       memmove(token, token + fitLen, tokLen - fitLen);
@@ -131,7 +144,7 @@ uint32_t paginatePage(IReadStream& in,
 
     if (measure(scratch) > m.maxWidth) {
       flushLine();
-      if (linesUsed >= m.maxLines) return safeReturn(tokenStartPos);
+      if (pageFull()) return safeReturn(tokenStartPos);
 
       token[tokLen] = 0;
       if (measure(token) > m.maxWidth) {
@@ -148,7 +161,7 @@ uint32_t paginatePage(IReadStream& in,
     return 0;
   };
 
-  while (in.available() && linesUsed < m.maxLines) {
+  while (in.available() && !pageFull()) {
     uint32_t charPos = in.position();
     int rb = in.read();
     if (rb < 0) break;
@@ -158,8 +171,17 @@ uint32_t paginatePage(IReadStream& in,
     if (c == '\n') {
       uint32_t forcedNext = appendTokenToLine();
       if (forcedNext != 0) return forcedNext;
-      flushLine();
-      if (linesUsed >= m.maxLines) return safeReturn(in.position());
+      // Empty line = paragraph break. Height can be full or half line depending on settings.
+      if (lineLen == 0) {
+        // If we're at the top of the page, just skip it.
+        if (usedH > 0) {
+          usedH += gapH;
+          if (onLine) onLine(nullptr, 0);
+        }
+      } else {
+        flushLine();
+      }
+      if (pageFull()) return safeReturn(in.position());
       lineStartPos = in.position();
       continue;
     }
@@ -192,7 +214,7 @@ uint32_t paginatePage(IReadStream& in,
   uint32_t forcedNext = appendTokenToLine();
   if (forcedNext != 0) return forcedNext;
 
-  if (linesUsed < m.maxLines && lineLen > 0) {
+  if (!pageFull() && lineLen > 0) {
     flushLine();
   }
 
