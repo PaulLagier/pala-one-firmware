@@ -163,13 +163,69 @@ static void ensureOffsetsUpTo(int targetPage) {
   }
 }
 
-int findPageForOffset(uint32_t targetOffset) {
+// Controls how long after we start rebuilding the page index to wait before
+// showing progress. This way we don't wast time doing screen updates for small
+// rebuilds.
+static const uint32_t kRebuildSplashDelayMs  = 500;
+// Controls how long between progress updates.
+// Screen updates take a while, so there's no point in updating constantly.
+static const uint32_t kRebuildSplashRedrawMs = 700;
+
+static void drawCacheRebuildProgress(int pct, bool firstFrame) {
+  if (firstFrame) {
+    prepareMenuFrame();
+    Font::useBody();
+    int ascent = u8g2.getFontAscent();
+    int lineH  = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 1;
+    int y = drawSectionHeader(D_READER_INDEXING_TITLE);
+
+    // The detail message is expected to be a little longer.
+    // Use toast font to give us more room for translations.
+    Font::useToast();
+    int w = u8g2.getUTF8Width(D_READER_INDEXING_DETAIL);
+    u8g2.setCursor((SCREEN_W - w) / 2, 60);
+    u8g2.print(D_READER_INDEXING_DETAIL);
+
+    gfx.drawRect(barX, barY, barW, barH, 1);
+  }
+  const int barX = MARGIN_X;
+  const int barW = SCREEN_W - 2 * MARGIN_X;
+  const int barY = 74;
+  const int barH = 10;
+  int fillW = ((barW - 4) * pct) / 100;
+  if (fillW > 0) gfx.fillRect(barX + 2, barY + 2, fillW, barH - 4, 1);
+
+  display.update();
+}
+
+int findPageForOffset(uint32_t targetOffset, bool showProgress) {
+  uint32_t startMs = millis();
+  uint32_t lastDrawMs = 0;
+  int shownPct = -1;
+
   // Extend forward until the last known page starts at or past the target,
   // or we can't extend further.
   while (g_bookview.pages.count == 0
       || g_bookview.pages.offsets[g_bookview.pages.count - 1] < targetOffset) {
     if (!tryExtendPageTable()) break;
+    if (showProgress) {
+      uint32_t now = millis();
+      if (shownPct < 0 && now - startMs < kRebuildSplashDelayMs) continue;
+      if (shownPct >= 0 && now - lastDrawMs < kRebuildSplashRedrawMs) continue;
+	  int pct = (int)(((uint64_t)g_bookview.pages.offsets[g_bookview.pages.count - 1]
+                     * 100) / targetOffset);
+	  if (pct > 100) pct = 100;
+      if (pct <= shownPct) continue;
+
+      drawCacheRebuildProgress(pct, /*firstFrame=*/shownPct < 0);
+      shownPct = pct;
+      lastDrawMs = millis();
+    }
   }
+
+  // Progress bar can make for ugly ghosting.
+  if (shownPct >= 0) forceNextRenderFull();
+
   // The page containing `targetOffset` is the largest N with
   // offsets[N] <= targetOffset.
   for (int i = g_bookview.pages.count - 1; i >= 0; i--) {
@@ -210,7 +266,7 @@ bool openBookByIndex(int idx) {
   PreferencesStore kv(prefs);
   uint32_t savedOffset = loadSavedOffset(kv, g_bookview.book.key());
   if (savedOffset != kOffsetUnset) {
-    g_bookview.cursor.pageIndex = findPageForOffset(savedOffset);
+    g_bookview.cursor.pageIndex = findPageForOffset(savedOffset, /*showProgress=*/ true);
   } else {
     g_bookview.cursor.pageIndex = loadSavedPage(kv, g_bookview.book.key());
   }

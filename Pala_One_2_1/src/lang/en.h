@@ -109,6 +109,9 @@
 // ----------------------------------------------------------------------------
 #define D_READER_BOOK_EMPTY         "Book empty"
 #define D_READER_BACK_LIBRARY       "Back to library"
+#define D_READER_INDEXING_TITLE     "Preparing book..."
+#define D_READER_INDEXING_DETAIL    "Rebuilding page index"
+
 
 // ----------------------------------------------------------------------------
 //  App loader error overlay (src/ui/pala_api_impl.cpp paintLoadError)

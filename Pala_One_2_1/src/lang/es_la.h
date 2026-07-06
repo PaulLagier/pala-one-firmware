@@ -109,6 +109,9 @@
 // ----------------------------------------------------------------------------
 #define D_READER_BOOK_EMPTY         "Libro vacío"
 #define D_READER_BACK_LIBRARY       "Volver a biblioteca"
+#define D_READER_INDEXING_TITLE     "Preparando libro..."
+#define D_READER_INDEXING_DETAIL    "Reconstruyendo índice de páginas"
+
 
 // ----------------------------------------------------------------------------
 //  App loader error overlay
