@@ -168,10 +168,15 @@ static void ensureOffsetsUpTo(int targetPage) {
 // rebuilds.
 static const uint32_t kRebuildSplashDelayMs  = 500;
 // Controls how long between progress updates.
-// Screen updates take a while, so there's no point in updating constantly.
+// Screen updates take a while, so updating too frequently will actually increase
+// the time a rebuild can take substantially.
 static const uint32_t kRebuildSplashRedrawMs = 700;
 
 static void drawCacheRebuildProgress(int pct, bool firstFrame) {
+  const int barX = MARGIN_X;
+  const int barW = SCREEN_W - 2 * MARGIN_X;
+  const int barY = 74;
+  const int barH = 10;
   if (firstFrame) {
     prepareMenuFrame();
     Font::useBody();
@@ -188,10 +193,6 @@ static void drawCacheRebuildProgress(int pct, bool firstFrame) {
 
     gfx.drawRect(barX, barY, barW, barH, 1);
   }
-  const int barX = MARGIN_X;
-  const int barW = SCREEN_W - 2 * MARGIN_X;
-  const int barY = 74;
-  const int barH = 10;
   int fillW = ((barW - 4) * pct) / 100;
   if (fillW > 0) gfx.fillRect(barX + 2, barY + 2, fillW, barH - 4, 1);
 
