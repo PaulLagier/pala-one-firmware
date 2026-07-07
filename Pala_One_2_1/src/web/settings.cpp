@@ -11,6 +11,7 @@
 #include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
 #include "src/ui/reader_actions.h"        // ButtonAction + Gestures
 #include "src/ui/screens/reader_screen.h" // g_readerScreen — active-reader check
+#include "src/storage/wifi_creds.h"
 #include "src/ui/lock.h"
 #include "src/ui/sleep.h"
 #include "src/web/chrome.h"
@@ -188,6 +189,39 @@ static void handleSettings() {
   out += "</div><div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
   out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
   out += "</div></form></div>";
+ 
+  // Wi-Fi card — own form (wifi_form sentinel), posts back to the same
+  // /settings endpoint as the other cards. Edits the single stored network
+  // the upload screen joins.
+  out +=
+    "<div class='card'><h2>" D_WEB_WIFI_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_WIFI_INTRO "</p>"
+    "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>"
+    "<div class='grid cols-2'>"
+    "<div><label for='wssid'>" D_WEB_WIFI_SSID_LABEL "</label>"
+    "<input type='text' id='wssid' name='wssid' maxlength='32' placeholder='" D_WEB_WIFI_SSID_PLACEHOLDER "' value='";
+  out += htmlAttrEscape(WifiCreds::ssid().c_str());
+  out +=
+    "'></div>"
+    "<div><label for='wpass'>" D_WEB_WIFI_PASSWORD_LABEL "</label>"
+    "<div class='pwwrap'>"
+    "<input type='password' id='wpass' name='wpass' maxlength='64' placeholder='" D_WEB_WIFI_PASSWORD_PLACEHOLDER "' value='";
+  out += htmlAttrEscape(WifiCreds::pass().c_str());
+  // Pasword area includes a crude SVG of an eye with a strike through that
+  // acts as a button to allow it to be shown/hidden as appropriate.
+  out +=
+    "'>"
+    "<button type='button' class='pweye' onclick='palaTogglePw(this)' aria-label='" D_WEB_WIFI_SHOW_PASSWORD "'>"
+    "<svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor'"
+    " stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>"
+    "<path d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z'/><circle cx='12' cy='12' r='3'/>"
+    "<line class='pwh' x1='3' y1='21' x2='21' y2='3'/></svg>"
+    "</button></div></div>"
+    "</div>"
+    "<input type='hidden' name='wifi_form' value='1'>"
+    "<div class='actions' style='margin-top:14px'><button type='submit'>" D_WEB_WIFI_SAVE_BUTTON "</button>"
+    "<span class='muted'>" D_WEB_WIFI_HINT "</span></div>"
+    "</form></div>";
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
@@ -308,6 +342,19 @@ static void handleSettingsPost() {
   }
   if (server.hasArg("btnCH")) {
     Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());
+  }
+
+  // Wi-Fi — its own form, guarded by wifi_form sentinel, so a Reading/Device/Buttons
+  // POST won't accidentally wipe the stored network via absent fields.
+  // A blank SSID forgets the stored network.
+  if (server.hasArg("wifi_form")) {
+    String ssid = server.hasArg("wifi_ssid") ? server.arg("wifi_ssid") : "";
+    ssid.trim();
+    if (ssid.length() == 0) {
+      WifiCreds::clear();
+    } else {
+      WifiCreds::save(ssid, server.hasArg("wifi_pass") ? server.arg("wifi_pass") : "");
+    }
   }
 
   server.sendHeader("Location", "/settings");

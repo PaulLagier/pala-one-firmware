@@ -337,6 +337,18 @@
 #define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
 #define D_WEB_BUTTONS_ACTION_ROTATE     "Flip screen orientation"
 
+// Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
+// joins.
+#define D_WEB_WIFI_HEADING            "Wi-Fi"
+#define D_WEB_WIFI_INTRO              "The network the device joins for file upload."
+#define D_WEB_WIFI_SSID_LABEL         "SSID"
+#define D_WEB_WIFI_PASSWORD_LABEL     "Password"
+#define D_WEB_WIFI_SSID_PLACEHOLDER   "Network name"
+#define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Password"
+#define D_WEB_WIFI_SHOW_PASSWORD      "Show password"
+#define D_WEB_WIFI_SAVE_BUTTON        "Save network"
+#define D_WEB_WIFI_HINT               "Stored on device. Leave the SSID blank to forget it."
+
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Device"
 #define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."

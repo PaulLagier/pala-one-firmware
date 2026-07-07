@@ -69,8 +69,13 @@ static const char kStyleCss[] PROGMEM =
   ".status.idle{background:var(--pill-bg);color:var(--pill-fg)}"
   "button,.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;background:var(--btn-bg);color:var(--btn-fg);padding:10px 14px;font:600 14px system-ui,sans-serif;text-decoration:none;cursor:pointer}"
   ".btn.secondary{background:var(--btn-sec-bg);color:var(--btn-sec-fg);border:1px solid var(--btn-sec-bd)}"
-  "input[type=text],input[type=number],input[type=file],input[type=search],select,textarea{width:100%;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
+  "input[type=file],input[type=number],input[type=password],input[type=search],input[type=text],select,textarea{width:100%;box-sizing:border-box;border:1px solid var(--inp-bd);border-radius:10px;background:var(--inp-bg);color:var(--text);padding:10px;font:inherit}"
   "input[type=checkbox],input[type=radio]{accent-color:var(--link)}"
+  ".pwwrap{position:relative}"
+  ".pwwrap input{padding-right:40px}"
+  ".pweye{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:0;padding:6px;cursor:pointer;color:var(--muted);display:inline-flex}"
+  ".pweye .pwh{display:none}"
+  ".pweye.shown .pwh{display:inline}"
   ".theme-toggle{padding:8px 12px;font-size:13px;white-space:nowrap}"
   ".theme-toggle .tgd{display:none}"
   "html[data-theme=dark] .theme-toggle .tgl{display:none}"
@@ -98,6 +103,7 @@ static const char kStyleCss[] PROGMEM =
 // flash of the wrong palette. Reads localStorage.palaTheme first; falls back
 // to the build-time default above. Exposes window.palaToggleTheme() for the
 // button.
+// Also exposes PalaTogglePw to allow password fields to toggle between hidden and shown.
 static const char kThemeScript[] PROGMEM =
   "<script>(function(){"
   "var k='palaTheme',r=document.documentElement;"
@@ -105,6 +111,7 @@ static const char kThemeScript[] PROGMEM =
   "var v=null;try{v=localStorage.getItem(k)}catch(e){}"
   "S((v==='dark'||v==='light')?v:'" WEB_DEFAULT_THEME_JS "');"
   "window.palaToggleTheme=function(){S(r.dataset.theme==='dark'?'light':'dark')};"
+  "window.palaTogglePw=function(b){var i=b.parentNode.querySelector('input');var s=(i.type==='password');i.type=s?'text':'password';b.classList.toggle('shown',s);};"
   "})();</script>";
 
 static void handleStyleCss() {

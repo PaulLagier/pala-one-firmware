@@ -330,6 +330,18 @@
 #define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
 #define D_WEB_BUTTONS_ACTION_MENU     "Abrir menú"
 #define D_WEB_BUTTONS_ACTION_ROTATE  "Voltear orientación de la pantalla" // Translate by ChatGPT
+ 
+// Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
+// joins.
+#define D_WEB_WIFI_HEADING            "Wi-Fi"
+#define D_WEB_WIFI_INTRO              "La red a la que el dispositivo se une para subir archivos." // Translated by Claude
+#define D_WEB_WIFI_SSID_LABEL         "SSID"
+#define D_WEB_WIFI_PASSWORD_LABEL     "Contraseña" // Translated by Claude
+#define D_WEB_WIFI_SSID_PLACEHOLDER   "Nombre de la red" // Translated by Claude
+#define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Contraseña" // Translated by Claude
+#define D_WEB_WIFI_SHOW_PASSWORD      "Mostrar contraseña" // Translated by Claude
+#define D_WEB_WIFI_SAVE_BUTTON        "Guardar red" // Translated by Claude
+#define D_WEB_WIFI_HINT               "Almacenado en el dispositivo. Deja el SSID vacío para olvidarla." // Translated by Claude
 
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Dispositivo"
