@@ -33,6 +33,7 @@
 #define D_MENU_BOOKMARKS            "Marcapáginas"
 #define D_MENU_LIST                 "Lista"
 #define D_MENU_APPS                 "Apps"
+#define D_MENU_SETTINGS             "Configuración de diseño" // Translated by Claude
 #define D_MENU_STATISTICS           "Estadísticas"
 #define D_MENU_DEVICE               "Dispositivo"
 #define D_MENU_UPLOAD               "Conectar"
@@ -53,6 +54,24 @@
 // ----------------------------------------------------------------------------
 #define D_LIST_HEADER               "Lista"
 #define D_LIST_NONE                 "Sin elementos"
+
+// ----------------------------------------------------------------------------
+//  Settings screen (src/ui/screens/settings_screen.cpp). For the most part we
+//  reuse the same labels as the Web UI, but a few we need to redefine due to
+//  embedded html elements.
+//  All elements translated with Claude.
+// ----------------------------------------------------------------------------
+#define D_SETTINGS_HEADER           "Configuración de diseño"
+
+#define D_SETTINGS_GAP_0            "0 - compacto"
+#define D_SETTINGS_GAP_1            "1 - normal"
+#define D_SETTINGS_GAP_2            "2 - holgado"
+#define D_SETTINGS_GAP_3            "3 - amplio"
+
+#define D_SETTINGS_SIZE_8           "8 - diminuto"
+#define D_SETTINGS_SIZE_10          "10 - pequeño"
+#define D_SETTINGS_SIZE_12          "12 - mediano"
+#define D_SETTINGS_SIZE_14          "14 - grande"
 
 // ----------------------------------------------------------------------------
 //  Upload screen
