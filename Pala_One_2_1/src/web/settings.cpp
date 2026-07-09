@@ -348,12 +348,12 @@ static void handleSettingsPost() {
   // POST won't accidentally wipe the stored network via absent fields.
   // A blank SSID forgets the stored network.
   if (server.hasArg("wifi_form")) {
-    String ssid = server.hasArg("wifi_ssid") ? server.arg("wifi_ssid") : "";
+    String ssid = server.hasArg("wssid") ? server.arg("wssid") : "";
     ssid.trim();
     if (ssid.length() == 0) {
       WifiCreds::clear();
     } else {
-      WifiCreds::save(ssid, server.hasArg("wifi_pass") ? server.arg("wifi_pass") : "");
+      WifiCreds::save(ssid, server.hasArg("wpass") ? server.arg("wpass") : "");
     }
   }
 
