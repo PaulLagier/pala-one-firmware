@@ -47,7 +47,7 @@ static uint32_t encodeLayoutVersion(const PageCacheLayout& layout) {
        | ((uint32_t)(layout.lineGap          & 0x0F) << 8)
        | ((uint32_t)(layout.family           & 0x03) << 16)
        | ((uint32_t)(layout.bionic           & 0x01) << 18)
-       | ((uint32_t)(layout.bionic           & 0x01) << 19)
+       | ((uint32_t)(layout.halfGaps         & 0x01) << 19)
        | ((uint32_t)(layout.statusbarReserve & 0x0F) << 24);
 }
 
