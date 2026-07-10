@@ -161,7 +161,7 @@ static const char kReadScript[] PROGMEM =
   "elJump=document.getElementById('bvJumpBtn'),elJumpStat=document.getElementById('bvJumpStat');"
   "var rawText='',hits=[],curHit=-1,normCache=null;"
   "function esc(s){return s.replace(/[&<>]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':'&gt;'});}"
-  "var TYPO={'‘':\"'\",'’':\"'\",'‚':\"'\",'‛':\"'\",'“':'\"','”':'\"','„':'\"','‟':'\"','‹':'\"','›':'\"','«':'\"','»':'\"','–':'-','—':'-','―':'-','…':'...',' ':' '};"
+  "var TYPO={'‘':\"'\",'’':\"'\",'‚':\"'\",'‛':\"'\",'“':'\"','”':'\"','„':'\"','‟':'\"','‹':'\"','›':'\"','«':'\"','»':'\"','–':'-','—':'-','―':'-','…':'...','\\u00A0':' '};"
   "function normTextMap(s){"
   "var n='',map=[],pend=false;"
   "for(var i=0;i<s.length;i++){"
