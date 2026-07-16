@@ -105,7 +105,7 @@ static const uint32_t TOAST_MS = 650;
 static const uint32_t UPLOAD_AUTO_EXIT_MS = 15UL * 60UL * 1000UL;
 static const uint32_t BAT_CACHE_MS = 180000; // 3 min — battery changes slowly
 static const uint32_t BAT_CHARGING_CHECK_MS = 2000;
-static const float BAT_CHARGING_VOLTAGE = 4.2f;
+static const float BAT_CHARGING_VOLTAGE = 4.09f;
 
 static const int FULL_REFRESH_EVERY_N_PAGES = 100;
 static const int MENU_FULL_REFRESH_EVERY = 60;

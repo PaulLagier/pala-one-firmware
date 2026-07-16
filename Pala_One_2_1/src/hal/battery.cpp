@@ -260,21 +260,28 @@ void drawBolt(int battX, int battY, int battH, int spacing)
   }
 }
 
-void drawBatteryTopRight()
+void drawBatteryTopRight(bool extended)
 {
   updateBatteryCached(false);
-
+  Font::useUiSmall();
   int pct = s_battery.valid ? s_battery.pctShown : 0;
   if (pct < 0)
     pct = 0;
   if (pct > 100)
     pct = 100;
 
+  char extendedInfo[11];
+  int icon_extendedInfo_spacing = 5;
+  if (extended) {
+    snprintf(extendedInfo, sizeof(extendedInfo), "%d%%/%.2fV", pct, readBatteryVoltageRaw());
+  }
   const int iconW = 18;
   const int iconH = 9;
-  int xIcon = SCREEN_W - MARGIN_X - iconW - 2;
+  int xIcon = SCREEN_W - MARGIN_X - iconW - 2 - (extended ? u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing : 0);
   int yIcon = 2;
 
+  // Clear previous icons
+  gfx.fillRect(xIcon, yIcon, iconW + u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing, iconH, 0);
   drawBatteryOutline(xIcon, yIcon, iconW, iconH);
   int displayedCharge = 0;
 
@@ -304,7 +311,12 @@ void drawBatteryTopRight()
     drawChargingFill(xIcon, yIcon, iconH, iconW);
   }
 
+  if (extended) {
+    u8g2.setCursor(xIcon + iconW + icon_extendedInfo_spacing, yIcon + iconH - 1);
+    u8g2.print(extendedInfo);
+  }
 }
+
 
 // void drawBatteryTopRight()
 // {
