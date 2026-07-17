@@ -21,7 +21,7 @@ static int bodyMeasure(const char* s) {
 //  offset where the next page begins.
 // ============================================================================
 uint32_t drawPageAt(File& f, uint32_t startPos) {
-  FileReadStream stream(f);
+  BufferedFileReadStream stream(f);
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
 
@@ -37,7 +37,7 @@ uint32_t drawPageAt(File& f, uint32_t startPos) {
 }
 
 uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
-  FileReadStream stream(f);
+  BufferedFileReadStream stream(f);
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
 
@@ -54,7 +54,7 @@ uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
 }
 
 uint32_t nextPageOffset(File& f, uint32_t startPos) {
-  FileReadStream stream(f);
+  BufferedFileReadStream stream(f);
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
   return paginatePage(stream, startPos, m, bodyMeasure, nullptr);

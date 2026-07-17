@@ -7,7 +7,7 @@
 #if HAS_BATTERY
 void adcSetupOnce();
 void updateBatteryCached(bool force = false);
-void drawBatteryTopRight();
+void drawBatteryTopRight(bool extended = false);
 bool batteryChargingChanged();
 #endif
 
