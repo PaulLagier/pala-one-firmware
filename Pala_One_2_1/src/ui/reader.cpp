@@ -180,7 +180,6 @@ static void drawCacheRebuildProgress(int pct, bool firstFrame) {
   if (firstFrame) {
     prepareMenuFrame();
     Font::useBody();
-    int ascent = u8g2.getFontAscent();
     drawSectionHeader(D_READER_INDEXING_TITLE);
 
     // The detail message is expected to be a little longer.
