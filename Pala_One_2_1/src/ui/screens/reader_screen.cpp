@@ -72,16 +72,6 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  // // Remappable hold gestures dispatch through the user's binding. NB:
-  // // ACTION_BOOKMARK on Long restores the original (pre-PR-#15) behavior;
-  // // an unbound gesture (ACTION_NONE) is a no-op.
-  // if (e.kind == ButtonEvent::Long
-  //  || e.kind == ButtonEvent::VeryLong
-  //  || e.kind == ButtonEvent::ClickHold) {
-  //   performReaderAction(Gestures::actionFor(e.kind));
-  //   return;
-  // }
-
   if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_PREV)) {
     if (retreatPage()) {
       saveProgressThrottled();

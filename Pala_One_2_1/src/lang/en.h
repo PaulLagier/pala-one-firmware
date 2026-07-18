@@ -367,7 +367,6 @@
 #define D_WEB_HEADER_TITLE_RESET    "Reset to default"
 #define D_WEB_FLIP_SCREEN           "Flip screen orientation"
 
-
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)
 // ----------------------------------------------------------------------------

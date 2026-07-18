@@ -206,7 +206,7 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     draw();
     return;
   }
-  
+
   // Goes to the previous element (not supported in legacy)
   if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
     s_cursor--;
@@ -234,7 +234,7 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (Gestures::legacyControlsOn() && e.kind != ButtonEvent::Double) 
+  if (Gestures::legacyControlsOn() && e.kind != ButtonEvent::Double)
     return;
   if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) != ACTION_MENU)
     return;

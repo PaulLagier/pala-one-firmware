@@ -55,7 +55,7 @@ void AppsScreen::onButton(const ButtonEvent& e) {
     draw();
     return;
   }
-  
+
   // Goes to the previous element (not supported in legacy)
   if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
     if (g_apps.count > 0) {

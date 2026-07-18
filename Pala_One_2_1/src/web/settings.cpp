@@ -211,7 +211,7 @@ static void handleSettings() {
   appendActionSelect(out, "btnL",  D_WEB_BUTTONS_LONG,       (int)Gestures::actionLong());
   appendActionSelect(out, "btnXL", D_WEB_BUTTONS_EXTRA_LONG, (int)Gestures::actionExtraLong());
   appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
-  
+
   String legacyControlsOn = Gestures::legacyControlsOn()?"checked":"";
   // Toggle for legacy controls
   out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";

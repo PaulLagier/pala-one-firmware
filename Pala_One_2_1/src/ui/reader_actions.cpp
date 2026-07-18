@@ -59,7 +59,7 @@ void setActionExtraLong(ButtonAction a) { persist(kKeyExtraLong, s_extraLong, a)
 void setActionClickHold(ButtonAction a) { persist(kKeyClickHold, s_clickHold, a); }
 void setLegacyControls(bool legacy) {
   s_legacyControls = legacy;
-  prefs.putBool(kKeyLegacyControls, legacy); 
+  prefs.putBool(kKeyLegacyControls, legacy);
 }
 
 bool legacyControlsOn() {
@@ -76,9 +76,7 @@ bool resolveLegacyAction(const ButtonEvent &e, const ButtonEvent::Kind &legacyGe
   else {
     return ac == targetAction;
   }
-  // return (legacyCont && e.kind == legacyGesture) || (!legacyCont && ac == targetAction);
 }
-
 
 bool isNonLegacyAction(const ButtonEvent &e, ButtonAction action) {
   if (legacyControlsOn()) {

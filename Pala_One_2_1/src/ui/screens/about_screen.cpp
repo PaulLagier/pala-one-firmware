@@ -89,11 +89,12 @@ void AboutScreen::draw() {
 }
 
 void AboutScreen::onButton(const ButtonEvent& e) {
-  if (Gestures::legacyControlsOn()){
+  if (Gestures::legacyControlsOn()) {
     if (e.any()) nextScreen = &g_libraryScreen;
   }
   else {
     if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
       nextScreen = &g_libraryScreen;
     }
-  }}
+  }
+}

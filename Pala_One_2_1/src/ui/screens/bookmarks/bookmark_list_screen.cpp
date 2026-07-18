@@ -72,7 +72,6 @@ void BookmarkListScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-
   if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
     if (g_bookmarkSession.count > 0) {
       g_bookmarkSession.selectedIndex--;
@@ -80,7 +79,7 @@ void BookmarkListScreen::onButton(const ButtonEvent& e) {
     }
     draw();
     return;
-      
+
   }
 
   if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {

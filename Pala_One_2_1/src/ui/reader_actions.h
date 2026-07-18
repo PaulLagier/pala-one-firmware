@@ -41,7 +41,7 @@ void loadSettings();
 // Current bound action for each remappable gesture.
 ButtonAction actionShort();
 ButtonAction actionDouble();
-ButtonAction actionTriple(); 
+ButtonAction actionTriple();
 ButtonAction actionLong();       // plain long press (>= LONG_MS, < VERY_LONG_MS, no preceding click)
 ButtonAction actionExtraLong();  // very-long press (>= VERY_LONG_MS, no preceding click)
 ButtonAction actionClickHold();  // short click then immediate long hold
@@ -62,7 +62,7 @@ bool legacyControlsOn();
 // event `e` matches `legacyGesture`. Otherwise it checks if event `e` is associated with action `targetAction`
 bool resolveLegacyAction(const ButtonEvent &e, const ButtonEvent::Kind &legacyGesture, ButtonAction targetAction);
 
-// Returns true if legacy actions are off and ButtonEvent `e` matches the ButtonAction `action` 
+// Returns true if legacy actions are off and ButtonEvent `e` matches the ButtonAction `action`
 bool isNonLegacyAction(const ButtonEvent &e, ButtonAction action);
 
 // Convenience: which action (if any) is currently bound to the gesture
