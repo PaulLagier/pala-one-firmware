@@ -357,7 +357,7 @@
 // Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
 // joins.
 #define D_WEB_WIFI_HEADING            "Wi-Fi"
-#define D_WEB_WIFI_INTRO              "La red a la que el dispositivo se une para subir archivos." // Translated by Claude
+#define D_WEB_WIFI_INTRO              "La red a la que el dispositivo se une para subir archivos. Por motivos de seguridad, las contraseñas guardadas nunca se mostrarán." // Translated by Claude
 #define D_WEB_WIFI_SSID_LABEL         "SSID"
 #define D_WEB_WIFI_PASSWORD_LABEL     "Contraseña" // Translated by Claude
 #define D_WEB_WIFI_SSID_PLACEHOLDER   "Nombre de la red" // Translated by Claude
@@ -365,7 +365,7 @@
 #define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<guardada>" // Translated by Claude
 #define D_WEB_WIFI_SHOW_PASSWORD      "Mostrar contraseña" // Translated by Claude
 #define D_WEB_WIFI_SAVE_BUTTON        "Guardar red" // Translated by Claude
-#define D_WEB_WIFI_HINT               "Se almacena en el dispositivo. Deja el SSID en blanco para olvidarla. Por motivos de seguridad, las contraseñas guardadas nunca se mostrarán." // Translated by Claude
+#define D_WEB_WIFI_HINT               "Se almacena en el dispositivo. Deja el SSID en blanco para olvidarla." // Translated by Claude
 
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Dispositivo"
