@@ -20,12 +20,27 @@
 // ----------------------------------------------------------------------------
 //  About screen
 // ----------------------------------------------------------------------------
-#define D_ABOUT_HEADER              "Dispositivo"
-#define D_ABOUT_FIRMWARE_PREFIX     "Firmware "
-#define D_ABOUT_GESTURE_NEXT        "1x siguiente / abajo"
-#define D_ABOUT_GESTURE_OPEN        "2x abrir / elegir"
-#define D_ABOUT_GESTURE_HOME        "3x inicio"
-#define D_ABOUT_GESTURE_BOOKMARK    "Mantener: marcapáginas"
+#define D_ABOUT_HEADER              "Dispositivo" // AI translation
+#define D_ABOUT_FIRMWARE_PREFIX     "Firmware" // AI translation
+#define D_ABOUT_GESTURE_CLICK       "clic" // AI translation
+#define D_ABOUT_GESTURE_CLICK_2     "clic x 2" // AI translation
+#define D_ABOUT_GESTURE_CLICK_3     "clic x 3" // AI translation
+#define D_ABOUT_GESTURE_CLICK_HOLD  "clic + mantener" // AI translation
+#define D_ABOUT_GESTURE_HOLD        "mantener" // AI translation
+#define D_ABOUT_GESTURE_LONG_HOLD   "mantener mucho" // AI translation
+#define D_ABOUT_GESTURE_SEPARATOR   ": "
+
+// ----------------------------------------------------------------------------
+// Action names  (src/ui/reader_actions.cpp)
+// ----------------------------------------------------------------------------
+#define D_ACTION_NONE_LABEL     "Ninguna" // AI translation
+#define D_ACTION_NEXT_LABEL     "Siguiente" // AI translation
+#define D_ACTION_OPEN_LABEL     "Abrir/Seleccionar" // AI translation
+#define D_ACTION_BOOKMARK_LABEL "Marcador" // AI translation
+#define D_ACTION_HOME_LABEL     "Inicio" // AI translation
+#define D_ACTION_LOCK_LABEL     "Bloquear" // AI translation
+#define D_ACTION_MENU_LABEL     "Menú" // AI translation
+#define D_ACTION_ROTATE_LABEL   "Girar pantalla" // AI translation
 
 // ----------------------------------------------------------------------------
 //  Library menu entries

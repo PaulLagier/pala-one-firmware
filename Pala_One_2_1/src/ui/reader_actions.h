@@ -28,6 +28,8 @@ enum ButtonAction {
   ACTION_ROTATE   = 4,
 };
 
+
+
 namespace Gestures {
 
 // NVS load on boot — call once from setup() after `prefs.begin`.
