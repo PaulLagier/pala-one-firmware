@@ -354,9 +354,10 @@
 #define D_WEB_WIFI_PASSWORD_LABEL     "Contraseña" // Translated by Claude
 #define D_WEB_WIFI_SSID_PLACEHOLDER   "Nombre de la red" // Translated by Claude
 #define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Contraseña" // Translated by Claude
+#define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<guardada>" // Translated by Claude
 #define D_WEB_WIFI_SHOW_PASSWORD      "Mostrar contraseña" // Translated by Claude
 #define D_WEB_WIFI_SAVE_BUTTON        "Guardar red" // Translated by Claude
-#define D_WEB_WIFI_HINT               "Almacenado en el dispositivo. Deja el SSID vacío para olvidarla." // Translated by Claude
+#define D_WEB_WIFI_HINT               "Se almacena en el dispositivo. Deja el SSID en blanco para olvidarla. Por motivos de seguridad, las contraseñas guardadas nunca se mostrarán." // Translated by Claude
 
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Dispositivo"

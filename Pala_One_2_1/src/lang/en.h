@@ -360,9 +360,10 @@
 #define D_WEB_WIFI_PASSWORD_LABEL     "Password"
 #define D_WEB_WIFI_SSID_PLACEHOLDER   "Network name"
 #define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Password"
+#define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<saved>"
 #define D_WEB_WIFI_SHOW_PASSWORD      "Show password"
 #define D_WEB_WIFI_SAVE_BUTTON        "Save network"
-#define D_WEB_WIFI_HINT               "Stored on device. Leave the SSID blank to forget it."
+#define D_WEB_WIFI_HINT               "Stored on device. Leave the SSID blank to forget it. For security reasons, saved passwords will never be shown."
 
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Device"

@@ -208,7 +208,8 @@ static void handleSettings() {
     "<div><label for='wpass'>" D_WEB_WIFI_PASSWORD_LABEL "</label>"
     "<div class='pwwrap'>"
     "<input type='password' id='wpass' name='wpass' maxlength='64' placeholder='" D_WEB_WIFI_PASSWORD_PLACEHOLDER "' value='";
-  out += htmlAttrEscape(WifiCreds::pass().c_str());
+  // Never echo out the saved password verbatim for security reasons.
+  out += WifiCreds::pass().isEmpty() ? "" : D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER;
   // Pasword area includes a crude SVG of an eye with a strike through that
   // acts as a button to allow it to be shown/hidden as appropriate.
   out +=
@@ -355,7 +356,12 @@ static void handleSettingsPost() {
     if (ssid.length() == 0) {
       WifiCreds::clear();
     } else {
-      WifiCreds::save(ssid, server.hasArg("wpass") ? server.arg("wpass") : "");
+      // If we get the saved password placeholder back, assume the user wants to keep that password as is.
+      String pass = server.hasArg("wpass") ? server.arg("wpass") : "";
+      if (pass == D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER) {
+        pass = WifiCreds::pass();
+      }
+      WifiCreds::save(ssid, pass);
     }
   }
 
