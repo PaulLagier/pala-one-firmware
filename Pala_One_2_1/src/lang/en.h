@@ -337,11 +337,15 @@
 #define D_WEB_SCREENSAVER_DEFAULT   "Using built-in screensaver."
 #define D_WEB_SLEEP_IMAGE_LABEL     "Sleep image file"
 #define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Upload image"
+#define D_WEB_MISSING_REQUIRED_BUTTON_MSG "The following actions must always be present: " D_WEB_BUTTONS_ACTION_HOME ", " D_WEB_BUTTONS_ACTION_NEXT ", " D_WEB_BUTTONS_ACTION_MENU
 
 // Buttons / remappable hold-gestures section.
 #define D_WEB_BUTTONS_HEADING       "Buttons"
-#define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The three holds below are remappable."
+#define D_WEB_BUTTONS_HINT          "You can remap click patterns to different actions"
 #define D_WEB_BUTTONS_LONG          "Long press"
+#define D_WEB_BUTTONS_SHORT         "Single click"
+#define D_WEB_BUTTONS_DOUBLE        "Double click"
+#define D_WEB_BUTTONS_TRIPLE        "Triple click"
 #define D_WEB_BUTTONS_EXTRA_LONG    "Extra-long press"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
 #define D_WEB_BUTTONS_SAVE          "Save buttons"
@@ -349,8 +353,19 @@
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
-#define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
-#define D_WEB_BUTTONS_ACTION_ROTATE     "Flip screen orientation"
+#define D_WEB_BUTTONS_ACTION_MENU     "OK/Open menu(Context dependent)"
+#define D_WEB_BUTTONS_ACTION_ROTATE   "Flip screen orientation"
+#define D_WEB_BUTTONS_ACTION_NEXT "Next item/page"
+#define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"
+#define D_WEB_BUTTONS_ACTION_HOME "Go to main menu"
+#define D_WEB_BUTTONS_LEGACY_HINT "If enabled, mapping single, double and triple clicks has no effect."
+// Device personalization card (src/web/settings.cpp).
+#define D_WEB_DEVICE_HEADING        "Device"
+#define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
+#define D_WEB_HEADER_TITLE_LABEL    "Header title"
+#define D_WEB_HEADER_TITLE_HINT     "Shown at the top of the library screen. Leave empty for no title."
+#define D_WEB_HEADER_TITLE_RESET    "Reset to default"
+#define D_WEB_FLIP_SCREEN           "Flip screen orientation"
 
 // Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
 // joins.
@@ -364,14 +379,6 @@
 #define D_WEB_WIFI_SHOW_PASSWORD      "Show password"
 #define D_WEB_WIFI_SAVE_BUTTON        "Save network"
 #define D_WEB_WIFI_HINT               "Stored on device. Leave the SSID blank to forget it. For security reasons, saved passwords will never be shown."
-
-// Device personalization card (src/web/settings.cpp).
-#define D_WEB_DEVICE_HEADING        "Device"
-#define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
-#define D_WEB_HEADER_TITLE_LABEL    "Header title"
-#define D_WEB_HEADER_TITLE_HINT     "Shown at the top of the library screen. Leave empty for no title."
-#define D_WEB_HEADER_TITLE_RESET    "Reset to default"
-#define D_WEB_FLIP_SCREEN           "Flip screen orientation"
 
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)
@@ -485,6 +492,7 @@
 #define D_WEB_BIONIC_LABEL          "Bionic reading"
 #define D_WEB_BIONIC_HINT           "Bolds the leading characters of each word to help your eyes anchor."
 #define D_WEB_SETTINGS_APPLY_HINT   "Changes apply to the next page render."
+#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Enable legacy controls"
 
 // ----------------------------------------------------------------------------
 

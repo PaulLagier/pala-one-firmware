@@ -7,6 +7,7 @@
 #include "src/ui/screens/bookmarks/session.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
+#include "src/ui/reader_actions.h"
 
 void BookmarkBookSelectScreen::onEnter() {
   draw();
@@ -33,7 +34,7 @@ void BookmarkBookSelectScreen::draw() {
 }
 
 void BookmarkBookSelectScreen::onButton(const ButtonEvent& e) {
-  if (e.kind == ButtonEvent::Triple) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Triple, ACTION_HOME)) {
     nextScreen = &g_libraryScreen;
     return;
   }
@@ -43,21 +44,21 @@ void BookmarkBookSelectScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
     g_bookmarkSession.bookIndex++;
     if (g_bookmarkSession.bookIndex >= g_library.bookCount) g_bookmarkSession.bookIndex = 0;
     draw();
     return;
   }
 
-  if (e.kind == ButtonEvent::Long) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Long, ACTION_PREV)) {
     g_bookmarkSession.bookIndex--;
     if (g_bookmarkSession.bookIndex < 0) g_bookmarkSession.bookIndex = g_library.bookCount - 1;
     draw();
     return;
   }
 
-  if (e.kind == ButtonEvent::Double) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
     g_bookmarkSession.selectedIndex = 0;
     nextScreen = &g_bmListScreen;
     return;

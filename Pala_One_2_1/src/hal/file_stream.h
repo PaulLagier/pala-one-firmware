@@ -33,8 +33,8 @@ private:
 class BufferedFileReadStream : public IReadStream {
 public:
   explicit BufferedFileReadStream(File& f)
-      : f_(f), size_((uint32_t)f.size()), pos_((uint32_t)f.position()) {
-    buf_ = (uint8_t*)malloc(kBufCap);
+      : f_(f), size_(static_cast<uint32_t>(f.size())), pos_(static_cast<uint32_t>(f.position())) {
+    buf_ = static_cast<uint8_t*>(malloc(kBufCap));
   }
   ~BufferedFileReadStream() override { free(buf_); }
 

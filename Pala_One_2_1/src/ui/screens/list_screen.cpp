@@ -5,7 +5,7 @@
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
-
+#include "src/ui/reader_actions.h"
 void ListScreen::onEnter() {
   draw();
 }
@@ -69,24 +69,33 @@ void ListScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  switch (e.kind) {
-    case ButtonEvent::Short:
+    if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)){
+
       g_list.selectedIndex++;
       if (g_list.selectedIndex >= g_list.count) g_list.selectedIndex = 0;
       draw();
       return;
-    case ButtonEvent::Long:
+    }
+
+    if (Gestures::isNonLegacyAction(e, ACTION_PREV)){
+
+      g_list.selectedIndex--;
+      if (g_list.selectedIndex < 0) g_list.selectedIndex = g_list.count - 1;
+      draw();
+      return;
+    }
+
+    if (Gestures::resolveLegacyAction(e, ButtonEvent::Long, ACTION_MENU)){
       if (g_list.selectedIndex >= 0 && g_list.selectedIndex < g_list.count) {
         g_list.items[g_list.selectedIndex].done = g_list.items[g_list.selectedIndex].done ? 0 : 1;
         saveListItems();
         draw();
       }
       return;
-    case ButtonEvent::Double:
-    case ButtonEvent::Triple:
+    }
+
+    if (Gestures::resolveLegacyAction(e, ButtonEvent::Triple, ACTION_HOME)){
       nextScreen = &g_libraryScreen;
       return;
-    default:
-      return;
-  }
+    }
 }

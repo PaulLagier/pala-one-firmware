@@ -7,6 +7,7 @@
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
+#include "src/ui/reader_actions.h"
 
 void StatisticsScreen::onEnter() {
   draw();
@@ -72,5 +73,12 @@ void StatisticsScreen::draw() {
 }
 
 void StatisticsScreen::onButton(const ButtonEvent& e) {
-  if (e.any()) nextScreen = &g_libraryScreen;
+  if (Gestures::legacyControlsOn()){
+    if (e.any()) nextScreen = &g_libraryScreen;
+  }
+  else {
+    if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
+      nextScreen = &g_libraryScreen;
+    }
+  }
 }

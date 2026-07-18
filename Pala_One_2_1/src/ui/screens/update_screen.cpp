@@ -12,6 +12,7 @@
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
+#include "src/ui/reader_actions.h"
 
 static constexpr uint32_t    kStaTimeoutMs  = 15000;
 static constexpr const char* kKeyOtaChannel = "cfg_ota_channel";
@@ -239,15 +240,15 @@ void UpdateScreen::draw() {
 void UpdateScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
 
-  // Reboot prompt — only 2x is accepted; device has no manual reboot option.
+  // Reboot prompt.
   if (phase_ == Phase::RebootPrompt) {
-    if (e.kind == ButtonEvent::Double) {
+    if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
       esp_restart();
     }
     return;
   }
 
-  if (e.kind == ButtonEvent::Triple) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Triple, ACTION_HOME)) {
     exitToLibrary();
     return;
   }
@@ -260,7 +261,8 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
                       phase_ == Phase::DownloadFailed;
   if (!fullUi) return;
 
-  if (e.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT))
+  {
     bool hasInstall = (phase_ == Phase::UpdateAvailable ||
                        phase_ == Phase::DownloadFailed);
     focusItem_ = (focusItem_ + 1) % (hasInstall ? 4 : 3);
@@ -268,7 +270,20 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Double) {
+  if (Gestures::isNonLegacyAction(e, ACTION_PREV))
+  {
+    bool hasInstall = (phase_ == Phase::UpdateAvailable ||
+                       phase_ == Phase::DownloadFailed);
+    focusItem_--;
+    if (focusItem_ < 0) {
+      focusItem_ = hasInstall ? 3 : 2;
+    }
+    draw();
+    return;
+  }
+
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU))
+  {
     if (focusItem_ == 0) {
       stableChan_ = true;
       saveChannel();

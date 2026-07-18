@@ -7,6 +7,7 @@
 #include "src/ui/reader.h"        // g_bookview
 #include "src/ui/statusbar.h"
 #include "src/ui/widgets.h"       // prepareMenuFrame, drawSectionHeader
+#include "src/ui/reader_actions.h"
 
 namespace ReaderMenu {
 
@@ -91,7 +92,7 @@ bool onButton(const ButtonEvent& ev) {
   if (!s_active) return false;
   if (!ev.any()) return false;
 
-  if (ev.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(ev, ButtonEvent::Short, ACTION_NEXT)) {
     Statusbar::cycleMode();
     draw();
     return true;
