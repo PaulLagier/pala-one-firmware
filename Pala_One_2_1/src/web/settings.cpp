@@ -392,21 +392,12 @@ static void handleSettingsPost() {
       if (server.hasArg("btnCH")) {
         Gestures::setActionClickHold((ButtonAction)server.arg("btnCH").toInt());
       }
+
+      Gestures::setLegacyControls(server.hasArg("legacy_cont"));
     }
   }
 
-
-
-  // Gestures::setLegacyControls(true);
-  if (server.hasArg("legacy_cont")) {
-    Gestures::setLegacyControls(true);
-    
-  }
-  else {
-    Gestures::setLegacyControls(false);
-  }
-
-    server.sendHeader("Location", "/settings");
+  server.sendHeader("Location", "/settings");
   server.send(302, "text/plain", "");
 }
 
