@@ -26,9 +26,9 @@ uint32_t drawPageAt(File& f, uint32_t startPos) {
   Font::useBody();
 
   int cursorY = TOP_PAD + m.ascent;
-  auto onLine = [&](const char* buf, size_t /*len*/) {
-    // nullptr indicates a paragraph break. Advance by gap height.
-    if (buf == nullptr) { cursorY += m.paragraphGapH; return; }
+  auto onLine = [&](const char* buf, size_t len) {
+    // len 0 indicates a paragraph gap. Advance by gap height.
+    if (len == 0) { cursorY += m.paragraphGapH; return; }
     // drawBionicLine sets the active u8g2 font back to Body before returning,
     // so the next line measurement (via bodyMeasure) is consistent.
     Font::drawBionicLine(MARGIN_X, cursorY, buf);
@@ -44,8 +44,8 @@ uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
   Font::useBody();
 
   auto onLine = [&](const char* buf, size_t len) {
-    // nullptr indicates paragraph break.
-    if (buf == nullptr) { out.concat('\n'); return; }
+    // len 0 indicates paragraph break.
+    if (len == 0) { out.concat('\n'); return; }
     // Trim leading whitespace (paginator already trims trailing).
     const char* start = buf;
     size_t remaining = len;

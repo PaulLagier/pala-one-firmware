@@ -212,7 +212,7 @@ uint32_t paginatePage(IReadStream& in,
         // If we're at the top of the page, just skip it.
         if (usedH > 0) {
           usedH += gapH;
-          if (onLine) onLine(nullptr, 0);
+          if (onLine) onLine("", 0);
         }
       } else {
         flushLine();

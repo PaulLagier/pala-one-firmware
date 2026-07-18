@@ -104,3 +104,43 @@ TEST_CASE("paginator handles UTF-8 multibyte characters without splitting them")
   REQUIRE(lines.size() == 1u);
   CHECK_EQ(lines[0], String("café"));
 }
+
+TEST_CASE("height based line budgeting works as expected") {
+  auto lines = linesOf("One\nTwo\nThree\nFour\nFive\nSix\nSeven\nEight\n", m(50, 5));
+  CHECK_EQ(lines.size(), 5u);
+  CHECK_EQ(lines[0], String("One"));
+  CHECK_EQ(lines[1], String("Two"));
+  CHECK_EQ(lines[2], String("Three"));
+  CHECK_EQ(lines[3], String("Four"));
+  CHECK_EQ(lines[4], String("Five"));
+}
+
+TEST_CASE("changing paragraph height allows more lines") {
+  auto lm = m(50, 10);
+  auto lines = linesOf("One\n\nTwo\n\nThree\n\nFour\n\nFive\n\nSix\n\nSeven\n\nEight\n", lm);
+  CHECK_EQ(lines.size(), 10u);
+  CHECK_EQ(lines[0], String("One"));
+  CHECK_EQ(lines[2], String("Two"));
+  CHECK_EQ(lines[4], String("Three"));
+  CHECK_EQ(lines[6], String("Four"));
+  CHECK_EQ(lines[8], String("Five"));
+  
+  lm.paragraphGapH = lm.lineH / 2;
+  lines = linesOf("One\n\nTwo\n\nThree\n\nFour\n\nFive\n\nSix\n\nSeven\n\nEight\n", lm);
+  CHECK_EQ(lines.size(), 13u);
+  CHECK_EQ(lines[0], String("One"));
+  CHECK_EQ(lines[2], String("Two"));
+  CHECK_EQ(lines[4], String("Three"));
+  CHECK_EQ(lines[6], String("Four"));
+  CHECK_EQ(lines[8], String("Five"));
+  CHECK_EQ(lines[10], String("Six"));
+  CHECK_EQ(lines[12], String("Seven"));
+}
+
+TEST_CASE("skip empty lines at start of page") {
+  auto lines = linesOf("\n\nOne\nTwo\nThree\nFour\nFive\nSix\nSeven\nEight\n", m(50, 3));
+  CHECK_EQ(lines.size(), 3u);
+  CHECK_EQ(lines[0], String("One"));
+  CHECK_EQ(lines[1], String("Two"));
+  CHECK_EQ(lines[2], String("Three"));
+}
