@@ -40,11 +40,25 @@ The board version is usually printed on the back of the PCB.
 
 Pick your board's revision in the build step below — either by uncommenting the matching `#define` at the top of `Pala_One_2_1/Pala_One_2_1.ino` (Arduino IDE), or by selecting the matching env (PlatformIO).
 
-## Wi-Fi provisioning (Improv)
+## Wi-Fi Setup
 
-Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
+Out of the box, the device supports a SoftAP captive portal that can be used to upload books and adjust settings. The device can also be configured to connect to a single WiFi network via one of
+two methods: Improv WiFi provisioning via USB; or, the Web UI.
+
+### Configuring using Improv
+
+The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
 
 Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
+
+### Configuring using Web UI
+
+On the `/settings` page of the device's Web UI, you can also find a "WiFi" section at the bottom. This will let you enter an SSID and password for the device to connect to. The next time you select "Upload"
+from the main menu, the device will try to connect to the configured WiFi network before falling back to the Soft AP mode (you can also force the fallback by pressing the button).
+
+Note: The `/settings` page will never show your actual WiFi password, it will simply indicate if one is saved or not.
+
+<img width="512" height="150" alt="WiFi Configuration Settings" src="[https://github.com/user-attachments/assets/e787ae2c-75d9-4ccd-8ce8-8093d3fb1b4d" />
 
 ## Customizing click behaviours
 
