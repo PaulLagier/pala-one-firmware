@@ -181,8 +181,7 @@ static void drawCacheRebuildProgress(int pct, bool firstFrame) {
     prepareMenuFrame();
     Font::useBody();
     int ascent = u8g2.getFontAscent();
-    int lineH  = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 1;
-    int y = drawSectionHeader(D_READER_INDEXING_TITLE);
+    drawSectionHeader(D_READER_INDEXING_TITLE);
 
     // The detail message is expected to be a little longer.
     // Use toast font to give us more room for translations.
