@@ -46,6 +46,27 @@ Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi
 
 Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
 
+## Customizing click behaviours
+
+Version 3.2 introduces a fully customizable action system. You can now bind *any* **action** (e.g. go-home, bookmark, sleep, ...) to any **gesture** (e.g. single click, double click, ...).
+
+This option is disabled by default and can be enabled in the WebUI unchecking the "Legacy mode" in the settings page.
+
+The following table summarizes the different **actions** with their effect in the various screens and menus, as well as the default **gesture** binding, which can be changed by the user.
+
+
+|**Action**| Main menu effect   | Submenu effect (e.g. "connect") | Reading            | Locked | Default **gesture** binding |
+|----------|--------------------|---------------------------------|--------------------|--------|-----------------------------|
+| NEXT     | Next item          | Next page (if multi-page)       | Next page          | /      | Short click                 |
+| PREV     | Previous item      | Previous page (if multi-page)   | Previous page      | /      | Double click                |
+| OK       | Select item        | Interact/Cycle options          | Book menu          | /      | Long click                  |
+| LOCK     | Lock               | Lock                            | Lock               | Unlock | Extra long click            |
+| HOME     | Go to first item   | Go to previous menu             | Go to main menu    | /      | Triple click                |
+| BOOKMARK | /                  | /                               | Bookmark page      | /      | Click + Hold                |
+| ROTATE   | Flip screen 180deg |  Flip screen 180deg             | Flip screen 180deg | /      | /                           |
+
+If "Legacy mode" is enabled, mapping single, double and triple click will have no effect and the behaviour will remain the same of versions <= 3.1.
+
 ## OTA firmware updates
 
 Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-provisioning-improv)), firmware updates can be installed wirelessly — no USB cable, no computer required.
@@ -72,6 +93,7 @@ Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-pr
 
 > [!WARNING]
 > Charging status and battery level are estimated using an unreliable method due to hardware limitations. The battery icon and related indicators are only a guideline and may be inaccurate.
+
 
 ## Language
 

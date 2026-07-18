@@ -124,6 +124,15 @@ static int batteryPercentFromOCV(float v)
   return 0;
 }
 
+void updateBatteryBackground()
+{
+  uint32_t now = millis();
+  bool needFull = (now - s_battery.lastMs) >= BAT_CACHE_MS;
+  if (needFull) {
+    updateBatteryCached(/*force=*/true);
+  }
+}
+
 void updateBatteryCached(bool force)
 {
   uint32_t now = millis();
@@ -260,7 +269,10 @@ void drawBolt(int battX, int battY, int battH, int spacing)
   }
 }
 
-void drawBatteryTopRight(bool extended)
+const int iconW = 18;
+const int iconH = 9;
+
+void drawBattery(int xIcon, int yIcon)
 {
   updateBatteryCached(false);
   Font::useUiSmall();
@@ -270,18 +282,6 @@ void drawBatteryTopRight(bool extended)
   if (pct > 100)
     pct = 100;
 
-  char extendedInfo[11];
-  int icon_extendedInfo_spacing = 5;
-  if (extended) {
-    snprintf(extendedInfo, sizeof(extendedInfo), "%d%%/%.2fV", pct, readBatteryVoltageRaw());
-  }
-  const int iconW = 18;
-  const int iconH = 9;
-  int xIcon = SCREEN_W - MARGIN_X - iconW - 2 - (extended ? u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing : 0);
-  int yIcon = 2;
-
-  // Clear previous icons
-  gfx.fillRect(xIcon, yIcon, iconW + u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing, iconH, 0);
   drawBatteryOutline(xIcon, yIcon, iconW, iconH);
   int displayedCharge = 0;
 
@@ -310,13 +310,46 @@ void drawBatteryTopRight(bool extended)
     drawBolt(xIcon, yIcon, iconH, 2);
     drawChargingFill(xIcon, yIcon, iconH, iconW);
   }
+}
+
+void drawBatteryTopRight(bool extended)
+{
+  updateBatteryCached(false);
+  int pct = s_battery.valid ? s_battery.pctShown : 0;
+  if (pct < 0)
+    pct = 0;
+  if (pct > 100)
+    pct = 100;
+
+  char extendedInfo[11];
+  int icon_extendedInfo_spacing = 5;
+  if (extended) {
+    snprintf(extendedInfo, sizeof(extendedInfo), "%d%%/%.2fV", pct, readBatteryVoltageRaw());
+  }
+  int xIcon = SCREEN_W - MARGIN_X - iconW - 2 - (extended ? u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing : 0);
+  int yIcon = 2;
+
+  // Clear previous icons
+  gfx.fillRect(xIcon, yIcon, iconW + u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing, iconH, 0);
+
+  drawBattery(xIcon, yIcon);
 
   if (extended) {
+    Font::useUiSmall();
     u8g2.setCursor(xIcon + iconW + icon_extendedInfo_spacing, yIcon + iconH - 1);
     u8g2.print(extendedInfo);
   }
 }
 
+void drawBatteryBottomLeft()
+{
+	drawBattery(/*xIcon=*/MARGIN_X + 2, /*yIcon=*/SCREEN_H - iconH);
+}
+
+bool batteryLow()
+{
+  return s_battery.valid && s_battery.low;
+}
 
 // void drawBatteryTopRight()
 // {
