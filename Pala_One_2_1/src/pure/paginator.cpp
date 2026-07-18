@@ -71,8 +71,8 @@ uint32_t paginatePage(IReadStream& in,
     emit(line, lineLen);
     lineLen = 0;
     lineW = 0;
-	tailStart = 0;
-	tailW = 0;
+    tailStart = 0;
+    tailW = 0;
   };
 
   auto safeReturn = [&](uint32_t off) -> uint32_t {
@@ -155,15 +155,15 @@ uint32_t paginatePage(IReadStream& in,
       return startLineWithToken(measure(token));
     }
     // Only put the tail and the token into scratch to recompute width
-	// since the new token isn't going to be able to influence the layout
-	// of anything before that.
+    // since the new token isn't going to be able to influence the layout
+    // of anything before that.
     const size_t tailLen = lineLen - tailStart;
     memcpy(scratch, line + tailStart, tailLen);
     memcpy(scratch + tailLen, token, tokLen);
     scratch[tailLen + tokLen] = 0;
     const int combinedW = measure(scratch);
-	// lineW includes the width of the tail without the new token, so we
-	// need to subtract that here before adding the width of tail + token.
+    // lineW includes the width of the tail without the new token, so we
+    // need to subtract that here before adding the width of tail + token.
     const int candidateW = lineW - tailW + combinedW;
 
     if (candidateW > m.maxWidth) {
@@ -173,9 +173,9 @@ uint32_t paginatePage(IReadStream& in,
     }
 
     // The token fits entirely, perhaps having modified the tail
-	// width. Regardless, candidateW is the new width of the line.
-	// The tail only moves forward on whitespace so for the moment
-	// the start remains the same and the width becoems combinedW.
+    // width. Regardless, candidateW is the new width of the line.
+    // The tail only moves forward on whitespace so for the moment
+    // the start remains the same and the width becomes combinedW.
     memcpy(line + lineLen, token, tokLen);
     lineLen += tokLen;
     lineW = candidateW;
@@ -207,7 +207,7 @@ uint32_t paginatePage(IReadStream& in,
         // Same telescoping method as a token append: the trailing space's
         // marginal width is measure(tail + " ") - measure(tail), in case the space
         // modifies the tail's width. The space then starts a fresh one-byte trailing
-		// chunk.
+        // chunk.
         if (spaceW < 0) spaceW = measure(" ");
         const size_t tailLen = lineLen - tailStart;
         memcpy(scratch, line + tailStart, tailLen);
