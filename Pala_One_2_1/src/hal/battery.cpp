@@ -330,7 +330,7 @@ void drawBatteryTopRight(bool extended)
   int yIcon = 2;
 
   // Clear previous icons
-  gfx.fillRect(xIcon, yIcon, iconW + u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing, iconH, 0);
+  gfx.fillRect(xIcon, yIcon, iconW + (extended ? u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing : 0), iconH, 0);
 
   drawBattery(xIcon, yIcon);
 
