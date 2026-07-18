@@ -110,6 +110,12 @@ static const float BAT_CHARGING_VOLTAGE = 4.09f;
 static const int FULL_REFRESH_EVERY_N_PAGES = 100;
 static const int MENU_FULL_REFRESH_EVERY = 60;
 
+// Buffer size for file read operations. Bigger is not necessarily
+// better as you might wind up just pulling in more data than you need
+// to fill a page. This was a value that worked well with both ASCII
+// unicode inputs.
+static const size_t FILE_STREAM_BUF_BYTES = 512;
+
 static const int MARGIN_X = 6;
 static const int TOP_PAD = 3;
 static const int BOT_PAD = 0;
