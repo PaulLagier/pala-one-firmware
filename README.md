@@ -58,8 +58,6 @@ from the main menu, the device will try to connect to the configured WiFi networ
 
 Note: The `/settings` page will never show your actual WiFi password, it will simply indicate if one is saved or not.
 
-<img width="512" height="150" alt="WiFi Configuration Settings" src="[https://github.com/user-attachments/assets/e787ae2c-75d9-4ccd-8ce8-8093d3fb1b4d" />
-
 ## Customizing click behaviours
 
 Version 3.2 introduces a fully customizable action system. You can now bind *any* **action** (e.g. go-home, bookmark, sleep, ...) to any **gesture** (e.g. single click, double click, ...).
