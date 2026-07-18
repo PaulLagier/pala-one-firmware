@@ -226,10 +226,12 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
   }
   if (Gestures::isNonLegacyAction(e, ACTION_ROTATE)) {
     ScreenSettings::toggleScreenRotation();
+    return;
   }
   if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
     s_cursor = 0;
     draw();
+    return;
   }
 
   if (Gestures::legacyControlsOn() && e.kind != ButtonEvent::Double) 
