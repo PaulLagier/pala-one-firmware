@@ -43,12 +43,12 @@ static constexpr size_t kHeaderBytes =
 // statusbarReserve in pixels (currently 0/1/STATUS_H) gets to stretch out in the top byte.
 // Bits 20-23 are currently spare.
 static uint32_t encodeLayoutVersion(const PageCacheLayout& layout) {
-  return ((uint32_t)(layout.bodySize         & 0x0F))
-       | ((uint32_t)(layout.lineGap          & 0x0F) << 8)
+  return ((uint32_t)(layout.bodySize         & 0xFF))
+       | ((uint32_t)(layout.lineGap          & 0xFF) << 8)
        | ((uint32_t)(layout.family           & 0x03) << 16)
        | ((uint32_t)(layout.bionic           & 0x01) << 18)
        | ((uint32_t)(layout.halfGaps         & 0x01) << 19)
-       | ((uint32_t)(layout.statusbarReserve & 0x0F) << 24);
+       | ((uint32_t)(layout.statusbarReserve & 0xFF) << 24);
 }
 
 static String pageCachePathForBook(const String& path) {
