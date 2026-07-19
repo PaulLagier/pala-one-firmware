@@ -6,7 +6,7 @@
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
 #include "src/storage/library_menu_order.h"
-#include "src/storage/list_items.h"       // listHasVisibleItems
+#include "src/storage/list_items.h"       // g_list, listHasVisibleItems
 #include "src/ui/font.h"
 #include "src/ui/reader.h"
 #include "src/ui/screens/about_screen.h"
@@ -165,17 +165,6 @@ void LibraryScreen::draw() {
   LibraryEntryType systemEntries[LibraryMenuOrder::kMaxSystemEntries];
   int systemCount = LibraryMenuOrder::copyEntries(
       systemEntries, LibraryMenuOrder::kMaxSystemEntries);
-
-  // Keep the old runtime rule for the todo list: hide it when empty even if
-  // it is present in the stored order.
-  if (!listHasVisibleItems()) {
-    int kept = 0;
-    for (int i = 0; i < systemCount; i++) {
-      if (systemEntries[i] == LIB_ENTRY_LIST) continue;
-      systemEntries[kept++] = systemEntries[i];
-    }
-    systemCount = kept;
-  }
 
   // Build the bool[] view that the assembler wants from our name-keyed
   // expansion set, against the current folder ordering.
