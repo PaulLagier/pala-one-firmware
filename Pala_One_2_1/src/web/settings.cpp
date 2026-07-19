@@ -6,6 +6,7 @@
 #include "src/storage/book_metadata.h"
 #include "src/storage/page_cache.h"       // deletePageCacheForBook
 #include "src/storage/preferences_store.h"
+#include "src/storage/library_menu_order.h"
 #include "src/ui/font.h"
 #include "src/ui/header_title.h"
 #include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
@@ -71,6 +72,105 @@ static void appendActionSelect(String& out, const char* nameId, const char* labe
   out += "</select></div>";
 }
 
+static constexpr int kLibraryMenuHidden = -1;
+
+static const char* libraryMenuLabel(int value) {
+  switch (value) {
+    case LIB_ENTRY_BOOKMARKS: return D_MENU_BOOKMARKS;
+    case LIB_ENTRY_LIST:      return D_MENU_LIST;
+    case LIB_ENTRY_APPS:      return D_MENU_APPS;
+    case LIB_ENTRY_STATISTICS: return D_MENU_STATISTICS;
+    case LIB_ENTRY_ABOUT:     return D_MENU_DEVICE;
+    case LIB_ENTRY_UPDATE:    return D_MENU_UPDATE;
+    case LIB_ENTRY_UPLOAD:    return D_MENU_UPLOAD;
+    default:                  return D_WEB_LIBRARY_ORDER_HIDDEN;
+  }
+}
+
+static bool isLibraryMenuEntryValue(int value) {
+  switch (value) {
+    case LIB_ENTRY_BOOKMARKS:
+    case LIB_ENTRY_LIST:
+    case LIB_ENTRY_APPS:
+    case LIB_ENTRY_STATISTICS:
+    case LIB_ENTRY_ABOUT:
+    case LIB_ENTRY_UPDATE:
+    case LIB_ENTRY_UPLOAD:
+      return true;
+    default:
+      return false;
+  }
+}
+
+static void appendLibraryMenuOption(String& out, int val, const char* label, int current) {
+  out += "<option value='";
+  out += val;
+  out += "'";
+  if (val == current) out += " selected";
+  out += ">";
+  out += label;
+  out += "</option>";
+}
+
+static void appendLibraryMenuSelect(String& out, int slotIndex, int current) {
+  String nameId = "lib";
+  nameId += slotIndex;
+  out += "<div><label for='";
+  out += nameId;
+  out += "'>";
+  out += D_WEB_LIBRARY_ORDER_SLOT_LABEL;
+  out += " ";
+  out += slotIndex + 1;
+  out += "</label><select id='";
+  out += nameId;
+  out += "' name='";
+  out += nameId;
+  out += "'>";
+  appendLibraryMenuOption(out, kLibraryMenuHidden, D_WEB_LIBRARY_ORDER_HIDDEN, current);
+  appendLibraryMenuOption(out, LIB_ENTRY_BOOKMARKS, libraryMenuLabel(LIB_ENTRY_BOOKMARKS), current);
+  appendLibraryMenuOption(out, LIB_ENTRY_LIST, libraryMenuLabel(LIB_ENTRY_LIST), current);
+  appendLibraryMenuOption(out, LIB_ENTRY_APPS, libraryMenuLabel(LIB_ENTRY_APPS), current);
+  appendLibraryMenuOption(out, LIB_ENTRY_STATISTICS, libraryMenuLabel(LIB_ENTRY_STATISTICS), current);
+  appendLibraryMenuOption(out, LIB_ENTRY_ABOUT, libraryMenuLabel(LIB_ENTRY_ABOUT), current);
+  appendLibraryMenuOption(out, LIB_ENTRY_UPLOAD, libraryMenuLabel(LIB_ENTRY_UPLOAD), current);
+  appendLibraryMenuOption(out, LIB_ENTRY_UPDATE, libraryMenuLabel(LIB_ENTRY_UPDATE), current);
+  out += "</select></div>";
+}
+
+static void handleLibraryMenuOrderPost() {
+  if (!server.hasArg("lib_menu_form")) return;
+
+  if (server.hasArg("lib_menu_reset")) {
+    LibraryMenuOrder::resetToDefaults();
+    return;
+  }
+
+  LibraryEntryType entries[LibraryMenuOrder::kMaxSystemEntries];
+  int entryCount = 0;
+
+  for (int i = 0; i < LibraryMenuOrder::kMaxSystemEntries; i++) {
+    String key = "lib";
+    key += i;
+    if (!server.hasArg(key)) continue;
+
+    int value = server.arg(key).toInt();
+    if (value == kLibraryMenuHidden || !isLibraryMenuEntryValue(value)) continue;
+
+    LibraryEntryType type = (LibraryEntryType)value;
+    bool duplicate = false;
+    for (int j = 0; j < entryCount; j++) {
+      if (entries[j] == type) {
+        duplicate = true;
+        break;
+      }
+    }
+    if (duplicate) continue;
+    entries[entryCount++] = type;
+  }
+
+  LibraryMenuOrder::setEntries(entries, entryCount);
+}
+
 static void handleSettings() {
   int curFont = Font::currentBodySize();
   String sel8  = (curFont == 8)  ? " selected" : "";
@@ -124,7 +224,7 @@ static void handleSettings() {
     out += "'";
     out += ");};</script>";
   }
-  out.reserve(out.length() + 4500);
+  out.reserve(out.length() + 6200);
 
   // Device personalization card — separate form, no layout-remap interaction.
   out += "<div class='card'><h2>" D_WEB_DEVICE_HEADING "</h2>";
@@ -149,6 +249,28 @@ static void handleSettings() {
 
   out += "<div class='actions' style='margin-top:14px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button></div>";
   out += "</form></div>";
+
+  out +=
+    "<div class='card'><h2>" D_WEB_LIBRARY_ORDER_HEADING "</h2>"
+    "<p class='muted'>" D_WEB_LIBRARY_ORDER_INTRO "</p>"
+    "<p class='muted'>" D_WEB_LIBRARY_ORDER_REQUIRED "</p>"
+    "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>"
+    "<div class='grid cols-2'>";
+  LibraryEntryType currentOrder[LibraryMenuOrder::kMaxSystemEntries];
+  int currentCount = LibraryMenuOrder::copyEntries(currentOrder, LibraryMenuOrder::kMaxSystemEntries);
+  for (int i = 0; i < LibraryMenuOrder::kMaxSystemEntries; i++) {
+    int current = (i < currentCount) ? (int)currentOrder[i] : kLibraryMenuHidden;
+    appendLibraryMenuSelect(out, i, current);
+  }
+  out +=
+    "</div>"
+    "<input type='hidden' name='lib_menu_form' value='1'>"
+    "<div class='actions' style='margin-top:14px'>"
+    "<button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button>"
+    "<button type='submit' name='lib_menu_reset' value='1'>" D_WEB_LIBRARY_ORDER_RESET "</button>"
+    "<span class='muted'>" D_WEB_LIBRARY_ORDER_HINT "</span>"
+    "</div>"
+    "</form></div>";
 
   out +=
     "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
@@ -400,6 +522,8 @@ static void handleSettingsPost() {
       ScreenSettings::setScreenRotation(false);
     }
   }
+
+  handleLibraryMenuOrderPost();
 
   // Gesture bindings — `setAction*` clamp internally, but we still check
   // `hasArg` because the page submits this section as a separate form

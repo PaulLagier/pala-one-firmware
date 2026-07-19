@@ -5,6 +5,7 @@
 #include "src/pure/library_nav.h"         // buildLibraryEntries
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
+#include "src/storage/library_menu_order.h"
 #include "src/storage/list_items.h"       // listHasVisibleItems
 #include "src/ui/font.h"
 #include "src/ui/reader.h"
@@ -159,17 +160,22 @@ void LibraryScreen::draw() {
   prepareMenuFrame();
   Font::useBody();
 
-  // Decide which system entries to show. "List" only appears when the
-  // todo list has visible items; the rest are always present.
-  LibraryEntryType systemEntries[7];
-  int systemCount = 0;
-  systemEntries[systemCount++] = LIB_ENTRY_BOOKMARKS;
-  if (listHasVisibleItems()) systemEntries[systemCount++] = LIB_ENTRY_LIST;
-  systemEntries[systemCount++] = LIB_ENTRY_APPS;
-  systemEntries[systemCount++] = LIB_ENTRY_STATISTICS;
-  systemEntries[systemCount++] = LIB_ENTRY_ABOUT;
-  systemEntries[systemCount++] = LIB_ENTRY_UPLOAD;
-  systemEntries[systemCount++] = LIB_ENTRY_UPDATE;
+  // Pull the current order from persistent settings. The settings page can
+  // later edit this list directly without changing the screen logic again.
+  LibraryEntryType systemEntries[LibraryMenuOrder::kMaxSystemEntries];
+  int systemCount = LibraryMenuOrder::copyEntries(
+      systemEntries, LibraryMenuOrder::kMaxSystemEntries);
+
+  // Keep the old runtime rule for the todo list: hide it when empty even if
+  // it is present in the stored order.
+  if (!listHasVisibleItems()) {
+    int kept = 0;
+    for (int i = 0; i < systemCount; i++) {
+      if (systemEntries[i] == LIB_ENTRY_LIST) continue;
+      systemEntries[kept++] = systemEntries[i];
+    }
+    systemCount = kept;
+  }
 
   // Build the bool[] view that the assembler wants from our name-keyed
   // expansion set, against the current folder ordering.

@@ -83,6 +83,7 @@
 #include "src/storage/app_catalog.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
+#include "src/storage/library_menu_order.h"
 #include "src/storage/list_items.h"
 #include "src/storage/page_cache.h"
 #include "src/storage/statistics.h"
@@ -216,6 +217,7 @@ void setup() {
   Gestures::loadSettings();
   HeaderTitle::loadSettings();
   ScreenSettings::loadSettings();
+  LibraryMenuOrder::loadSettings();
 
   // Sleep::loadSettings() and Lock::loadSettings() already ran earlier in
   // setup() so both flags were available for the boot-clear gate above —
