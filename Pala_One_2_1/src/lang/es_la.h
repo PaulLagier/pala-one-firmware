@@ -327,7 +327,7 @@
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Guardar ajustes"
 #define D_WEB_LIBRARY_ORDER_HEADING  "Menú de la biblioteca"
 #define D_WEB_LIBRARY_ORDER_INTRO    "Elige qué elementos aparecen en la biblioteca y coloca su orden en la secuencia que quieras. Los elementos ocultos no aparecen."
-#define D_WEB_LIBRARY_ORDER_REQUIRED "La opción de subir es obligatoria y siempre permanecerá en la biblioteca."
+#define D_WEB_LIBRARY_ORDER_REQUIRED "La opción " D_MENU_UPLOAD " es obligatoria y siempre permanecerá en la biblioteca."
 #define D_WEB_LIBRARY_ORDER_SLOT_LABEL "Posición"
 #define D_WEB_LIBRARY_ORDER_HIDDEN   "Oculto"
 #define D_WEB_LIBRARY_ORDER_RESET    "Restaurar orden predeterminado"

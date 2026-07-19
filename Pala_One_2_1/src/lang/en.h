@@ -333,7 +333,7 @@
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Save settings"
 #define D_WEB_LIBRARY_ORDER_HEADING  "Library menu"
 #define D_WEB_LIBRARY_ORDER_INTRO    "Choose which items appear in the library and drag their order into the sequence you want. Hidden items do not appear at all."
-#define D_WEB_LIBRARY_ORDER_REQUIRED "Upload is required and will always stay in the library."
+#define D_WEB_LIBRARY_ORDER_REQUIRED  D_MENU_UPLOAD " is required and will always stay in the library."
 #define D_WEB_LIBRARY_ORDER_SLOT_LABEL "Position"
 #define D_WEB_LIBRARY_ORDER_HIDDEN   "Hidden"
 #define D_WEB_LIBRARY_ORDER_RESET    "Restore default order"
