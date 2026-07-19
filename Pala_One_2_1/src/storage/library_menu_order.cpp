@@ -7,7 +7,7 @@
 
 namespace LibraryMenuOrder {
 
-static constexpr const char* kNvsKey = "cfg_lib_menu_order";
+static constexpr const char* kNvsKey = "cfg_lib_order";
 
 static const LibraryEntryType kDefaultOrder[kMaxSystemEntries] = {
     LIB_ENTRY_BOOKMARKS,
