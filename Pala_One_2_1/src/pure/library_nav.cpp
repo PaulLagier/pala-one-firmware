@@ -23,6 +23,7 @@ bool isValidLibEntry(LibraryEntryType type, bool includeSystemEntries) {
       if (includeSystemEntries) {
         return true;
       }
+      return false;
     default:
       return false;
   }

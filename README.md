@@ -58,7 +58,9 @@ from the main menu, the device will try to connect to the configured WiFi networ
 
 Note: The `/settings` page will never show your actual WiFi password, it will simply indicate if one is saved or not.
 
-## Customizing click behaviours
+## Customization
+
+### Click behaviours
 
 Version 3.2 introduces a fully customizable action system. You can now bind *any* **action** (e.g. go-home, bookmark, sleep, ...) to any **gesture** (e.g. single click, double click, ...).
 
@@ -78,6 +80,13 @@ The following table summarizes the different **actions** with their effect in th
 | ROTATE   | Flip screen 180deg |  Flip screen 180deg             | Flip screen 180deg | /      | /                           |
 
 If "Legacy mode" is enabled, mapping single, double and triple click will have no effect and the behaviour will remain the same of versions <= 3.1.
+
+### Main menu
+
+Starting from version 3.2 you can use the web UI to hide and rearrange the entries of the main menu. The book and folder items will remain at the top of the main menu while all the others can be customized. 
+
+Note that the "Upload" item cannot be hidden as this would make it impossible to further interact with the Pala One from an external device.
+
 
 ## OTA firmware updates
 

@@ -22,7 +22,6 @@
 #include "src/ui/reader_actions.h"
 #include "src/ui/lock.h"
 #include "src/ui/sleep.h"
-#include "src/pure/library_nav.h"
 // ============================================================================
 //  Library screen nav state
 //
