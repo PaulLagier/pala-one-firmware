@@ -1,0 +1,40 @@
+name: Build firmware
+
+# Compile-only smoke test on every push and pull request. Builds both
+# board revisions (V1.1, V1.2) using the English language variant only —
+# the two languages share the same source tree and only differ in string
+# tables, so a single language is enough to catch build breakage on both
+# boards. This is a build check, not a release: no artifacts are saved.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [wireless-paper-v1_1-en, wireless-paper-v1_2-en]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio/.cache
+            ~/.platformio/packages
+            ~/.platformio/platforms
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Build firmware
+        run: pio run -e ${{ matrix.env }}
