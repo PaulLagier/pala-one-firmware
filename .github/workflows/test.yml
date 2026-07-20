@@ -21,5 +21,9 @@ jobs:
       - name: Build
         run: cmake --build test/build --config Release
 
+      # -V surfaces every individual TEST_CASE's [ RUN ]/[ OK ]/[ FAIL ] line
+      # from the host_tests binary (all 13 test_*.cpp files are linked into
+      # it — see test/CMakeLists.txt), not just the single aggregated
+      # "host_tests" pass/fail that ctest reports by default.
       - name: Run tests
-        run: ctest --test-dir test/build -C Release --output-on-failure
+        run: ctest --test-dir test/build -C Release -V
