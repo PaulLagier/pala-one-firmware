@@ -8,6 +8,13 @@ on:
   push:
   pull_request:
 
+# Cancel superseded runs — including the redundant push-triggered run that
+# fires alongside pull_request for commits on a branch with an open PR
+# (same commit, same key, so whichever run starts second cancels the other).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   cppcheck:
     runs-on: ubuntu-latest
