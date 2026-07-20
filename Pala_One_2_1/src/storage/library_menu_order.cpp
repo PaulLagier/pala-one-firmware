@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include "src/state.h"
-
+#include "src/pure/library_nav.h"
 namespace LibraryMenuOrder {
 
 static constexpr const char* kNvsKey = "cfg_lib_order";
@@ -30,21 +30,6 @@ static LibraryEntryType s_order[kMaxSystemEntries] = {
 };
 
 static int s_count = kMaxSystemEntries;
-
-static bool isAllowed(LibraryEntryType type) {
-  switch (type) {
-    case LIB_ENTRY_BOOKMARKS:
-    case LIB_ENTRY_LIST:
-    case LIB_ENTRY_APPS:
-    case LIB_ENTRY_STATISTICS:
-    case LIB_ENTRY_ABOUT:
-    case LIB_ENTRY_UPDATE:
-    case LIB_ENTRY_UPLOAD:
-      return true;
-    default:
-      return false;
-  }
-}
 
 static void copyDefault() {
   memcpy(s_order, kDefaultOrder, sizeof(kDefaultOrder));
@@ -101,7 +86,7 @@ static void loadEncoded(const String& raw) {
     if (token.length() > 0) {
       long value = token.toInt();
       LibraryEntryType type = (LibraryEntryType)value;
-      if (isAllowed(type)) {
+      if (isValidLibEntry(type)) {
         bool duplicate = false;
         for (int i = 0; i < s_count; i++) {
           if (s_order[i] == type) {
@@ -158,7 +143,7 @@ void setEntries(const LibraryEntryType* entries, int entryCount) {
   s_count = 0;
   for (int i = 0; i < entryCount && s_count < kMaxSystemEntries; i++) {
     LibraryEntryType type = entries[i];
-    if (!isAllowed(type)) continue;
+    if (!isValidLibEntry(type)) continue;
 
     bool duplicate = false;
     for (int j = 0; j < s_count; j++) {

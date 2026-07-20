@@ -17,6 +17,7 @@
 #include "src/ui/sleep.h"
 #include "src/web/chrome.h"
 #include "src/ui/screen_settings.h"
+#include "src/pure/library_nav.h"
 
 // ----------------------------------------------------------------------------
 //  HTML escaping for user-supplied text rendered in attributes
@@ -87,20 +88,7 @@ static const char* libraryMenuLabel(int value) {
   }
 }
 
-static bool isLibraryMenuEntryValue(int value) {
-  switch (value) {
-    case LIB_ENTRY_BOOKMARKS:
-    case LIB_ENTRY_LIST:
-    case LIB_ENTRY_APPS:
-    case LIB_ENTRY_STATISTICS:
-    case LIB_ENTRY_ABOUT:
-    case LIB_ENTRY_UPDATE:
-    case LIB_ENTRY_UPLOAD:
-      return true;
-    default:
-      return false;
-  }
-}
+
 
 static void appendLibraryMenuOption(String& out, int val, const char* label, int current) {
   out += "<option value='";
@@ -154,7 +142,7 @@ static void handleLibraryMenuOrderPost() {
     if (!server.hasArg(key)) continue;
 
     int value = server.arg(key).toInt();
-    if (value == kLibraryMenuHidden || !isLibraryMenuEntryValue(value)) continue;
+    if (value == kLibraryMenuHidden || !isValidLibEntry((LibraryEntryType)value)) continue;
 
     LibraryEntryType type = (LibraryEntryType)value;
     bool duplicate = false;

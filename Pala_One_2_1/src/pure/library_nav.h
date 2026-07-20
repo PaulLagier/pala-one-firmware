@@ -43,6 +43,10 @@ enum LibraryEntryType {
   LIB_ENTRY_UPLOAD
 };
 
+// Checks whether `type` is a valid library entry. 
+// Set `includeSystemEntries` to `true` if the check should also include the LIBRARY and BOOK entries.
+bool isValidLibEntry(LibraryEntryType type, bool includeSystemEntries = false);
+
 // One row in the assembled menu. `ref` is a catalog book/folder index for
 // BOOK/FOLDER, and -1 (unused) for system entries. `depth` indents nested
 // folder/book rows.

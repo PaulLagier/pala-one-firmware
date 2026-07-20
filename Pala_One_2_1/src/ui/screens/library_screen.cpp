@@ -6,7 +6,7 @@
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
 #include "src/storage/library_menu_order.h"
-#include "src/storage/list_items.h"       // g_list, listHasVisibleItems
+#include "src/storage/list_items.h"       // g_list
 #include "src/ui/font.h"
 #include "src/ui/reader.h"
 #include "src/ui/screens/about_screen.h"
@@ -22,6 +22,7 @@
 #include "src/ui/reader_actions.h"
 #include "src/ui/lock.h"
 #include "src/ui/sleep.h"
+#include "src/pure/library_nav.h"
 // ============================================================================
 //  Library screen nav state
 //
@@ -107,16 +108,9 @@ static void toggleExpanded(const char* name) {
 // ----------------------------------------------------------------------------
 //  Per-entry helpers
 // ----------------------------------------------------------------------------
-static bool isSystemEntryType(LibraryEntryType t) {
-  return t == LIB_ENTRY_BOOKMARKS || t == LIB_ENTRY_LIST
-      || t == LIB_ENTRY_APPS || t == LIB_ENTRY_STATISTICS
-      || t == LIB_ENTRY_ABOUT || t == LIB_ENTRY_UPDATE
-      || t == LIB_ENTRY_UPLOAD;
-}
-
 static int rowIndent(const LibEntry& e) {
   int indent = e.depth * LIBRARY_DEPTH_INDENT;
-  if (isSystemEntryType(e.type)) indent += LIBRARY_SYSTEM_NUDGE;
+  if (isValidLibEntry(e.type)) indent += LIBRARY_SYSTEM_NUDGE;
   return indent;
 }
 
