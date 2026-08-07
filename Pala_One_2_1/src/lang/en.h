@@ -16,11 +16,26 @@
 //  About screen (src/ui/screens/about_screen.cpp)
 // ----------------------------------------------------------------------------
 #define D_ABOUT_HEADER              "Device"
-#define D_ABOUT_FIRMWARE_PREFIX     "Firmware "
-#define D_ABOUT_GESTURE_NEXT        "1x next / down"
-#define D_ABOUT_GESTURE_OPEN        "2x open / select"
-#define D_ABOUT_GESTURE_HOME        "3x home"
-#define D_ABOUT_GESTURE_BOOKMARK    "Hold bookmark"
+#define D_ABOUT_FIRMWARE_PREFIX     "Firmware"
+#define D_ABOUT_GESTURE_CLICK       "click"
+#define D_ABOUT_GESTURE_CLICK_2     "click x 2"
+#define D_ABOUT_GESTURE_CLICK_3     "click x 3"
+#define D_ABOUT_GESTURE_CLICK_HOLD  "click + hold"
+#define D_ABOUT_GESTURE_HOLD        "hold"
+#define D_ABOUT_GESTURE_LONG_HOLD   "long hold"
+#define D_ABOUT_GESTURE_SEPARATOR   ": "
+
+// ----------------------------------------------------------------------------
+// Action names  (src/ui/reader_actions.cpp)
+// ----------------------------------------------------------------------------
+#define D_ACTION_NONE_LABEL     "None"
+#define D_ACTION_NEXT_LABEL     "Next"
+#define D_ACTION_OPEN_LABEL     "Open/Select"
+#define D_ACTION_BOOKMARK_LABEL "Bookmark"
+#define D_ACTION_HOME_LABEL     "Home"
+#define D_ACTION_LOCK_LABEL     "Lock"
+#define D_ACTION_MENU_LABEL     "Menu"
+#define D_ACTION_ROTATE_LABEL   "Flip screen"
 
 // ----------------------------------------------------------------------------
 //  Library screen — section title + system menu entries
@@ -127,6 +142,9 @@
 // ----------------------------------------------------------------------------
 #define D_READER_BOOK_EMPTY         "Book empty"
 #define D_READER_BACK_LIBRARY       "Back to library"
+#define D_READER_INDEXING_TITLE     "Preparing book..."
+#define D_READER_INDEXING_DETAIL    "Rebuilding page index"
+
 
 // ----------------------------------------------------------------------------
 //  App loader error overlay (src/ui/pala_api_impl.cpp paintLoadError)
@@ -331,6 +349,13 @@
 #define D_WEB_LOCK_ON_SLEEP_LABEL   "Lock on sleep"
 #define D_WEB_LOCK_ON_SLEEP_HINT    "Automatically lock the device every time it goes to sleep. You will need to perform a long press to unlock on the next wake."
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Save settings"
+#define D_WEB_LIBRARY_ORDER_HEADING  "Library menu"
+#define D_WEB_LIBRARY_ORDER_INTRO    "Choose which items appear in the library and drag their order into the sequence you want. Hidden items do not appear at all."
+#define D_WEB_LIBRARY_ORDER_REQUIRED  D_MENU_UPLOAD " is required and will always stay in the library."
+#define D_WEB_LIBRARY_ORDER_SLOT_LABEL "Position"
+#define D_WEB_LIBRARY_ORDER_HIDDEN   "Hidden"
+#define D_WEB_LIBRARY_ORDER_RESET    "Restore default order"
+#define D_WEB_LIBRARY_ORDER_HINT     "The screen uses this order immediately and keeps it after reboot."
 #define D_WEB_SETTINGS_NO_EXTRAS    "No extra files, scripts, or fonts."
 #define D_WEB_SCREENSAVER_HEADING   "Screensaver"
 #define D_WEB_SCREENSAVER_SPECS     "Upload raw XBM bytes: <b>3904 bytes</b>, 250&times;122 px, 1-bit, LSB-first, 32 bytes per row."
@@ -340,11 +365,15 @@
 #define D_WEB_SCREENSAVER_DEFAULT   "Using built-in screensaver."
 #define D_WEB_SLEEP_IMAGE_LABEL     "Sleep image file"
 #define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Upload image"
+#define D_WEB_MISSING_REQUIRED_BUTTON_MSG "The following actions must always be present: " D_WEB_BUTTONS_ACTION_HOME ", " D_WEB_BUTTONS_ACTION_NEXT ", " D_WEB_BUTTONS_ACTION_MENU
 
 // Buttons / remappable hold-gestures section.
 #define D_WEB_BUTTONS_HEADING       "Buttons"
-#define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The three holds below are remappable."
+#define D_WEB_BUTTONS_HINT          "You can remap click patterns to different actions"
 #define D_WEB_BUTTONS_LONG          "Long press"
+#define D_WEB_BUTTONS_SHORT         "Single click"
+#define D_WEB_BUTTONS_DOUBLE        "Double click"
+#define D_WEB_BUTTONS_TRIPLE        "Triple click"
 #define D_WEB_BUTTONS_EXTRA_LONG    "Extra-long press"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
 #define D_WEB_BUTTONS_SAVE          "Save buttons"
@@ -352,9 +381,12 @@
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
-#define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
-#define D_WEB_BUTTONS_ACTION_ROTATE     "Flip screen orientation"
-
+#define D_WEB_BUTTONS_ACTION_MENU     "OK/Open menu(Context dependent)"
+#define D_WEB_BUTTONS_ACTION_ROTATE   "Flip screen orientation"
+#define D_WEB_BUTTONS_ACTION_NEXT "Next item/page"
+#define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"
+#define D_WEB_BUTTONS_ACTION_HOME "Go to main menu"
+#define D_WEB_BUTTONS_LEGACY_HINT "If enabled, mapping single, double and triple clicks has no effect."
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Device"
 #define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
@@ -362,6 +394,19 @@
 #define D_WEB_HEADER_TITLE_HINT     "Shown at the top of the library screen. Leave empty for no title."
 #define D_WEB_HEADER_TITLE_RESET    "Reset to default"
 #define D_WEB_FLIP_SCREEN           "Flip screen orientation"
+
+// Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
+// joins.
+#define D_WEB_WIFI_HEADING            "Wi-Fi"
+#define D_WEB_WIFI_INTRO              "The network the device joins for file upload. For security reasons, saved passwords will never be shown."
+#define D_WEB_WIFI_SSID_LABEL         "SSID"
+#define D_WEB_WIFI_PASSWORD_LABEL     "Password"
+#define D_WEB_WIFI_SSID_PLACEHOLDER   "Network name"
+#define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Password"
+#define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<saved>"
+#define D_WEB_WIFI_SHOW_PASSWORD      "Show password"
+#define D_WEB_WIFI_SAVE_BUTTON        "Save network"
+#define D_WEB_WIFI_HINT               "Stored on device. Leave the SSID blank to forget it."
 
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)
@@ -474,7 +519,10 @@
 #define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic uses heavier letter shapes designed for easier scanning."
 #define D_WEB_BIONIC_LABEL          "Bionic reading"
 #define D_WEB_BIONIC_HINT           "Bolds the leading characters of each word to help your eyes anchor."
+#define D_WEB_PARA_GAP_LABEL        "Compact paragraph gaps"
+#define D_WEB_PARA_GAP_HINT         "If enabled, paragraph breaks will be reduced to half normal height allowing more lines of text to fit on a single page."
 #define D_WEB_SETTINGS_APPLY_HINT   "Changes apply to the next page render."
+#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Enable legacy controls"
 
 // ----------------------------------------------------------------------------
 

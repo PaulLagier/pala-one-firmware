@@ -9,7 +9,7 @@
 // ============================================================================
 //  Shared drawing helpers used by multiple screens
 // ============================================================================
-int drawSectionHeader(const char* title);
+int drawSectionHeader(const char* title, bool drawBattery = true);
 
 // Full-screen single- or two-line centered message. Always full-refreshes
 // (no fastmode), so use it sparingly — for hard errors or status notices

@@ -1,8 +1,10 @@
-name: Static analysis
+name: Build firmware
 
-# Runs on every push (all branches) and every pull request.
-# The deploy workflow only triggers on dev/tags and does not cover PRs,
-# so this is a separate job to catch issues before they land on main.
+# Compile-only smoke test on every push and pull request. Builds both
+# board revisions (V1.1, V1.2) using the English language variant only —
+# the two languages share the same source tree and only differ in string
+# tables, so a single language is enough to catch build breakage on both
+# boards. This is a build check, not a release: no artifacts are saved.
 
 on:
   push:
@@ -16,8 +18,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  cppcheck:
+  build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [wireless-paper-v1_1-en, wireless-paper-v1_2-en]
     steps:
       - uses: actions/checkout@v7
 
@@ -38,7 +44,5 @@ jobs:
       - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      # One environment is enough — all 4 leaf envs share the same source
-      # tree; only preprocessor defines differ (board revision, language).
-      - name: Run cppcheck via pio check
-        run: pio check -e wireless-paper-v1_2-en --fail-on-defect low
+      - name: Build firmware
+        run: pio run -e ${{ matrix.env }}

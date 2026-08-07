@@ -44,18 +44,18 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Full history + tags so scripts/build_info.py can derive FW_VERSION
           # via `git describe --tags`. Shallow (default depth=1) breaks that.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
       - name: Cache PlatformIO
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.platformio/.cache
@@ -142,7 +142,7 @@ jobs:
       # manual build's firmware bins from the Actions tab without needing
       # to clone + build locally. Auto-expires (default 30 days here).
       - name: Upload firmware bins as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: firmware-${{ steps.meta.outputs.version }}
           path: site/${{ steps.meta.outputs.channel }}/firmware-*.bin

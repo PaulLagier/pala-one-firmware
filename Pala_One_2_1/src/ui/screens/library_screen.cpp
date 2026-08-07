@@ -5,7 +5,8 @@
 #include "src/pure/library_nav.h"         // buildLibraryEntries
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
-#include "src/storage/list_items.h"       // listHasVisibleItems
+#include "src/storage/library_menu_order.h"
+#include "src/storage/list_items.h"       // g_list
 #include "src/ui/font.h"
 #include "src/ui/reader.h"
 #include "src/ui/screens/about_screen.h"
@@ -19,7 +20,9 @@
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/upload_screen.h"
 #include "src/ui/widgets.h"
-
+#include "src/ui/reader_actions.h"
+#include "src/ui/lock.h"
+#include "src/ui/sleep.h"
 // ============================================================================
 //  Library screen nav state
 //
@@ -105,20 +108,9 @@ static void toggleExpanded(const char* name) {
 // ----------------------------------------------------------------------------
 //  Per-entry helpers
 // ----------------------------------------------------------------------------
-static bool isSystemEntryType(LibraryEntryType t) {
-  return t == LIB_ENTRY_ABOUT
-      || t == LIB_ENTRY_APPS
-      || t == LIB_ENTRY_BOOKMARKS
-	  || t == LIB_ENTRY_LIST
-      || t == LIB_ENTRY_SETTINGS
-	  || t == LIB_ENTRY_STATISTICS
-      || t == LIB_ENTRY_UPDATE
-	  || t == LIB_ENTRY_UPLOAD;
-}
-
 static int rowIndent(const LibEntry& e) {
   int indent = e.depth * LIBRARY_DEPTH_INDENT;
-  if (isSystemEntryType(e.type)) indent += LIBRARY_SYSTEM_NUDGE;
+  if (isValidLibEntry(e.type)) indent += LIBRARY_SYSTEM_NUDGE;
   return indent;
 }
 
@@ -163,20 +155,11 @@ void LibraryScreen::draw() {
   prepareMenuFrame();
   Font::useBody();
 
-  // Decide which system entries to show. "List" only appears when the
-  // todo list has visible items; the rest are always present.
-  // The order the items are added to systemEntries is the order they will
-  // appear on screen.
-  LibraryEntryType systemEntries[8];
-  int systemCount = 0;
-  systemEntries[systemCount++] = LIB_ENTRY_BOOKMARKS;
-  systemEntries[systemCount++] = LIB_ENTRY_SETTINGS;
-  if (listHasVisibleItems()) systemEntries[systemCount++] = LIB_ENTRY_LIST;
-  systemEntries[systemCount++] = LIB_ENTRY_APPS;
-  systemEntries[systemCount++] = LIB_ENTRY_STATISTICS;
-  systemEntries[systemCount++] = LIB_ENTRY_ABOUT;
-  systemEntries[systemCount++] = LIB_ENTRY_UPLOAD;
-  systemEntries[systemCount++] = LIB_ENTRY_UPDATE;
+  // Pull the current order from persistent settings. The settings page can
+  // later edit this list directly without changing the screen logic again.
+  LibraryEntryType systemEntries[LibraryMenuOrder::kMaxSystemEntries];
+  int systemCount = LibraryMenuOrder::copyEntries(
+      systemEntries, LibraryMenuOrder::kMaxSystemEntries);
 
   // Build the bool[] view that the assembler wants from our name-keyed
   // expansion set, against the current folder ordering.
@@ -206,7 +189,7 @@ void LibraryScreen::draw() {
 void LibraryScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
 
-  if (e.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
     if (s_entryCount > 0) {
       s_cursor = (s_cursor + 1) % s_entryCount;
     }
@@ -214,7 +197,37 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind != ButtonEvent::Double) return;
+  // Goes to the previous element (not supported in legacy)
+  if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
+    s_cursor--;
+
+    if (s_cursor < 0)
+    {
+      s_cursor = s_entryCount - 1;
+    }
+    draw();
+    return;
+  }
+
+  if (Gestures::isNonLegacyAction(e, ACTION_LOCK)) {
+    Lock::engage();
+    Sleep::enter();
+    return;
+  }
+  if (Gestures::isNonLegacyAction(e, ACTION_ROTATE)) {
+    ScreenSettings::toggleScreenRotation();
+    return;
+  }
+  if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
+    s_cursor = 0;
+    draw();
+    return;
+  }
+
+  if (Gestures::legacyControlsOn() && e.kind != ButtonEvent::Double)
+    return;
+  if (!Gestures::legacyControlsOn() && Gestures::actionFor(e.kind) != ACTION_MENU)
+    return;
 
   if (s_cursor < 0 || s_cursor >= s_entryCount) {
     draw();

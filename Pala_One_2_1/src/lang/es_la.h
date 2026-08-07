@@ -20,12 +20,27 @@
 // ----------------------------------------------------------------------------
 //  About screen
 // ----------------------------------------------------------------------------
-#define D_ABOUT_HEADER              "Dispositivo"
-#define D_ABOUT_FIRMWARE_PREFIX     "Firmware "
-#define D_ABOUT_GESTURE_NEXT        "1x siguiente / abajo"
-#define D_ABOUT_GESTURE_OPEN        "2x abrir / elegir"
-#define D_ABOUT_GESTURE_HOME        "3x inicio"
-#define D_ABOUT_GESTURE_BOOKMARK    "Mantener: marcapáginas"
+#define D_ABOUT_HEADER              "Dispositivo" // AI translation
+#define D_ABOUT_FIRMWARE_PREFIX     "Firmware" // AI translation
+#define D_ABOUT_GESTURE_CLICK       "clic" // AI translation
+#define D_ABOUT_GESTURE_CLICK_2     "clic x 2" // AI translation
+#define D_ABOUT_GESTURE_CLICK_3     "clic x 3" // AI translation
+#define D_ABOUT_GESTURE_CLICK_HOLD  "clic + mantener" // AI translation
+#define D_ABOUT_GESTURE_HOLD        "mantener" // AI translation
+#define D_ABOUT_GESTURE_LONG_HOLD   "mantener mucho" // AI translation
+#define D_ABOUT_GESTURE_SEPARATOR   ": "
+
+// ----------------------------------------------------------------------------
+// Action names  (src/ui/reader_actions.cpp)
+// ----------------------------------------------------------------------------
+#define D_ACTION_NONE_LABEL     "Ninguna" // AI translation
+#define D_ACTION_NEXT_LABEL     "Siguiente" // AI translation
+#define D_ACTION_OPEN_LABEL     "Abrir/Seleccionar" // AI translation
+#define D_ACTION_BOOKMARK_LABEL "Marcador" // AI translation
+#define D_ACTION_HOME_LABEL     "Inicio" // AI translation
+#define D_ACTION_LOCK_LABEL     "Bloquear" // AI translation
+#define D_ACTION_MENU_LABEL     "Menú" // AI translation
+#define D_ACTION_ROTATE_LABEL   "Girar pantalla" // AI translation
 
 // ----------------------------------------------------------------------------
 //  Library menu entries
@@ -128,6 +143,9 @@
 // ----------------------------------------------------------------------------
 #define D_READER_BOOK_EMPTY         "Libro vacío"
 #define D_READER_BACK_LIBRARY       "Volver a biblioteca"
+#define D_READER_INDEXING_TITLE     "Preparando libro..."
+#define D_READER_INDEXING_DETAIL    "Reconstruyendo índice de páginas"
+
 
 // ----------------------------------------------------------------------------
 //  App loader error overlay
@@ -326,6 +344,13 @@
 #define D_WEB_LOCK_ON_SLEEP_LABEL   "Bloquear al dormir"
 #define D_WEB_LOCK_ON_SLEEP_HINT    "Bloquea el dispositivo automáticamente cada vez que se duerme. Necesitarás una pulsación larga para desbloquearlo al despertar."
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Guardar ajustes"
+#define D_WEB_LIBRARY_ORDER_HEADING  "Menú de la biblioteca"
+#define D_WEB_LIBRARY_ORDER_INTRO    "Elige qué elementos aparecen en la biblioteca y coloca su orden en la secuencia que quieras. Los elementos ocultos no aparecen."
+#define D_WEB_LIBRARY_ORDER_REQUIRED "La opción " D_MENU_UPLOAD " es obligatoria y siempre permanecerá en la biblioteca."
+#define D_WEB_LIBRARY_ORDER_SLOT_LABEL "Posición"
+#define D_WEB_LIBRARY_ORDER_HIDDEN   "Oculto"
+#define D_WEB_LIBRARY_ORDER_RESET    "Restaurar orden predeterminado"
+#define D_WEB_LIBRARY_ORDER_HINT     "La pantalla usa este orden de inmediato y lo conserva tras reiniciar."
 #define D_WEB_SETTINGS_NO_EXTRAS    "Sin archivos extra, scripts ni fuentes."
 #define D_WEB_SCREENSAVER_HEADING   "Salvapantallas"
 #define D_WEB_SCREENSAVER_SPECS     "Suba bytes XBM en bruto: <b>3904 bytes</b>, 250&times;122 px, 1 bit, LSB primero, 32 bytes por fila."
@@ -335,10 +360,14 @@
 #define D_WEB_SCREENSAVER_DEFAULT   "Usando salvapantallas predeterminado."
 #define D_WEB_SLEEP_IMAGE_LABEL     "Archivo de imagen de suspensión"
 #define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Subir imagen"
+#define D_WEB_MISSING_REQUIRED_BUTTON_MSG "Las siguientes acciones siempre deben estar presentes:" D_WEB_BUTTONS_ACTION_HOME ", " D_WEB_BUTTONS_ACTION_NEXT ", " D_WEB_BUTTONS_ACTION_MENU
 
 // Buttons / remappable hold-gestures section.
 #define D_WEB_BUTTONS_HEADING       "Botones"
-#define D_WEB_BUTTONS_HINT          "1 clic = siguiente, 2 = anterior, 3 = inicio. Las tres pulsaciones largas abajo son reasignables."
+#define D_WEB_BUTTONS_HINT          "Puedes reasignar los patrones de clic a diferentes acciones." //AI tranlsated
+#define D_WEB_BUTTONS_SHORT         "Clic único" // AI translated
+#define D_WEB_BUTTONS_DOUBLE        "Clic doble" // AI translated
+#define D_WEB_BUTTONS_TRIPLE        "Clic trilple" // AI translated
 #define D_WEB_BUTTONS_LONG          "Pulsación larga"
 #define D_WEB_BUTTONS_EXTRA_LONG    "Pulsación muy larga"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Clic y mantener"
@@ -347,8 +376,25 @@
 #define D_WEB_BUTTONS_ACTION_NONE     "Ninguna"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Marcar página"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
-#define D_WEB_BUTTONS_ACTION_MENU     "Abrir menú"
+#define D_WEB_BUTTONS_ACTION_MENU     "OK/Abrir el menú (depende del contexto)"
 #define D_WEB_BUTTONS_ACTION_ROTATE  "Voltear orientación de la pantalla" // Translate by ChatGPT
+#define D_WEB_BUTTONS_ACTION_NEXT "Siguiente elemento/página" // AI translated
+#define D_WEB_BUTTONS_ACTION_PREV "Elemento/página anterior" // AI translated
+#define D_WEB_BUTTONS_ACTION_HOME "Ir al menú principal" // AI translated
+#define D_WEB_BUTTONS_LEGACY_HINT "Si está habilitado, el mapeo de los clics único, doble y triple no tiene efecto." //AI translated
+ 
+// Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
+// joins.
+#define D_WEB_WIFI_HEADING            "Wi-Fi"
+#define D_WEB_WIFI_INTRO              "La red a la que el dispositivo se une para subir archivos. Por motivos de seguridad, las contraseñas guardadas nunca se mostrarán." // Translated by Claude
+#define D_WEB_WIFI_SSID_LABEL         "SSID"
+#define D_WEB_WIFI_PASSWORD_LABEL     "Contraseña" // Translated by Claude
+#define D_WEB_WIFI_SSID_PLACEHOLDER   "Nombre de la red" // Translated by Claude
+#define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Contraseña" // Translated by Claude
+#define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<guardada>" // Translated by Claude
+#define D_WEB_WIFI_SHOW_PASSWORD      "Mostrar contraseña" // Translated by Claude
+#define D_WEB_WIFI_SAVE_BUTTON        "Guardar red" // Translated by Claude
+#define D_WEB_WIFI_HINT               "Se almacena en el dispositivo. Deja el SSID en blanco para olvidarla." // Translated by Claude
 
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Dispositivo"
@@ -466,7 +512,10 @@
 #define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic usa formas de letra más gruesas diseñadas para una lectura más fácil."
 #define D_WEB_BIONIC_LABEL          "Lectura biónica"
 #define D_WEB_BIONIC_HINT           "Resalta en negrita las primeras letras de cada palabra para anclar la mirada."
+#define D_WEB_PARA_GAP_LABEL        "Espacios de párrafo compactos"
+#define D_WEB_PARA_GAP_HINT         "Si está activado, los saltos de párrafo se reducirán a la mitad de su altura normal, permitiendo que quepan más líneas de texto en una sola página."
 #define D_WEB_SETTINGS_APPLY_HINT   "Los cambios se aplican en la próxima página renderizada."
+#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Habilitar los controles heredados" // AI translated
 
 // ----------------------------------------------------------------------------
 

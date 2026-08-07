@@ -8,6 +8,27 @@ static void addBookEntry(int bookIdx, int depth,
   out[count++] = { LIB_ENTRY_BOOK, bookIdx, depth };
 }
 
+bool isValidLibEntry(LibraryEntryType type, bool includeSystemEntries) {
+  switch (type) {
+    case LIB_ENTRY_BOOKMARKS:
+    case LIB_ENTRY_LIST:
+    case LIB_ENTRY_APPS:
+    case LIB_ENTRY_STATISTICS:
+    case LIB_ENTRY_ABOUT:
+    case LIB_ENTRY_UPDATE:
+    case LIB_ENTRY_UPLOAD:
+      return true;
+    case LIB_ENTRY_FOLDER:
+    case LIB_ENTRY_BOOK:
+      if (includeSystemEntries) {
+        return true;
+      }
+      return false;
+    default:
+      return false;
+  }
+}
+
 static void addFolderTree(const Catalog& cat, const bool* folderExpanded,
                           const String& parent, int depth,
                           LibEntry* out, int& count, int cap) {

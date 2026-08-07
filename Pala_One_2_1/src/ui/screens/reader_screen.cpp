@@ -64,7 +64,7 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Triple) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Triple, ACTION_HOME)) {
     // Catch any progress / pagination since the last throttled save before
     // we lose the active book.
     persistReaderState();
@@ -72,17 +72,7 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  // Remappable hold gestures dispatch through the user's binding. NB:
-  // ACTION_BOOKMARK on Long restores the original (pre-PR-#15) behavior;
-  // an unbound gesture (ACTION_NONE) is a no-op.
-  if (e.kind == ButtonEvent::Long
-   || e.kind == ButtonEvent::VeryLong
-   || e.kind == ButtonEvent::ClickHold) {
-    performReaderAction(Gestures::actionFor(e.kind));
-    return;
-  }
-
-  if (e.kind == ButtonEvent::Double) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_PREV)) {
     if (retreatPage()) {
       saveProgressThrottled();
       draw();
@@ -90,13 +80,16 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
     if (advancePage()) {
       saveProgressThrottled();
       draw();
     }
     return;
   }
+
+  performReaderAction(Gestures::actionFor(e.kind));
+
 }
 
 void ReaderScreen::onSleep() {

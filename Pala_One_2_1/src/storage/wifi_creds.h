@@ -3,8 +3,10 @@
 
 #include <Arduino.h>
 
-// Persisted home-network Wi-Fi credentials, written by the Improv Serial flow
-// and read by the upload screen when deciding STA vs SoftAP. Stored alongside
+// Persisted home-network Wi-Fi credentials, configurable in two ways:
+//  - The Web settings UI (web/settings.cpp)
+//  - written by the Improv Serial flow (hal/wifi_provisioning.cpp)
+// Read by the upload screen when deciding STA vs SoftAP. Stored alongside
 // the project's other settings in the shared "ereader" NVS namespace
 // (`prefs`), under per-module keys following the existing convention.
 namespace WifiCreds {

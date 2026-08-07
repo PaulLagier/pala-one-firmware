@@ -78,7 +78,10 @@ bool retreatPage();
 // active book forward as needed (so the page table grows up to the answer).
 // Used to resume from a saved byte offset and to navigate to a bookmark
 // whose offset is invariant under font/layout changes.
-int findPageForOffset(uint32_t targetOffset);
+// Setting showProgress to true will cause the device to show a fullscreen
+// progress interstitial if the index rebuild happens to take a long time
+// so that the user knows something is happening.
+int findPageForOffset(uint32_t targetOffset, bool showProgress=false);
 
 // Boot-time wake-resume. Checks if wake state asks us to resume reading and
 // if the book still exists. On success the reader is fully set up for an

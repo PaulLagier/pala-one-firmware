@@ -1,5 +1,6 @@
 #include "src/ui/reader.h"
 
+#include "src/hal/battery.h" // for low battery warning.
 #include "src/hal/display.h"
 #include "src/pure/hashing.h"
 #include "src/storage/book_metadata.h"
@@ -163,13 +164,68 @@ static void ensureOffsetsUpTo(int targetPage) {
   }
 }
 
-int findPageForOffset(uint32_t targetOffset) {
+// Controls how long after we start rebuilding the page index to wait before
+// showing progress. This way we don't wast time doing screen updates for small
+// rebuilds.
+static const uint32_t kRebuildSplashDelayMs  = 500;
+// Controls how long between progress updates.
+// Screen updates take a while, so updating too frequently will actually increase
+// the time a rebuild can take substantially.
+static const uint32_t kRebuildSplashRedrawMs = 700;
+
+static void drawCacheRebuildProgress(int pct, bool firstFrame) {
+  const int barX = MARGIN_X;
+  const int barW = SCREEN_W - 2 * MARGIN_X;
+  const int barY = 74;
+  const int barH = 10;
+  if (firstFrame) {
+    prepareMenuFrame();
+    Font::useBody();
+    drawSectionHeader(D_READER_INDEXING_TITLE);
+
+    // The detail message is expected to be a little longer.
+    // Use toast font to give us more room for translations.
+    Font::useToast();
+    int w = u8g2.getUTF8Width(D_READER_INDEXING_DETAIL);
+    u8g2.setCursor((SCREEN_W - w) / 2, 60);
+    u8g2.print(D_READER_INDEXING_DETAIL);
+
+    gfx.drawRect(barX, barY, barW, barH, 1);
+  }
+  int fillW = ((barW - 4) * pct) / 100;
+  if (fillW > 0) gfx.fillRect(barX + 2, barY + 2, fillW, barH - 4, 1);
+
+  display.update();
+}
+
+int findPageForOffset(uint32_t targetOffset, bool showProgress) {
+  uint32_t startMs = millis();
+  uint32_t lastDrawMs = 0;
+  int shownPct = -1;
+
   // Extend forward until the last known page starts at or past the target,
   // or we can't extend further.
   while (g_bookview.pages.count == 0
       || g_bookview.pages.offsets[g_bookview.pages.count - 1] < targetOffset) {
     if (!tryExtendPageTable()) break;
+    if (showProgress) {
+      uint32_t now = millis();
+      if (shownPct < 0 && now - startMs < kRebuildSplashDelayMs) continue;
+      if (shownPct >= 0 && now - lastDrawMs < kRebuildSplashRedrawMs) continue;
+	  int pct = (int)(((uint64_t)g_bookview.pages.offsets[g_bookview.pages.count - 1]
+                     * 100) / targetOffset);
+	  if (pct > 100) pct = 100;
+      if (pct <= shownPct) continue;
+
+      drawCacheRebuildProgress(pct, /*firstFrame=*/shownPct < 0);
+      shownPct = pct;
+      lastDrawMs = millis();
+    }
   }
+
+  // Progress bar can make for ugly ghosting.
+  if (shownPct >= 0) forceNextRenderFull();
+
   // The page containing `targetOffset` is the largest N with
   // offsets[N] <= targetOffset.
   for (int i = g_bookview.pages.count - 1; i >= 0; i--) {
@@ -210,7 +266,7 @@ bool openBookByIndex(int idx) {
   PreferencesStore kv(prefs);
   uint32_t savedOffset = loadSavedOffset(kv, g_bookview.book.key());
   if (savedOffset != kOffsetUnset) {
-    g_bookview.cursor.pageIndex = findPageForOffset(savedOffset);
+    g_bookview.cursor.pageIndex = findPageForOffset(savedOffset, /*showProgress=*/ true);
   } else {
     g_bookview.cursor.pageIndex = loadSavedPage(kv, g_bookview.book.key());
   }
@@ -220,12 +276,21 @@ bool openBookByIndex(int idx) {
 }
 
 static void drawStatusBar(uint32_t startOffset) {
-  if (Statusbar::mode() == Statusbar::Hidden) return;
+  // If the battery is low, we show a full status bar regardless of preference
+  // with a warning icon.
+  bool showBatteryWarning = false;
+#if HAS_BATTERY
+  // Battery status usually isn't updated mid-session, so poll it here to see if we're low.
+  // Entries are valid for BAT_CACHE_MS so this won't be too burdonsome.
+  updateBatteryBackground();
+  showBatteryWarning = batteryLow();
+#endif
+  if (!showBatteryWarning && Statusbar::mode() == Statusbar::Hidden) return;
 
   size_t total = g_bookview.book.size();
   if (total == 0) total = 1;
 
-  if (Statusbar::mode() == Statusbar::Minimal) {
+  if (!showBatteryWarning && Statusbar::mode() == Statusbar::Minimal) {
     int w = SCREEN_W - 2 * MARGIN_X;
     int filled = (int)((startOffset * (uint32_t)w) / (uint32_t)total);
     if (filled < 0) filled = 0;
@@ -247,10 +312,13 @@ static void drawStatusBar(uint32_t startOffset) {
 
   if (SHOW_PROGRESS_BAR) {
     const int padR = SHOW_PAGE_NUMBER ? (pageTextW + 8) : 0;
-    int w = (SCREEN_W - 2 * MARGIN_X) - padR;
-    if (w < 40) w = 40;
-
     int x0 = MARGIN_X;
+	if (showBatteryWarning) {
+	  drawBatteryBottomLeft();
+	  x0 += 24;
+	}
+    int w = (SCREEN_W - MARGIN_X - x0) - padR;
+    if (w < 40) w = 40;
     int yTop = SCREEN_H - 7;
     int barH = 4;
     int filled = (int)((startOffset * (uint32_t)w) / (uint32_t)total);

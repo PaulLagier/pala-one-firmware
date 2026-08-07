@@ -1,0 +1,36 @@
+name: Host tests
+
+# Runs the host-side CMake/ctest suite in test/ on every push and pull
+# request. These tests exercise pure/ and storage/ modules directly on
+# the runner (no board needed) — see CLAUDE.md for the layering rules
+# that make this possible.
+
+on:
+  push:
+  pull_request:
+
+# Cancel superseded runs — including the redundant push-triggered run that
+# fires alongside pull_request for commits on a branch with an open PR
+# (same commit, same key, so whichever run starts second cancels the other).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ctest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure
+        run: cmake -S test -B test/build
+
+      - name: Build
+        run: cmake --build test/build --config Release
+
+      # -V surfaces every individual TEST_CASE's [ RUN ]/[ OK ]/[ FAIL ] line
+      # from the host_tests binary (all 13 test_*.cpp files are linked into
+      # it — see test/CMakeLists.txt), not just the single aggregated
+      # "host_tests" pass/fail that ctest reports by default.
+      - name: Run tests
+        run: ctest --test-dir test/build -C Release -V

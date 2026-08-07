@@ -72,6 +72,7 @@ void setBodySize(int sz);
 void setLineGap(int gap);
 void setFamily(Family fam);
 void setBionic(bool on);
+void setHalfParagraphGaps(bool on);
 
 // Current applied values. Page-cache stamping passes everything through
 // `layoutForCache()`; these direct accessors exist for places that need
@@ -80,6 +81,7 @@ int    currentBodySize();
 int    currentLineGap();
 Family currentFamily();
 bool   bionicEnabled();
+bool   halfParagraphGapsEnabled();
 
 // One-shot snapshot of every layout-affecting setting, packed for stamping
 // the on-disk page cache. Centralizing this here means call sites in

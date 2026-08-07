@@ -40,6 +40,7 @@ struct PageCacheLayout {
   int     lineGap;           // [0, 4]
   uint8_t family;            // matches Font::Family numeric value (0 = Helv, 1 = Dys)
   uint8_t bionic;            // 0 / 1
+  uint8_t halfGaps;          // 0 / 1 - half-height paragraph gaps
   uint8_t statusbarReserve;  // pixels reserved at the bottom; from Statusbar::reserveH()
 };
 

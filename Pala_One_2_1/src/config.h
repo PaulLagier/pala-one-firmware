@@ -105,10 +105,16 @@ static const uint32_t TOAST_MS = 650;
 static const uint32_t UPLOAD_AUTO_EXIT_MS = 15UL * 60UL * 1000UL;
 static const uint32_t BAT_CACHE_MS = 180000; // 3 min — battery changes slowly
 static const uint32_t BAT_CHARGING_CHECK_MS = 2000;
-static const float BAT_CHARGING_VOLTAGE = 4.2f;
+static const float BAT_CHARGING_VOLTAGE = 4.09f;
 
 static const int FULL_REFRESH_EVERY_N_PAGES = 100;
 static const int MENU_FULL_REFRESH_EVERY = 60;
+
+// Buffer size for file read operations. Bigger is not necessarily
+// better as you might wind up just pulling in more data than you need
+// to fill a page. This was a value that worked well with both ASCII
+// unicode inputs.
+static const size_t FILE_STREAM_BUF_BYTES = 512;
 
 static const int MARGIN_X = 6;
 static const int TOP_PAD = 3;

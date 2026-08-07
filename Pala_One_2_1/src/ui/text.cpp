@@ -21,12 +21,14 @@ static int bodyMeasure(const char* s) {
 //  offset where the next page begins.
 // ============================================================================
 uint32_t drawPageAt(File& f, uint32_t startPos) {
-  FileReadStream stream(f);
+  BufferedFileReadStream stream(f);
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
 
   int cursorY = TOP_PAD + m.ascent;
-  auto onLine = [&](const char* buf, size_t /*len*/) {
+  auto onLine = [&](const char* buf, size_t len) {
+    // len 0 indicates a paragraph gap. Advance by gap height.
+    if (len == 0) { cursorY += m.paragraphGapH; return; }
     // drawBionicLine sets the active u8g2 font back to Body before returning,
     // so the next line measurement (via bodyMeasure) is consistent.
     Font::drawBionicLine(MARGIN_X, cursorY, buf);
@@ -37,11 +39,13 @@ uint32_t drawPageAt(File& f, uint32_t startPos) {
 }
 
 uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
-  FileReadStream stream(f);
+  BufferedFileReadStream stream(f);
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
 
   auto onLine = [&](const char* buf, size_t len) {
+    // len 0 indicates paragraph break.
+    if (len == 0) { out.concat('\n'); return; }
     // Trim leading whitespace (paginator already trims trailing).
     const char* start = buf;
     size_t remaining = len;
@@ -54,7 +58,7 @@ uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
 }
 
 uint32_t nextPageOffset(File& f, uint32_t startPos) {
-  FileReadStream stream(f);
+  BufferedFileReadStream stream(f);
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
   return paginatePage(stream, startPos, m, bodyMeasure, nullptr);

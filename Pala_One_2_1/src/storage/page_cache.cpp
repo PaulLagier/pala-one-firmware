@@ -21,12 +21,14 @@
 //                 must rebuild when Statusbar::setMode toggles between
 //                 Full / Minimal / Hidden because each has a different
 //                 reserve height and therefore a different maxLines
+//    0x50434F4A — added the half-height-paragraph-gaps flag; toggling it
+//                 changes how a blank line fills the page, shifting offsets
 //
 //  Old files fail the magic check, get ignored, then overwritten on the next
 //  save. No migration code needed.
 // ============================================================================
 
-static constexpr uint32_t kPageCacheMagic = 0x50434F49UL;
+static constexpr uint32_t kPageCacheMagic = 0x50434F4AUL;
 
 static constexpr size_t kHeaderBytes =
     sizeof(uint32_t)   // magic
@@ -35,15 +37,17 @@ static constexpr size_t kHeaderBytes =
   + sizeof(uint16_t);  // count
 
 // Compact encoding of "what layout were the offsets in this file computed
-// under?" — every field tucks into one byte (bodySize ∈ {8,10,12,14},
-// lineGap ∈ [0,4], family ∈ {0,1}, bionic ∈ {0,1}, statusbarReserve in
-// pixels — currently 0/1/STATUS_H). family + bionic share the third byte
-// (4 bits each) to leave room for statusbarReserve in the top byte.
+// under?" — bodySize ∈ {8,10,12,14} and lineGap ∈ [0,4] get a byte each.
+// Third byte really packs in the small fields: family ∈ {0,1} gets 2 bits to allow for
+// growth; and, bionic ∈ {0,1} and halfGaps ∈ {0,1} get a bit each.
+// statusbarReserve in pixels (currently 0/1/STATUS_H) gets to stretch out in the top byte.
+// Bits 20-23 are currently spare.
 static uint32_t encodeLayoutVersion(const PageCacheLayout& layout) {
   return ((uint32_t)(layout.bodySize         & 0xFF))
        | ((uint32_t)(layout.lineGap          & 0xFF) << 8)
-       | ((uint32_t)(layout.family           & 0x0F) << 16)
-       | ((uint32_t)(layout.bionic           & 0x0F) << 20)
+       | ((uint32_t)(layout.family           & 0x03) << 16)
+       | ((uint32_t)(layout.bionic           & 0x01) << 18)
+       | ((uint32_t)(layout.halfGaps         & 0x01) << 19)
        | ((uint32_t)(layout.statusbarReserve & 0xFF) << 24);
 }
 

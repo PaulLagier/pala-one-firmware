@@ -55,7 +55,7 @@ void drawCenter(const char* a, const char* b) {
   display.update();
 }
 
-int drawSectionHeader(const char* title) {
+int drawSectionHeader(const char* title, bool drawBattery) {
   Font::useBold();
   int ascent = u8g2.getFontAscent();
   int yTitle = UI_HEADER_TOP + ascent - 2;
@@ -64,7 +64,9 @@ int drawSectionHeader(const char* title) {
   u8g2.print(title);
 
 #if HAS_BATTERY
-  drawBatteryTopRight();
+  if (drawBattery){
+    drawBatteryTopRight();
+  }
 #endif
 
   int lineY = yTitle + 4;

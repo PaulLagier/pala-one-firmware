@@ -40,11 +40,53 @@ The board version is usually printed on the back of the PCB.
 
 Pick your board's revision in the build step below — either by uncommenting the matching `#define` at the top of `Pala_One_2_1/Pala_One_2_1.ino` (Arduino IDE), or by selecting the matching env (PlatformIO).
 
-## Wi-Fi provisioning (Improv)
+## Wi-Fi Setup
 
-Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
+Out of the box, the device supports a SoftAP captive portal that can be used to upload books and adjust settings. The device can also be configured to connect to a single WiFi network via one of
+two methods: Improv WiFi provisioning via USB; or, the Web UI.
+
+### Configuring using Improv
+
+The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
 
 Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
+
+### Configuring using Web UI
+
+On the `/settings` page of the device's Web UI, you can also find a "WiFi" section at the bottom. This will let you enter an SSID and password for the device to connect to. The next time you select "Upload"
+from the main menu, the device will try to connect to the configured WiFi network before falling back to the Soft AP mode (you can also force the fallback by pressing the button).
+
+Note: The `/settings` page will never show your actual WiFi password, it will simply indicate if one is saved or not.
+
+## Customization
+
+### Click behaviours
+
+Version 3.2 introduces a fully customizable action system. You can now bind *any* **action** (e.g. go-home, bookmark, sleep, ...) to any **gesture** (e.g. single click, double click, ...).
+
+This option is disabled by default and can be enabled in the WebUI unchecking the "Legacy mode" in the settings page.
+
+The following table summarizes the different **actions** with their effect in the various screens and menus, as well as the default **gesture** binding, which can be changed by the user.
+
+
+|**Action**| Main menu effect   | Submenu effect (e.g. "connect") | Reading            | Locked | Default **gesture** binding |
+|----------|--------------------|---------------------------------|--------------------|--------|-----------------------------|
+| NEXT     | Next item          | Next page (if multi-page)       | Next page          | /      | Short click                 |
+| PREV     | Previous item      | Previous page (if multi-page)   | Previous page      | /      | Double click                |
+| OK       | Select item        | Interact/Cycle options          | Book menu          | /      | Long click                  |
+| LOCK     | Lock               | Lock                            | Lock               | Unlock | Extra long click            |
+| HOME     | Go to first item   | Go to previous menu             | Go to main menu    | /      | Triple click                |
+| BOOKMARK | /                  | /                               | Bookmark page      | /      | Click + Hold                |
+| ROTATE   | Flip screen 180deg |  Flip screen 180deg             | Flip screen 180deg | /      | /                           |
+
+If "Legacy mode" is enabled, mapping single, double and triple click will have no effect and the behaviour will remain the same of versions <= 3.1.
+
+### Main menu
+
+Starting from version 3.2 you can use the web UI to hide and rearrange the entries of the main menu. The book and folder items will remain at the top of the main menu while all the others can be customized. 
+
+Note that the "Upload" item cannot be hidden as this would make it impossible to further interact with the Pala One from an external device.
+
 
 ## OTA firmware updates
 
@@ -72,6 +114,7 @@ Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-pr
 
 > [!WARNING]
 > Charging status and battery level are estimated using an unreliable method due to hardware limitations. The battery icon and related indicators are only a guideline and may be inaccurate.
+
 
 ## Language
 

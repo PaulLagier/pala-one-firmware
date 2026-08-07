@@ -12,6 +12,7 @@
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/text.h"
 #include "src/ui/widgets.h"
+#include "src/ui/reader_actions.h"
 
 void BookmarkListScreen::onEnter() {
   draw();
@@ -62,7 +63,7 @@ void BookmarkListScreen::onButton(const ButtonEvent& e) {
   if (g_bookmarkSession.selectedIndex >= (int)g_bookmarkSession.count)
     g_bookmarkSession.selectedIndex = max(0, (int)g_bookmarkSession.count - 1);
 
-  if (e.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
     if (g_bookmarkSession.count > 0) {
       g_bookmarkSession.selectedIndex++;
       if (g_bookmarkSession.selectedIndex >= (int)g_bookmarkSession.count) g_bookmarkSession.selectedIndex = 0;
@@ -71,7 +72,17 @@ void BookmarkListScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Double) {
+  if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
+    if (g_bookmarkSession.count > 0) {
+      g_bookmarkSession.selectedIndex--;
+      if (g_bookmarkSession.selectedIndex < 0) g_bookmarkSession.selectedIndex = (int)g_bookmarkSession.count - 1;
+    }
+    draw();
+    return;
+
+  }
+
+  if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
     if (g_bookmarkSession.count == 0) return;
 
     if (openBookByIndex(g_bookmarkSession.bookIndex)) {
@@ -97,13 +108,24 @@ void BookmarkListScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Triple) {
-    nextScreen = &g_libraryScreen;
-    return;
-  }
+  // Retain legacy behaviour if legacy controls are on
+  if (Gestures::legacyControlsOn()) {
+    if (e.kind == ButtonEvent::Triple) {
+      nextScreen = &g_libraryScreen;
+      return;
+    }
 
-  if (e.kind == ButtonEvent::Long) {
-    nextScreen = &g_bmBookSelectScreen;
-    return;
+    if (e.kind == ButtonEvent::Long) {
+      nextScreen = &g_bmBookSelectScreen;
+      return;
+    }
+  }
+  else {
+    // In this case the behaviour of ACTION_HOME is slightly different (go back to the previous menu)
+    // instead of the standard "go to main menu" to retain the legacy behaviour of "ButtonEvent::Long"
+    if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
+      nextScreen = &g_bmBookSelectScreen;
+      return;
+    }
   }
 }
