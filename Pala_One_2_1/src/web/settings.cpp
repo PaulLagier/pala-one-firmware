@@ -77,14 +77,15 @@ static constexpr int kLibraryMenuHidden = -1;
 
 static const char* libraryMenuLabel(int value) {
   switch (value) {
-    case LIB_ENTRY_BOOKMARKS: return D_MENU_BOOKMARKS;
-    case LIB_ENTRY_LIST:      return D_MENU_LIST;
-    case LIB_ENTRY_APPS:      return D_MENU_APPS;
+    case LIB_ENTRY_BOOKMARKS:  return D_MENU_BOOKMARKS;
+    case LIB_ENTRY_LIST:       return D_MENU_LIST;
+    case LIB_ENTRY_APPS:       return D_MENU_APPS;
     case LIB_ENTRY_STATISTICS: return D_MENU_STATISTICS;
-    case LIB_ENTRY_ABOUT:     return D_MENU_DEVICE;
-    case LIB_ENTRY_UPDATE:    return D_MENU_UPDATE;
-    case LIB_ENTRY_UPLOAD:    return D_MENU_UPLOAD;
-    default:                  return D_WEB_LIBRARY_ORDER_HIDDEN;
+    case LIB_ENTRY_ABOUT:      return D_MENU_DEVICE;
+    case LIB_ENTRY_UPDATE:     return D_MENU_UPDATE;
+    case LIB_ENTRY_UPLOAD:     return D_MENU_UPLOAD;
+    case LIB_ENTRY_SETTINGS:   return D_MENU_SETTINGS;
+    default:                   return D_WEB_LIBRARY_ORDER_HIDDEN;
   }
 }
 
@@ -122,6 +123,7 @@ static void appendLibraryMenuSelect(String& out, int slotIndex, int current) {
   appendLibraryMenuOption(out, LIB_ENTRY_ABOUT, libraryMenuLabel(LIB_ENTRY_ABOUT), current);
   appendLibraryMenuOption(out, LIB_ENTRY_UPLOAD, libraryMenuLabel(LIB_ENTRY_UPLOAD), current);
   appendLibraryMenuOption(out, LIB_ENTRY_UPDATE, libraryMenuLabel(LIB_ENTRY_UPDATE), current);
+  appendLibraryMenuOption(out, LIB_ENTRY_SETTINGS, libraryMenuLabel(LIB_ENTRY_SETTINGS), current);
   out += "</select></div>";
 }
 
