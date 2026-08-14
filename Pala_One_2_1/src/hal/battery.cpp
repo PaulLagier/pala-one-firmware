@@ -285,22 +285,26 @@ void drawBattery(int xIcon, int yIcon)
   drawBatteryOutline(xIcon, yIcon, iconW, iconH);
   int displayedCharge = 0;
 
-  if (pct > 75)
+  if (batteryLow())
+  {
+    displayedCharge = 0;
+    drawExclamation(xIcon, yIcon, iconH, 2);
+  }
+  else if (pct > 75)
   {
     displayedCharge = 100;
   }
-  else if (pct > 50)
+  else if (pct > 40)
   {
     displayedCharge = 50;
   }
-  else if (pct > 25)
+  else if (pct > 15)
   {
     displayedCharge = 25;
   }
   else
   {
     displayedCharge = 0;
-    drawExclamation(xIcon, yIcon, iconH, 2);
   }
 
   if (!s_battery.charging) {
