@@ -102,6 +102,7 @@
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
+#include "src/ui/screens/settings_screen.h"
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/update_screen.h"
 #include "src/ui/screens/upload_screen.h"
@@ -118,31 +119,33 @@
 // ============================================================================
 //  Screen instances + current-screen pointer
 // ============================================================================
-LibraryScreen              g_libraryScreen;
-ReaderScreen               g_readerScreen;
-UploadScreen               g_uploadScreen;
 AboutScreen                g_aboutScreen;
-UpdateScreen               g_updateScreen;
 AppsScreen                 g_appsScreen;
-ListScreen                 g_listScreen;
-StatisticsScreen           g_statsScreen;
 BookmarkBookSelectScreen   g_bmBookSelectScreen;
 BookmarkListScreen         g_bmListScreen;
 BookmarkPreviewScreen      g_bmPreviewScreen;
+LibraryScreen              g_libraryScreen;
+ListScreen                 g_listScreen;
+ReaderScreen               g_readerScreen;
+SettingsScreen             g_settingsScreen;
+StatisticsScreen           g_statsScreen;
+UpdateScreen               g_updateScreen;
+UploadScreen               g_uploadScreen;
 
 Screen* g_currentScreen = &g_libraryScreen;
 
 #if HAS_BATTERY
 static bool batteryIndicatorVisible() {
-  return g_currentScreen == &g_libraryScreen
-      || g_currentScreen == &g_uploadScreen
-      || g_currentScreen == &g_aboutScreen
-      || g_currentScreen == &g_updateScreen
+  return g_currentScreen == &g_aboutScreen
       || g_currentScreen == &g_appsScreen
-      || g_currentScreen == &g_listScreen
-      || g_currentScreen == &g_statsScreen
       || g_currentScreen == &g_bmBookSelectScreen
       || g_currentScreen == &g_bmListScreen
+      || g_currentScreen == &g_libraryScreen
+      || g_currentScreen == &g_listScreen
+      || g_currentScreen == &g_settingsScreen
+      || g_currentScreen == &g_statsScreen
+      || g_currentScreen == &g_updateScreen
+      || g_currentScreen == &g_uploadScreen
       || (g_currentScreen == &g_readerScreen && ReaderMenu::isActive());
 }
 #endif

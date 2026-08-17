@@ -10,11 +10,12 @@ static void addBookEntry(int bookIdx, int depth,
 
 bool isValidLibEntry(LibraryEntryType type, bool includeSystemEntries) {
   switch (type) {
+    case LIB_ENTRY_ABOUT:
+    case LIB_ENTRY_APPS:
     case LIB_ENTRY_BOOKMARKS:
     case LIB_ENTRY_LIST:
-    case LIB_ENTRY_APPS:
+    case LIB_ENTRY_SETTINGS:
     case LIB_ENTRY_STATISTICS:
-    case LIB_ENTRY_ABOUT:
     case LIB_ENTRY_UPDATE:
     case LIB_ENTRY_UPLOAD:
       return true;

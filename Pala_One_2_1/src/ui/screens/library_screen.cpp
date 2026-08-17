@@ -16,6 +16,7 @@
 #include "src/ui/screens/bookmarks/session.h"
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
+#include "src/ui/screens/settings_screen.h"
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/upload_screen.h"
 #include "src/ui/widgets.h"
@@ -115,16 +116,17 @@ static int rowIndent(const LibEntry& e) {
 
 static String entryLabel(const LibEntry& e) {
   switch (e.type) {
+    case LIB_ENTRY_ABOUT:      return D_MENU_DEVICE;
+    case LIB_ENTRY_APPS:       return D_MENU_APPS;
+    case LIB_ENTRY_BOOK:       return bookLeafLabel(String(g_library.books[e.ref].path));
+    case LIB_ENTRY_BOOKMARKS:  return D_MENU_BOOKMARKS;
     case LIB_ENTRY_FOLDER: {
       String prefix = isExpanded(g_library.folders[e.ref]) ? "- " : "+ ";
       return prefix + folderLeafLabel(String(g_library.folders[e.ref]));
     }
-    case LIB_ENTRY_BOOK:      return bookLeafLabel(String(g_library.books[e.ref].path));
-    case LIB_ENTRY_BOOKMARKS: return D_MENU_BOOKMARKS;
-    case LIB_ENTRY_LIST:      return D_MENU_LIST;
-    case LIB_ENTRY_APPS:       return D_MENU_APPS;
+    case LIB_ENTRY_LIST:       return D_MENU_LIST;
+    case LIB_ENTRY_SETTINGS:   return D_MENU_SETTINGS;
     case LIB_ENTRY_STATISTICS: return D_MENU_STATISTICS;
-    case LIB_ENTRY_ABOUT:      return D_MENU_DEVICE;
     case LIB_ENTRY_UPDATE:     return D_MENU_UPDATE;
     case LIB_ENTRY_UPLOAD:     return D_MENU_UPLOAD;
   }
@@ -234,59 +236,47 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
 
   const LibEntry& sel = s_entries[s_cursor];
 
-  if (sel.type == LIB_ENTRY_FOLDER) {
-    toggleExpanded(g_library.folders[sel.ref]);
-    draw();
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_BOOK) {
-    if (openBookByIndex(sel.ref)) {
-      nextScreen = &g_readerScreen;
-    } else {
-      drawCenter(D_LIBRARY_OPEN_FAILED, D_LIBRARY_TRY_UPLOAD);
+  switch(sel.type) {
+    case LIB_ENTRY_ABOUT:
+      nextScreen = &g_aboutScreen;
+      return;
+	case LIB_ENTRY_APPS:
+      nextScreen = &g_appsScreen;
+      return;
+	case LIB_ENTRY_BOOK:
+      if (openBookByIndex(sel.ref)) {
+        nextScreen = &g_readerScreen;
+      } else {
+        drawCenter(D_LIBRARY_OPEN_FAILED, D_LIBRARY_TRY_UPLOAD);
+        draw();
+      }
+      return;
+	case LIB_ENTRY_BOOKMARKS:
+      nextScreen = &g_bmBookSelectScreen;
+      return;
+	case LIB_ENTRY_FOLDER:
+      toggleExpanded(g_library.folders[sel.ref]);
       draw();
-    }
-    return;
+      return;
+	case LIB_ENTRY_LIST:
+      g_list.selectedIndex = 0;
+      nextScreen = &g_listScreen;
+      return;
+	case LIB_ENTRY_SETTINGS:
+	  nextScreen = &g_settingsScreen;
+	  return;
+	case LIB_ENTRY_STATISTICS:
+      nextScreen = &g_statsScreen;
+      return;
+	case LIB_ENTRY_UPDATE:
+      nextScreen = &g_updateScreen;
+      return;
+	case LIB_ENTRY_UPLOAD:
+      nextScreen = &g_uploadScreen;
+      return;
+	default:
+      Serial.println("LibraryScreen: unhandled entry type " + String(sel.type));
   }
-
-  if (sel.type == LIB_ENTRY_BOOKMARKS) {
-    nextScreen = &g_bmBookSelectScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_LIST) {
-    g_list.selectedIndex = 0;
-    nextScreen = &g_listScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_APPS) {
-    nextScreen = &g_appsScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_STATISTICS) {
-    nextScreen = &g_statsScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_ABOUT) {
-    nextScreen = &g_aboutScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_UPDATE) {
-    nextScreen = &g_updateScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_UPLOAD) {
-    nextScreen = &g_uploadScreen;
-    return;
-  }
-
-  Serial.println("LibraryScreen: unhandled entry type " + String(sel.type));
 }
 
 // ============================================================================

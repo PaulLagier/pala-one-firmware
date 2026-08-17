@@ -5,7 +5,7 @@
 
 namespace LibraryMenuOrder {
 
-static constexpr int kMaxSystemEntries = 7;
+static constexpr int kMaxSystemEntries = 8;
 
 void loadSettings();
 

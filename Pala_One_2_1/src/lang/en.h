@@ -44,6 +44,7 @@
 // ----------------------------------------------------------------------------
 #define D_MENU_BOOKMARKS            "Bookmarks"
 #define D_MENU_LIST                 "List"
+#define D_MENU_SETTINGS             "Layout Settings"
 #define D_MENU_APPS                 "Apps"
 #define D_MENU_STATISTICS           "Statistics"
 #define D_MENU_DEVICE               "Device"
@@ -67,6 +68,23 @@
 // ----------------------------------------------------------------------------
 #define D_LIST_HEADER               "List"
 #define D_LIST_NONE                 "No items"
+
+// ----------------------------------------------------------------------------
+//  Settings screen (src/ui/screens/settings_screen.cpp). For the most part we
+//  reuse the same labels as the Web UI, but a few we need to redefine due to
+//  embedded html elements.
+// ----------------------------------------------------------------------------
+#define D_SETTINGS_HEADER           "Layout Settings"
+
+#define D_SETTINGS_GAP_0            "0 - compact"
+#define D_SETTINGS_GAP_1            "1 - normal"
+#define D_SETTINGS_GAP_2            "2 - relaxed"
+#define D_SETTINGS_GAP_3            "3 - loose"
+
+#define D_SETTINGS_SIZE_8           "8 - tiny"
+#define D_SETTINGS_SIZE_10          "10 - small"
+#define D_SETTINGS_SIZE_12          "12 - medium"
+#define D_SETTINGS_SIZE_14          "14 - large"
 
 // ----------------------------------------------------------------------------
 //  Upload screen (src/ui/screens/upload_screen.cpp)

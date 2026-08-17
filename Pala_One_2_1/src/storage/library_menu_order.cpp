@@ -7,9 +7,10 @@
 #include "src/pure/library_nav.h"
 namespace LibraryMenuOrder {
 
+static constexpr int kDefaultEntries = 7;
 static constexpr const char* kNvsKey = "cfg_lib_order";
 
-static const LibraryEntryType kDefaultOrder[kMaxSystemEntries] = {
+static const LibraryEntryType kDefaultOrder[kDefaultEntries] = {
     LIB_ENTRY_BOOKMARKS,
     LIB_ENTRY_APPS,
     LIB_ENTRY_STATISTICS,
@@ -19,21 +20,13 @@ static const LibraryEntryType kDefaultOrder[kMaxSystemEntries] = {
     LIB_ENTRY_UPDATE,
 };
 
-static LibraryEntryType s_order[kMaxSystemEntries] = {
-    LIB_ENTRY_BOOKMARKS,
-    LIB_ENTRY_APPS,
-    LIB_ENTRY_STATISTICS,
-    LIB_ENTRY_LIST,
-    LIB_ENTRY_ABOUT,
-    LIB_ENTRY_UPLOAD,
-    LIB_ENTRY_UPDATE,
-};
+static LibraryEntryType s_order[kMaxSystemEntries] = {};
 
-static int s_count = kMaxSystemEntries;
+static int s_count = 0;
 
 static void copyDefault() {
   memcpy(s_order, kDefaultOrder, sizeof(kDefaultOrder));
-  s_count = kMaxSystemEntries;
+  s_count = kDefaultEntries;
 }
 
 static void normalizeOrder() {
