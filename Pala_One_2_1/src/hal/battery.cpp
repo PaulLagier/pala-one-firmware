@@ -2,6 +2,7 @@
 
 #include "src/hal/display.h" // u8g2 + gfx for the battery icon
 #include "src/ui/font.h"     // role-based font switch (UiSmall for the % text)
+#include "src/ui/screen_settings.h"
 
 #if HAS_BATTERY
 
@@ -347,6 +348,9 @@ void drawBatteryTopRight(bool extended)
 
 void drawBatteryBottomLeft()
 {
+  if (!ScreenSettings::batteryIndicatorsEnabled()) {
+    return;
+  }
 	drawBattery(/*xIcon=*/MARGIN_X + 2, /*yIcon=*/SCREEN_H - iconH);
 }
 

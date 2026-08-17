@@ -134,9 +134,10 @@ Screen* g_currentScreen = &g_libraryScreen;
 
 #if HAS_BATTERY
 static bool batteryIndicatorVisible() {
+  if (g_currentScreen == &g_aboutScreen) return true;
+  if (!ScreenSettings::batteryIndicatorsEnabled()) return false;
   return g_currentScreen == &g_libraryScreen
       || g_currentScreen == &g_uploadScreen
-      || g_currentScreen == &g_aboutScreen
       || g_currentScreen == &g_updateScreen
       || g_currentScreen == &g_appsScreen
       || g_currentScreen == &g_listScreen

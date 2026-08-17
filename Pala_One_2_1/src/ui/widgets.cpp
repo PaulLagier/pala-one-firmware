@@ -3,6 +3,7 @@
 #include "src/hal/battery.h"
 #include "src/hal/display.h"
 #include "src/ui/font.h"
+#include "src/ui/screen_settings.h"
 
 static const int UI_HEADER_TOP = 6;
 static const int UI_HEADER_GAP = 6;
@@ -64,7 +65,7 @@ int drawSectionHeader(const char* title, bool drawBattery) {
   u8g2.print(title);
 
 #if HAS_BATTERY
-  if (drawBattery){
+  if (drawBattery && ScreenSettings::batteryIndicatorsEnabled()) {
     drawBatteryTopRight();
   }
 #endif
