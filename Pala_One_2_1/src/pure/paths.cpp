@@ -81,8 +81,7 @@ String sanitizeFolderInput(const String& raw) {
 }
 
 String sanitizeUploadedFilename(String fname) {
-  int slash = fname.lastIndexOf('/');
-  if (slash >= 0) fname = fname.substring(slash + 1);
+  fname = lastPathComponent(fname);
 
   String clean;
   clean.reserve(fname.length());
