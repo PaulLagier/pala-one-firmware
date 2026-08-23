@@ -1,3 +1,4 @@
+#include "../config.h"
 #include "paths.h"
 
 String stripTxtExt(const String& s) {
@@ -102,6 +103,10 @@ String sanitizeUploadedFilename(String fname) {
   while (clean.startsWith(".")) clean.remove(0, 1);
   if (!clean.endsWith(".txt")) clean += ".txt";
   if (clean.length() == 0) clean = "book.txt";
+  if (clean.length() >= MAX_FILE_PATH) {
+    int ext = fname.lastIndexOf('.');
+    clean = clean.substring(0, min(ext, MAX_FILE_PATH - 4)) + ".txt";
+  }
   return clean;
 }
 
