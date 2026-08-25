@@ -42,8 +42,8 @@ void loadSettings();
 ButtonAction actionShort();
 ButtonAction actionDouble();
 ButtonAction actionTriple();
-ButtonAction actionLong();       // plain long press (>= LONG_MS, < VERY_LONG_MS, no preceding click)
-ButtonAction actionExtraLong();  // very-long press (>= VERY_LONG_MS, no preceding click)
+ButtonAction actionLong();       // plain long press (>= kDefaultLongMs, < kDefaultVeryLongMs, no preceding click)
+ButtonAction actionExtraLong();  // very-long press (>= kDefaultVeryLongMs, no preceding click)
 ButtonAction actionClickHold();  // short click then immediate long hold
 
 // Apply + persist a binding. Out-of-range values clamp to ACTION_NONE.

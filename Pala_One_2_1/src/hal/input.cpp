@@ -3,6 +3,7 @@
 #include <esp_timer.h>
 
 #include "src/pure/hold_gesture.h"  // classifyHoldRelease / classifyHoldInProgress
+#include "src/storage/click_timings.h"
 
 // Local helper: map a HoldGestureKind decision into the matching output
 // flag. Used at both classification sites (release path + in-progress).
@@ -105,12 +106,12 @@ static ButtonQueue s_btnQ;
 //    t~1090: loop() -> poll():
 //      snapshot head, drain (tail..head):
 //        (true, 1000):  debounce OK, transition -> pressStart=1000, armed
-//        (false, 1080): debounce OK, transition -> dur=80 < LONG_MS,
+//        (false, 1080): debounce OK, transition -> dur=80 < kDefaultLongMs,
 //                                                  clickCount=1, lastRelease=1080
-//      trailing-silence check: now-lastRelease = 1090-1080 = 10 < MAX_CLICK_GAP_MS.
+//      trailing-silence check: now-lastRelease = 1090-1080 = 10 < kDefaultGapMs.
 //      Do NOT emit yet — could still become a double.
 //    t=1100..1400: poll() called each loop, queue empty, still waiting.
-//    t~1400: poll(): now-lastRelease = 1400-1080 = 320 > MAX_CLICK_GAP_MS.
+//    t~1400: poll(): now-lastRelease = 1400-1080 = 320 > kDefaultGapMs.
 //            -> shortClick = true for ONE poll, consumed by the screen.
 //
 //  Walked-through example — bouncy release:
@@ -121,9 +122,9 @@ static ButtonQueue s_btnQ;
 //    t=1087: bounce settles open.        ISR: (false, 1087)
 //    poll() drains:
 //      (true,  1000): accept            -> stablePressed=true, pressStart=1000
-//      (false, 1080): 1080-1000=80 > DEBOUNCE_MS=14, accept release
-//      (true,  1083): 1083-1080=3   <= DEBOUNCE_MS, reject
-//      (false, 1087): 1087-1080=7   <= DEBOUNCE_MS, reject
+//      (false, 1080): 1080-1000=80 > kDefaultDebounceMs=14, accept release
+//      (true,  1083): 1083-1080=3   <= kDefaultDebounceMs, reject
+//      (false, 1087): 1087-1080=7   <= kDefaultDebounceMs, reject
 //    Result: clean clickCount = 1, no spurious double-click.
 //
 //  Walked-through example — ISR overflow during a long redraw:
@@ -214,15 +215,15 @@ void injectButtonEdgeNow(bool pressed) {
 // Three pipeline stages, in order:
 //
 //   ISR queue  -->  debounce  -->  classifier
-//   (s_btnQ)        (DEBOUNCE_MS)   (this function's job)
+//   (s_btnQ)        (kDefaultDebounceMs)   (this function's job)
 //
 // The classifier is awkward for one reason: the meaning of a click depends
 // on what comes AFTER it. A short click is only a short click once enough
 // silence has passed to rule out a double. So we have three emit points:
-//   1. Inside the drain loop, on a release whose duration >= LONG_MS —
+//   1. Inside the drain loop, on a release whose duration >= kDefaultLongMs —
 //      defensive fallback; in normal operation point 2 fires first.
 //   2. After the drain loop, when stablePressed_ AND pressArmed_ AND the
-//      hold has crossed LONG_MS — fires the long-click while the button
+//      hold has crossed kDefaultLongMs — fires the long-click while the button
 //      is still held, so the user gets feedback at the threshold instead
 //      of after release. Sets pressArmed_=false to make the eventual
 //      release a no-op (the release path's `if (pressArmed_)` guard skips).
@@ -256,18 +257,18 @@ void injectButtonEdgeNow(bool pressed) {
 //   1. Clear last poll's output flags.
 //   2. Snapshot the ISR queue head (so we don't chase a moving target),
 //      then drain entries [tail, head):
-//        - Reject edges within DEBOUNCE_MS of the last accepted change.
+//        - Reject edges within kDefaultDebounceMs of the last accepted change.
 //        - Reject edges that don't actually flip stablePressed_.
 //        - On a down-edge: record pressStart_, arm the press.
 //        - On an up-edge that's armed:
-//            * duration >= LONG_MS  -> emit longClick_, reset clickCount_
+//            * duration >= kDefaultLongMs  -> emit longClick_, reset clickCount_
 //            * else                 -> clickCount_++, remember releases
-//   3. After draining, if a press is still held past LONG_MS, emit
+//   3. After draining, if a press is still held past kDefaultLongMs, emit
 //      longClick_ now and clear pressArmed_ so the eventual release is
 //      ignored. This is the normal path for long-click emission.
 //   4. After draining, if a click sequence is pending, commit it when ANY of:
-//        - gap elapsed:      now - lastRelease_      > MAX_CLICK_GAP_MS
-//        - sequence timeout: now - firstClickRelease_ > MAX_CLICK_SEQUENCE_MS
+//        - gap elapsed:      now - lastRelease_      > kDefaultGapMs
+//        - sequence timeout: now - firstClickRelease_ > kDefaultSequenceMs
 //        - count >= 4:       quad commits immediately (nothing it could become)
 //      Then map clickCount_ to shortClick_ / doubleClick_ / tripleClick_ /
 //      quadClick_ and reset.
@@ -291,7 +292,7 @@ void ButtonState::poll() {
     s_btnQ.tail = (uint8_t)((s_btnQ.tail + 1) % BTN_Q);
     interrupts();
 
-    if ((uint32_t)(edgeTime - lastStableChange_) <= DEBOUNCE_MS) continue;
+    if ((uint32_t)(edgeTime - lastStableChange_) <= ClickTimings::debounceMs()) continue;
     if (edgePressed == stablePressed_) continue;
 
     bool prevPressed = stablePressed_;
@@ -307,7 +308,7 @@ void ButtonState::poll() {
     // On a clean release, if we're armed, classify the click by duration and
     // accumulated count. Note: in normal operation, the hold-detection block
     // below this loop fires the long-click and clears pressArmed_ before the
-    // release ever lands, so the `dur >= LONG_MS` branch here is a defensive
+    // release ever lands, so the `dur >= kDefaultLongMs` branch here is a defensive
     // fallback (e.g., for the unlikely case where poll() didn't run during
     // the hold).
     if (prevPressed) {
@@ -316,7 +317,7 @@ void ButtonState::poll() {
         HoldGestureKind k = classifyHoldRelease(dur, clickCount_);
         if (applyHoldKindTo(*this, k)) {
           clickCount_ = 0;
-        } else if (dur < LONG_MS) {
+        } else if (dur < ClickTimings::longMs()) {
           // Short release — accumulate into the click sequence. Bump the
           // apps-API raw counter *before* the multi-click accumulator so
           // apps see every short release even when the classifier later
@@ -326,7 +327,7 @@ void ButtonState::poll() {
           lastRelease_ = edgeTime;
           if (clickCount_ == 1) firstClickRelease_ = edgeTime;
         }
-        // dur >= LONG_MS but classifyHoldRelease returned None (count >= 2)
+        // dur >= kDefaultLongMs but classifyHoldRelease returned None (count >= 2)
         // → pending clicks commit on their own; the hold contributes nothing.
       }
       pressArmed_ = false;
@@ -338,7 +339,7 @@ void ButtonState::poll() {
   // earliest threshold the gesture is unambiguously identified, then
   // consume the press so the eventual release is ignored (cleared
   // pressArmed_ → release path's `if (pressArmed_)` guard skips). Plain
-  // Long is deferred to release because at LONG_MS we can't yet tell
+  // Long is deferred to release because at kDefaultLongMs we can't yet tell
   // whether the user is on their way to a VeryLong — that case lives
   // in the release classifier above.
   if (stablePressed_ && pressArmed_) {
@@ -351,13 +352,13 @@ void ButtonState::poll() {
   }
 
   // Trailing-silence check: commit the accumulated click count when ANY of:
-  //   1. The user paused for MAX_CLICK_GAP_MS since the most recent release
+  //   1. The user paused for kDefaultGapMssince the most recent release
   //      AND isn't currently pressing — an in-progress press might still be
   //      part of the sequence (e.g., a slightly-late double-click), so we
   //      wait for its release to find out. Without this, a press starting at
   //      gap+epsilon would commit a single and then count the late release
   //      as a fresh sequence — turning one intended double into two singles.
-  //   2. The whole sequence has run past MAX_CLICK_SEQUENCE_MS from the first
+  //   2. The whole sequence has run past kDefaultSequenceMs from the first
   //      release — caps slow multi-clicks. Same press-in-progress gate.
   //   3. We hit a 4th click — quad needs no wait, there's nothing it could
   //      become next. Commits even if a 5th press is in progress (it'll
@@ -373,8 +374,8 @@ void ButtonState::poll() {
   // human speeds in practice.
   if (clickCount_ > 0) {
     uint32_t now = millis();
-    bool gapElapsed      = (uint32_t)(now - lastRelease_)       > MAX_CLICK_GAP_MS;
-    bool sequenceTimeout = (uint32_t)(now - firstClickRelease_) > MAX_CLICK_SEQUENCE_MS;
+    bool gapElapsed      = (uint32_t)(now - lastRelease_)       > ClickTimings::maxClickGapMs();
+    bool sequenceTimeout = (uint32_t)(now - firstClickRelease_) > ClickTimings::maxClickSequenceMs();
     bool quadReady       = clickCount_ >= 4;
     bool readyByTime     = (gapElapsed || sequenceTimeout) && !stablePressed_;
 
@@ -416,7 +417,7 @@ void resetInputFrontend() {
   // release are intentional and should be processed normally.
   uint32_t start = millis();
   while (digitalRead(BTN) == LOW && (uint32_t)(millis() - start) < 600) delay(1);
-  delay(DEBOUNCE_MS + 2); // minimal debounce after release
+  delay(ClickTimings::debounceMs() + 2); // minimal debounce after release
 
   // Discard only events that happened BEFORE this moment (the transition press).
   // Events queued after the release are kept.

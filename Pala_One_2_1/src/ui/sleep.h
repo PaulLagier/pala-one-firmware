@@ -33,6 +33,17 @@ void setNoScreensaver(bool val);
 bool lockOnSleep();
 void setLockOnSleep(bool val);
 
+// True when something is actively holding sleep off: either the current
+// screen declines it (UploadScreen always; UpdateScreen while its Wi-Fi
+// session is up) or a USB host has the Improv CDC listener open. Both are
+// battery drains the user can't otherwise see, which is what the header
+// status icon reports.
+//
+// Deliberately excludes ENABLE_DEEP_SLEEP so callers keep that as a separate
+// compile-time term — with deep sleep compiled out, "sleep is prevented"
+// would be vacuously true and the icon would never go off.
+bool inhibited();
+
 // Enter deep sleep right now. Notifies the active screen, draws the sleep
 // image, releases peripherals, then `esp_deep_sleep_start`s.
 void enter();

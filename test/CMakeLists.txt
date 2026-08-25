@@ -25,6 +25,7 @@ set(SUT_SRC
   ${FW_SRC}/pure/app_header.cpp
   ${FW_SRC}/pure/hold_gesture.cpp
   ${FW_SRC}/pure/streak_log.cpp
+  ${FW_SRC}/storage/click_timings.cpp
   ${FW_SRC}/storage/book_metadata.cpp
   ${FW_SRC}/storage/list_items.cpp
 )
@@ -43,6 +44,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_list_store.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_app_header.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hold_gesture.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_click_timings.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_streak_log.cpp
 )
 

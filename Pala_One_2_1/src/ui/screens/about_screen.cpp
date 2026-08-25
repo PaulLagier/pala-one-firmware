@@ -34,7 +34,9 @@ void AboutScreen::draw() {
   Font::useUiSmall();
   int ascent = u8g2.getFontAscent();
   int lineH = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 3;
-  int y = drawSectionHeader(D_ABOUT_HEADER, false);
+  // No status tray here: the extended battery block drawn below is ~79px
+  // wide and occupies the same right-hand band the tray would.
+  int y = drawSectionHeader(D_ABOUT_HEADER, false, false);
   drawBatteryTopRight(true);
   const int rowNumber = 7;
   String rows[rowNumber][2] = {

@@ -405,6 +405,23 @@
 #define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"
 #define D_WEB_BUTTONS_ACTION_HOME "Go to main menu"
 #define D_WEB_BUTTONS_LEGACY_HINT "If enabled, mapping single, double and triple clicks has no effect."
+
+// Click timing section.
+#define D_WEB_TIMINGS_HEADING        "Click timing"
+#define D_WEB_TIMINGS_INTRO          "Tune the behavior for clicks and hold gestures."
+#define D_WEB_TIMINGS_GAP_LABEL      "Click gap"
+#define D_WEB_TIMINGS_GAP_HINT       "How long a pause between releases may last before the current click burst is committed."
+#define D_WEB_TIMINGS_SEQUENCE_LABEL "Click sequence"
+#define D_WEB_TIMINGS_SEQUENCE_HINT  "Maximum total time allowed for a multi-click burst, measured from the first release."
+#define D_WEB_TIMINGS_LONG_LABEL     D_WEB_BUTTONS_LONG " threshold"
+#define D_WEB_TIMINGS_LONG_HINT      "Press duration that turns a hold into a " D_WEB_BUTTONS_LONG " instead of another " D_WEB_BUTTONS_SHORT "."
+#define D_WEB_TIMINGS_VLONG_LABEL    D_WEB_BUTTONS_EXTRA_LONG " threshold"
+#define D_WEB_TIMINGS_VLONG_HINT     "Press duration that upgrades a solo hold from " D_WEB_BUTTONS_LONG " to " D_WEB_BUTTONS_EXTRA_LONG "."
+#define D_WEB_TIMINGS_DEBOUNCE_LABEL "Debounce"
+#define D_WEB_TIMINGS_DEBOUNCE_HINT  "Events closer together than this are treated as switch bounce and ignored."
+#define D_WEB_TIMINGS_RESET          "Reset"
+#define D_WEB_TIMINGS_SAVE           "Save timings"
+#define D_WEB_TIMINGS_DEFAULT_PREFIX "Default: "
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Device"
 #define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
@@ -414,6 +431,12 @@
 #define D_WEB_FLIP_SCREEN           "Flip screen orientation"
 #define D_WEB_BATTERY_INDICATORS_LABEL "Hide battery indicators"
 #define D_WEB_BATTERY_INDICATORS_HINT "When checked, battery status is visible on the " D_ABOUT_HEADER " screen only."
+
+// Header status icons card (src/web/settings.cpp) — see src/ui/icons.h.
+#define D_WEB_ICONS_HEADING         "Status icons"
+#define D_WEB_ICONS_INTRO           "Small indicators shown in the menu header for states that use extra battery."
+#define D_WEB_ICON_SLEEP_LABEL      "Show sleep-blocked icon"
+#define D_WEB_ICON_SLEEP_HINT       "A crossed-out moon, shown while something is keeping the device awake - a connected computer, or an upload in progress."
 
 // Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
 // joins.

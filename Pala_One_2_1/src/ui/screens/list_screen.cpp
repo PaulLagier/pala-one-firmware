@@ -23,10 +23,10 @@ void ListScreen::draw() {
 
   const int strikeYOffset = (u8g2.getFontAscent() - u8g2.getFontDescent()) / 3;
   const int lineH = menuLineH();
-  const int maxWidth = SCREEN_W - UI_LIST_LEFT - MARGIN_X;
 
-  auto drawStrike = [&](int rowY, const String& s) {
-    int w = u8g2.getUTF8Width(s.c_str());
+  // Struck through to the width actually drawn, which drawMenuRow reports —
+  // measuring the label here instead would overshoot once it truncates.
+  auto drawStrike = [&](int rowY, int w) {
     gfx.drawFastHLine(UI_LIST_LEFT, rowY - strikeYOffset, w, 1);
   };
 
@@ -37,24 +37,28 @@ void ListScreen::draw() {
       String line1, line2;
 
       if (selected) {
-        splitListLabelForDisplay(label, maxWidth, line1, line2);
+        // Split under Bold, the font the selected row is actually drawn in.
+        // Measuring under Body would let line 1 overflow, and drawMenuRow
+        // would then ellipsize it — giving the nonsense "Foo... bar" across
+        // the two lines.
+        Font::useBold();
+        splitListLabelForDisplay(label, menuRowMaxWidth(), line1, line2);
+        Font::useBody();
       } else {
-        line1 = label;
-        while (line1.length() > 0 && u8g2.getUTF8Width(line1.c_str()) > maxWidth) {
-          line1.remove(line1.length() - 1);
-        }
+        line1 = label;   // drawMenuRow truncates to fit
       }
 
-      drawMenuRow(rowY, line1, selected);
-      if (done) drawStrike(rowY, line1);
+      int w1 = drawMenuRow(rowY, line1, selected);
+      if (done) drawStrike(rowY, w1);
 
       if (selected && line2.length() > 0 && budget >= 2) {
         int row2Y = rowY + lineH;
         Font::useBold();
         u8g2.setCursor(UI_LIST_LEFT, row2Y);
         u8g2.print(line2.c_str());
+        int w2 = u8g2.getUTF8Width(line2.c_str());
         Font::useBody();
-        if (done) drawStrike(row2Y, line2);
+        if (done) drawStrike(row2Y, w2);
         return 2;
       }
       return 1;

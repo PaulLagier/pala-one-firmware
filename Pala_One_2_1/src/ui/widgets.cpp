@@ -2,11 +2,30 @@
 
 #include "src/hal/battery.h"
 #include "src/hal/display.h"
+#include "src/pure/text_util.h"   // truncateWithEllipsis
 #include "src/ui/font.h"
 #include "src/ui/screen_settings.h"
+#include "src/ui/icons.h"
 
 static const int UI_HEADER_TOP = 6;
 static const int UI_HEADER_GAP = 6;
+
+// Set for the duration of a `drawScrollableList` call whose list is longer
+// than its visible window, so `menuRowMaxWidth` knows to hold back the
+// gutter. Cleared on every exit path — a standalone `drawMenuRow` (the
+// "no items" rows several screens draw) must get the full width.
+static bool s_listGutterActive = false;
+
+// u8g2 measurement, wrapped as a plain function so its address can be handed
+// to the pure truncation helper. Measures under whatever font is current,
+// so callers must select the font first.
+static int measureCurrentFont(const char* s) {
+  return u8g2.getUTF8Width(s);
+}
+
+static String fitLabelWithEllipsis(const String& in, int maxWidth) {
+  return truncateWithEllipsis(in, maxWidth, measureCurrentFont);
+}
 
 // Counter that drives the periodic full refresh of menu screens (clears
 // e-ink ghosting). File-private; nothing outside `prepareMenuFrame` reads it.
@@ -56,19 +75,30 @@ void drawCenter(const char* a, const char* b) {
   display.update();
 }
 
-int drawSectionHeader(const char* title, bool drawBattery) {
+int drawSectionHeader(const char* title, bool drawBattery, bool drawIcons) {
   Font::useBold();
   int ascent = u8g2.getFontAscent();
   int yTitle = UI_HEADER_TOP + ascent - 2;
 
-  u8g2.setCursor(MARGIN_X, yTitle);
-  u8g2.print(title);
-
+  // Indicators first: the title is clamped to whatever they leave. Drawing
+  // the title first would let the tray's self-clear chop it mid-glyph, which
+  // it will at the larger body sizes — a size-14 bold title plus two icons
+  // overruns the header on its own.
+  int right = SCREEN_W - MARGIN_X;
 #if HAS_BATTERY
   if (drawBattery && ScreenSettings::batteryIndicatorsEnabled()) {
     drawBatteryTopRight();
   }
 #endif
+  if (drawIcons) {
+    right = Icons::drawStatusTray(Icons::trayRightEdge(drawBattery));
+  }
+
+  // Re-select bold: the indicators above leave the face set to whatever they
+  // last needed, and yTitle was computed from bold's ascent.
+  Font::useBold();
+  u8g2.setCursor(MARGIN_X, yTitle);
+  u8g2.print(fitLabelWithEllipsis(String(title), right - MARGIN_X - 4).c_str());
 
   int lineY = yTitle + 4;
   gfx.drawFastHLine(MARGIN_X, lineY, SCREEN_W - (MARGIN_X * 2), 1);
@@ -79,13 +109,25 @@ int drawSectionHeader(const char* title, bool drawBattery) {
   return contentTop;
 }
 
-void drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent) {
+int menuRowMaxWidth(int extraIndent) {
+  int right = SCREEN_W - MARGIN_X - (s_listGutterActive ? UI_LIST_GUTTER_W : 0);
+  return right - UI_LIST_LEFT - extraIndent;
+}
+
+int drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent) {
   u8g2.setForegroundColor(1);
   if (selected) Font::useBold();
   else          Font::useBody();
+
+  // Truncate under the row's own font — bold is wider, so a selected row
+  // fits fewer characters than the same label unselected.
+  String shown = fitLabelWithEllipsis(label, menuRowMaxWidth(extraIndent));
+  int drawnW = u8g2.getUTF8Width(shown.c_str());
+
   u8g2.setCursor(UI_LIST_LEFT + extraIndent, yBaseline);
-  u8g2.print(label.c_str());
+  u8g2.print(shown.c_str());
   Font::useBody();
+  return drawnW;
 }
 
 int menuLineH() {
@@ -94,8 +136,15 @@ int menuLineH() {
   return (ascent - descent) + Font::currentLineGap() + 1;
 }
 
+// A 7x5 triangle inside the 8px gutter, pointing up or down.
+static void drawScrollArrow(int x, int y, bool up) {
+  if (up) gfx.fillTriangle(x + 3, y,     x, y + 4, x + 6, y + 4, 1);
+  else    gfx.fillTriangle(x + 3, y + 4, x, y,     x + 6, y,     1);
+}
+
 void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
                         const DrawListRowFn& drawRow) {
+  s_listGutterActive = false;
   if (itemCount <= 0) return;
 
   int lineH = menuLineH();
@@ -119,15 +168,33 @@ void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
   if (top < 0) top = 0;
   if (top > itemCount - visibleRows) top = max(0, itemCount - visibleRows);
 
+  // Whether the list scrolls at all is known before drawing anything, so the
+  // gutter can be reserved in time for the rows to be measured against it.
+  s_listGutterActive = (itemCount > visibleRows);
+
   int y = contentTopY;
   int rowsUsed = 0;
-  for (int idx = top; idx < itemCount && rowsUsed < visibleRows; idx++) {
+  int idx = top;                        // hoisted: needed after the loop
+  for (; idx < itemCount && rowsUsed < visibleRows; idx++) {
     int budget = visibleRows - rowsUsed;
     int consumed = drawRow(idx, y, idx == selectedIndex, budget);
     if (consumed < 1) consumed = 1;
     y += consumed * lineH;
     rowsUsed += consumed;
   }
+
+  if (s_listGutterActive) {
+    const int gx = SCREEN_W - MARGIN_X - UI_LIST_GUTTER_W;
+    // `top` is clamped above and navigation wraps, so these mean "there are
+    // items outside the current window", not "a next page exists".
+    if (top > 0) drawScrollArrow(gx, contentTopY - 6, true);
+    // Tested against `idx`, not `top + rowsUsed`: a row callback may consume
+    // two rows for one item (ListScreen's selected continuation line), so
+    // rowsUsed can reach visibleRows having advanced idx fewer times.
+    if (idx < itemCount) drawScrollArrow(gx, SCREEN_H - BOT_PAD - 5, false);
+  }
+
+  s_listGutterActive = false;
 }
 
 void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, String& line2) {
@@ -162,7 +229,7 @@ void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, Str
   line2 = in.substring(bestBreak);
   line2.trim();
 
-  while (line2.length() > 0 && u8g2.getUTF8Width(line2.c_str()) > maxWidth) {
-    line2.remove(line2.length() - 1);
-  }
+  // Only line 2 gets an ellipsis. Line 1 already fits by construction, and
+  // marking it would read as "Foo... bar" when the text simply continues.
+  line2 = fitLabelWithEllipsis(line2, maxWidth);
 }
