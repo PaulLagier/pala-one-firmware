@@ -255,12 +255,7 @@ static void handleSettings() {
   out += ScreenSettings::isScreenFlipped() ? " checked" : "";
   out += ">";
   out += "<span>" D_WEB_FLIP_SCREEN "</span></label>";
-  out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
-  out += "<input type='checkbox' name='batt_ind' value='1' style='width:auto'";
-  out += !ScreenSettings::batteryIndicatorsEnabled() ? " checked" : "";
-  out += ">";
-  out += "<span>" D_WEB_BATTERY_INDICATORS_LABEL "</span></label>";
-  out += "<div class='hint'>" D_WEB_BATTERY_INDICATORS_HINT "</div>";
+
   out += "<span class='muted' style='display:inline'>" D_WEB_SETTINGS_APPLY_HINT "</span>";
 
   out += "<div class='actions' style='margin-top:14px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button></div>";
@@ -277,6 +272,13 @@ static void handleSettings() {
   out += "><span>" D_WEB_ICON_SLEEP_LABEL "</span></label>";
   out += "<div class='hint'>" D_WEB_ICON_SLEEP_HINT "</div>";
   out += "<input type='hidden' name='icons_form' value='1'>";
+  
+  out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
+  out += "<input type='checkbox' name='batt_ind' value='1' style='width:auto'";
+  out += !ScreenSettings::batteryIndicatorsEnabled() ? " checked" : "";
+  out += ">";
+  out += "<span>" D_WEB_BATTERY_INDICATORS_LABEL "</span></label>";
+  out += "<div class='hint'>" D_WEB_BATTERY_INDICATORS_HINT "</div>";
   out += "<div class='actions' style='margin-top:14px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button></div>";
   out += "</form></div>";
 
@@ -609,6 +611,7 @@ static void handleSettingsPost() {
   if (server.hasArg("icons_form")) {
     bool si = server.hasArg("ico_sleep");
     if (si != Icons::sleepIconEnabled()) Icons::setSleepIconEnabled(si);
+    ScreenSettings::setBatteryIndicatorsEnabled(!server.hasArg("batt_ind"));
   }
 
   // Header title — its own form card.
@@ -630,7 +633,6 @@ static void handleSettingsPost() {
     {
       ScreenSettings::setScreenRotation(false);
     }
-    ScreenSettings::setBatteryIndicatorsEnabled(!server.hasArg("batt_ind"));
   }
 
   handleLibraryMenuOrderPost();
