@@ -2,7 +2,7 @@
 
 #include "src/config.h"               // MARGIN_X, SCREEN_W, STATUS_H
 #include "src/hal/display.h"
-#include "src/pure/streak_log.h"      // STREAK_DAY_UNSET
+#include "src/pure/streak_log.h"      // ReadingStreakFile field semantics
 #include "src/storage/statistics.h"
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
@@ -50,9 +50,12 @@ void StatisticsScreen::draw() {
   u8g2.setCursor(MARGIN_X, y);
   u8g2.print(buf);
 
-  // Bottom row: 30-day bitmap. Each cell = 1 day. Right-most cell = today
-  // (bit 0). A filled rect means "logged that day"; an outlined rect means
-  // "not logged". Sits in the bottom strip above the statusbar reserve.
+  // Bottom row: 30-day bitmap. Each cell = 1 streak day (a rolling day, not a
+  // calendar one — see src/pure/streak_log.h). Right-most cell = the most
+  // recent logged day (bit 0). A filled rect means "read that day"; an
+  // outlined rect means "not read". A lapse advances the head by the whole
+  // gap, so missed days show up as blanks. Sits in the bottom strip above the
+  // statusbar reserve.
   static const int CELLS = 30;
   const int cellW = 6;
   const int cellH = 6;

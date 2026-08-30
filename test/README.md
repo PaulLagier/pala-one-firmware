@@ -83,6 +83,7 @@ test/build/host_tests                 # Linux / macOS / MinGW
 | [`test_list_codec.cpp`](test_list_codec.cpp) | todo-list byte-blob encode/decode |
 | [`test_bookmarks_store.cpp`](test_bookmarks_store.cpp) | `loadBookmarks` / `saveBookmarks` against `MapKvStore` |
 | [`test_list_store.cpp`](test_list_store.cpp) | `loadList` / `saveList` against `MapKvStore` |
+| [`test_streak_log.cpp`](test_streak_log.cpp) | reading-streak rolling window, bitmap, v1 → v2 migration |
 
 ## Adding a new test
 

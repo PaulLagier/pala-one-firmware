@@ -15,11 +15,13 @@
 //       reloads from NVS into the RTC counters.
 //
 //    2. Reading streak (currentStreak, longestStreak, totalSessions,
-//       lastLoggedDay, bitmap). Persisted straight to NVS — log events
-//       are at most once per real day, so flash wear is a non-issue.
+//       lastLogSec, lastReadSec, dayIndex, bitmap). Persisted straight to
+//       NVS. A logged day happens at most once per rolling day; the
+//       lastReadSec refresh that keeps the window open is rate-limited to
+//       one write per STREAK_REFRESH_SECS, so flash wear stays a non-issue.
 //       The shape is `ReadingStreakFile` from src/pure/streak_log.h;
-//       the log-advance rules live in src/pure/streak_log.cpp and are
-//       host-tested.
+//       the window + log-advance rules live in src/pure/streak_log.cpp and
+//       are host-tested.
 //
 //  Both feed StatisticsScreen (src/ui/screens/statistics_screen) through
 //  one read-only snapshot accessor — the screen never touches state
@@ -37,9 +39,9 @@ struct StatisticsSnapshot {
   uint32_t currentStreak;
   uint32_t longestStreak;
   uint32_t totalSessions;
-  uint32_t lastLoggedDay;      // STREAK_DAY_UNSET if never logged
-  uint32_t bitmapHead;
-  uint32_t bitmap;             // bit i = "logged on day (bitmapHead - i)"
+  uint32_t lastLogSec;         // STREAK_SEC_UNSET if never logged
+  uint32_t dayIndex;           // rolling day ordinal; also the bitmap head
+  uint32_t bitmap;             // bit i = "read on day (dayIndex - i)"
 };
 
 namespace Statistics {
@@ -50,8 +52,10 @@ namespace Statistics {
 void loadOnBoot();
 
 // Page-turn hook — bumps the lifetime page counter and, after enough
-// page turns on a new day, advances the streak via applyStreakLog
-// from src/pure/streak_log.cpp. Toasts "Reading streak: day N" on a
+// page turns, offers the session to applyStreakLog from
+// src/pure/streak_log.cpp, which decides whether it opens a new streak
+// day, merely keeps the current one alive, or lands after a lapse.
+// Toasts "Reading streak: day N" on a
 // successful log. Call from advancePage() / retreatPage() in
 // src/ui/reader.cpp; bookmark-add doesn't go through those, so it
 // correctly stays uncounted.
@@ -64,7 +68,7 @@ void bumpButtons(uint32_t delta);
 
 // Force a flush of RTC-RAM lifetime counters to NVS. Called from
 // Sleep::enter so any in-flight deltas land before power-down. The
-// streak portion of the state is already in NVS (log events write
+// streak portion of the state is already in NVS (logged days write
 // straight through), so this only deals with pagesRead /
 // buttonPresses / firstStatsRtcSec.
 void flushToNvs();
