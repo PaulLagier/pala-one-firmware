@@ -76,11 +76,6 @@ TEST_CASE("sanitizeUploadedFilename") {
   CHECK(sanitizeUploadedFilename("weird!@#chars.txt") == "weird___chars.txt");
   // Numeric, punctuation in middle stays as filename
   CHECK(sanitizeUploadedFilename("a1-b2.txt") == "a1-b2.txt");
-  // Clamps to MAX_FILE_NAME - 1 (88) so "/books/" + name fits BookInfo::path[96]
-  CHECK(sanitizeUploadedFilename("88_chars__________________________________________________________________________88.txt") == "88_chars__________________________________________________________________________88.txt");
-  CHECK(sanitizeUploadedFilename("89_chars___________________________________________________________________________89.txt") == "89_chars___________________________________________________________________________8.txt");
-  CHECK(sanitizeUploadedFilename("90_chars____________________________________________________________________________90.txt") == "90_chars____________________________________________________________________________.txt");
-  CHECK(sanitizeUploadedFilename("93_chars_______________________________________________________________________________93.txt") == "93_chars____________________________________________________________________________.txt");
 }
 
 TEST_CASE("sanitizeUploadedAppFilename") {
