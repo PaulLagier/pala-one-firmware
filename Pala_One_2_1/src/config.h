@@ -57,7 +57,6 @@ static const int SCREEN_H = 122;
 
 static const uint8_t MAX_BOOKMARKS = 12;
 static const int MAX_BOOKS = 80;
-static const int MAX_FILE_NAME = 89;  // chars at file upload
 static const int MAX_FOLDERS = 32;
 static const int MAX_FOLDER_PATH = 63;  // chars, excluding null
 static const int MAX_PAGES = 10000;
