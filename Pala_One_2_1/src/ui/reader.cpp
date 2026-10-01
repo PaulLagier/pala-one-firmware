@@ -10,6 +10,7 @@
 #include "src/storage/statistics.h"         // Statistics::onReaderPageTurn
 
 #include "src/ui/font.h"                    // layoutForCache for cache stamping
+#include "src/ui/screen_settings.h"          // battery indicator toggle
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
 #include "src/ui/statusbar.h"               // Statusbar::mode for the per-mode statusbar render
 #include "src/ui/text.h"
@@ -306,10 +307,12 @@ static void drawStatusBar(uint32_t startOffset) {
     int x0 = MARGIN_X;
     bool showBatteryWarning = false;
 #if HAS_BATTERY
-    // Battery status usually isn't updated mid-session, so poll it here to see if we're low.
-    // Entries are valid for BAT_CACHE_MS so this won't be too burdonsome.
-    updateBatteryBackground();
-    showBatteryWarning = batteryLow();
+    if (ScreenSettings::batteryIndicatorsEnabled()) {
+      // Battery status usually isn't updated mid-session, so poll it here to see if we're low.
+      // Entries are valid for BAT_CACHE_MS so this won't be too burdonsome.
+      updateBatteryBackground();
+      showBatteryWarning = batteryLow();
+    }
 #endif
     if (showBatteryWarning) {
       drawBatteryBottomLeft();

@@ -4,6 +4,7 @@
 #include "src/hal/display.h"
 #include "src/pure/text_util.h"   // truncateWithEllipsis
 #include "src/ui/font.h"
+#include "src/ui/screen_settings.h"
 #include "src/ui/icons.h"
 
 static const int UI_HEADER_TOP = 6;
@@ -85,7 +86,7 @@ int drawSectionHeader(const char* title, bool drawBattery, bool drawIcons) {
   // overruns the header on its own.
   int right = SCREEN_W - MARGIN_X;
 #if HAS_BATTERY
-  if (drawBattery){
+  if (drawBattery && ScreenSettings::batteryIndicatorsEnabled()) {
     drawBatteryTopRight();
   }
 #endif

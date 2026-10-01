@@ -8,6 +8,8 @@ namespace ScreenSettings
     void toggleScreenRotation();
     bool isScreenFlipped();
     void setScreenRotation(bool);
+    bool batteryIndicatorsEnabled();
+    void setBatteryIndicatorsEnabled(bool enabled);
 }
 
 #endif

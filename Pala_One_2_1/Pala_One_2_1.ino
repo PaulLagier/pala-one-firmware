@@ -139,9 +139,10 @@ Screen* g_currentScreen = &g_libraryScreen;
 // for still warrants a repaint. Not guarded by HAS_BATTERY — the icon tray
 // exists regardless.
 static bool headerIndicatorVisible() {
+  if (g_currentScreen == &g_aboutScreen) return true;
+  if (!ScreenSettings::batteryIndicatorsEnabled()) return false;
   return g_currentScreen == &g_libraryScreen
       || g_currentScreen == &g_uploadScreen
-      || g_currentScreen == &g_aboutScreen
       || g_currentScreen == &g_updateScreen
       || g_currentScreen == &g_appsScreen
       || g_currentScreen == &g_listScreen

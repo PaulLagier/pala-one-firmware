@@ -430,6 +430,8 @@
 #define D_WEB_HEADER_TITLE_HINT     "Se muestra arriba de la pantalla de biblioteca. Deja vacío para ocultarlo."
 #define D_WEB_HEADER_TITLE_RESET    "Restaurar predeterminado"
 #define D_WEB_FLIP_SCREEN           "Voltear orientación de la pantalla" // Translate by ChatGPT
+#define D_WEB_BATTERY_INDICATORS_LABEL "Ocultar indicadores de batería"
+#define D_WEB_BATTERY_INDICATORS_HINT "Cuando se selecciona, el estado de la batería solo es visible en la pantalla " D_ABOUT_HEADER "."
 
 // Header status icons card (src/web/settings.cpp) — see src/ui/icons.h.
 #define D_WEB_ICONS_HEADING         "Iconos de estado"
