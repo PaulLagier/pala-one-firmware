@@ -176,3 +176,16 @@ TEST_CASE("buildLibraryEntries: books in catalog order under their folder") {
   CHECK_EQ(out[1].ref, 0);   // z added first
   CHECK_EQ(out[2].ref, 1);   // a added second
 }
+
+TEST_CASE("assertLibraryEntryValuesLocked: keep LibraryEntryType values consistent") {
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_ABOUT, 6);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_APPS, 4);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_BOOK, 1);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_BOOKMARKS, 2);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_FOLDER, 0);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_LIST, 3);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_SETTINGS, 9);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_STATISTICS, 5);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_UPDATE, 7);
+  CHECK_EQ(LibraryEntryType::LIB_ENTRY_UPLOAD, 8);
+}

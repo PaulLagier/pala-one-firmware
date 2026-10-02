@@ -31,17 +31,18 @@ struct Catalog {
   int  folderCount = 0;
 };
 
+// Values are persisted in settings and should not be changed.
 enum LibraryEntryType {
-  LIB_ENTRY_ABOUT,
-  LIB_ENTRY_APPS,
-  LIB_ENTRY_BOOK,
-  LIB_ENTRY_BOOKMARKS,
-  LIB_ENTRY_FOLDER,
-  LIB_ENTRY_LIST,
-  LIB_ENTRY_SETTINGS,
-  LIB_ENTRY_STATISTICS,
-  LIB_ENTRY_UPDATE,
-  LIB_ENTRY_UPLOAD
+  LIB_ENTRY_ABOUT      = 6,
+  LIB_ENTRY_APPS       = 4,
+  LIB_ENTRY_BOOK       = 1,
+  LIB_ENTRY_BOOKMARKS  = 2,
+  LIB_ENTRY_FOLDER     = 0,
+  LIB_ENTRY_LIST       = 3,
+  LIB_ENTRY_SETTINGS   = 9,
+  LIB_ENTRY_STATISTICS = 5,
+  LIB_ENTRY_UPDATE     = 7,
+  LIB_ENTRY_UPLOAD     = 8
 };
 
 // Checks whether `type` is a valid library entry. 

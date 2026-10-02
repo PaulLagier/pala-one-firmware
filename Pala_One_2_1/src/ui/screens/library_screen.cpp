@@ -240,10 +240,10 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     case LIB_ENTRY_ABOUT:
       nextScreen = &g_aboutScreen;
       return;
-	case LIB_ENTRY_APPS:
+    case LIB_ENTRY_APPS:
       nextScreen = &g_appsScreen;
       return;
-	case LIB_ENTRY_BOOK:
+    case LIB_ENTRY_BOOK:
       if (openBookByIndex(sel.ref)) {
         nextScreen = &g_readerScreen;
       } else {
@@ -251,30 +251,30 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
         draw();
       }
       return;
-	case LIB_ENTRY_BOOKMARKS:
+    case LIB_ENTRY_BOOKMARKS:
       nextScreen = &g_bmBookSelectScreen;
       return;
-	case LIB_ENTRY_FOLDER:
+    case LIB_ENTRY_FOLDER:
       toggleExpanded(g_library.folders[sel.ref]);
       draw();
       return;
-	case LIB_ENTRY_LIST:
+    case LIB_ENTRY_LIST:
       g_list.selectedIndex = 0;
       nextScreen = &g_listScreen;
       return;
-	case LIB_ENTRY_SETTINGS:
-	  nextScreen = &g_settingsScreen;
-	  return;
-	case LIB_ENTRY_STATISTICS:
+    case LIB_ENTRY_SETTINGS:
+      nextScreen = &g_settingsScreen;
+      return;
+    case LIB_ENTRY_STATISTICS:
       nextScreen = &g_statsScreen;
       return;
-	case LIB_ENTRY_UPDATE:
+    case LIB_ENTRY_UPDATE:
       nextScreen = &g_updateScreen;
       return;
-	case LIB_ENTRY_UPLOAD:
+    case LIB_ENTRY_UPLOAD:
       nextScreen = &g_uploadScreen;
       return;
-	default:
+    default:
       Serial.println("LibraryScreen: unhandled entry type " + String(sel.type));
   }
 }
