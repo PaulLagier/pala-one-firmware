@@ -27,6 +27,21 @@ int utf8SafeCharLenAt(const char* buf, size_t len, size_t index);
 // Returns the UTF-8 character at `index` (as a String), or empty if out of range.
 String utf8CharAt(const String& s, int index);
 
+// Truncate `in` so that it fits `maxWidth` under the caller's `measure`
+// function, appending "..." when anything was dropped. Never splits a UTF-8
+// sequence, and right-trims spaces before the ellipsis so labels don't read
+// "Foo ...". Returns `in` unchanged when it already fits, and "" when even
+// the ellipsis alone doesn't fit.
+//
+// `measure` is a plain function pointer rather than std::function to keep
+// this layer free of <functional> — callers on the device pass a wrapper
+// around u8g2.getUTF8Width, host tests pass a fixed-width stub.
+//
+// The ellipsis is three ASCII dots, not U+2026: `normalizeTypography` below
+// already converts U+2026 to "..." as the project convention, and the small
+// UI fonts are ASCII-only (see src/ui/font.h).
+String truncateWithEllipsis(const String& in, int maxWidth, int (*measure)(const char*));
+
 bool isBreakableWhitespaceByte(char b);
 bool isBreakablePunctuationByte(char b);
 

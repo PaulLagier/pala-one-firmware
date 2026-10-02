@@ -18,12 +18,12 @@ namespace {
 // Validate ?id and return the book index, or -1 with an error response sent.
 int requireBookId(const char* arg = "id") {
   if (!server.hasArg(arg)) {
-    server.send(400, "text/plain; charset=utf-8", "missing id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
     return -1;
   }
   int id = server.arg(arg).toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
     return -1;
   }
   return id;
@@ -45,7 +45,7 @@ static void handleReadbookText() {
   String path = String(g_library.books[id].path);
   File f = FS.open(path, "r");
   if (!f) {
-    server.send(404, "text/plain; charset=utf-8", "Open failed");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_OPEN_FAILED);
     return;
   }
 
@@ -76,7 +76,7 @@ static void handleJumpOffset() {
   int id = requireBookId();
   if (id < 0) return;
   if (!server.hasArg("offset")) {
-    server.send(400, "text/plain; charset=utf-8", "missing offset");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_OFFSET);
     return;
   }
 
@@ -85,7 +85,7 @@ static void handleJumpOffset() {
 
   File f = FS.open(path, "r");
   if (!f) {
-    server.send(500, "text/plain; charset=utf-8", "Open failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_OPEN_FAILED);
     return;
   }
   size_t fileSize = f.size();
@@ -162,20 +162,20 @@ static const char kReadScript[] PROGMEM =
     "elText.innerHTML=html;"
   "}"
   "function gotoHit(i){"
-    "if(hits.length===0){elStat.textContent='No matches';return;}"
+    "if(hits.length===0){elStat.textContent='" D_WEB_READ_JS_NO_MATCHES "';return;}"
     "curHit=((i%hits.length)+hits.length)%hits.length;"
     "render(true);"
     "var n=elText.querySelector('.find-cur');"
     "if(n)n.scrollIntoView({block:'center',behavior:'smooth'});"
-    "elStat.textContent='Match '+(curHit+1)+' of '+hits.length+'  (byte '+hits[curHit].start+')';"
+    "elStat.textContent=palaFmt('" D_WEB_READ_JS_MATCH_FMT "',curHit+1,hits.length,hits[curHit].start);"
   "}"
   "function search(){"
     "var q=elQ.value;"
-    "if(!q){hits=[];curHit=-1;render(false);elStat.textContent='Enter a phrase to find.';return;}"
+    "if(!q){hits=[];curHit=-1;render(false);elStat.textContent='" D_WEB_READ_JS_ENTER_PHRASE "';return;}"
     "hits=[];var qLow=q.toLowerCase(),rLow=rawText.toLowerCase(),i=0;"
     "while(true){var p=rLow.indexOf(qLow,i);if(p<0)break;hits.push({start:p,end:p+q.length});i=p+q.length;}"
     "curHit=hits.length>0?0:-1;render(true);"
-    "if(hits.length===0)elStat.textContent='No matches';"
+    "if(hits.length===0)elStat.textContent='" D_WEB_READ_JS_NO_MATCHES "';"
     "else gotoHit(0);"
   "}"
   "elBtnAll.addEventListener('click',search);"
@@ -183,17 +183,17 @@ static const char kReadScript[] PROGMEM =
   "elNext.addEventListener('click',function(){if(hits.length)gotoHit(curHit+1);});"
   "elPrev.addEventListener('click',function(){if(hits.length)gotoHit(curHit-1);});"
   "elText.addEventListener('click',function(e){var t=e.target;if(t.classList&&t.classList.contains('find-hit')){var idx=parseInt(t.dataset.i,10);if(!isNaN(idx))gotoHit(idx);}});"
-  "elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent='Find something first.';return;}"
+  "elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent='" D_WEB_READ_JS_FIND_FIRST "';return;}"
     "var off=hits[curHit].start;var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));"
-    "elJumpStat.textContent='Saving...';elJump.disabled=true;"
+    "elJumpStat.textContent='" D_WEB_READ_JS_SAVING "';elJump.disabled=true;"
     "fetch('/jumpoffset',{method:'POST',body:fd,redirect:'follow'}).then(function(r){"
-      "elJumpStat.textContent=r.ok?('Saved. Open the book on the device to jump to byte '+off+'.'):('Save failed: HTTP '+r.status);"
-    "}).catch(function(e){elJumpStat.textContent='Save failed: '+(e&&e.message?e.message:'error');"
+      "elJumpStat.textContent=r.ok?palaFmt('" D_WEB_READ_JS_SAVED_FMT "',off):palaFmt('" D_WEB_READ_JS_SAVE_HTTP_FMT "',r.status);"
+    "}).catch(function(e){elJumpStat.textContent=palaFmt('" D_WEB_READ_JS_SAVE_FAIL_FMT "',(e&&e.message?e.message:'" D_WEB_READ_JS_ERROR "'));"
     "}).finally(function(){elJump.disabled=false;});"
   "});"
   "fetch('/readbook-text?id='+encodeURIComponent(bookId)).then(function(r){return r.text();}).then(function(t){"
-    "rawText=t;render(false);elStat.textContent='Loaded '+rawText.length+' bytes. Enter a phrase to find.';"
-  "}).catch(function(){elStat.textContent='Could not load book text.';});"
+    "rawText=t;render(false);elStat.textContent=palaFmt('" D_WEB_READ_JS_LOADED_FMT "',rawText.length);"
+  "}).catch(function(){elStat.textContent='" D_WEB_READ_JS_LOAD_FAILED "';});"
   "})();</script>";
 
 static void handleReadView() {

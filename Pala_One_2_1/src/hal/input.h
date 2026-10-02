@@ -39,7 +39,7 @@ struct ButtonState {
   bool tripleClick_ = false;
   bool quadClick_ = false;
   bool longClick_ = false;
-  bool veryLongClick_ = false;   // hold >= VERY_LONG_MS with no preceding click
+  bool veryLongClick_ = false;   // hold >= kDefaultVeryLongMs with no preceding click
   bool clickHoldClick_ = false;  // chord: short click immediately followed by a long hold
 
   // Count of accepted short press-release pairs since the last

@@ -15,10 +15,10 @@ static bool s_active = false;
 
 static const char* statusbarLabel() {
   switch (Statusbar::mode()) {
-    case Statusbar::Minimal: return "Minimal";
-    case Statusbar::Hidden:  return "Hidden";
+    case Statusbar::Minimal: return D_STATUSBAR_MODE_MINIMAL;
+    case Statusbar::Hidden:  return D_STATUSBAR_MODE_HIDDEN;
     case Statusbar::Full:
-    default:                 return "Full";
+    default:                 return D_STATUSBAR_MODE_FULL;
   }
 }
 
@@ -43,7 +43,7 @@ void draw() {
   Font::useBody();
   int ascent = u8g2.getFontAscent();
   int lineH = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 1;
-  int y = drawSectionHeader("Reading");
+  int y = drawSectionHeader(D_READER_MENU_HEADING);
 
   // Book title (truncated by font; the screen clip handles overflow).
   String title = stripTxtExt(lastPathComponent(g_bookview.book.path()));
@@ -63,10 +63,10 @@ void draw() {
   // reads as a hard cap rather than "this is how many pages exist."
   char buf[64];
   if (g_bookview.pages.eofReached && g_bookview.pages.count > 0) {
-    snprintf(buf, sizeof(buf), "Page %d of %d  (%d%%)",
+    snprintf(buf, sizeof(buf), D_READER_MENU_PAGE_OF_FMT,
              g_bookview.cursor.pageIndex + 1, g_bookview.pages.count, pct);
   } else {
-    snprintf(buf, sizeof(buf), "Page %d  (%d%% of book)",
+    snprintf(buf, sizeof(buf), D_READER_MENU_PAGE_PCT_FMT,
              g_bookview.cursor.pageIndex + 1, pct);
   }
   u8g2.setCursor(MARGIN_X, y);
@@ -77,13 +77,13 @@ void draw() {
   y += lineH;
 
   // Statusbar mode row — short-click cycles through the three modes.
-  snprintf(buf, sizeof(buf), "Statusbar: %s", statusbarLabel());
+  snprintf(buf, sizeof(buf), D_READER_MENU_STATUSBAR_FMT, statusbarLabel());
   u8g2.setCursor(MARGIN_X, y);
   u8g2.print(buf);
 
   // Footer hint at the very bottom.
   u8g2.setCursor(MARGIN_X, SCREEN_H - 2);
-  u8g2.print("click: cycle  2x: close");
+  u8g2.print(D_READER_MENU_HINT);
 
   display.update();
 }

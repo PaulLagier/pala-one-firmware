@@ -112,6 +112,13 @@ static const char kThemeScript[] PROGMEM =
   "S((v==='dark'||v==='light')?v:'" WEB_DEFAULT_THEME_JS "');"
   "window.palaToggleTheme=function(){S(r.dataset.theme==='dark'?'light':'dark')};"
   "window.palaTogglePw=function(b){var i=b.parentNode.querySelector('input');var s=(i.type==='password');i.type=s?'text':'password';b.classList.toggle('shown',s);};"
+  // Positional formatter for the D_*_JS_*_FMT strings. %1..%9 are replaced by
+  // the trailing arguments, so a translation can reorder them freely. Lives
+  // here because this script is emitted on every page; the find and editor
+  // script blocks both rely on it.
+  "window.palaFmt=function(s){var a=arguments;"
+  "return String(s).replace(/%([1-9])/g,function(m,i){"
+  "var v=a[+i];return v===undefined?m:String(v);});};"
   "})();</script>";
 
 static void handleStyleCss() {
@@ -150,8 +157,9 @@ String webPageStart(const String& title, const String& subtitle,
     out += "</div>";
   }
   out += "<button type='button' class='btn secondary theme-toggle' "
-         "onclick='palaToggleTheme()' title='Light or dark appearance'>"
-         "<span class='tgl'>Dark mode</span><span class='tgd'>Light mode</span>"
+         "onclick='palaToggleTheme()' title='" D_WEB_THEME_TOGGLE_TITLE "'>"
+         "<span class='tgl'>" D_WEB_THEME_DARK_MODE "</span>"
+         "<span class='tgd'>" D_WEB_THEME_LIGHT_MODE "</span>"
          "</button></div></div>";
   return out;
 }

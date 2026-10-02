@@ -77,29 +77,6 @@ static const int MAX_APP_PATH = 80;
 // after measuring free exec-capable heap on a real device.
 static const size_t MAX_APP_BINARY = 48u * 1024u;
 
-// Max silence after the most recent release before we commit a click sequence.
-// The press-in-progress gate in input.cpp's trailing-silence check means this
-// effectively bounds "dead time between release and the next press" — once a
-// press starts, the commit pauses until that release lands. So the user can
-// take this long to *start* their next click; the press itself can take as
-// long as it wants (up to LONG_MS).
-static const uint32_t MAX_CLICK_GAP_MS = 175;
-
-// Max total duration of a multi-click sequence, measured from the first release.
-// Conceptually: "the whole multi-click input has to complete within this window."
-// Combined with MAX_CLICK_GAP_MS this caps both per-gap and overall sloppiness.
-static const uint32_t MAX_CLICK_SEQUENCE_MS = 550;
-
-static const uint32_t LONG_MS = 850;
-
-// Hold this long (without a preceding click) and the classifier emits
-// VeryLong instead of Long. Long and VeryLong — plus the click-then-hold
-// chord — are independently bindable to reader actions (bookmark / lock /
-// menu / none) via the web settings UI.
-static const uint32_t VERY_LONG_MS = 2000;
-
-static const uint32_t DEBOUNCE_MS = 14;
-
 static const uint32_t SAVE_EVERY_MS = 7000;
 static const uint32_t TOAST_MS = 650;
 static const uint32_t UPLOAD_AUTO_EXIT_MS = 15UL * 60UL * 1000UL;

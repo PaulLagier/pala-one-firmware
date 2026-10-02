@@ -70,7 +70,7 @@ static void handleSleepThumb() {
   }
 
   if (!gotBytes) {
-    server.send(404, "text/plain; charset=utf-8", "Thumbnail not found");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_SS_ERR_THUMB_NOT_FOUND);
     return;
   }
 
@@ -147,7 +147,7 @@ static void handleSleepDownload() {
   }
 
   if (!gotBytes) {
-    server.send(404, "text/plain; charset=utf-8", "Screensaver not found");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_SS_ERR_NOT_FOUND);
     return;
   }
 
@@ -197,7 +197,7 @@ static void handleSleepModePost() {
 static void handleScreensaverUploadDone() {
   if (!s_up.ok) {
     server.send(400, "text/plain; charset=utf-8",
-                s_up.error.length() ? s_up.error : "Upload failed");
+                s_up.error.length() ? s_up.error : D_WEB_SS_ERR_UPLOAD_FAILED);
     return;
   }
   server.sendHeader("Location", "/screensavers");
@@ -218,7 +218,7 @@ static void handleScreensaverUploadStream() {
         requested = Screensavers::firstFreeSlot();
       }
       if (requested < 0) {
-        s_up.error = "All rotation slots are full";
+        s_up.error = D_WEB_SS_ERR_SLOTS_FULL;
         return;
       }
       s_up.slotTarget = requested;
@@ -228,7 +228,7 @@ static void handleScreensaverUploadStream() {
     }
     if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
     s_up.tmpFile = FS.open(s_up.tmpPath, "w");
-    if (!s_up.tmpFile) s_up.error = "Cannot create temp file";
+    if (!s_up.tmpFile) s_up.error = D_WEB_SS_ERR_CANT_CREATE_TMP;
   }
   else if (up.status == UPLOAD_FILE_WRITE) {
     if (s_up.error.length() > 0) return;
@@ -236,14 +236,14 @@ static void handleScreensaverUploadStream() {
       if (s_up.tmpFile.size() + up.currentSize > 8192) {
         s_up.tmpFile.close();
         if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
-        s_up.error = "Image file is too large";
+        s_up.error = D_WEB_SS_ERR_IMAGE_TOO_LARGE;
         return;
       }
       size_t wrote = s_up.tmpFile.write(up.buf, up.currentSize);
       if (wrote != up.currentSize) {
         s_up.tmpFile.close();
         if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
-        s_up.error = "Write failed (disk full?)";
+        s_up.error = D_WEB_ERR_WRITE_FAILED;
         return;
       }
     }
@@ -256,9 +256,14 @@ static void handleScreensaverUploadStream() {
 
     if (sz != (size_t)Screensavers::SCREENSAVER_BYTES) {
       if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
-      s_up.error = (sz == 0)
-        ? "Please choose an image first."
-        : "Image must be exactly 3904 bytes";
+      if (sz == 0) {
+        s_up.error = D_WEB_SS_ERR_CHOOSE_IMAGE;
+      } else {
+        char msg[80];
+        snprintf(msg, sizeof(msg), D_WEB_SS_ERR_EXACT_BYTES_FMT,
+                 Screensavers::SCREENSAVER_BYTES);
+        s_up.error = msg;
+      }
       s_up.ok = false;
     } else if (s_up.legacy) {
       if (FS.exists("/sleep.bin")) FS.remove("/sleep.bin");
@@ -266,13 +271,13 @@ static void handleScreensaverUploadStream() {
         s_up.ok = true;
       } else {
         if (FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
-        s_up.error = "Failed to save sleep image";
+        s_up.error = D_WEB_SS_ERR_SAVE_SLEEP;
       }
     } else {
       if (Screensavers::installFromTemp(s_up.slotTarget, s_up.tmpPath)) {
         s_up.ok = true;
       } else {
-        s_up.error = "Failed to save rotation slot";
+        s_up.error = D_WEB_SS_ERR_SAVE_SLOT;
       }
     }
     s_up.tmpPath = "";
@@ -282,7 +287,7 @@ static void handleScreensaverUploadStream() {
     if (s_up.tmpPath.length() > 0 && FS.exists(s_up.tmpPath)) FS.remove(s_up.tmpPath);
     s_up.tmpPath = "";
     s_up.ok = false;
-    s_up.error = "Upload aborted";
+    s_up.error = D_WEB_ERR_UPLOAD_ABORTED;
   }
 }
 
@@ -367,17 +372,17 @@ static const char kEditorScript[] PROGMEM =
   "var pinch={active:false,startDist:0,startZoom:100,startPanX:0,startPanY:0,startMidX:0,startMidY:0};"
   "function clamp(v,a,b){return v<a?a:(v>b?b:v)}"
   "function thr(o){o=clamp(parseInt(o||0,10)||0,-100,100);return clamp(128+Math.round(o*(255-128)/100),0,255)}"
-  "function setLbls(){var t=parseInt(tol.value,10)||0;tolLbl.textContent=(t>0?'+':'')+t+'%';zoomLbl.textContent=zoom.value+'%';panXLbl.textContent=panX.value+' px';panYLbl.textContent=panY.value+' px';}"
+  "function setLbls(){var t=parseInt(tol.value,10)||0;tolLbl.textContent=(t>0?'+':'')+t+'%';zoomLbl.textContent=zoom.value+'%';panXLbl.textContent=panX.value+'" D_WEB_SS_JS_PX_SUFFIX "';panYLbl.textContent=panY.value+'" D_WEB_SS_JS_PX_SUFFIX "';}"
   "function fit(){if(!sourceImage)return;zoom.value='100';panX.value='0';panY.value='0';setLbls();render();}"
   "function drawToWork(){workCtx.fillStyle='#fff';workCtx.fillRect(0,0,W,H);if(!sourceImage)return;var base=Math.min(W/sourceImage.width,H/sourceImage.height);var s=base*((parseInt(zoom.value,10)||100)/100);if(!isFinite(s)||s<=0)s=base;var dw=Math.max(1,Math.round(sourceImage.width*s));var dh=Math.max(1,Math.round(sourceImage.height*s));var x=((W-dw)/2)+(parseInt(panX.value,10)||0);var y=((H-dh)/2)+(parseInt(panY.value,10)||0);workCtx.drawImage(sourceImage,x,y,dw,dh);}"
   "function toOneBit(){var img=workCtx.getImageData(0,0,W,H),d=img.data,t=thr(tol.value),iv=!!inv.checked;for(var i=0;i<d.length;i+=4){var L=((d[i]*299)+(d[i+1]*587)+(d[i+2]*114))/1000;var w=(L>=t);if(iv)w=!w;var c=w?255:0;d[i]=c;d[i+1]=c;d[i+2]=c;d[i+3]=255;}ctx.putImageData(img,0,0);return img;}"
   "function pack(img){var d=img.data,o=new Uint8Array(TOTAL);for(var y=0;y<H;y++)for(var x=0;x<W;x++){var i=(y*W+x)*4;if(d[i]>=128){var b=(y*ROW)+(x>>3);o[b]=o[b]|(1<<(x&7));}}return o;}"
-  "function render(){setLbls();drawToWork();var i=toOneBit();if(!sourceImage){meta.textContent='No image loaded';return null;}meta.textContent='Preview: '+W+'x'+H+'  threshold '+thr(tol.value)+'  bytes '+TOTAL;return i;}"
+  "function render(){setLbls();drawToWork();var i=toOneBit();if(!sourceImage){meta.textContent='" D_WEB_SS_NO_IMAGE "';return null;}meta.textContent=palaFmt('" D_WEB_SS_JS_PREVIEW_FMT "',W,H,thr(tol.value),TOTAL);return i;}"
   "function pts(){var a=[];for(var k in pointers){a.push(pointers[k]);}return a;}"
   "function dist(a,b){var dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy);}"
   "function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};}"
   "function startPinch(){var p=pts();if(p.length===2){pinch.active=true;pinch.startDist=Math.max(8,dist(p[0],p[1]));pinch.startZoom=parseInt(zoom.value,10)||100;pinch.startPanX=parseInt(panX.value,10)||0;pinch.startPanY=parseInt(panY.value,10)||0;var m=mid(p[0],p[1]);pinch.startMidX=m.x;pinch.startMidY=m.y;}else pinch.active=false;}"
-  "fileInput.addEventListener('change',function(){var f=fileInput.files&&fileInput.files[0];if(!f){sourceImage=null;render();return;}status.textContent='';var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){sourceImage=im;fit();};im.onerror=function(){status.textContent='Could not decode image.';};im.src=r.result;};r.onerror=function(){status.textContent='Could not read image.';};r.readAsDataURL(f);});"
+  "fileInput.addEventListener('change',function(){var f=fileInput.files&&fileInput.files[0];if(!f){sourceImage=null;render();return;}status.textContent='';var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){sourceImage=im;fit();};im.onerror=function(){status.textContent='" D_WEB_SS_JS_DECODE_FAILED "';};im.src=r.result;};r.onerror=function(){status.textContent='" D_WEB_SS_JS_READ_FAILED "';};r.readAsDataURL(f);});"
   "[tol,zoom,panX,panY,inv].forEach(function(el){el.addEventListener('input',render);el.addEventListener('change',render);});"
   "resetBtn.addEventListener('click',function(){fit();status.textContent='';});"
   "canvas.addEventListener('pointerdown',function(e){pointers[e.pointerId]={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);var p=pts();if(p.length===1){isDragging=true;dragStartX=e.clientX;dragStartY=e.clientY;dragPanX=parseInt(panX.value,10)||0;dragPanY=parseInt(panY.value,10)||0;}startPinch();});"
@@ -385,7 +390,7 @@ static const char kEditorScript[] PROGMEM =
   "function endP(e){delete pointers[e.pointerId];var p=pts();if(p.length===1){isDragging=true;dragStartX=p[0].x;dragStartY=p[0].y;dragPanX=parseInt(panX.value,10)||0;dragPanY=parseInt(panY.value,10)||0;}else isDragging=false;startPinch();}"
   "canvas.addEventListener('pointerup',endP);canvas.addEventListener('pointercancel',endP);"
   "canvas.addEventListener('wheel',function(e){if(!sourceImage)return;e.preventDefault();var z=parseInt(zoom.value,10)||100,s=Math.max(2,Math.round(Math.abs(e.deltaY)/25));zoom.value=String(clamp(z-(e.deltaY>0?s:-s),10,400));render();},{passive:false});"
-  "uploadBtn.addEventListener('click',function(){if(!sourceImage){alert('Please choose an image first.');return;}var img=render();if(!img){status.textContent='Preview is not ready yet.';return;}var bytes=pack(img);var fd=new FormData();fd.append('file',new Blob([bytes],{type:'application/octet-stream'}),'sleep-editor.bin');var url='/screensavers/upload';var sel=dstSel?dstSel.value:'auto';if(sel==='single')url+='?single=1';else if(sel!=='auto')url+='?slot='+encodeURIComponent(sel);status.textContent='Uploading...';uploadBtn.disabled=true;fetch(url,{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t||('HTTP '+r.status));});status.textContent='Upload complete. Refreshing...';setTimeout(function(){window.location.href='/screensavers';},600);}).catch(function(e){status.textContent='Upload failed: '+(e&&e.message?e.message:'error');}).finally(function(){uploadBtn.disabled=false;});});"
+  "uploadBtn.addEventListener('click',function(){if(!sourceImage){alert('" D_WEB_SS_ERR_CHOOSE_IMAGE "');return;}var img=render();if(!img){status.textContent='" D_WEB_SS_JS_PREVIEW_NOT_READY "';return;}var bytes=pack(img);var fd=new FormData();fd.append('file',new Blob([bytes],{type:'application/octet-stream'}),'sleep-editor.bin');var url='/screensavers/upload';var sel=dstSel?dstSel.value:'auto';if(sel==='single')url+='?single=1';else if(sel!=='auto')url+='?slot='+encodeURIComponent(sel);status.textContent='" D_WEB_SS_JS_UPLOADING "';uploadBtn.disabled=true;fetch(url,{method:'POST',body:fd}).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t||palaFmt('" D_WEB_SS_JS_HTTP_FMT "',r.status));});status.textContent='" D_WEB_SS_JS_UPLOAD_COMPLETE "';setTimeout(function(){window.location.href='/screensavers';},600);}).catch(function(e){status.textContent=palaFmt('" D_WEB_SS_JS_UPLOAD_FAIL_FMT "',(e&&e.message?e.message:'" D_WEB_SS_JS_ERROR "'));}).finally(function(){uploadBtn.disabled=false;});});"
   "setLbls();render();"
   "})();</script>";
 

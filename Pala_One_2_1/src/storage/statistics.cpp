@@ -151,7 +151,10 @@ static void streakAutoLogOnPageTurn() {
   g_streakAuto.cachedLastDay = today;
   g_streakAuto.pagesToday    = 0;
 
-  Toast::show(String("Reading streak: day ") + String(r.next.currentStreak));
+  char msg[48];
+  snprintf(msg, sizeof(msg), D_TOAST_STREAK_DAY_FMT,
+           (unsigned)r.next.currentStreak);
+  Toast::show(msg);
 }
 
 // ---------------------------------------------------------------------------

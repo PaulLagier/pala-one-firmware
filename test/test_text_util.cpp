@@ -134,3 +134,74 @@ TEST_CASE("compactText streaming: no word merging across boundary") {
   String b = compactText("o bar", &lastWasSpace, &newlineCount, /*trimTail=*/true);
   CHECK_EQ(a + b, String("foo bar"));
 }
+
+// ============================================================================
+//  truncateWithEllipsis
+//
+//  The stub measure charges a flat 6 px per *codepoint*, not per byte, so a
+//  test that feeds multi-byte input fails loudly if the implementation ever
+//  starts counting bytes.
+// ============================================================================
+
+static int measure6PerCodepoint(const char* s) {
+  String str(s);
+  int n = 0;
+  int i = 0;
+  while (i < (int)str.length()) {
+    int charLen = utf8SafeCharLenAt(str, i);
+    if (charLen <= 0) break;
+    n++;
+    i += charLen;
+  }
+  return n * 6;
+}
+
+TEST_CASE("truncateWithEllipsis leaves a string that already fits untouched") {
+  CHECK_EQ(truncateWithEllipsis("abc", 60, measure6PerCodepoint), String("abc"));
+  // "abc" measures 18. Exactly at the limit is still a fit.
+  CHECK_EQ(truncateWithEllipsis("abc", 18, measure6PerCodepoint), String("abc"));
+  // One pixel under and it no longer fits — and "..." costs 18 itself, so
+  // there is no truncation that helps. Empty, not a partial ellipsis.
+  CHECK_EQ(truncateWithEllipsis("abc", 17, measure6PerCodepoint), String(""));
+  CHECK_EQ(truncateWithEllipsis("", 6, measure6PerCodepoint), String(""));
+}
+
+TEST_CASE("truncateWithEllipsis truncates ASCII and appends three dots") {
+  // maxWidth 30 = 5 codepoints. "..." costs 3, leaving room for 2 chars.
+  CHECK_EQ(truncateWithEllipsis("abcdefgh", 30, measure6PerCodepoint), String("ab..."));
+}
+
+TEST_CASE("truncateWithEllipsis never splits a multi-byte sequence") {
+  // "ñ" is 0xC3 0xB1. Eight of them = 8 codepoints = 16 bytes = 48 px,
+  // comfortably over the 30 px limit so truncation actually runs.
+  char raw[] = {(char)0xC3, (char)0xB1, (char)0xC3, (char)0xB1,
+                (char)0xC3, (char)0xB1, (char)0xC3, (char)0xB1,
+                (char)0xC3, (char)0xB1, (char)0xC3, (char)0xB1,
+                (char)0xC3, (char)0xB1, (char)0xC3, (char)0xB1, 0};
+  String in(raw);
+  // 30 px = 5 codepoints; ellipsis eats 3, so 2 "ñ" survive = 4 bytes.
+  String out = truncateWithEllipsis(in, 30, measure6PerCodepoint);
+  CHECK_EQ(out, String("\xC3\xB1\xC3\xB1..."));
+  CHECK_EQ((int)out.length(), 7);
+
+  // Every byte before the ellipsis must still form valid sequences: walking
+  // the result must land exactly on the start of the dots.
+  int i = 0;
+  while (i < (int)out.length() && (unsigned char)out[i] >= 0x80) {
+    i += utf8SafeCharLenAt(out, i);
+  }
+  CHECK_EQ(i, 4);
+}
+
+TEST_CASE("truncateWithEllipsis returns empty when even the ellipsis won't fit") {
+  CHECK_EQ(truncateWithEllipsis("abcdef", 12, measure6PerCodepoint), String(""));
+}
+
+TEST_CASE("truncateWithEllipsis right-trims spaces before the ellipsis") {
+  // 36 px = 6 codepoints; "..." leaves 3, and the 3rd kept char is a space.
+  CHECK_EQ(truncateWithEllipsis("ab cdefgh", 36, measure6PerCodepoint), String("ab..."));
+}
+
+TEST_CASE("truncateWithEllipsis tolerates a null measure function") {
+  CHECK_EQ(truncateWithEllipsis("abcdef", 6, nullptr), String("abcdef"));
+}

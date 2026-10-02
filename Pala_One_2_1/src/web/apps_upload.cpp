@@ -230,7 +230,7 @@ static void handleDownloadApp() {
   String path = String("/apps/") + name;
   File f = FS.open(path, "r");
   if (!f) {
-    server.send(404, "text/plain; charset=utf-8", "App not found");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_APP_NOT_FOUND);
     return;
   }
 

@@ -10,6 +10,7 @@
 #include "src/storage/statistics.h"         // Statistics::onReaderPageTurn
 
 #include "src/ui/font.h"                    // layoutForCache for cache stamping
+#include "src/ui/screen_settings.h"          // battery indicator toggle
 #include "src/ui/screens/library_screen.h"  // navigateToLibraryRoot — fallback on error
 #include "src/ui/statusbar.h"               // Statusbar::mode for the per-mode statusbar render
 #include "src/ui/text.h"
@@ -276,21 +277,12 @@ bool openBookByIndex(int idx) {
 }
 
 static void drawStatusBar(uint32_t startOffset) {
-  // If the battery is low, we show a full status bar regardless of preference
-  // with a warning icon.
-  bool showBatteryWarning = false;
-#if HAS_BATTERY
-  // Battery status usually isn't updated mid-session, so poll it here to see if we're low.
-  // Entries are valid for BAT_CACHE_MS so this won't be too burdonsome.
-  updateBatteryBackground();
-  showBatteryWarning = batteryLow();
-#endif
-  if (!showBatteryWarning && Statusbar::mode() == Statusbar::Hidden) return;
+  if (Statusbar::mode() == Statusbar::Hidden) return;
 
   size_t total = g_bookview.book.size();
   if (total == 0) total = 1;
 
-  if (!showBatteryWarning && Statusbar::mode() == Statusbar::Minimal) {
+  if (Statusbar::mode() == Statusbar::Minimal) {
     int w = SCREEN_W - 2 * MARGIN_X;
     int filled = (int)((startOffset * (uint32_t)w) / (uint32_t)total);
     if (filled < 0) filled = 0;
@@ -313,10 +305,19 @@ static void drawStatusBar(uint32_t startOffset) {
   if (SHOW_PROGRESS_BAR) {
     const int padR = SHOW_PAGE_NUMBER ? (pageTextW + 8) : 0;
     int x0 = MARGIN_X;
-	if (showBatteryWarning) {
-	  drawBatteryBottomLeft();
-	  x0 += 24;
-	}
+    bool showBatteryWarning = false;
+#if HAS_BATTERY
+    if (ScreenSettings::batteryIndicatorsEnabled()) {
+      // Battery status usually isn't updated mid-session, so poll it here to see if we're low.
+      // Entries are valid for BAT_CACHE_MS so this won't be too burdonsome.
+      updateBatteryBackground();
+      showBatteryWarning = batteryLow();
+    }
+#endif
+    if (showBatteryWarning) {
+      drawBatteryBottomLeft();
+      x0 += 24;
+    }
     int w = (SCREEN_W - MARGIN_X - x0) - padR;
     if (w < 40) w = 40;
     int yTop = SCREEN_H - 7;

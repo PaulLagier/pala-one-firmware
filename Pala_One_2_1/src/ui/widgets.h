@@ -9,7 +9,15 @@
 // ============================================================================
 //  Shared drawing helpers used by multiple screens
 // ============================================================================
-int drawSectionHeader(const char* title, bool drawBattery = true);
+// Draws the title, optionally the battery indicator, and optionally the
+// status icon tray (see src/ui/icons.h). The title is clamped with an
+// ellipsis to whatever width the tray leaves it, so a long title can no
+// longer run underneath the indicators. Returns `contentTop`.
+//
+// `drawIcons` exists for AboutScreen, which suppresses the normal battery
+// and then draws the wide *extended* battery block itself — a tray anchored
+// to the right margin would land underneath it.
+int drawSectionHeader(const char* title, bool drawBattery = true, bool drawIcons = true);
 
 // Full-screen single- or two-line centered message. Always full-refreshes
 // (no fastmode), so use it sparingly — for hard errors or status notices
@@ -32,7 +40,18 @@ void forceNextMenuFrameFull();
 // `UI_LIST_LEFT + extraIndent` on the given baseline; bold if selected.
 // Resets font to Body afterwards. Most callers pass no indent;
 // LibraryScreen passes its folder-depth + system-nudge offset.
-void drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent = 0);
+//
+// Labels too wide for the row are truncated with an ellipsis — doing it here
+// rather than per-screen is what gives every menu the same behaviour without
+// each one repeating the width arithmetic. Returns the pixel width actually
+// drawn, which ListScreen needs so its strike-through matches the visible
+// text rather than the original label.
+int drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent = 0);
+
+// Width available to a menu row's text at the given indent. Accounts for the
+// scroll-indicator gutter, which is only reserved while a list is actually
+// scrolling. Call it during a `drawScrollableList` callback.
+int menuRowMaxWidth(int extraIndent = 0);
 
 // Row height for the menu screens. Used internally by drawScrollableList;
 // also exposed so callers that draw extra rows (e.g. ListScreen's selected
@@ -65,5 +84,10 @@ void drawScrollableList(int contentTopY,
 
 // Leftmost x for menu rows.
 static const int UI_LIST_LEFT = MARGIN_X + 4;
+
+// Right gutter reserved for the scroll indicator arrows, so long row labels
+// never collide with them. Reserved only while a list actually scrolls —
+// see menuRowMaxWidth().
+static const int UI_LIST_GUTTER_W = 8;
 
 #endif  // PALA_UI_WIDGETS_H

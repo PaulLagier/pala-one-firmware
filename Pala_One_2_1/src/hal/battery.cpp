@@ -2,6 +2,7 @@
 
 #include "src/hal/display.h" // u8g2 + gfx for the battery icon
 #include "src/ui/font.h"     // role-based font switch (UiSmall for the % text)
+#include "src/ui/screen_settings.h"
 
 #if HAS_BATTERY
 
@@ -272,10 +273,20 @@ void drawBolt(int battX, int battY, int battH, int spacing)
 const int iconW = 18;
 const int iconH = 9;
 
+// Widest adornment drawn to the LEFT of the battery body. The charging bolt
+// (drawBolt) puts point d at battX - spacing(2) - iconH/2(4) - 1 = battX - 7,
+// then strokes each segment twice at x and x-1, so its leftmost column is
+// battX - 8; the low-battery exclamation (drawExclamation) only reaches
+// battX - 4. Anything laid out beside the battery has to clear the larger.
+static const int kTopRightAdornW = 8;
+
+int batteryTopRightLeftEdge() {
+  return SCREEN_W - MARGIN_X - iconW - 2 - kTopRightAdornW;
+}
+
 void drawBattery(int xIcon, int yIcon)
 {
   updateBatteryCached(false);
-  Font::useUiSmall();
   int pct = s_battery.valid ? s_battery.pctShown : 0;
   if (pct < 0)
     pct = 0;
@@ -285,22 +296,26 @@ void drawBattery(int xIcon, int yIcon)
   drawBatteryOutline(xIcon, yIcon, iconW, iconH);
   int displayedCharge = 0;
 
-  if (pct > 75)
+  if (batteryLow())
+  {
+    displayedCharge = 0;
+    drawExclamation(xIcon, yIcon, iconH, 2);
+  }
+  else if (pct > 75)
   {
     displayedCharge = 100;
   }
-  else if (pct > 50)
+  else if (pct > 40)
   {
     displayedCharge = 50;
   }
-  else if (pct > 25)
+  else if (pct > 15)
   {
     displayedCharge = 25;
   }
   else
   {
     displayedCharge = 0;
-    drawExclamation(xIcon, yIcon, iconH, 2);
   }
 
   if (!s_battery.charging) {
@@ -324,6 +339,9 @@ void drawBatteryTopRight(bool extended)
   char extendedInfo[11];
   int icon_extendedInfo_spacing = 5;
   if (extended) {
+    // Select the face before the first getUTF8Width below: the layout and the
+    // print at the end have to agree, and the caller leaves whatever it used.
+    Font::useUiSmall();
     snprintf(extendedInfo, sizeof(extendedInfo), "%d%%/%.2fV", pct, readBatteryVoltageRaw());
   }
   int xIcon = SCREEN_W - MARGIN_X - iconW - 2 - (extended ? u8g2.getUTF8Width(extendedInfo) + icon_extendedInfo_spacing : 0);
@@ -335,7 +353,6 @@ void drawBatteryTopRight(bool extended)
   drawBattery(xIcon, yIcon);
 
   if (extended) {
-    Font::useUiSmall();
     u8g2.setCursor(xIcon + iconW + icon_extendedInfo_spacing, yIcon + iconH - 1);
     u8g2.print(extendedInfo);
   }
@@ -343,6 +360,9 @@ void drawBatteryTopRight(bool extended)
 
 void drawBatteryBottomLeft()
 {
+  if (!ScreenSettings::batteryIndicatorsEnabled()) {
+    return;
+  }
 	drawBattery(/*xIcon=*/MARGIN_X + 2, /*yIcon=*/SCREEN_H - iconH);
 }
 

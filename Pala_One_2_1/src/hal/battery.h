@@ -25,6 +25,18 @@ bool batteryChargingChanged();
  * threshold.
  */
 bool batteryLow();
+
+/*
+ * Leftmost x the top-right battery indicator can occupy, including the
+ * charging bolt that hangs off its left side. Anything else anchored to the
+ * right of the header (see Icons::drawStatusTray) lays itself out from here
+ * so the geometry lives in one place.
+ */
+int batteryTopRightLeftEdge();
+#else
+// No battery indicator on this board: the right margin is entirely free.
+// Defined rather than omitted so callers need no #if of their own.
+inline int batteryTopRightLeftEdge() { return SCREEN_W - MARGIN_X; }
 #endif
 
 #endif  // PALA_HAL_BATTERY_H

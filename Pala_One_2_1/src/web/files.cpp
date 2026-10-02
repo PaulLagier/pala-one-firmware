@@ -39,7 +39,7 @@ static void handleDownloadBook() {
   String path = String(g_library.books[id].path);
   File f = FS.open(path, "r");
   if (!f) {
-    server.send(404, "text/plain; charset=utf-8", "Not found");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_NOT_FOUND);
     return;
   }
 

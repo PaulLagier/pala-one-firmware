@@ -145,6 +145,27 @@
 #define D_READER_INDEXING_TITLE     "Preparing book..."
 #define D_READER_INDEXING_DETAIL    "Rebuilding page index"
 
+// ----------------------------------------------------------------------------
+//  Reader menu overlay (src/ui/reader_menu.cpp). Both *_FMT strings are
+//  snprintf templates rendered into a char[64]; keep the argument order —
+//  PAGE_OF_FMT takes (page, total, percent), PAGE_PCT_FMT takes (page,
+//  percent). STATUSBAR_FMT's %s is one of the D_STATUSBAR_MODE_* labels.
+// ----------------------------------------------------------------------------
+#define D_READER_MENU_HEADING       "Reading"
+#define D_READER_MENU_PAGE_OF_FMT   "Page %d of %d  (%d%%)"
+#define D_READER_MENU_PAGE_PCT_FMT  "Page %d  (%d%% of book)"
+#define D_READER_MENU_STATUSBAR_FMT "Statusbar: %s"
+#define D_READER_MENU_HINT          "click: cycle  2x: close"
+#define D_STATUSBAR_MODE_FULL       "Full"
+#define D_STATUSBAR_MODE_MINIMAL    "Minimal"
+#define D_STATUSBAR_MODE_HIDDEN     "Hidden"
+
+// ----------------------------------------------------------------------------
+//  Toasts (src/ui/screen_settings.cpp, src/storage/statistics.cpp)
+// ----------------------------------------------------------------------------
+#define D_TOAST_SCREEN_FLIPPED      "Flipped"
+#define D_TOAST_STREAK_DAY_FMT      "Reading streak: day %u"
+
 
 // ----------------------------------------------------------------------------
 //  App loader error overlay (src/ui/pala_api_impl.cpp paintLoadError)
@@ -210,6 +231,15 @@
 #define D_WEB_NAV_BACK              "Back"
 
 // ----------------------------------------------------------------------------
+//  Theme toggle in the page header (src/web/chrome.cpp webPageStart). The
+//  title is emitted inside a single-quoted HTML attribute, so it follows the
+//  no-apostrophe rule from lang.h.
+// ----------------------------------------------------------------------------
+#define D_WEB_THEME_TOGGLE_TITLE    "Light or dark appearance"
+#define D_WEB_THEME_DARK_MODE       "Dark mode"
+#define D_WEB_THEME_LIGHT_MODE      "Light mode"
+
+// ----------------------------------------------------------------------------
 //  Home page (src/web/files.cpp handleRoot)
 // ----------------------------------------------------------------------------
 #define D_WEB_HOME_TITLE            "Pala One"
@@ -264,8 +294,10 @@
 
 // ----------------------------------------------------------------------------
 //  Plain-text 4xx/5xx error bodies (src/web/files.cpp, bookmarks.cpp,
-//  apps_upload.cpp). These reach the browser on misformed requests; they
-//  surface as page content if the user navigates a bad URL.
+//  apps_upload.cpp, find.cpp, screensavers.cpp). These reach the browser on
+//  misformed requests; they surface as page content if the user navigates a
+//  bad URL. The lowercase ones are argument-validation failures, the
+//  capitalized ones are operation failures — keep that split in translation.
 // ----------------------------------------------------------------------------
 #define D_WEB_ERR_MISSING_ID            "missing id"
 #define D_WEB_ERR_BAD_ID                "bad id"
@@ -286,6 +318,10 @@
 #define D_WEB_ERR_MISSING_BOOK          "missing book"
 #define D_WEB_ERR_MISSING_NAME          "missing name"
 #define D_WEB_ERR_INVALID_NAME          "invalid name"
+#define D_WEB_ERR_MISSING_OFFSET        "missing offset"
+#define D_WEB_ERR_OPEN_FAILED           "Open failed"
+#define D_WEB_ERR_NOT_FOUND             "Not found"
+#define D_WEB_ERR_APP_NOT_FOUND         "App not found"
 
 // ----------------------------------------------------------------------------
 //  List page (src/web/list.cpp)
@@ -387,6 +423,23 @@
 #define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"
 #define D_WEB_BUTTONS_ACTION_HOME "Go to main menu"
 #define D_WEB_BUTTONS_LEGACY_HINT "If enabled, mapping single, double and triple clicks has no effect."
+
+// Click timing section.
+#define D_WEB_TIMINGS_HEADING        "Click timing"
+#define D_WEB_TIMINGS_INTRO          "Tune the behavior for clicks and hold gestures."
+#define D_WEB_TIMINGS_GAP_LABEL      "Click gap"
+#define D_WEB_TIMINGS_GAP_HINT       "How long a pause between releases may last before the current click burst is committed."
+#define D_WEB_TIMINGS_SEQUENCE_LABEL "Click sequence"
+#define D_WEB_TIMINGS_SEQUENCE_HINT  "Maximum total time allowed for a multi-click burst, measured from the first release."
+#define D_WEB_TIMINGS_LONG_LABEL     D_WEB_BUTTONS_LONG " threshold"
+#define D_WEB_TIMINGS_LONG_HINT      "Press duration that turns a hold into a " D_WEB_BUTTONS_LONG " instead of another " D_WEB_BUTTONS_SHORT "."
+#define D_WEB_TIMINGS_VLONG_LABEL    D_WEB_BUTTONS_EXTRA_LONG " threshold"
+#define D_WEB_TIMINGS_VLONG_HINT     "Press duration that upgrades a solo hold from " D_WEB_BUTTONS_LONG " to " D_WEB_BUTTONS_EXTRA_LONG "."
+#define D_WEB_TIMINGS_DEBOUNCE_LABEL "Debounce"
+#define D_WEB_TIMINGS_DEBOUNCE_HINT  "Events closer together than this are treated as switch bounce and ignored."
+#define D_WEB_TIMINGS_RESET          "Reset"
+#define D_WEB_TIMINGS_SAVE           "Save timings"
+#define D_WEB_TIMINGS_DEFAULT_PREFIX "Default: "
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Device"
 #define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
@@ -394,6 +447,14 @@
 #define D_WEB_HEADER_TITLE_HINT     "Shown at the top of the library screen. Leave empty for no title."
 #define D_WEB_HEADER_TITLE_RESET    "Reset to default"
 #define D_WEB_FLIP_SCREEN           "Flip screen orientation"
+#define D_WEB_BATTERY_INDICATORS_LABEL "Hide battery indicators"
+#define D_WEB_BATTERY_INDICATORS_HINT "When checked, battery status is visible on the " D_ABOUT_HEADER " screen only."
+
+// Header status icons card (src/web/settings.cpp) — see src/ui/icons.h.
+#define D_WEB_ICONS_HEADING         "Status icons"
+#define D_WEB_ICONS_INTRO           "Small indicators shown in the menu header for states that use extra battery."
+#define D_WEB_ICON_SLEEP_LABEL      "Show sleep-blocked icon"
+#define D_WEB_ICON_SLEEP_HINT       "A crossed-out moon, shown while something is keeping the device awake - a connected computer, or an upload in progress."
 
 // Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
 // joins.
@@ -507,6 +568,23 @@
 #define D_WEB_READ_JUMP_HINT        "Saves the next-open page directly."
 #define D_WEB_READ_AND_FIND_LINK    "Read &amp; find"
 
+// Status strings emitted by the find/jump JS. These are substituted into
+// single-quoted JS string literals inside a PROGMEM <script> block, so the
+// no-apostrophe / no-backslash rule from lang.h applies here too. The *_FMT
+// values are expanded by window.palaFmt (src/web/chrome.cpp): %1, %2, %3 are
+// positional and MAY be reordered by a translation.
+#define D_WEB_READ_JS_NO_MATCHES    "No matches"
+#define D_WEB_READ_JS_MATCH_FMT     "Match %1 of %2  (byte %3)"
+#define D_WEB_READ_JS_ENTER_PHRASE  "Enter a phrase to find."
+#define D_WEB_READ_JS_FIND_FIRST    "Find something first."
+#define D_WEB_READ_JS_SAVING        "Saving..."
+#define D_WEB_READ_JS_SAVED_FMT     "Saved. Open the book on the device to jump to byte %1."
+#define D_WEB_READ_JS_SAVE_HTTP_FMT "Save failed: HTTP %1"
+#define D_WEB_READ_JS_SAVE_FAIL_FMT "Save failed: %1"
+#define D_WEB_READ_JS_ERROR         "error"
+#define D_WEB_READ_JS_LOADED_FMT    "Loaded %1 bytes. Enter a phrase to find."
+#define D_WEB_READ_JS_LOAD_FAILED   "Could not load book text."
+
 // ----------------------------------------------------------------------------
 //  Font family + bionic reading + reading-position retention
 //  (src/web/settings.cpp). Layout-affecting settings; changes trigger the
@@ -528,9 +606,8 @@
 
 // ----------------------------------------------------------------------------
 //  Screensaver editor + multi-slot manager (src/web/screensavers.cpp).
-//  JS-internal status / error strings emitted by the editor are NOT yet i18n'd;
-//  they live inside the PROGMEM script block. Add D_WEB_SS_JS_* macros and a
-//  data-attribute pass-through if/when that's wanted.
+//  The editor's JS status strings are the D_WEB_SS_JS_* block at the end of
+//  this section; they are concatenated straight into the PROGMEM script.
 // ----------------------------------------------------------------------------
 #define D_WEB_SS_TITLE              "Screensavers"
 #define D_WEB_SS_SUBTITLE           "Custom sleep images, multi-slot rotation, and in-firmware bitmap editor."
@@ -574,5 +651,34 @@
 #define D_WEB_SS_DST_SLOT_PREFIX    "Rotation slot "
 #define D_WEB_SS_DST_OVERWRITE      " (overwrite)"
 #define D_WEB_SS_UPLOAD_EDITED      "Upload edited image"
+
+// Screensaver upload failures. These are set on the upload handler's error
+// slot and returned as the 400 body by handleScreensaverUploadDone.
+// EXACT_BYTES_FMT's %d is Screensavers::SCREENSAVER_BYTES.
+#define D_WEB_SS_ERR_THUMB_NOT_FOUND "Thumbnail not found"
+#define D_WEB_SS_ERR_NOT_FOUND       "Screensaver not found"
+#define D_WEB_SS_ERR_UPLOAD_FAILED   "Upload failed"
+#define D_WEB_SS_ERR_SLOTS_FULL      "All rotation slots are full"
+#define D_WEB_SS_ERR_CANT_CREATE_TMP "Cannot create temp file"
+#define D_WEB_SS_ERR_IMAGE_TOO_LARGE "Image file is too large"
+#define D_WEB_SS_ERR_CHOOSE_IMAGE    "Please choose an image first."
+#define D_WEB_SS_ERR_EXACT_BYTES_FMT "Image must be exactly %d bytes"
+#define D_WEB_SS_ERR_SAVE_SLEEP      "Failed to save sleep image"
+#define D_WEB_SS_ERR_SAVE_SLOT       "Failed to save rotation slot"
+
+// Editor JS status strings. Same single-quote / backslash restriction and
+// same window.palaFmt positional %N expansion as the D_WEB_READ_JS_* block.
+// The "no image" reset reuses D_WEB_SS_NO_IMAGE, which is also the initial
+// server-rendered value of the same element.
+#define D_WEB_SS_JS_PX_SUFFIX        " px"
+#define D_WEB_SS_JS_PREVIEW_FMT      "Preview: %1x%2  threshold %3  bytes %4"
+#define D_WEB_SS_JS_DECODE_FAILED    "Could not decode image."
+#define D_WEB_SS_JS_READ_FAILED      "Could not read image."
+#define D_WEB_SS_JS_PREVIEW_NOT_READY "Preview is not ready yet."
+#define D_WEB_SS_JS_UPLOADING        "Uploading..."
+#define D_WEB_SS_JS_HTTP_FMT         "HTTP %1"
+#define D_WEB_SS_JS_UPLOAD_COMPLETE  "Upload complete. Refreshing..."
+#define D_WEB_SS_JS_UPLOAD_FAIL_FMT  "Upload failed: %1"
+#define D_WEB_SS_JS_ERROR            "error"
 
 #endif  // PALA_LANG_EN_H
