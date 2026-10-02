@@ -31,7 +31,9 @@ struct Catalog {
   int  folderCount = 0;
 };
 
-// Values are persisted in settings and should not be changed.
+// Numeric values are persisted to NVS by LibraryMenuOrder (cfg_lib_order) and
+// cast back on load, so they are a wire format. Declaration order below is
+// cosmetic; the values are not. New entries take the next unused number.
 enum LibraryEntryType {
   LIB_ENTRY_ABOUT      = 6,
   LIB_ENTRY_APPS       = 4,
