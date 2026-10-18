@@ -16,7 +16,19 @@
   var FAMILY_VALUES  = ["helv", "dys"];
   // Gesture-bindable actions. Order matches the legacy UI; "none" first so
   // users can blank out a binding from the keyboard with one arrow press.
-  var ACTION_VALUES  = ["none", "bookmark", "lock", "menu"];
+  var ACTION_VALUES  = ["none", "next", "prev", "menu", "lock", "home", "bookmark", "rotate"];
+  // Remappable gestures: [select id, wire key, i18n label key].
+  var GESTURES = [
+    ["btnS",  "short",     "buttonsShort"],
+    ["btnD",  "double",    "buttonsDouble"],
+    ["btnT",  "triple",    "buttonsTriple"],
+    ["btnL",  "long",      "buttonsLong"],
+    ["btnXL", "extraLong", "buttonsExtraLong"],
+    ["btnCH", "clickHold", "buttonsClickHold"]
+  ];
+  // Without these the device can't be navigated; the backend enforces the
+  // same rule.
+  var REQUIRED_ACTIONS = ["next", "home", "menu"];
 
   function selectHtml(id, name, options, currentValue, hint) {
     var opts = options.map(function (o) {
@@ -139,9 +151,16 @@
       <p class="muted">${s.buttonsHint}</p>
       <form id="gestures-form" style="margin-top:12px">
         <div class="grid cols-2">
-          ${selectHtml("btnL",  s.buttonsLong,      actionOpts, gestures.long      || "none", "")}
-          ${selectHtml("btnXL", s.buttonsExtraLong, actionOpts, gestures.extraLong || "none", "")}
-          ${selectHtml("btnCH", s.buttonsClickHold, actionOpts, gestures.clickHold || "none", "")}
+          ${GESTURES.map(function (g) {
+            return selectHtml(g[0], s[g[2]], actionOpts, gestures[g[1]] || "none", "");
+          })}
+          <div class="span-2">
+            <label class="check-row">
+              <input type="checkbox" id="legacyControls"${gestures.legacyControls ? raw(" checked") : ""}>
+              <span>${s.legacyControlsLabel}</span>
+            </label>
+            <div class="hint">${s.legacyControlsHint}</div>
+          </div>
         </div>
         <div class="actions">
           <button type="submit" id="save-gestures">${s.buttonsSave}</button>
@@ -202,13 +221,18 @@
   }
 
   function readGesturesForm(ctx) {
-    return {
-      gestures: {
-        long:      ctx.container.querySelector("#btnL").value,
-        extraLong: ctx.container.querySelector("#btnXL").value,
-        clickHold: ctx.container.querySelector("#btnCH").value
-      }
+    var gestures = {
+      legacyControls: ctx.container.querySelector("#legacyControls").checked
     };
+    GESTURES.forEach(function (g) {
+      gestures[g[1]] = ctx.container.querySelector("#" + g[0]).value;
+    });
+    return { gestures: gestures };
+  }
+
+  function missingRequiredActions(gestures) {
+    var bound = GESTURES.map(function (g) { return gestures[g[1]]; });
+    return REQUIRED_ACTIONS.filter(function (a) { return bound.indexOf(a) < 0; });
   }
 
   function setHeaderTitleStatus(ctx, kind, msg) {
@@ -253,13 +277,20 @@
 
   async function saveGestures(ctx) {
     var t = ctx.t;
+    var payload = readGesturesForm(ctx);
+    var missing = missingRequiredActions(payload.gestures);
+    if (missing.length) {
+      var names = missing.map(function (a) { return t.settings.actions[a]; });
+      setGesturesStatus(ctx, "err", t.settings.buttonsMissingRequired + " " + names.join(", "));
+      return;
+    }
     var btn = ctx.container.querySelector("#save-gestures");
     btn.disabled = true;
     var prevLabel = btn.textContent;
     btn.textContent = t.settings.saving;
     setGesturesStatus(ctx, "busy", t.settings.saving);
     try {
-      var state = await window.palaApi.post("/api/settings", readGesturesForm(ctx));
+      var state = await window.palaApi.post("/api/settings", payload);
       // Whole-screen redraw so the new bindings stick (and any clamping
       // the device did is reflected back). Cheaper than threading the
       // gestures sub-object through renderForm by hand.

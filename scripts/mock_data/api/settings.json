@@ -9,8 +9,12 @@
   "headerTitle":        "My library",
   "headerTitleDefault": "Pala One",
   "gestures": {
-    "long":      "bookmark",
-    "extraLong": "lock",
-    "clickHold": "menu"
+    "short":          "next",
+    "double":         "prev",
+    "triple":         "home",
+    "long":           "menu",
+    "extraLong":      "lock",
+    "clickHold":      "bookmark",
+    "legacyControls": true
   }
 }

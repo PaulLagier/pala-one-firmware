@@ -28,19 +28,60 @@ static Font::Family familyFromWire(const char* s) {
 // across the wire.
 static const char* actionToWire(ButtonAction a) {
   switch (a) {
-    case ACTION_BOOKMARK: return "bookmark";
-    case ACTION_LOCK:     return "lock";
+    case ACTION_NEXT:     return "next";
+    case ACTION_PREV:     return "prev";
     case ACTION_MENU:     return "menu";
+    case ACTION_LOCK:     return "lock";
+    case ACTION_HOME:     return "home";
+    case ACTION_BOOKMARK: return "bookmark";
+    case ACTION_ROTATE:   return "rotate";
     case ACTION_NONE:
     default:              return "none";
   }
 }
 static ButtonAction actionFromWire(const char* s) {
   if (!s) return ACTION_NONE;
-  if (strcmp(s, "bookmark") == 0) return ACTION_BOOKMARK;
-  if (strcmp(s, "lock")     == 0) return ACTION_LOCK;
+  if (strcmp(s, "next")     == 0) return ACTION_NEXT;
+  if (strcmp(s, "prev")     == 0) return ACTION_PREV;
   if (strcmp(s, "menu")     == 0) return ACTION_MENU;
+  if (strcmp(s, "lock")     == 0) return ACTION_LOCK;
+  if (strcmp(s, "home")     == 0) return ACTION_HOME;
+  if (strcmp(s, "bookmark") == 0) return ACTION_BOOKMARK;
+  if (strcmp(s, "rotate")   == 0) return ACTION_ROTATE;
   return ACTION_NONE;
+}
+
+// The six remappable gestures, in wire-key order. One table drives GET,
+// POST and the required-action check so they can't drift apart.
+struct GestureBinding {
+  const char* wireKey;
+  ButtonAction (*get)();
+  void (*set)(ButtonAction);
+};
+static const GestureBinding kGestureBindings[] = {
+  {"short",     Gestures::actionShort,     Gestures::setActionShort},
+  {"double",    Gestures::actionDouble,    Gestures::setActionDouble},
+  {"triple",    Gestures::actionTriple,    Gestures::setActionTriple},
+  {"long",      Gestures::actionLong,      Gestures::setActionLong},
+  {"extraLong", Gestures::actionExtraLong, Gestures::setActionExtraLong},
+  {"clickHold", Gestures::actionClickHold, Gestures::setActionClickHold},
+};
+
+// Next, Home and OK/Menu must stay reachable from some gesture or the
+// device can't be navigated. Checks the bindings that would result from
+// applying `g` on top of the current ones (fields are individually
+// optional), so a partial update is validated against the full picture.
+static bool gestureBindingsValid(JsonObjectConst g) {
+  bool hasNext = false, hasHome = false, hasMenu = false;
+  for (const GestureBinding& b : kGestureBindings) {
+    ButtonAction a = g[b.wireKey].is<const char*>()
+                         ? actionFromWire(g[b.wireKey].as<const char*>())
+                         : b.get();
+    if (a == ACTION_NEXT) hasNext = true;
+    if (a == ACTION_HOME) hasHome = true;
+    if (a == ACTION_MENU) hasMenu = true;
+  }
+  return hasNext && hasHome && hasMenu;
 }
 
 // Serialise the current settings into the destination object. Used by both
@@ -62,9 +103,10 @@ static void writeSettingsTo(JsonObject obj) {
   obj["headerTitleDefault"] = LIB_HEADER_TITLE;
 
   JsonObject g = obj["gestures"].to<JsonObject>();
-  g["long"]      = actionToWire(Gestures::actionLong());
-  g["extraLong"] = actionToWire(Gestures::actionExtraLong());
-  g["clickHold"] = actionToWire(Gestures::actionClickHold());
+  for (const GestureBinding& b : kGestureBindings) {
+    g[b.wireKey] = actionToWire(b.get());
+  }
+  g["legacyControls"] = Gestures::legacyControlsOn();
 }
 
 static void sendSettings(int status) {
@@ -145,14 +187,17 @@ static bool applyFromJson(JsonObjectConst body) {
 
   // Gestures — each field individually optional. The setters clamp +
   // persist internally, so we don't need to read-back to filter no-ops.
+  // The required-action check already ran in handleApiSettingsPost.
   JsonObjectConst g = body["gestures"].as<JsonObjectConst>();
   if (!g.isNull()) {
-    if (g["long"].is<const char*>())
-      Gestures::setActionLong(actionFromWire(g["long"].as<const char*>()));
-    if (g["extraLong"].is<const char*>())
-      Gestures::setActionExtraLong(actionFromWire(g["extraLong"].as<const char*>()));
-    if (g["clickHold"].is<const char*>())
-      Gestures::setActionClickHold(actionFromWire(g["clickHold"].as<const char*>()));
+    for (const GestureBinding& b : kGestureBindings) {
+      if (g[b.wireKey].is<const char*>())
+        b.set(actionFromWire(g[b.wireKey].as<const char*>()));
+    }
+    if (g["legacyControls"].is<bool>()) {
+      bool v = g["legacyControls"].as<bool>();
+      if (v != Gestures::legacyControlsOn()) Gestures::setLegacyControls(v);
+    }
   }
 
   return layoutChanged;
@@ -169,6 +214,16 @@ static void handleApiSettingsPost() {
   if (err) {
     String msg = String("bad json: ") + err.c_str();
     server.send(400, "text/plain; charset=utf-8", msg);
+    return;
+  }
+
+  // Reject before applying anything so a bad gesture map can't half-land.
+  // The SPA runs the same check client-side and shows a localised message;
+  // this is the backstop for other clients.
+  JsonObjectConst gestures = doc["gestures"].as<JsonObjectConst>();
+  if (!gestures.isNull() && !gestureBindingsValid(gestures)) {
+    server.send(400, "text/plain; charset=utf-8",
+                "gestures must include next, home and menu");
     return;
   }
 
