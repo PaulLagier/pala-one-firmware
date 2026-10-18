@@ -5,6 +5,7 @@
 #include "src/config.h"                   // LIB_HEADER_TITLE (compile-time default)
 #include "src/state.h"
 #include "src/storage/book_metadata.h"   // saveSavedPage
+#include "src/storage/click_timings.h"
 #include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
 #include "src/ui/header_title.h"
@@ -84,6 +85,27 @@ static bool gestureBindingsValid(JsonObjectConst g) {
   return hasNext && hasHome && hasMenu;
 }
 
+// Wire keys for ClickTimings::timingSettings(), index-aligned with that
+// table (gap, sequence, long, very-long, debounce). Applying in table order
+// matters: sequence's minimum is the gap, very-long's is long + 1.
+static const char* const kTimingWireKeys[] = {
+  "gap", "sequence", "long", "veryLong", "debounce",
+};
+static constexpr uint8_t kTimingWireKeyCount =
+    sizeof(kTimingWireKeys) / sizeof(kTimingWireKeys[0]);
+
+static uint8_t timingCount() {
+  uint8_t n = ClickTimings::timingSettingsCount();
+  return n < kTimingWireKeyCount ? n : kTimingWireKeyCount;
+}
+
+static bool jsonArrayContains(JsonArrayConst arr, const char* s) {
+  for (JsonVariantConst v : arr) {
+    if (v.is<const char*>() && strcmp(v.as<const char*>(), s) == 0) return true;
+  }
+  return false;
+}
+
 // Serialise the current settings into the destination object. Used by both
 // GET (just dump state) and POST (echo back the resulting state).
 static void writeSettingsTo(JsonObject obj) {
@@ -107,6 +129,19 @@ static void writeSettingsTo(JsonObject obj) {
     g[b.wireKey] = actionToWire(b.get());
   }
   g["legacyControls"] = Gestures::legacyControlsOn();
+
+  // Click timings, in ms. min/max are live: sequence's floor follows the
+  // current gap and very-long's follows long.
+  JsonArray tim = obj["timings"].to<JsonArray>();
+  const ClickTimings::TimingSettingSpec* specs = ClickTimings::timingSettings();
+  for (uint8_t i = 0; i < timingCount(); i++) {
+    JsonObject t = tim.add<JsonObject>();
+    t["key"]     = kTimingWireKeys[i];
+    t["value"]   = specs[i].current();
+    t["default"] = specs[i].defaultValue;
+    t["min"]     = specs[i].minValue();
+    t["max"]     = specs[i].maxValue();
+  }
 }
 
 static void sendSettings(int status) {
@@ -197,6 +232,25 @@ static bool applyFromJson(JsonObjectConst body) {
     if (g["legacyControls"].is<bool>()) {
       bool v = g["legacyControls"].as<bool>();
       if (v != Gestures::legacyControlsOn()) Gestures::setLegacyControls(v);
+    }
+  }
+
+  // Click timings — `timingsReset: [key…]` restores defaults and wins over a
+  // value sent for the same key. Setters clamp to the live range + persist.
+  JsonObjectConst tim = body["timings"].as<JsonObjectConst>();
+  JsonArrayConst timReset = body["timingsReset"].as<JsonArrayConst>();
+  if (!tim.isNull() || !timReset.isNull()) {
+    const ClickTimings::TimingSettingSpec* specs = ClickTimings::timingSettings();
+    for (uint8_t i = 0; i < timingCount(); i++) {
+      const char* key = kTimingWireKeys[i];
+      if (!timReset.isNull() && jsonArrayContains(timReset, key)) {
+        specs[i].reset();
+      } else if (!tim.isNull() && tim[key].is<long>()) {
+        // Floor negatives first: a straight cast to uint32_t would wrap to
+        // ~4.29e9 and clamp to the max instead of the min.
+        long raw = tim[key].as<long>();
+        specs[i].set(raw < 0 ? 0u : (uint32_t)raw);
+      }
     }
   }
 

@@ -203,6 +203,25 @@ window.__pala_i18n.en = {
     buttonsMissingRequired:"The following actions must always be present:",
     legacyControlsLabel:  "Enable legacy controls",
     legacyControlsHint:   "If enabled, mapping single, double and triple clicks has no effect.",
+    timingsHeading:       "Click timing",
+    timingsIntro:         "Tune the behavior for clicks and hold gestures.",
+    timingsSave:          "Save timings",
+    timingsReset:         "Reset",
+    timingRange:          "Default: {default} ms, min {min} ms, max {max} ms",
+    timingLabels: {
+      gap:      "Click gap",
+      sequence: "Click sequence",
+      long:     "Long press threshold",
+      veryLong: "Extra-long press threshold",
+      debounce: "Debounce"
+    },
+    timingHints: {
+      gap:      "How long a pause between releases may last before the current click burst is committed.",
+      sequence: "Maximum total time allowed for a multi-click burst, measured from the first release.",
+      long:     "Press duration that turns a hold into a Long press instead of another Single click.",
+      veryLong: "Press duration that upgrades a solo hold from Long press to Extra-long press.",
+      debounce: "Events closer together than this are treated as switch bounce and ignored."
+    },
     actions: {
       none:     "None",
       next:     "Next item/page",

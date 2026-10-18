@@ -199,6 +199,25 @@ window.__pala_i18n.es = {
     buttonsMissingRequired:"Las siguientes acciones siempre deben estar presentes:",
     legacyControlsLabel:  "Habilitar los controles heredados",
     legacyControlsHint:   "Si está habilitado, el mapeo de los clics único, doble y triple no tiene efecto.",
+    timingsHeading:       "Tiempos de clic",
+    timingsIntro:         "Ajusta cómo el clasificador separa los clics rápidos de las pulsaciones largas.",
+    timingsSave:          "Guardar tiempos",
+    timingsReset:         "Restablecer",
+    timingRange:          "Predeterminado: {default} ms, mín. {min} ms, máx. {max} ms",
+    timingLabels: {
+      gap:      "Intervalo entre clics",
+      sequence: "Secuencia de clics",
+      long:     "Umbral de Pulsación larga",
+      veryLong: "Umbral de Pulsación muy larga",
+      debounce: "Debounce"
+    },
+    timingHints: {
+      gap:      "Cuánto puede durar la pausa entre pulsaciones antes de confirmar la secuencia actual.",
+      sequence: "Tiempo total máximo permitido para una secuencia de varios clics, medido desde la primera liberación.",
+      long:     "Duración de la pulsación que convierte una pulsación en Pulsación larga en lugar de otro Clic único.",
+      veryLong: "Duración de la pulsación que convierte una pulsación sola de Pulsación larga a Pulsación muy larga.",
+      debounce: "Los cambios de borde más cercanos que esto se tratan como rebote del botón y se ignoran."
+    },
     actions: {
       none:     "Ninguna",
       next:     "Siguiente elemento/página",

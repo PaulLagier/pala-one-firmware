@@ -16,5 +16,12 @@
     "extraLong":      "lock",
     "clickHold":      "bookmark",
     "legacyControls": true
-  }
+  },
+  "timings": [
+    { "key": "gap",      "value": 175,  "default": 175,  "min": 75,  "max": 5000 },
+    { "key": "sequence", "value": 550,  "default": 550,  "min": 175, "max": 10000 },
+    { "key": "long",     "value": 850,  "default": 850,  "min": 50,  "max": 10000 },
+    { "key": "veryLong", "value": 2000, "default": 2000, "min": 851, "max": 20000 },
+    { "key": "debounce", "value": 14,   "default": 14,   "min": 0,   "max": 100 }
+  ]
 }

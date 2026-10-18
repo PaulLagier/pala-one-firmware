@@ -99,6 +99,7 @@
       </form>
     </div>
     ${gesturesCardHtml(s, state.gestures || {})}
+    ${timingsCardHtml(s, state.timings || [])}
     ${libraryCardHtml(s, state.headerTitle || "", state.headerTitleDefault || "")}
     <div class="card" id="sleep-image-card"${state.hasSleepImage ? "" : raw(" hidden")}>
       <h2>${s.sleepImageHeading}</h2>
@@ -126,6 +127,18 @@
       gForm.addEventListener("submit", function (ev) {
         ev.preventDefault();
         saveGestures(ctx);
+      });
+    }
+    var tForm = ctx.container.querySelector("#timings-form");
+    if (tForm) {
+      tForm.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        saveTimings(ctx);
+      });
+      tForm.querySelectorAll("[data-timing-reset]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          resetTiming(ctx, b.getAttribute("data-timing-reset"));
+        });
       });
     }
     var hForm = ctx.container.querySelector("#header-title-form");
@@ -167,6 +180,41 @@
           <span class="muted">${s.buttonsLockHint}</span>
         </div>
         <div id="gestures-status"></div>
+      </form>
+    </div>`;
+  }
+
+  // Click-timing card. The backend sends the list in its own order with live
+  // min/max (some floors depend on other timings), so render it as-is.
+  function timingsCardHtml(s, timings) {
+    var fields = timings.map(function (tm) {
+      var label = s.timingLabels[tm.key] || tm.key;
+      var hint  = s.timingHints[tm.key]  || "";
+      var range = s.timingRange
+        .replace("{default}", tm["default"])
+        .replace("{min}", tm.min)
+        .replace("{max}", tm.max);
+      return html`<div>
+        <label for="tim-${tm.key}">${label}</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <input type="number" id="tim-${tm.key}" data-timing="${tm.key}"
+                 min="${tm.min}" max="${tm.max}" step="1" value="${tm.value}"
+                 style="max-width:120px">
+          <button type="button" class="btn secondary" data-timing-reset="${tm.key}">${s.timingsReset}</button>
+        </div>
+        <div class="hint">${hint} <span class="muted">${range}</span></div>
+      </div>`;
+    });
+    return html`<div class="card">
+      <h2>${s.timingsHeading}</h2>
+      <p class="muted">${s.timingsIntro}</p>
+      <form id="timings-form" style="margin-top:12px">
+        <div class="grid cols-2">${fields}</div>
+        <div class="actions">
+          <button type="submit" id="save-timings">${s.timingsSave}</button>
+          <span class="muted">${s.applyHint}</span>
+        </div>
+        <div id="timings-status"></div>
       </form>
     </div>`;
   }
@@ -272,6 +320,53 @@
       setHeaderTitleStatus(ctx, "ok", t.settings.saved);
     } catch (e) {
       setHeaderTitleStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
+    }
+  }
+
+  function setTimingsStatus(ctx, kind, msg) {
+    var el = ctx.container.querySelector("#timings-status");
+    if (!el) return;
+    el.className   = "status " + kind;
+    el.textContent = msg;
+  }
+
+  function readTimingsForm(ctx) {
+    var timings = {};
+    ctx.container.querySelectorAll("[data-timing]").forEach(function (inp) {
+      var v = parseInt(inp.value, 10);
+      if (!isNaN(v)) timings[inp.getAttribute("data-timing")] = v;
+    });
+    return { timings: timings };
+  }
+
+  async function saveTimings(ctx) {
+    var t = ctx.t;
+    var btn = ctx.container.querySelector("#save-timings");
+    btn.disabled = true;
+    var prevLabel = btn.textContent;
+    btn.textContent = t.settings.saving;
+    setTimingsStatus(ctx, "busy", t.settings.saving);
+    try {
+      // The device clamps out-of-range values; re-rendering shows what stuck.
+      var state = await window.palaApi.post("/api/settings", readTimingsForm(ctx));
+      renderForm(ctx, state);
+      setTimingsStatus(ctx, "ok", t.settings.saved);
+    } catch (e) {
+      btn.disabled    = false;
+      btn.textContent = prevLabel;
+      setTimingsStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
+    }
+  }
+
+  async function resetTiming(ctx, key) {
+    var t = ctx.t;
+    setTimingsStatus(ctx, "busy", t.settings.saving);
+    try {
+      var state = await window.palaApi.post("/api/settings", { timingsReset: [key] });
+      renderForm(ctx, state);
+      setTimingsStatus(ctx, "ok", t.settings.saved);
+    } catch (e) {
+      setTimingsStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
     }
   }
 
