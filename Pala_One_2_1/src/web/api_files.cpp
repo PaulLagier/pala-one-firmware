@@ -118,7 +118,7 @@ static void handleApiBookDelete() {
   if (!readJsonBody(doc)) return;
   int id = doc["id"].is<int>() ? doc["id"].as<int>() : -1;
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
     return;
   }
   String path = String(g_library.books[id].path);
@@ -137,7 +137,7 @@ static void handleApiBookMove() {
   if (!readJsonBody(doc)) return;
   int id = doc["id"].is<int>() ? doc["id"].as<int>() : -1;
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
     return;
   }
   String folderRaw = doc["folder"].is<const char*>() ? doc["folder"].as<const char*>() : "";
@@ -146,21 +146,31 @@ static void handleApiBookMove() {
   String oldPath = String(g_library.books[id].path);
   String destDir = (folder.length() == 0) ? String("/books")
                                           : String("/books/") + folder;
-  if (!ensureDirRecursive(destDir)) {
-    server.send(500, "text/plain; charset=utf-8", "create folder failed");
+  String newPath = destDir + "/" + lastPathComponent(oldPath);
+
+  // BookInfo::path holds MAX_FILE_NAME bytes including the NUL. Check before
+  // creating the folder so a rejected move doesn't leave an empty one behind.
+  if (newPath.length() >= MAX_FILE_NAME) {
+    char msg[192];
+    snprintf(msg, sizeof(msg), D_WEB_ERR_FILE_NAME_TOO_LONG, MAX_FILE_NAME - 1, newPath.c_str());
+    server.send(400, "text/plain; charset=utf-8", msg);
     return;
   }
-  String newPath = destDir + "/" + lastPathComponent(oldPath);
+
+  if (!ensureDirRecursive(destDir)) {
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_CREATE_FAILED);
+    return;
+  }
   if (newPath == oldPath) {  // no-op move
     sendOk();
     return;
   }
   if (FS.exists(newPath)) {
-    server.send(409, "text/plain; charset=utf-8", "destination exists");
+    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_DEST_EXISTS);
     return;
   }
   if (!FS.rename(oldPath, newPath)) {
-    server.send(500, "text/plain; charset=utf-8", "move failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MOVE_FAILED);
     return;
   }
   migrateBookMetadata(oldPath, newPath);
@@ -179,7 +189,7 @@ static void handleApiBookJumpPage() {
   int id   = doc["id"].is<int>()   ? doc["id"].as<int>()   : -1;
   int page = doc["page"].is<int>() ? doc["page"].as<int>() : 0;
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
     return;
   }
   if (page < 1) page = 1;
@@ -209,16 +219,16 @@ static void handleApiFolderCreate() {
   String raw = doc["folder"].is<const char*>() ? doc["folder"].as<const char*>() : "";
   String folder = sanitizeFolderInput(raw);
   if (folder.length() == 0) {
-    server.send(400, "text/plain; charset=utf-8", "bad folder");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
     return;
   }
   if (g_library.folderCount >= MAX_FOLDERS) {
-    server.send(409, "text/plain; charset=utf-8", "folder limit");
+    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_LIMIT);
     return;
   }
   String fullPath = "/books/" + folder;
   if (!ensureDirRecursive(fullPath)) {
-    server.send(500, "text/plain; charset=utf-8", "mkdir failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_MKDIR_FAILED);
     return;
   }
   loadBooks();
@@ -234,20 +244,20 @@ static void handleApiFolderDelete() {
   String raw = doc["folder"].is<const char*>() ? doc["folder"].as<const char*>() : "";
   String folder = sanitizeFolderInput(raw);
   if (folder.length() == 0) {
-    server.send(400, "text/plain; charset=utf-8", "bad folder");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_FOLDER);
     return;
   }
   String fullPath = "/books/" + folder;
   if (!FS.exists(fullPath)) {
-    server.send(404, "text/plain; charset=utf-8", "folder not found");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_NOT_FOUND);
     return;
   }
   if (!isDirEmpty(fullPath)) {
-    server.send(409, "text/plain; charset=utf-8", "folder not empty");
+    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_FOLDER_NOT_EMPTY);
     return;
   }
   if (!FS.rmdir(fullPath)) {
-    server.send(500, "text/plain; charset=utf-8", "rmdir failed");
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_DELETE_FAILED);
     return;
   }
   loadBooks();
@@ -262,13 +272,13 @@ static void handleApiAppDelete() {
   if (!readJsonBody(doc)) return;
   const char* nameC = doc["name"].is<const char*>() ? doc["name"].as<const char*>() : nullptr;
   if (!nameC || !*nameC) {
-    server.send(400, "text/plain; charset=utf-8", "missing name");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_NAME);
     return;
   }
   String name = nameC;
   // Path-traversal guard: name must be a bare basename, not a path.
   if (name.indexOf('/') >= 0 || name.indexOf('\\') >= 0 || !name.endsWith(".bin")) {
-    server.send(400, "text/plain; charset=utf-8", "invalid name");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_INVALID_NAME);
     return;
   }
   String path = String("/apps/") + name;
@@ -300,18 +310,18 @@ static void streamFileAsDownload(File& f, const String& filename,
 // ----------------------------------------------------------------------------
 static void handleApiBookDownload() {
   if (!server.hasArg("id")) {
-    server.send(400, "text/plain; charset=utf-8", "missing id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_ID);
     return;
   }
   int id = server.arg("id").toInt();
   if (id < 0 || id >= g_library.bookCount) {
-    server.send(400, "text/plain; charset=utf-8", "bad id");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_ID);
     return;
   }
   String path = String(g_library.books[id].path);
   File f = FS.open(path, "r");
   if (!f) {
-    server.send(404, "text/plain; charset=utf-8", "not found");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_NOT_FOUND);
     return;
   }
   streamFileAsDownload(f, lastPathComponent(path), "text/plain; charset=utf-8");
@@ -322,18 +332,18 @@ static void handleApiBookDownload() {
 // ----------------------------------------------------------------------------
 static void handleApiAppDownload() {
   if (!server.hasArg("name")) {
-    server.send(400, "text/plain; charset=utf-8", "missing name");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_MISSING_NAME);
     return;
   }
   String name = server.arg("name");
   // Path-traversal guard: name must be a bare .bin basename.
   if (name.indexOf('/') >= 0 || name.indexOf('\\') >= 0 || !name.endsWith(".bin")) {
-    server.send(400, "text/plain; charset=utf-8", "invalid name");
+    server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_INVALID_NAME);
     return;
   }
   File f = FS.open(String("/apps/") + name, "r");
   if (!f) {
-    server.send(404, "text/plain; charset=utf-8", "not found");
+    server.send(404, "text/plain; charset=utf-8", D_WEB_ERR_APP_NOT_FOUND);
     return;
   }
   streamFileAsDownload(f, name, "application/octet-stream");
