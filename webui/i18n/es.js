@@ -247,7 +247,24 @@ window.__pala_i18n.es = {
     headerTitlePlaceholder:"Predeterminado: {default}",
     headerTitleSave:       "Guardar",
     headerTitleReset:      "Restaurar predeterminado",
-    headerTitleResetConfirm:"¿Restaurar el título del encabezado al valor predeterminado del dispositivo?"
+    headerTitleResetConfirm:"¿Restaurar el título del encabezado al valor predeterminado del dispositivo?",
+    libraryMenuHeading:   "Menú de la biblioteca",
+    libraryMenuIntro:     "Elige qué elementos aparecen en la biblioteca y en qué orden. Los elementos ocultos no aparecen.",
+    libraryMenuRequired:  "La opción Conectar es obligatoria y siempre permanecerá en la biblioteca.",
+    libraryMenuSlot:      "Posición",
+    libraryMenuHidden:    "Oculto",
+    libraryMenuReset:     "Restaurar orden predeterminado",
+    libraryMenuHint:      "La pantalla usa este orden de inmediato y lo conserva tras reiniciar.",
+    libraryEntries: {
+      bookmarks:  "Marcapáginas",
+      list:       "Lista",
+      apps:       "Apps",
+      statistics: "Estadísticas",
+      device:     "Dispositivo",
+      upload:     "Conectar",
+      update:     "Actualización FW",
+      settings:   "Configuración de diseño"
+    }
   },
   bookmarks: {
     title:              "Marcapáginas",

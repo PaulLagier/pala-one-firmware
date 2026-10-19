@@ -30,6 +30,9 @@
   // Without these the device can't be navigated; the backend enforces the
   // same rule.
   var REQUIRED_ACTIONS = ["next", "home", "menu"];
+  // System entries the library menu can show, in dropdown order. Wire names
+  // match the backend; "" means the slot is hidden.
+  var LIBRARY_ENTRIES = ["bookmarks", "list", "apps", "statistics", "device", "upload", "update", "settings"];
 
   function selectHtml(id, name, options, currentValue, hint) {
     var opts = options.map(function (o) {
@@ -110,6 +113,7 @@
     ${gesturesCardHtml(s, state.gestures || {})}
     ${timingsCardHtml(s, state.timings || [])}
     ${libraryCardHtml(s, state.headerTitle || "", state.headerTitleDefault || "")}
+    ${libraryMenuCardHtml(s, state.libraryMenu || [], state.libraryMenuSlots || LIBRARY_ENTRIES.length)}
     <div class="card" id="sleep-image-card"${state.hasSleepImage ? "" : raw(" hidden")}>
       <h2>${s.sleepImageHeading}</h2>
       <p class="muted">${s.sleepImagePresent}</p>
@@ -156,6 +160,17 @@
           resetTiming(ctx, b.getAttribute("data-timing-reset"));
         });
       });
+    }
+    var lmForm = ctx.container.querySelector("#library-menu-form");
+    if (lmForm) {
+      lmForm.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        saveLibraryMenu(ctx, { libraryMenu: readLibraryMenuForm(ctx) });
+      });
+      ctx.container.querySelector("#library-menu-reset")
+        .addEventListener("click", function () {
+          saveLibraryMenu(ctx, { libraryMenuReset: true });
+        });
     }
     var hForm = ctx.container.querySelector("#header-title-form");
     if (hForm) {
@@ -264,6 +279,61 @@
         <div id="timings-status"></div>
       </form>
     </div>`;
+  }
+
+  // Library menu order: one select per position, each offering "Hidden" plus
+  // every entry. Duplicates are dropped by the device (first one wins), and
+  // Upload is always kept so the device stays reachable.
+  function libraryMenuCardHtml(s, order, slots) {
+    var opts = [{ value: "", label: s.libraryMenuHidden }].concat(
+      LIBRARY_ENTRIES.map(function (v) { return { value: v, label: s.libraryEntries[v] }; })
+    );
+    var selects = [];
+    for (var i = 0; i < slots; i++) {
+      selects.push(selectHtml("lib" + i, s.libraryMenuSlot + " " + (i + 1), opts, order[i] || "", ""));
+    }
+    return html`<div class="card">
+      <h2>${s.libraryMenuHeading}</h2>
+      <p class="muted">${s.libraryMenuIntro}</p>
+      <p class="muted">${s.libraryMenuRequired}</p>
+      <form id="library-menu-form" style="margin-top:12px">
+        <div class="grid cols-2">${selects}</div>
+        <div class="actions">
+          <button type="submit" id="save-library-menu">${s.save}</button>
+          <button type="button" class="btn secondary" id="library-menu-reset">${s.libraryMenuReset}</button>
+          <span class="muted">${s.libraryMenuHint}</span>
+        </div>
+        <div id="library-menu-status"></div>
+      </form>
+    </div>`;
+  }
+
+  function readLibraryMenuForm(ctx) {
+    var out = [];
+    ctx.container.querySelectorAll("#library-menu-form select").forEach(function (sel) {
+      if (sel.value && out.indexOf(sel.value) < 0) out.push(sel.value);
+    });
+    return out;
+  }
+
+  function setLibraryMenuStatus(ctx, kind, msg) {
+    var el = ctx.container.querySelector("#library-menu-status");
+    if (!el) return;
+    el.className   = "status " + kind;
+    el.textContent = msg;
+  }
+
+  async function saveLibraryMenu(ctx, payload) {
+    var t = ctx.t;
+    setLibraryMenuStatus(ctx, "busy", t.settings.saving);
+    try {
+      // Re-render with the device's normalised order (dedupe, Upload kept).
+      var state = await window.palaApi.post("/api/settings", payload);
+      renderForm(ctx, state);
+      setLibraryMenuStatus(ctx, "ok", t.settings.saved);
+    } catch (e) {
+      setLibraryMenuStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
+    }
   }
 
   function libraryCardHtml(s, current, defaultTitle) {

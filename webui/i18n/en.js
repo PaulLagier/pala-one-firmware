@@ -251,7 +251,24 @@ window.__pala_i18n.en = {
     headerTitlePlaceholder:"Default: {default}",
     headerTitleSave:       "Save",
     headerTitleReset:      "Reset to default",
-    headerTitleResetConfirm:"Reset the header title to the device default?"
+    headerTitleResetConfirm:"Reset the header title to the device default?",
+    libraryMenuHeading:   "Library menu",
+    libraryMenuIntro:     "Choose which items appear in the library and the order they appear in. Hidden items do not appear at all.",
+    libraryMenuRequired:  "Upload is required and will always stay in the library.",
+    libraryMenuSlot:      "Position",
+    libraryMenuHidden:    "Hidden",
+    libraryMenuReset:     "Restore default order",
+    libraryMenuHint:      "The screen uses this order immediately and keeps it after reboot.",
+    libraryEntries: {
+      bookmarks:  "Bookmarks",
+      list:       "List",
+      apps:       "Apps",
+      statistics: "Statistics",
+      device:     "Device",
+      upload:     "Upload",
+      update:     "Firmware Update",
+      settings:   "Layout Settings"
+    }
   },
   bookmarks: {
     title:              "Bookmarks",

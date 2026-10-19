@@ -6,6 +6,7 @@
 #include "src/state.h"
 #include "src/storage/book_metadata.h"   // saveSavedPage
 #include "src/storage/click_timings.h"
+#include "src/storage/library_menu_order.h"
 #include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
 #include "src/ui/header_title.h"
@@ -100,6 +101,37 @@ static uint8_t timingCount() {
   return n < kTimingWireKeyCount ? n : kTimingWireKeyCount;
 }
 
+// Wire names for the system entries the library menu can show. Order here
+// is the order the SPA lists them in its dropdowns.
+struct LibraryEntryWire {
+  LibraryEntryType type;
+  const char* wire;
+};
+static const LibraryEntryWire kLibraryEntries[] = {
+  {LIB_ENTRY_BOOKMARKS,  "bookmarks"},
+  {LIB_ENTRY_LIST,       "list"},
+  {LIB_ENTRY_APPS,       "apps"},
+  {LIB_ENTRY_STATISTICS, "statistics"},
+  {LIB_ENTRY_ABOUT,      "device"},
+  {LIB_ENTRY_UPLOAD,     "upload"},
+  {LIB_ENTRY_UPDATE,     "update"},
+  {LIB_ENTRY_SETTINGS,   "settings"},
+};
+
+static const char* libraryEntryToWire(LibraryEntryType t) {
+  for (const LibraryEntryWire& e : kLibraryEntries) {
+    if (e.type == t) return e.wire;
+  }
+  return nullptr;
+}
+static bool libraryEntryFromWire(const char* s, LibraryEntryType* out) {
+  if (!s) return false;
+  for (const LibraryEntryWire& e : kLibraryEntries) {
+    if (strcmp(e.wire, s) == 0) { *out = e.type; return true; }
+  }
+  return false;
+}
+
 static bool jsonArrayContains(JsonArrayConst arr, const char* s) {
   for (JsonVariantConst v : arr) {
     if (v.is<const char*>() && strcmp(v.as<const char*>(), s) == 0) return true;
@@ -133,6 +165,15 @@ static void writeSettingsTo(JsonObject obj) {
     g[b.wireKey] = actionToWire(b.get());
   }
   g["legacyControls"] = Gestures::legacyControlsOn();
+
+  // Library menu: visible system entries, top to bottom. Slots tells the
+  // SPA how many positions to offer.
+  obj["libraryMenuSlots"] = LibraryMenuOrder::kMaxSystemEntries;
+  JsonArray lib = obj["libraryMenu"].to<JsonArray>();
+  for (int i = 0; i < LibraryMenuOrder::count(); i++) {
+    const char* w = libraryEntryToWire(LibraryMenuOrder::entryAt(i));
+    if (w) lib.add(w);
+  }
 
   // Click timings, in ms. min/max are live: sequence's floor follows the
   // current gap and very-long's follows long.
@@ -249,6 +290,24 @@ static bool applyFromJson(JsonObjectConst body) {
       bool v = g["legacyControls"].as<bool>();
       if (v != Gestures::legacyControlsOn()) Gestures::setLegacyControls(v);
     }
+  }
+
+  // Library menu — `libraryMenuReset:true` wins over `libraryMenu`.
+  // Unknown names are skipped; LibraryMenuOrder dedupes and always keeps
+  // Upload, so the device stays reachable over Wi-Fi.
+  if (body["libraryMenuReset"].is<bool>() && body["libraryMenuReset"].as<bool>()) {
+    LibraryMenuOrder::resetToDefaults();
+  } else if (body["libraryMenu"].is<JsonArrayConst>()) {
+    LibraryEntryType entries[LibraryMenuOrder::kMaxSystemEntries];
+    int n = 0;
+    for (JsonVariantConst v : body["libraryMenu"].as<JsonArrayConst>()) {
+      if (n >= LibraryMenuOrder::kMaxSystemEntries) break;
+      LibraryEntryType t;
+      if (v.is<const char*>() && libraryEntryFromWire(v.as<const char*>(), &t)) {
+        entries[n++] = t;
+      }
+    }
+    LibraryMenuOrder::setEntries(entries, n);
   }
 
   // Click timings — `timingsReset: [key…]` restores defaults and wins over a
