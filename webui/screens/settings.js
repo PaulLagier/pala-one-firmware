@@ -1,6 +1,7 @@
 // Settings screen — GET /api/settings, edit form, POST full state.
 //
-// Reading-related settings (font size/family/line-gap/bionic) can shift the
+// Reading-related settings (font size/family/line-gap/bionic/paragraph
+// gaps) can shift the
 // active reader's page table; the backend handles cursor re-location, the
 // SPA just sends the new state and trusts the device. The response carries
 // the resulting state so we can refresh the form without a second GET.
@@ -71,6 +72,13 @@
           </div>
           <div class="span-2">
             <label class="check-row">
+              <input type="checkbox" id="halfParagraphGaps"${state.halfParagraphGaps ? raw(" checked") : ""}>
+              <span>${s.paraGapLabel}</span>
+            </label>
+            <div class="hint">${s.paraGapHint}</div>
+          </div>
+          <div class="span-2">
+            <label class="check-row">
               <input type="checkbox" id="noScreensaver"${state.noScreensaver ? raw(" checked") : ""}>
               <span>${s.noScreensaverLabel}</span>
             </label>
@@ -98,6 +106,7 @@
         <div id="settings-status"></div>
       </form>
     </div>
+    ${iconsCardHtml(s, state)}
     ${gesturesCardHtml(s, state.gestures || {})}
     ${timingsCardHtml(s, state.timings || [])}
     ${libraryCardHtml(s, state.headerTitle || "", state.headerTitleDefault || "")}
@@ -127,6 +136,13 @@
       gForm.addEventListener("submit", function (ev) {
         ev.preventDefault();
         saveGestures(ctx);
+      });
+    }
+    var iForm = ctx.container.querySelector("#icons-form");
+    if (iForm) {
+      iForm.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        saveIcons(ctx);
       });
     }
     var tForm = ctx.container.querySelector("#timings-form");
@@ -180,6 +196,37 @@
           <span class="muted">${s.buttonsLockHint}</span>
         </div>
         <div id="gestures-status"></div>
+      </form>
+    </div>`;
+  }
+
+  // Header status icons + battery indicators. The device stores "battery
+  // indicators enabled"; the checkbox is phrased as "hide", so it's inverted.
+  function iconsCardHtml(s, state) {
+    return html`<div class="card">
+      <h2>${s.iconsHeading}</h2>
+      <p class="muted">${s.iconsIntro}</p>
+      <form id="icons-form" style="margin-top:12px">
+        <div class="grid cols-2">
+          <div class="span-2">
+            <label class="check-row">
+              <input type="checkbox" id="sleepIcon"${state.sleepIcon ? raw(" checked") : ""}>
+              <span>${s.sleepIconLabel}</span>
+            </label>
+            <div class="hint">${s.sleepIconHint}</div>
+          </div>
+          <div class="span-2">
+            <label class="check-row">
+              <input type="checkbox" id="hideBattery"${state.batteryIndicators === false ? raw(" checked") : ""}>
+              <span>${s.hideBatteryLabel}</span>
+            </label>
+            <div class="hint">${s.hideBatteryHint}</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" id="save-icons">${s.save}</button>
+        </div>
+        <div id="icons-status"></div>
       </form>
     </div>`;
   }
@@ -248,6 +295,7 @@
       sleep:         parseInt(ctx.container.querySelector("#sleep").value, 10),
       lgap:          parseInt(ctx.container.querySelector("#lgap").value,  10),
       bionic:        ctx.container.querySelector("#bionic").checked,
+      halfParagraphGaps: ctx.container.querySelector("#halfParagraphGaps").checked,
       noScreensaver: ctx.container.querySelector("#noScreensaver").checked,
       lockOnSleep:    ctx.container.querySelector("#lockOnSleep").checked,
       screenRotation: ctx.container.querySelector("#screenRotation").checked
@@ -320,6 +368,34 @@
       setHeaderTitleStatus(ctx, "ok", t.settings.saved);
     } catch (e) {
       setHeaderTitleStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
+    }
+  }
+
+  function setIconsStatus(ctx, kind, msg) {
+    var el = ctx.container.querySelector("#icons-status");
+    if (!el) return;
+    el.className   = "status " + kind;
+    el.textContent = msg;
+  }
+
+  async function saveIcons(ctx) {
+    var t = ctx.t;
+    var btn = ctx.container.querySelector("#save-icons");
+    btn.disabled = true;
+    var prevLabel = btn.textContent;
+    btn.textContent = t.settings.saving;
+    setIconsStatus(ctx, "busy", t.settings.saving);
+    try {
+      var state = await window.palaApi.post("/api/settings", {
+        sleepIcon:         ctx.container.querySelector("#sleepIcon").checked,
+        batteryIndicators: !ctx.container.querySelector("#hideBattery").checked
+      });
+      renderForm(ctx, state);
+      setIconsStatus(ctx, "ok", t.settings.saved);
+    } catch (e) {
+      btn.disabled    = false;
+      btn.textContent = prevLabel;
+      setIconsStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
     }
   }
 

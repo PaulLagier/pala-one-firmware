@@ -9,6 +9,7 @@
 #include "src/storage/preferences_store.h"
 #include "src/ui/font.h"
 #include "src/ui/header_title.h"
+#include "src/ui/icons.h"                  // Icons::sleepIconEnabled/setSleepIconEnabled
 #include "src/ui/reader.h"                // g_bookview, findPageForOffset, renderCurrentPage
 #include "src/ui/reader_actions.h"        // ButtonAction + Gestures
 #include "src/ui/screens/reader_screen.h" // g_readerScreen
@@ -114,9 +115,12 @@ static void writeSettingsTo(JsonObject obj) {
   obj["sleep"]         = Sleep::idleTimeoutSecs();
   obj["lgap"]          = Font::currentLineGap();
   obj["bionic"]        = Font::bionicEnabled();
+  obj["halfParagraphGaps"] = Font::halfParagraphGapsEnabled();
   obj["noScreensaver"] = Sleep::noScreensaver();
   obj["lockOnSleep"]   = Sleep::lockOnSleep();
   obj["screenRotation"] = ScreenSettings::isScreenFlipped();
+  obj["sleepIcon"]         = Icons::sleepIconEnabled();
+  obj["batteryIndicators"] = ScreenSettings::batteryIndicatorsEnabled();
   obj["hasSleepImage"] = FS.exists("/sleep.bin");
   // headerTitleDefault lets the SPA show a "Reset to default" affordance
   // without having to hard-code LIB_HEADER_TITLE (which includes the build
@@ -195,6 +199,10 @@ static bool applyFromJson(JsonObjectConst body) {
     bool v = body["bionic"].as<bool>();
     if (v != Font::bionicEnabled()) { Font::setBionic(v); layoutChanged = true; }
   }
+  if (body["halfParagraphGaps"].is<bool>()) {
+    bool v = body["halfParagraphGaps"].as<bool>();
+    if (v != Font::halfParagraphGapsEnabled()) { Font::setHalfParagraphGaps(v); layoutChanged = true; }
+  }
   if (body["noScreensaver"].is<bool>()) {
     bool v = body["noScreensaver"].as<bool>();
     if (v != Sleep::noScreensaver()) Sleep::setNoScreensaver(v);
@@ -206,6 +214,14 @@ static bool applyFromJson(JsonObjectConst body) {
   if (body["screenRotation"].is<bool>()) {
     bool v = body["screenRotation"].as<bool>();
     if (v != ScreenSettings::isScreenFlipped()) ScreenSettings::setScreenRotation(v);
+  }
+  if (body["sleepIcon"].is<bool>()) {
+    bool v = body["sleepIcon"].as<bool>();
+    if (v != Icons::sleepIconEnabled()) Icons::setSleepIconEnabled(v);
+  }
+  if (body["batteryIndicators"].is<bool>()) {
+    bool v = body["batteryIndicators"].as<bool>();
+    if (v != ScreenSettings::batteryIndicatorsEnabled()) ScreenSettings::setBatteryIndicatorsEnabled(v);
   }
 
   // Header title — `headerTitleReset:true` wins over `headerTitle` so the
