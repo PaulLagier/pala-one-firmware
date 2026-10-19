@@ -8,6 +8,7 @@
 #include "src/storage/click_timings.h"
 #include "src/storage/library_menu_order.h"
 #include "src/storage/preferences_store.h"
+#include "src/storage/wifi_creds.h"
 #include "src/ui/font.h"
 #include "src/ui/header_title.h"
 #include "src/ui/icons.h"                  // Icons::sleepIconEnabled/setSleepIconEnabled
@@ -132,6 +133,10 @@ static bool libraryEntryFromWire(const char* s, LibraryEntryType* out) {
   return false;
 }
 
+// 802.11 SSID and WPA passphrase limits, in bytes.
+static constexpr size_t kMaxSsidBytes = 32;
+static constexpr size_t kMaxPassBytes = 64;
+
 static bool jsonArrayContains(JsonArrayConst arr, const char* s) {
   for (JsonVariantConst v : arr) {
     if (v.is<const char*>() && strcmp(v.as<const char*>(), s) == 0) return true;
@@ -165,6 +170,12 @@ static void writeSettingsTo(JsonObject obj) {
     g[b.wireKey] = actionToWire(b.get());
   }
   g["legacyControls"] = Gestures::legacyControlsOn();
+
+  // Stored home network. The password itself never leaves the device —
+  // the SPA only needs to know whether one is saved.
+  JsonObject w = obj["wifi"].to<JsonObject>();
+  w["ssid"]        = WifiCreds::ssid();
+  w["hasPassword"] = WifiCreds::pass().length() > 0;
 
   // Library menu: visible system entries, top to bottom. Slots tells the
   // SPA how many positions to offer.
@@ -292,6 +303,22 @@ static bool applyFromJson(JsonObjectConst body) {
     }
   }
 
+  // Wi-Fi — blank SSID forgets the network. An omitted `pass` keeps the
+  // stored one (the SPA never has it to send back); an explicit "" saves
+  // an open network. Lengths were checked in handleApiSettingsPost.
+  JsonObjectConst w = body["wifi"].as<JsonObjectConst>();
+  if (!w.isNull() && w["ssid"].is<const char*>()) {
+    String ssid = w["ssid"].as<const char*>();
+    ssid.trim();
+    if (ssid.length() == 0) {
+      WifiCreds::clear();
+    } else {
+      String pass = w["pass"].is<const char*>() ? String(w["pass"].as<const char*>())
+                                                : WifiCreds::pass();
+      WifiCreds::save(ssid, pass);
+    }
+  }
+
   // Library menu — `libraryMenuReset:true` wins over `libraryMenu`.
   // Unknown names are skipped; LibraryMenuOrder dedupes and always keeps
   // Upload, so the device stays reachable over Wi-Fi.
@@ -354,6 +381,17 @@ static void handleApiSettingsPost() {
     server.send(400, "text/plain; charset=utf-8",
                 "gestures must include next, home and menu");
     return;
+  }
+  JsonObjectConst wifi = doc["wifi"].as<JsonObjectConst>();
+  if (!wifi.isNull()) {
+    if (wifi["ssid"].is<const char*>() && strlen(wifi["ssid"].as<const char*>()) > kMaxSsidBytes) {
+      server.send(400, "text/plain; charset=utf-8", "ssid too long");
+      return;
+    }
+    if (wifi["pass"].is<const char*>() && strlen(wifi["pass"].as<const char*>()) > kMaxPassBytes) {
+      server.send(400, "text/plain; charset=utf-8", "password too long");
+      return;
+    }
   }
 
   // Snapshot the reader's current byte offset before applying changes so

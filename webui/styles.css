@@ -74,13 +74,22 @@ button[disabled], .btn[disabled] { opacity:.55; cursor:not-allowed; }
 .btn.danger    { background:var(--danger);    color:#fff; }
 .btn.small     { padding:6px 10px; font-size:13px; }
 
-input[type=text], input[type=number], input[type=search], textarea, select {
+input[type=text], input[type=number], input[type=password], input[type=search], textarea, select {
   width:100%; box-sizing:border-box;
   border:1px solid var(--inp-bd); border-radius:10px;
   background:var(--inp-bg); color:var(--text);
   padding:10px; font:inherit;
 }
 input[type=checkbox], input[type=radio] { accent-color:var(--link); }
+
+/* Password field with an inline show/hide toggle (Wi-Fi card). */
+.pwwrap       { position:relative; }
+.pwwrap input { padding-right:40px; }
+.pweye        { position:absolute; right:4px; top:50%; transform:translateY(-50%);
+                background:none; border:0; padding:6px; cursor:pointer;
+                color:var(--muted); display:inline-flex; }
+.pweye .pwh        { display:none; }
+.pweye.shown .pwh  { display:inline; }
 
 label  { display:block; font-weight:600; margin:0 0 6px; }
 .hint  { margin:6px 0 0; color:var(--muted); font-size:12px; }

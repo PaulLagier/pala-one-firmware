@@ -22,6 +22,7 @@
     "clickHold":      "bookmark",
     "legacyControls": true
   },
+  "wifi": { "ssid": "HomeNetwork", "hasPassword": true },
   "libraryMenuSlots": 8,
   "libraryMenu": ["bookmarks", "apps", "statistics", "list", "device", "upload", "update"],
   "timings": [

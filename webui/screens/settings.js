@@ -112,6 +112,7 @@
     ${iconsCardHtml(s, state)}
     ${gesturesCardHtml(s, state.gestures || {})}
     ${timingsCardHtml(s, state.timings || [])}
+    ${wifiCardHtml(s, state.wifi || {})}
     ${libraryCardHtml(s, state.headerTitle || "", state.headerTitleDefault || "")}
     ${libraryMenuCardHtml(s, state.libraryMenu || [], state.libraryMenuSlots || LIBRARY_ENTRIES.length)}
     <div class="card" id="sleep-image-card"${state.hasSleepImage ? "" : raw(" hidden")}>
@@ -159,6 +160,22 @@
         b.addEventListener("click", function () {
           resetTiming(ctx, b.getAttribute("data-timing-reset"));
         });
+      });
+    }
+    var wForm = ctx.container.querySelector("#wifi-form");
+    if (wForm) {
+      wForm.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        saveWifi(ctx);
+      });
+      var pw = ctx.container.querySelector("#wifiPass");
+      pw.addEventListener("input", function () { pw.dataset.dirty = "1"; });
+      var eye = ctx.container.querySelector("#wifi-pw-toggle");
+      eye.addEventListener("click", function () {
+        var show = pw.type === "password";
+        pw.type = show ? "text" : "password";
+        eye.classList.toggle("shown", show);
+        eye.setAttribute("aria-pressed", show ? "true" : "false");
       });
     }
     var lmForm = ctx.container.querySelector("#library-menu-form");
@@ -279,6 +296,75 @@
         <div id="timings-status"></div>
       </form>
     </div>`;
+  }
+
+  // Wi-Fi card. The device never returns the stored password; the field
+  // starts empty with a "<saved>" placeholder, and `pass` is only sent once
+  // the user has typed in it (so clearing it on purpose saves an open
+  // network, while editing just the SSID keeps the stored password).
+  function wifiCardHtml(s, wifi) {
+    var pwPlaceholder = wifi.hasPassword ? s.wifiPasswordSaved : s.wifiPasswordPlaceholder;
+    return html`<div class="card">
+      <h2>${s.wifiHeading}</h2>
+      <p class="muted">${s.wifiIntro}</p>
+      <form id="wifi-form" style="margin-top:12px" autocomplete="off">
+        <div class="grid cols-2">
+          <div>
+            <label for="wifiSsid">${s.wifiSsidLabel}</label>
+            <input type="text" id="wifiSsid" maxlength="32"
+                   placeholder="${s.wifiSsidPlaceholder}" value="${wifi.ssid || ""}">
+          </div>
+          <div>
+            <label for="wifiPass">${s.wifiPasswordLabel}</label>
+            <div class="pwwrap">
+              <input type="password" id="wifiPass" maxlength="64"
+                     autocomplete="new-password" placeholder="${pwPlaceholder}">
+              <button type="button" class="pweye" id="wifi-pw-toggle"
+                      aria-label="${s.wifiShowPassword}" aria-pressed="false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
+                  <line class="pwh" x1="3" y1="21" x2="21" y2="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" id="save-wifi">${s.wifiSave}</button>
+          <span class="muted">${s.wifiHint}</span>
+        </div>
+        <div id="wifi-status"></div>
+      </form>
+    </div>`;
+  }
+
+  function setWifiStatus(ctx, kind, msg) {
+    var el = ctx.container.querySelector("#wifi-status");
+    if (!el) return;
+    el.className   = "status " + kind;
+    el.textContent = msg;
+  }
+
+  async function saveWifi(ctx) {
+    var t = ctx.t;
+    var pw = ctx.container.querySelector("#wifiPass");
+    var wifi = { ssid: ctx.container.querySelector("#wifiSsid").value };
+    if (pw.dataset.dirty) wifi.pass = pw.value;
+    var btn = ctx.container.querySelector("#save-wifi");
+    btn.disabled = true;
+    var prevLabel = btn.textContent;
+    btn.textContent = t.settings.saving;
+    setWifiStatus(ctx, "busy", t.settings.saving);
+    try {
+      var state = await window.palaApi.post("/api/settings", { wifi: wifi });
+      renderForm(ctx, state);
+      setWifiStatus(ctx, "ok", t.settings.saved);
+    } catch (e) {
+      btn.disabled    = false;
+      btn.textContent = prevLabel;
+      setWifiStatus(ctx, "err", (t.errors.server || "Server error") + ": " + (e.message || e));
+    }
   }
 
   // Library menu order: one select per position, each offering "Hidden" plus
