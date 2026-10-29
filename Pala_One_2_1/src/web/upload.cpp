@@ -177,6 +177,9 @@ static void handleUploadBookStream() {
       }
       if (chunk.length() > 0) {
         String cleaned = normalizeTypography(chunk);
+        // Add new formatting directive characters (surround headings with bold,
+        // add bold on/bold off based on delineators)
+        // cleaned = addFormattingDirectiveChars(chunk);
         cleaned = compactText(cleaned,
                               &s_book.compactLastWasSpace,
                               &s_book.compactNewlineCount,

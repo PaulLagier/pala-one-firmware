@@ -350,14 +350,19 @@ void drawBionicLine(int x, int y, const char *line) {
     if (segLen <= 0)
       return;
     if (!isWord) {
-      useBody();
+      useBody(); // isBold ? useBold() : useBody();
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
+      // set isBold to new value, ensuring it exists for next line to be printed
+      // end while
       return;
     }
     int strong = bionicPrefixBytes(seg, segLen);
     if (strong <= 0) {
-      useBody();
+      // find next delineator char in segment
+      // while delineator char exists
+      // print current segment at current weight
+      useBody(); // idBold ? useBold() : useBody();
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
       return;

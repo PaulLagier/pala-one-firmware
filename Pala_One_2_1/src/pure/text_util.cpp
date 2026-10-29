@@ -135,6 +135,34 @@ String normalizeTypography(const String& in) {
   return out;
 }
 
+// String addFormattingDirectiveChars(const String& in) {
+//   String out;
+//   // not sure what length it needs because we are adding characters to the book now
+//   // maybe do a pass on book (regex, doubtful) for all delineators and all headings, then add that
+//   out.reserve(in.length() + 8);
+//   size_t i = 0;
+//   let isBold = false;
+//   let inHeading = false;
+//   for each line
+//     String out_line = ''
+//     if heading
+//       inHeading = true
+//       out_line += bold directive
+//       out_line += line text
+//       out_line += normal directive
+//     endif
+//     if delineator is found
+//       flip isBold
+//       while not inHeading and delineator ahead
+//         out_line += before segment
+//         out_line += isBold ? bold directive : normal directive
+//       endif
+//     endif
+//     out += out_line
+//   endfor
+//   return out
+// }
+
 String compactText(const String& in,
                    bool* ioLastWasSpace,
                    int* ioNewlineCount,
