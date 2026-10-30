@@ -210,47 +210,22 @@
 #define D_TOAST_UNLOCKED            "Unlocked"
 
 // ============================================================================
-//  Web UI (captive portal) — strings embedded in HTML via adjacent-literal
-//  concatenation. All endpoints declare Content-Type: charset=utf-8 already,
-//  so accented characters survive transit unchanged.
+//  Web UI (captive portal) — only the plain-text bodies the C++ routes send
+//  back (errors, bookmark export). The SPA's own strings live in
+//  webui/i18n/*.js. All endpoints declare charset=utf-8, so accented
+//  characters survive transit unchanged.
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  Shared chrome / storage card (src/web/chrome.{h,cpp})
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Navigation links (used across multiple route handlers)
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Theme toggle in the page header (src/web/chrome.cpp webPageStart). The
-//  title is emitted inside a single-quoted HTML attribute, so it follows the
-//  no-apostrophe rule from lang.h.
-// ----------------------------------------------------------------------------
-#define D_WEB_THEME_TOGGLE_TITLE    "Light or dark appearance"
-#define D_WEB_THEME_DARK_MODE       "Dark mode"
-#define D_WEB_THEME_LIGHT_MODE      "Light mode"
-
-// ----------------------------------------------------------------------------
-//  Home page (src/web/files.cpp handleRoot)
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Files page (src/web/files.cpp handleFiles + folder/move/jump forms)
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Plain-text 4xx/5xx error bodies (src/web/files.cpp, bookmarks.cpp,
-//  apps_upload.cpp, find.cpp, screensavers.cpp). These reach the browser on
-//  misformed requests; they surface as page content if the user navigates a
-//  bad URL. The lowercase ones are argument-validation failures, the
-//  capitalized ones are operation failures — keep that split in translation.
+//  Plain-text 4xx/5xx error bodies (src/web/api_files.cpp, apps_upload.cpp,
+//  find.cpp, screensavers.cpp). The SPA shows them after its own localised
+//  "Server error:" prefix. The lowercase ones are argument-validation
+//  failures, the capitalized ones are operation failures — keep that split
+//  in translation.
 //  FILE_NAME_TOO_LONG's %d is MAX_FILE_NAME; %s is file name.
 // ----------------------------------------------------------------------------
 #define D_WEB_ERR_MISSING_ID            "missing id"
 #define D_WEB_ERR_BAD_ID                "bad id"
-#define D_WEB_ERR_MISSING_FOLDER        "missing folder"
 #define D_WEB_ERR_BAD_FOLDER            "bad folder"
 #define D_WEB_ERR_FOLDER_LIMIT          "folder limit reached"
 #define D_WEB_ERR_MKDIR_FAILED          "mkdir failed"
@@ -261,11 +236,6 @@
 #define D_WEB_ERR_DEST_EXISTS           "destination exists"
 #define D_WEB_ERR_MOVE_FAILED           "move failed"
 #define D_WEB_ERR_FILE_NAME_TOO_LONG    "move failed: new path exceeds %d characters: %s"
-#define D_WEB_ERR_MISSING_ID_PAGE       "missing id/page"
-#define D_WEB_ERR_MISSING_BOOK_IDX      "missing book/idx"
-#define D_WEB_ERR_BAD_BOOK              "bad book"
-#define D_WEB_ERR_BAD_IDX               "bad idx"
-#define D_WEB_ERR_MISSING_BOOK          "missing book"
 #define D_WEB_ERR_MISSING_NAME          "missing name"
 #define D_WEB_ERR_INVALID_NAME          "invalid name"
 #define D_WEB_ERR_MISSING_OFFSET        "missing offset"
@@ -274,85 +244,7 @@
 #define D_WEB_ERR_APP_NOT_FOUND         "App not found"
 
 // ----------------------------------------------------------------------------
-//  List page (src/web/list.cpp)
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Reset page (src/web/reset.cpp)
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Settings page (src/web/settings.cpp)
-// ----------------------------------------------------------------------------
-
-// Buttons / remappable hold-gestures section.
-#define D_WEB_BUTTONS_HEADING       "Buttons"
-#define D_WEB_BUTTONS_HINT          "You can remap click patterns to different actions"
-#define D_WEB_BUTTONS_LONG          "Long press"
-#define D_WEB_BUTTONS_SHORT         "Single click"
-#define D_WEB_BUTTONS_DOUBLE        "Double click"
-#define D_WEB_BUTTONS_TRIPLE        "Triple click"
-#define D_WEB_BUTTONS_EXTRA_LONG    "Extra-long press"
-#define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
-#define D_WEB_BUTTONS_SAVE          "Save buttons"
-#define D_WEB_BUTTONS_LOCK_HINT     "If locked, repeat any hold gesture to unlock."
-#define D_WEB_BUTTONS_ACTION_NONE     "None"
-#define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
-#define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
-#define D_WEB_BUTTONS_ACTION_MENU     "OK/Open menu(Context dependent)"
-#define D_WEB_BUTTONS_ACTION_ROTATE   "Flip screen orientation"
-#define D_WEB_BUTTONS_ACTION_NEXT "Next item/page"
-#define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"
-#define D_WEB_BUTTONS_ACTION_HOME "Go to main menu"
-#define D_WEB_BUTTONS_LEGACY_HINT "If enabled, mapping single, double and triple clicks has no effect."
-
-// Click timing section.
-#define D_WEB_TIMINGS_HEADING        "Click timing"
-#define D_WEB_TIMINGS_INTRO          "Tune the behavior for clicks and hold gestures."
-#define D_WEB_TIMINGS_GAP_LABEL      "Click gap"
-#define D_WEB_TIMINGS_GAP_HINT       "How long a pause between releases may last before the current click burst is committed."
-#define D_WEB_TIMINGS_SEQUENCE_LABEL "Click sequence"
-#define D_WEB_TIMINGS_SEQUENCE_HINT  "Maximum total time allowed for a multi-click burst, measured from the first release."
-#define D_WEB_TIMINGS_LONG_LABEL     D_WEB_BUTTONS_LONG " threshold"
-#define D_WEB_TIMINGS_LONG_HINT      "Press duration that turns a hold into a " D_WEB_BUTTONS_LONG " instead of another " D_WEB_BUTTONS_SHORT "."
-#define D_WEB_TIMINGS_VLONG_LABEL    D_WEB_BUTTONS_EXTRA_LONG " threshold"
-#define D_WEB_TIMINGS_VLONG_HINT     "Press duration that upgrades a solo hold from " D_WEB_BUTTONS_LONG " to " D_WEB_BUTTONS_EXTRA_LONG "."
-#define D_WEB_TIMINGS_DEBOUNCE_LABEL "Debounce"
-#define D_WEB_TIMINGS_DEBOUNCE_HINT  "Events closer together than this are treated as switch bounce and ignored."
-#define D_WEB_TIMINGS_RESET          "Reset"
-#define D_WEB_TIMINGS_SAVE           "Save timings"
-#define D_WEB_TIMINGS_DEFAULT_PREFIX "Default: "
-// Device personalization card (src/web/settings.cpp).
-#define D_WEB_DEVICE_HEADING        "Device"
-#define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
-#define D_WEB_HEADER_TITLE_LABEL    "Header title"
-#define D_WEB_HEADER_TITLE_HINT     "Shown at the top of the library screen. Leave empty for no title."
-#define D_WEB_HEADER_TITLE_RESET    "Reset to default"
-#define D_WEB_FLIP_SCREEN           "Flip screen orientation"
-#define D_WEB_BATTERY_INDICATORS_LABEL "Hide battery indicators"
-#define D_WEB_BATTERY_INDICATORS_HINT "When checked, battery status is visible on the " D_ABOUT_HEADER " screen only."
-
-// Header status icons card (src/web/settings.cpp) — see src/ui/icons.h.
-#define D_WEB_ICONS_HEADING         "Status icons"
-#define D_WEB_ICONS_INTRO           "Small indicators shown in the menu header for states that use extra battery."
-#define D_WEB_ICON_SLEEP_LABEL      "Show sleep-blocked icon"
-#define D_WEB_ICON_SLEEP_HINT       "A crossed-out moon, shown while something is keeping the device awake - a connected computer, or an upload in progress."
-
-// Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
-// joins.
-#define D_WEB_WIFI_HEADING            "Wi-Fi"
-#define D_WEB_WIFI_INTRO              "The network the device joins for file upload. For security reasons, saved passwords will never be shown."
-#define D_WEB_WIFI_SSID_LABEL         "SSID"
-#define D_WEB_WIFI_PASSWORD_LABEL     "Password"
-#define D_WEB_WIFI_SSID_PLACEHOLDER   "Network name"
-#define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Password"
-#define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<saved>"
-#define D_WEB_WIFI_SHOW_PASSWORD      "Show password"
-#define D_WEB_WIFI_SAVE_BUTTON        "Save network"
-#define D_WEB_WIFI_HINT               "Stored on device. Leave the SSID blank to forget it."
-
-// ----------------------------------------------------------------------------
-//  Upload (book + sleep image) routes (src/web/upload.cpp)
+//  Book upload route (src/web/upload.cpp)
 // ----------------------------------------------------------------------------
 #define D_WEB_UPLOAD_ERR_FALLBACK   "Upload failed"
 #define D_WEB_ERR_LIBRARY_FULL      "Library full"
@@ -383,7 +275,7 @@
 #define D_WEB_APP_UPLOAD_ABORTED    "App upload aborted"
 
 // ----------------------------------------------------------------------------
-//  Bookmarks web page (src/web/bookmarks.cpp)
+//  Bookmarks API + .txt export (src/web/api_bookmarks.cpp)
 // ----------------------------------------------------------------------------
 #define D_WEB_BOOKMARKS_OPEN_FAILED_CARD "Open failed"
 #define D_WEB_BOOKMARK_PAGE_EMPTY   "(empty)"
@@ -397,54 +289,7 @@
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "No bookmarks for this book"
 
 // ----------------------------------------------------------------------------
-//  In-browser reader + find/jump (src/web/find.cpp).
-// ----------------------------------------------------------------------------
-#define D_WEB_READ_TITLE            "Read"
-#define D_WEB_READ_SUBTITLE         "Browse and search the book in your browser. Use Jump to set the device's resume point."
-#define D_WEB_READ_BYTES_LABEL      "bytes"
-#define D_WEB_READ_CURRENT_PAGE_LABEL "current page:"
-#define D_WEB_READ_FIND_PLACEHOLDER "Find in book"
-#define D_WEB_READ_FIND_ALL         "Find all"
-#define D_WEB_READ_FIND_PREV        "Prev"
-#define D_WEB_READ_FIND_NEXT        "Next"
-#define D_WEB_READ_JUMP_HERE        "Jump to here"
-#define D_WEB_READ_LOADING          "Loading book text..."
-#define D_WEB_READ_PAGE_PLACEHOLDER "Page number"
-#define D_WEB_READ_JUMP_PAGE        "Jump to page"
-#define D_WEB_READ_JUMP_HINT        "Saves the next-open page directly."
-#define D_WEB_READ_AND_FIND_LINK    "Read &amp; find"
-
-// Status strings emitted by the find/jump JS. These are substituted into
-// single-quoted JS string literals inside a PROGMEM <script> block, so the
-// no-apostrophe / no-backslash rule from lang.h applies here too. The *_FMT
-// values are expanded by window.palaFmt (src/web/chrome.cpp): %1, %2, %3 are
-// positional and MAY be reordered by a translation.
-#define D_WEB_READ_JS_NO_MATCHES    "No matches"
-#define D_WEB_READ_JS_MATCH_FMT     "Match %1 of %2  (byte %3)"
-#define D_WEB_READ_JS_ENTER_PHRASE  "Enter a phrase to find."
-#define D_WEB_READ_JS_FIND_FIRST    "Find something first."
-#define D_WEB_READ_JS_SAVING        "Saving..."
-#define D_WEB_READ_JS_SAVED_FMT     "Saved. Open the book on the device to jump to byte %1."
-#define D_WEB_READ_JS_SAVE_HTTP_FMT "Save failed: HTTP %1"
-#define D_WEB_READ_JS_SAVE_FAIL_FMT "Save failed: %1"
-#define D_WEB_READ_JS_ERROR         "error"
-#define D_WEB_READ_JS_LOADED_FMT    "Loaded %1 bytes. Enter a phrase to find."
-#define D_WEB_READ_JS_LOAD_FAILED   "Could not load book text."
-
-// ----------------------------------------------------------------------------
-//  Font family + bionic reading + reading-position retention
-//  (src/web/settings.cpp). Layout-affecting settings; changes trigger the
-//  reader to remap its byte-offset cursor under the new layout.
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Screensaver settings card link (src/web/settings.cpp).
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Screensaver editor + multi-slot manager (src/web/screensavers.cpp).
-//  The editor's JS status strings are the D_WEB_SS_JS_* block at the end of
-//  this section; they are concatenated straight into the PROGMEM script.
+//  Screensaver thumbnail / download / upload routes (src/web/screensavers.cpp).
 // ----------------------------------------------------------------------------
 
 // Screensaver upload failures. These are set on the upload handler's error
@@ -460,20 +305,5 @@
 #define D_WEB_SS_ERR_EXACT_BYTES_FMT "Image must be exactly %d bytes"
 #define D_WEB_SS_ERR_SAVE_SLEEP      "Failed to save sleep image"
 #define D_WEB_SS_ERR_SAVE_SLOT       "Failed to save rotation slot"
-
-// Editor JS status strings. Same single-quote / backslash restriction and
-// same window.palaFmt positional %N expansion as the D_WEB_READ_JS_* block.
-// The "no image" reset reuses D_WEB_SS_NO_IMAGE, which is also the initial
-// server-rendered value of the same element.
-#define D_WEB_SS_JS_PX_SUFFIX        " px"
-#define D_WEB_SS_JS_PREVIEW_FMT      "Preview: %1x%2  threshold %3  bytes %4"
-#define D_WEB_SS_JS_DECODE_FAILED    "Could not decode image."
-#define D_WEB_SS_JS_READ_FAILED      "Could not read image."
-#define D_WEB_SS_JS_PREVIEW_NOT_READY "Preview is not ready yet."
-#define D_WEB_SS_JS_UPLOADING        "Uploading..."
-#define D_WEB_SS_JS_HTTP_FMT         "HTTP %1"
-#define D_WEB_SS_JS_UPLOAD_COMPLETE  "Upload complete. Refreshing..."
-#define D_WEB_SS_JS_UPLOAD_FAIL_FMT  "Upload failed: %1"
-#define D_WEB_SS_JS_ERROR            "error"
 
 #endif  // PALA_LANG_EN_H

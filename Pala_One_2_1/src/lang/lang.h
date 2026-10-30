@@ -11,10 +11,12 @@
 //    PlatformIO: -D LANG_EN / -D LANG_ES_LA in build_flags.
 //    Arduino IDE: uncomment LANG_EN or LANG_ES_LA in Pala_One_2_1.ino.
 //
-//  All D_* values are plain string-literal #defines. Adjacent string-literal
-//  concatenation is exploited at call sites, e.g.
-//    out += "<h2>" D_WEB_FILES_HEADING "</h2>";
-//  The compiler folds these into a single literal — zero runtime cost.
+//  All D_* values are plain string-literal #defines, so they can be joined
+//  with adjacent literals at call sites; the compiler folds these into a
+//  single literal — zero runtime cost.
+//
+//  Scope: device-screen strings plus the plain-text bodies the web routes
+//  return. The browser UI's strings live in webui/i18n/*.js, not here.
 //
 //  Authoring rule:
 //    1. Add new keys to en.h FIRST. Then mirror them in es_la.h.
@@ -22,18 +24,10 @@
 //       key in es_la.h produces a "use of undeclared identifier" against the
 //       Spanish build.
 //    3. Preserve %u / %d / %s placeholders verbatim across languages.
-//    4. HTML entities (&middot; &mdash; &#10003; &#9888; &times; &#8592;)
-//       and tags (<b> </b>) survive intact across translations.
-//    5. D_WEB_CONFIRM_* strings are inlined inside JS confirm('...') calls in
-//       HTML onclick attributes. They MUST NOT contain a single quote (') or
-//       backslash (\) — either breaks attribute parsing and the destructive
-//       form submits without prompting the user. If a translation needs a
-//       contraction, rephrase or use a different punctuation mark.
 // ============================================================================
 
 // Default to English when nothing was picked. Lives here (not in config.h) so
-// that any TU which reaches lang.h before config.h — e.g. via src/web/chrome.h
-// — still gets the fallback. Removing this block re-enables a hard #error
+// that any TU which reaches lang.h before config.h still gets the fallback. Removing this block re-enables a hard #error
 // when neither LANG_* is set.
 #if !defined(LANG_EN) && !defined(LANG_ES_LA)
   #pragma message ("No LANG_* selected; defaulting to LANG_EN. Pick LANG_EN or LANG_ES_LA explicitly to silence this.")

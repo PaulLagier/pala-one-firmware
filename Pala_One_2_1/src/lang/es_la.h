@@ -210,34 +210,10 @@
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  Shared chrome / storage card
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Navigation links
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Selector de tema en el encabezado
-// ----------------------------------------------------------------------------
-#define D_WEB_THEME_TOGGLE_TITLE    "Apariencia clara u oscura"
-#define D_WEB_THEME_DARK_MODE       "Modo oscuro"
-#define D_WEB_THEME_LIGHT_MODE      "Modo claro"
-
-// ----------------------------------------------------------------------------
-//  Home page
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Files page
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
 //  Plain-text 4xx/5xx error bodies
 // ----------------------------------------------------------------------------
 #define D_WEB_ERR_MISSING_ID            "id faltante"
 #define D_WEB_ERR_BAD_ID                "id inválido"
-#define D_WEB_ERR_MISSING_FOLDER        "carpeta faltante"
 #define D_WEB_ERR_BAD_FOLDER            "carpeta inválida"
 #define D_WEB_ERR_FOLDER_LIMIT          "límite de carpetas alcanzado"
 #define D_WEB_ERR_MKDIR_FAILED          "fallo al crear carpeta"
@@ -248,11 +224,6 @@
 #define D_WEB_ERR_DEST_EXISTS           "destino ya existe"
 #define D_WEB_ERR_MOVE_FAILED           "fallo al mover"
 #define D_WEB_ERR_FILE_NAME_TOO_LONG    "fallo al mover: nuevo ruta del fichero de archivo supera los %d caracteres: %s"
-#define D_WEB_ERR_MISSING_ID_PAGE       "id/página faltante"
-#define D_WEB_ERR_MISSING_BOOK_IDX      "libro/idx faltante"
-#define D_WEB_ERR_BAD_BOOK              "libro inválido"
-#define D_WEB_ERR_BAD_IDX               "idx inválido"
-#define D_WEB_ERR_MISSING_BOOK          "libro faltante"
 #define D_WEB_ERR_MISSING_NAME          "nombre faltante"
 #define D_WEB_ERR_INVALID_NAME          "nombre inválido"
 #define D_WEB_ERR_MISSING_OFFSET        "offset faltante"
@@ -261,85 +232,7 @@
 #define D_WEB_ERR_APP_NOT_FOUND         "App no encontrada"
 
 // ----------------------------------------------------------------------------
-//  List page
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Reset page
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Settings page
-// ----------------------------------------------------------------------------
-
-// Buttons / remappable hold-gestures section.
-#define D_WEB_BUTTONS_HEADING       "Botones"
-#define D_WEB_BUTTONS_HINT          "Puedes reasignar los patrones de clic a diferentes acciones." //AI tranlsated
-#define D_WEB_BUTTONS_SHORT         "Clic único" // AI translated
-#define D_WEB_BUTTONS_DOUBLE        "Clic doble" // AI translated
-#define D_WEB_BUTTONS_TRIPLE        "Clic trilple" // AI translated
-#define D_WEB_BUTTONS_LONG          "Pulsación larga"
-#define D_WEB_BUTTONS_EXTRA_LONG    "Pulsación muy larga"
-#define D_WEB_BUTTONS_CLICK_HOLD    "Clic y mantener"
-#define D_WEB_BUTTONS_SAVE          "Guardar botones"
-#define D_WEB_BUTTONS_LOCK_HINT     "Si está bloqueado, repita cualquier pulsación larga para desbloquear."
-#define D_WEB_BUTTONS_ACTION_NONE     "Ninguna"
-#define D_WEB_BUTTONS_ACTION_BOOKMARK "Marcar página"
-#define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
-#define D_WEB_BUTTONS_ACTION_MENU     "OK/Abrir el menú (depende del contexto)"
-#define D_WEB_BUTTONS_ACTION_ROTATE  "Voltear orientación de la pantalla" // Translate by ChatGPT
-#define D_WEB_BUTTONS_ACTION_NEXT "Siguiente elemento/página" // AI translated
-#define D_WEB_BUTTONS_ACTION_PREV "Elemento/página anterior" // AI translated
-#define D_WEB_BUTTONS_ACTION_HOME "Ir al menú principal" // AI translated
-#define D_WEB_BUTTONS_LEGACY_HINT "Si está habilitado, el mapeo de los clics único, doble y triple no tiene efecto." //AI translated
-
-// Click timing section.
-#define D_WEB_TIMINGS_HEADING        "Tiempos de clic"
-#define D_WEB_TIMINGS_INTRO          "Ajusta cómo el clasificador separa los clics rápidos de las pulsaciones largas."
-#define D_WEB_TIMINGS_GAP_LABEL      "Intervalo entre clics"
-#define D_WEB_TIMINGS_GAP_HINT       "Cuánto puede durar la pausa entre pulsaciones antes de confirmar la secuencia actual."
-#define D_WEB_TIMINGS_SEQUENCE_LABEL "Secuencia de clics"
-#define D_WEB_TIMINGS_SEQUENCE_HINT  "Tiempo total máximo permitido para una secuencia de varios clics, medido desde la primera liberación."
-#define D_WEB_TIMINGS_LONG_LABEL     "Umbral de " D_WEB_BUTTONS_LONG
-#define D_WEB_TIMINGS_LONG_HINT      "Duración de la pulsación que convierte una pulsación en " D_WEB_BUTTONS_LONG " en lugar de otro " D_WEB_BUTTONS_SHORT "."
-#define D_WEB_TIMINGS_VLONG_LABEL    "Umbral de " D_WEB_BUTTONS_EXTRA_LONG
-#define D_WEB_TIMINGS_VLONG_HINT "Duración de la pulsación que convierte una pulsación sola de " D_WEB_BUTTONS_LONG " a " D_WEB_BUTTONS_EXTRA_LONG "."
-#define D_WEB_TIMINGS_DEBOUNCE_LABEL "Debounce"
-#define D_WEB_TIMINGS_DEBOUNCE_HINT  "Los cambios de borde más cercanos que esto se tratan como rebote del botón y se ignoran."
-#define D_WEB_TIMINGS_RESET          "Restablecer"
-#define D_WEB_TIMINGS_SAVE           "Guardar tiempos"
-#define D_WEB_TIMINGS_DEFAULT_PREFIX "Predeterminado: "
- 
-// Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
-// joins.
-#define D_WEB_WIFI_HEADING            "Wi-Fi"
-#define D_WEB_WIFI_INTRO              "La red a la que el dispositivo se une para subir archivos. Por motivos de seguridad, las contraseñas guardadas nunca se mostrarán." // Translated by Claude
-#define D_WEB_WIFI_SSID_LABEL         "SSID"
-#define D_WEB_WIFI_PASSWORD_LABEL     "Contraseña" // Translated by Claude
-#define D_WEB_WIFI_SSID_PLACEHOLDER   "Nombre de la red" // Translated by Claude
-#define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Contraseña" // Translated by Claude
-#define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<guardada>" // Translated by Claude
-#define D_WEB_WIFI_SHOW_PASSWORD      "Mostrar contraseña" // Translated by Claude
-#define D_WEB_WIFI_SAVE_BUTTON        "Guardar red" // Translated by Claude
-#define D_WEB_WIFI_HINT               "Se almacena en el dispositivo. Deja el SSID en blanco para olvidarla." // Translated by Claude
-
-// Device personalization card (src/web/settings.cpp).
-#define D_WEB_DEVICE_HEADING        "Dispositivo"
-#define D_WEB_DEVICE_INTRO          "Personaliza el nombre que aparece en el encabezado de la biblioteca."
-#define D_WEB_HEADER_TITLE_LABEL    "Título del encabezado"
-#define D_WEB_HEADER_TITLE_HINT     "Se muestra arriba de la pantalla de biblioteca. Deja vacío para ocultarlo."
-#define D_WEB_HEADER_TITLE_RESET    "Restaurar predeterminado"
-#define D_WEB_FLIP_SCREEN           "Voltear orientación de la pantalla" // Translate by ChatGPT
-#define D_WEB_BATTERY_INDICATORS_LABEL "Ocultar indicadores de batería"
-#define D_WEB_BATTERY_INDICATORS_HINT "Cuando se selecciona, el estado de la batería solo es visible en la pantalla " D_ABOUT_HEADER "."
-
-// Header status icons card (src/web/settings.cpp) — see src/ui/icons.h.
-#define D_WEB_ICONS_HEADING         "Iconos de estado"
-#define D_WEB_ICONS_INTRO           "Indicadores pequeños que aparecen en el encabezado del menú para estados que consumen más batería."
-#define D_WEB_ICON_SLEEP_LABEL      "Mostrar icono de suspensión bloqueada"
-#define D_WEB_ICON_SLEEP_HINT       "Una luna tachada, que se muestra mientras algo mantiene despierto al dispositivo: una computadora conectada o una subida en curso."
-// ----------------------------------------------------------------------------
-//  Upload routes
+//  Book upload route
 // ----------------------------------------------------------------------------
 #define D_WEB_UPLOAD_ERR_FALLBACK   "Subida fallida"
 #define D_WEB_ERR_LIBRARY_FULL      "Biblioteca llena"
@@ -370,7 +263,7 @@
 #define D_WEB_APP_UPLOAD_ABORTED    "Subida de app abortada"
 
 // ----------------------------------------------------------------------------
-//  Bookmarks web page
+//  Bookmarks API + .txt export
 // ----------------------------------------------------------------------------
 #define D_WEB_BOOKMARKS_OPEN_FAILED_CARD "Error al abrir"
 #define D_WEB_BOOKMARK_PAGE_EMPTY   "(vacío)"
@@ -383,49 +276,7 @@
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "Sin marcapáginas para este libro"
 
 // ----------------------------------------------------------------------------
-//  Lector en el navegador + buscar/saltar (src/web/find.cpp).
-// ----------------------------------------------------------------------------
-#define D_WEB_READ_TITLE            "Leer"
-#define D_WEB_READ_SUBTITLE         "Explora y busca el libro en tu navegador. Usa Saltar para fijar el punto de retoma del dispositivo."
-#define D_WEB_READ_BYTES_LABEL      "bytes"
-#define D_WEB_READ_CURRENT_PAGE_LABEL "página actual:"
-#define D_WEB_READ_FIND_PLACEHOLDER "Buscar en el libro"
-#define D_WEB_READ_FIND_ALL         "Buscar todo"
-#define D_WEB_READ_FIND_PREV        "Anterior"
-#define D_WEB_READ_FIND_NEXT        "Siguiente"
-#define D_WEB_READ_JUMP_HERE        "Saltar aquí"
-#define D_WEB_READ_LOADING          "Cargando texto del libro..."
-#define D_WEB_READ_PAGE_PLACEHOLDER "Número de página"
-#define D_WEB_READ_JUMP_PAGE        "Saltar a página"
-#define D_WEB_READ_JUMP_HINT        "Guarda directamente la próxima página de apertura."
-#define D_WEB_READ_AND_FIND_LINK    "Leer y buscar"
-
-// Estados del JS de buscar/saltar. Sin apóstrofos ni barras invertidas: se
-// insertan dentro de literales JS entre comillas simples.
-#define D_WEB_READ_JS_NO_MATCHES    "Sin coincidencias"
-#define D_WEB_READ_JS_MATCH_FMT     "Coincidencia %1 de %2  (byte %3)"
-#define D_WEB_READ_JS_ENTER_PHRASE  "Escribe una frase para buscar."
-#define D_WEB_READ_JS_FIND_FIRST    "Busca algo primero."
-#define D_WEB_READ_JS_SAVING        "Guardando..."
-#define D_WEB_READ_JS_SAVED_FMT     "Guardado. Abre el libro en el dispositivo para saltar al byte %1."
-#define D_WEB_READ_JS_SAVE_HTTP_FMT "Fallo al guardar: HTTP %1"
-#define D_WEB_READ_JS_SAVE_FAIL_FMT "Fallo al guardar: %1"
-#define D_WEB_READ_JS_ERROR         "error"
-#define D_WEB_READ_JS_LOADED_FMT    "Cargados %1 bytes. Escribe una frase para buscar."
-#define D_WEB_READ_JS_LOAD_FAILED   "No se pudo cargar el texto del libro."
-
-// ----------------------------------------------------------------------------
-//  Familia de fuente + lectura biónica + retención de posición
-//  (src/web/settings.cpp).
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Tarjeta de salvapantallas en la página de ajustes (src/web/settings.cpp).
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Editor y administrador multi-ranura de salvapantallas (src/web/screensavers.cpp).
-//  Las cadenas internas del editor en JS (estado / errores) aún NO están i18n'd.
+//  Rutas de miniatura / descarga / subida de salvapantallas (src/web/screensavers.cpp).
 // ----------------------------------------------------------------------------
 
 // Fallos de subida de protector de pantalla
@@ -439,17 +290,5 @@
 #define D_WEB_SS_ERR_EXACT_BYTES_FMT "La imagen debe tener exactamente %d bytes"
 #define D_WEB_SS_ERR_SAVE_SLEEP      "Fallo al guardar la imagen de reposo"
 #define D_WEB_SS_ERR_SAVE_SLOT       "Fallo al guardar la ranura de rotación"
-
-// Estados del JS del editor
-#define D_WEB_SS_JS_PX_SUFFIX        " px"
-#define D_WEB_SS_JS_PREVIEW_FMT      "Vista previa: %1x%2  umbral %3  bytes %4"
-#define D_WEB_SS_JS_DECODE_FAILED    "No se pudo decodificar la imagen."
-#define D_WEB_SS_JS_READ_FAILED      "No se pudo leer la imagen."
-#define D_WEB_SS_JS_PREVIEW_NOT_READY "La vista previa aún no está lista."
-#define D_WEB_SS_JS_UPLOADING        "Subiendo..."
-#define D_WEB_SS_JS_HTTP_FMT         "HTTP %1"
-#define D_WEB_SS_JS_UPLOAD_COMPLETE  "Subida completa. Actualizando..."
-#define D_WEB_SS_JS_UPLOAD_FAIL_FMT  "Fallo en la subida: %1"
-#define D_WEB_SS_JS_ERROR            "error"
 
 #endif  // PALA_LANG_ES_LA_H

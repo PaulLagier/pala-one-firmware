@@ -53,10 +53,10 @@ Saved credentials let the device join your network in **Station mode** the next 
 
 ### Configuring using Web UI
 
-On the `/settings` page of the device's Web UI, you can also find a "WiFi" section at the bottom. This will let you enter an SSID and password for the device to connect to. The next time you select "Upload"
+On the **Settings** screen of the device's Web UI (`/#/settings`), you can also find a "Wi-Fi" card. This will let you enter an SSID and password for the device to connect to. The next time you select "Upload"
 from the main menu, the device will try to connect to the configured WiFi network before falling back to the Soft AP mode (you can also force the fallback by pressing the button).
 
-Note: The `/settings` page will never show your actual WiFi password, it will simply indicate if one is saved or not.
+Note: The Settings screen will never show your actual WiFi password, it will simply indicate if one is saved or not.
 
 ## Customization
 
