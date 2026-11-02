@@ -1,0 +1,9 @@
+{
+  "max": 16,
+  "items": [
+    { "text": "Milk",    "done": false },
+    { "text": "Eggs",    "done": true  },
+    { "text": "Bread",   "done": false },
+    { "text": "Battery", "done": false }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "font":          12,
+  "family":        "helv",
+  "sleep":         60,
+  "lgap":          1,
+  "bionic":        false,
+  "halfParagraphGaps": false,
+  "noScreensaver": false,
+  "lockOnSleep":   false,
+  "screenRotation": false,
+  "sleepIcon":     true,
+  "batteryIndicators": true,
+  "hasSleepImage": true,
+  "headerTitle":        "My library",
+  "headerTitleDefault": "Pala One",
+  "gestures": {
+    "short":          "next",
+    "double":         "prev",
+    "triple":         "home",
+    "long":           "menu",
+    "extraLong":      "lock",
+    "clickHold":      "bookmark",
+    "legacyControls": true
+  },
+  "wifi": { "ssid": "HomeNetwork", "hasPassword": true },
+  "libraryMenuSlots": 8,
+  "libraryMenu": ["bookmarks", "apps", "statistics", "list", "device", "upload", "update"],
+  "timings": [
+    { "key": "gap",      "value": 175,  "default": 175,  "min": 75,  "max": 5000 },
+    { "key": "sequence", "value": 550,  "default": 550,  "min": 175, "max": 10000 },
+    { "key": "long",     "value": 850,  "default": 850,  "min": 50,  "max": 10000 },
+    { "key": "veryLong", "value": 2000, "default": 2000, "min": 851, "max": 20000 },
+    { "key": "debounce", "value": 14,   "default": 14,   "min": 0,   "max": 100 }
+  ]
+}

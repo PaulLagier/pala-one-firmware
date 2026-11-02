@@ -53,10 +53,10 @@ Saved credentials let the device join your network in **Station mode** the next 
 
 ### Configuring using Web UI
 
-On the `/settings` page of the device's Web UI, you can also find a "WiFi" section at the bottom. This will let you enter an SSID and password for the device to connect to. The next time you select "Upload"
+On the **Settings** screen of the device's Web UI (`/#/settings`), you can also find a "Wi-Fi" card. This will let you enter an SSID and password for the device to connect to. The next time you select "Upload"
 from the main menu, the device will try to connect to the configured WiFi network before falling back to the Soft AP mode (you can also force the fallback by pressing the button).
 
-Note: The `/settings` page will never show your actual WiFi password, it will simply indicate if one is saved or not.
+Note: The Settings screen will never show your actual WiFi password, it will simply indicate if one is saved or not.
 
 ## Customization
 
@@ -139,6 +139,19 @@ Out of the box, a first visit defaults to **light**. To change the firmware defa
 - **PlatformIO** — add `-D WEB_THEME_DARK` to your env's `build_flags` if you want dark as the default; otherwise leave it alone.
 
 The build-time default only affects the *first* visit from a given browser — once the toggle is used, the localStorage choice wins from then on.
+
+## Updating the web UI
+
+The browser-side configuration UI is a single-page app served from `/` on the device. The firmware exposes JSON endpoints under `/api/*` (plus a few binary routes for uploads and bitmaps); the SPA itself is a static bundle compiled into the firmware as a gzipped `PROGMEM` blob.
+
+The editable source lives in [`webui/`](webui/) (`index.html`, `styles.css`, `app.js`, one module per screen under `screens/`, and per-language strings under `i18n/`). A small Python script, [`scripts/build_webui.py`](scripts/build_webui.py), inlines and gzips it into the committed header at `Pala_One_2_1/src/web/generated/webui.gz.h`:
+
+- **PlatformIO** regenerates the header automatically on every `pio run` (it's a pre-build script), so just edit `webui/` and rebuild.
+- **Arduino IDE** has no pre-build hook — run `python scripts/build_webui.py` yourself after editing `webui/`, then compile. The header is committed precisely so Arduino IDE users who *don't* touch the web UI can build without the Python step.
+
+A CI check ([`.github/workflows/webui-check.yml`](.github/workflows/webui-check.yml)) fails any PR whose committed bundle is out of sync with `webui/`, so a forgotten regenerate can't merge.
+
+To iterate without flashing, [`scripts/dev_server.py`](scripts/dev_server.py) serves `webui/` locally and either proxies `/api/*` to a real device or returns mock fixtures. See [`webui/README.md`](webui/README.md) for the full dev loop and the recipe for adding a new screen.
 
 ## Device lock
 
@@ -290,9 +303,11 @@ Pala_One_2_1/
     ├── storage/         # KV store + on-disk persistence
     ├── ui/              # Screens, fonts, sleep, toasts, widgets
     │   └── screens/     # One file per screen
-    └── web/             # Captive-portal HTTP server (route groups)
+    └── web/             # JSON API (api_*.cpp) + SPA shell + upload/bitmap routes
+        └── generated/   # webui.gz.h — built from webui/ (do not hand-edit)
+webui/                   # Web UI source (SPA: HTML/CSS/JS + i18n) — see webui/README.md
 docs/                    # Architecture notes + refactor journal
-scripts/                 # PlatformIO pre-build helpers
+scripts/                 # build_info.py + build_webui.py pre-build helpers, dev_server.py
 test/                    # Host-side CMake unit tests for pure/ + storage/
 examples/                # Sample apps (click_counter, palagotchi)
 install/                 # ESP Web Tools installer page (deployed to GitHub Pages by CI)

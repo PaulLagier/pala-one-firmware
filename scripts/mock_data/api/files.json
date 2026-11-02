@@ -1,0 +1,13 @@
+{
+  "storage": { "total": 5832704, "used": 1842176, "free": 3990528, "pct": 31 },
+  "limits":  { "maxBooks": 80, "maxFolders": 32, "maxApps": 16 },
+  "books": [
+    { "id": 0, "name": "The Time Machine",   "size": 198432, "folder": "",                  "savedPage": 3  },
+    { "id": 1, "name": "Pride and Prejudice","size": 712044, "folder": "classics",          "savedPage": 12 },
+    { "id": 2, "name": "Notes",              "size":  12087, "folder": "drafts/working",    "savedPage": 1  }
+  ],
+  "folders": [ "classics", "drafts/working", "fiction/sci-fi" ],
+  "apps": [
+    { "name": "Click Counter", "path": "/apps/click_counter.bin", "fileName": "click_counter.bin", "size": 38912 }
+  ]
+}

@@ -71,12 +71,19 @@
 #define D_LIST_NONE                 "Sin elementos"
 
 // ----------------------------------------------------------------------------
-//  Settings screen (src/ui/screens/settings_screen.cpp). For the most part we
-//  reuse the same labels as the Web UI, but a few we need to redefine due to
-//  embedded html elements.
+//  Settings screen (src/ui/screens/settings_screen.cpp). The D_WEB_* labels
+//  below were shared with the old server-rendered Web UI; the SPA now carries
+//  its own strings in webui/i18n/, so they live here for the device screen.
 //  All elements translated with Claude.
 // ----------------------------------------------------------------------------
 #define D_SETTINGS_HEADER           "Configuración de diseño"
+
+#define D_WEB_FONT_SIZE_LABEL       "Tamaño de fuente"
+#define D_WEB_LINE_SPACING_LABEL    "Espaciado de línea"
+#define D_WEB_FONT_FAMILY_LABEL     "Familia de fuente"
+#define D_WEB_FONT_FAMILY_HELVETICA "Helvetica"
+#define D_WEB_FONT_FAMILY_DYSLEXIC  "OpenDyslexic"
+#define D_WEB_BIONIC_LABEL          "Lectura biónica"
 
 #define D_SETTINGS_GAP_0            "0 - compacto"
 #define D_SETTINGS_GAP_1            "1 - normal"
@@ -203,93 +210,10 @@
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  Shared chrome / storage card
-// ----------------------------------------------------------------------------
-#define D_WEB_STORAGE_HEADING       "Almacenamiento"
-#define D_WEB_STORAGE_BOOKS         "Libros"
-#define D_WEB_STORAGE_USED          "Usado"
-#define D_WEB_STORAGE_FREE          "Libre"
-#define D_WEB_STORAGE_TOTAL         "Total"
-#define D_WEB_STORAGE_PCT_SUFFIX    "% del almacenamiento interno en uso."
-
-// ----------------------------------------------------------------------------
-//  Navigation links
-// ----------------------------------------------------------------------------
-#define D_WEB_NAV_HOME              "Inicio"
-#define D_WEB_NAV_FILES             "Archivos"
-#define D_WEB_NAV_BOOKMARKS         "Marcapáginas"
-#define D_WEB_NAV_LIST              "Lista"
-#define D_WEB_NAV_SCREENSAVER       "Salvapantallas"
-#define D_WEB_NAV_SETTINGS          "Ajustes"
-#define D_WEB_NAV_FACTORY_RESET     "Reinicio de fábrica"
-#define D_WEB_NAV_BACK              "Atrás"
-
-// ----------------------------------------------------------------------------
-//  Selector de tema en el encabezado
-// ----------------------------------------------------------------------------
-#define D_WEB_THEME_TOGGLE_TITLE    "Apariencia clara u oscura"
-#define D_WEB_THEME_DARK_MODE       "Modo oscuro"
-#define D_WEB_THEME_LIGHT_MODE      "Modo claro"
-
-// ----------------------------------------------------------------------------
-//  Home page
-// ----------------------------------------------------------------------------
-#define D_WEB_HOME_TITLE            "Pala One"
-#define D_WEB_HOME_FW_PREFIX        "Firmware "
-#define D_WEB_HOME_MIDDOT_SEP       " &middot; "
-#define D_WEB_HOME_BOOKS_SUFFIX     " libros"
-#define D_WEB_HOME_FREE_LABEL       "Libre: "
-#define D_WEB_HOME_STORAGE_WARN     "&#9888; Almacenamiento no disponible o casi lleno. Si las subidas fallan, elimine libros o use Reinicio de fábrica desde esta interfaz web."
-#define D_WEB_UPLOAD_BOOK_HEADING   "Subir libro"
-#define D_WEB_UPLOAD_BOOK_DESC      "Envíe archivos UTF-8 de texto plano a <b>/books</b> en el dispositivo, luego organícelos en carpetas desde la página Archivos."
-#define D_WEB_UPLOAD_BOOK_BUTTON    "Subir"
-#define D_WEB_MANAGE_FILES_BUTTON   "Administrar archivos"
-#define D_WEB_INSTALL_APP_HEADING   "Instalar app"
-#define D_WEB_INSTALL_APP_DESC      "Suba un binario de app Pala (<b>.bin</b>) a <b>/apps</b>. El encabezado se valida antes de confirmar; solo se aceptan archivos con la firma y versión de API correctas. Abra <b>Apps</b> desde la biblioteca para ejecutarla."
-#define D_WEB_INSTALL_APP_BUTTON    "Instalar app"
-#define D_WEB_NOTES_HEADING         "Notas"
-#define D_WEB_NOTES_DESC            "Los libros subidos se normalizan y compactan antes de guardarse, por lo que un TXT de origen puede ser más grande que el archivo final almacenado. El lector está optimizado para texto plano UTF-8 e idiomas con alfabeto latino."
-
-// ----------------------------------------------------------------------------
-//  Files page
-// ----------------------------------------------------------------------------
-#define D_WEB_FILES_HEADING         "Archivos"
-#define D_WEB_FILES_SUBTITLE        "Administre libros, carpetas y estructura de la biblioteca de Pala One."
-#define D_WEB_CREATE_FOLDER_HEADING "Crear carpeta"
-#define D_WEB_CREATE_FOLDER_PLACEHOLDER "libros o clasicos/espanol"
-#define D_WEB_CREATE_FOLDER_BUTTON  "Crear carpeta"
-#define D_WEB_CREATE_FOLDER_HINT    "Las carpetas viven dentro de /books."
-#define D_WEB_FOLDERS_HEADING       "Carpetas"
-#define D_WEB_NO_FOLDERS            "Aún no hay carpetas. Los libros viven en la raíz de /books."
-#define D_WEB_CONFIRM_DELETE_FOLDER "¿Eliminar carpeta? Solo se pueden eliminar carpetas vacías."
-#define D_WEB_DELETE_BUTTON         "Eliminar"
-#define D_WEB_LIBRARY_FILES_HEADING "Archivos de biblioteca"
-#define D_WEB_LIBRARY_FULL_WARN     "&#9888; Biblioteca llena (máx. 80 libros). Elimine libros para hacer espacio."
-#define D_WEB_FOLDER_LIMIT_WARN     "&#9888; Límite de carpetas alcanzado (máx. 32)."
-#define D_WEB_NO_BOOKS_UPLOADED     "Aún no se han subido libros."
-#define D_WEB_BOOK_ROOT             "Raíz"
-#define D_WEB_BOOK_BYTES_LABEL      " bytes"
-#define D_WEB_BOOK_FOLDER_LABEL     " &middot; carpeta: "
-#define D_WEB_BOOK_CURRENT_PAGE     " &middot; página actual: "
-#define D_WEB_JUMP_BUTTON           "Ir"
-#define D_WEB_JUMP_HINT             "Establezca la página que se abrirá la próxima vez en el dispositivo."
-#define D_WEB_JUMP_HINT2            "La primera apertura puede tardar un momento."
-#define D_WEB_PAGE_PLACEHOLDER      "Página"
-#define D_WEB_MOVE_BUTTON           "Mover"
-#define D_WEB_MOVE_HINT             "Use la ruta exacta de la carpeta."
-#define D_WEB_MOVE_PLACEHOLDER      "vacío para raíz"
-#define D_WEB_CONFIRM_DELETE_FILE   "¿Eliminar archivo?"
-#define D_WEB_DOWNLOAD_BUTTON       "Descargar"
-#define D_WEB_APPS_PAGE_HEADING     "Apps"
-#define D_WEB_NO_APPS_INSTALLED     "Sin apps instaladas."
-#define D_WEB_CONFIRM_DELETE_APP    "¿Eliminar app?"
-
-// ----------------------------------------------------------------------------
 //  Plain-text 4xx/5xx error bodies
 // ----------------------------------------------------------------------------
 #define D_WEB_ERR_MISSING_ID            "id faltante"
 #define D_WEB_ERR_BAD_ID                "id inválido"
-#define D_WEB_ERR_MISSING_FOLDER        "carpeta faltante"
 #define D_WEB_ERR_BAD_FOLDER            "carpeta inválida"
 #define D_WEB_ERR_FOLDER_LIMIT          "límite de carpetas alcanzado"
 #define D_WEB_ERR_MKDIR_FAILED          "fallo al crear carpeta"
@@ -300,11 +224,6 @@
 #define D_WEB_ERR_DEST_EXISTS           "destino ya existe"
 #define D_WEB_ERR_MOVE_FAILED           "fallo al mover"
 #define D_WEB_ERR_FILE_NAME_TOO_LONG    "fallo al mover: nuevo ruta del fichero de archivo supera los %d caracteres: %s"
-#define D_WEB_ERR_MISSING_ID_PAGE       "id/página faltante"
-#define D_WEB_ERR_MISSING_BOOK_IDX      "libro/idx faltante"
-#define D_WEB_ERR_BAD_BOOK              "libro inválido"
-#define D_WEB_ERR_BAD_IDX               "idx inválido"
-#define D_WEB_ERR_MISSING_BOOK          "libro faltante"
 #define D_WEB_ERR_MISSING_NAME          "nombre faltante"
 #define D_WEB_ERR_INVALID_NAME          "nombre inválido"
 #define D_WEB_ERR_MISSING_OFFSET        "offset faltante"
@@ -313,163 +232,8 @@
 #define D_WEB_ERR_APP_NOT_FOUND         "App no encontrada"
 
 // ----------------------------------------------------------------------------
-//  List page
+//  Book upload route
 // ----------------------------------------------------------------------------
-#define D_WEB_LIST_HEADING          "Lista"
-#define D_WEB_LIST_SUBTITLE         "Cree una lista simple de compras o tareas para Pala One."
-#define D_WEB_LIST_EDIT_HEADING     "Editar lista"
-#define D_WEB_LIST_EDIT_DESC        "Los elementos aparecen en el dispositivo solo cuando al menos una línea contiene texto. Mantenga el botón en el dispositivo para marcar un elemento como hecho."
-#define D_WEB_LIST_ITEM_PLACEHOLDER "Elemento de lista"
-#define D_WEB_LIST_SAVE_BUTTON      "Guardar lista"
-#define D_WEB_LIST_DELETE_DONE      "Eliminar elementos marcados"
-#define D_WEB_LIST_HINT             "Las filas vacías se ignoran. Las filas marcadas se pueden eliminar directamente."
-
-// ----------------------------------------------------------------------------
-//  Reset page
-// ----------------------------------------------------------------------------
-#define D_WEB_RESET_HEADING         "Reinicio de fábrica"
-#define D_WEB_RESET_SUBTITLE        "Borre todos los libros, marcapáginas, progreso y recursos personalizados."
-#define D_WEB_RESET_CONFIRM_HEADING "Confirmar reinicio"
-#define D_WEB_RESET_WARNING         "Esto eliminará TODOS los libros, marcapáginas y progreso de lectura."
-#define D_WEB_RESET_DETAIL          "El sistema de archivos del dispositivo se formateará y los ajustes volverán a los valores predeterminados."
-#define D_WEB_RESET_YES_BUTTON      "Sí, reiniciar"
-#define D_WEB_RESET_COMPLETE_HEADING "Reinicio de fábrica completo"
-#define D_WEB_RESET_COMPLETE_DESC   "Todos los libros, marcapáginas, progreso y recursos personalizados fueron eliminados. El dispositivo está ahora en un estado limpio."
-#define D_WEB_GO_HOME_BUTTON        "Ir al inicio"
-#define D_WEB_OPEN_FILES_BUTTON     "Abrir archivos"
-#define D_WEB_RESET_SUCCESS_TITLE   "Reinicio completo"
-#define D_WEB_RESET_SUCCESS_SUBTITLE "Pala One se reinició con éxito."
-#define D_WEB_RESET_BANNER          "&#10003; Reinicio de fábrica completo."
-
-// ----------------------------------------------------------------------------
-//  Settings page
-// ----------------------------------------------------------------------------
-#define D_WEB_SETTINGS_TITLE        "Ajustes de Pala One"
-#define D_WEB_SETTINGS_SUBTITLE_PREFIX "Firmware "
-#define D_WEB_SETTINGS_SUBTITLE_SUFFIX " — página de configuración almacenada directamente en el dispositivo."
-#define D_WEB_SETTINGS_BACK_NAV     "&#8592; Inicio"
-#define D_WEB_READING_HEADING       "Lectura"
-#define D_WEB_FONT_SIZE_LABEL       "Tamaño de fuente"
-#define D_WEB_FONT_SIZE_8           "8px &mdash; diminuto"
-#define D_WEB_FONT_SIZE_10          "10px &mdash; pequeño"
-#define D_WEB_FONT_SIZE_12          "12px &mdash; mediano"
-#define D_WEB_FONT_SIZE_14          "14px &mdash; grande"
-#define D_WEB_FONT_SIZE_HINT        "Controla cuántas líneas caben en cada página."
-#define D_WEB_SLEEP_AFTER_LABEL     "Suspender después de"
-#define D_WEB_SLEEP_30S             "30 segundos"
-#define D_WEB_SLEEP_1M              "1 minuto"
-#define D_WEB_SLEEP_2M              "2 minutos"
-#define D_WEB_SLEEP_5M              "5 minutos"
-#define D_WEB_SLEEP_10M             "10 minutos"
-#define D_WEB_SLEEP_30M             "30 minutos"
-#define D_WEB_SLEEP_HINT            "La suspensión automática mantiene bajo el consumo de batería en reposo."
-#define D_WEB_LINE_SPACING_LABEL    "Espaciado de línea"
-#define D_WEB_LINE_SPACING_0        "0 px &mdash; compacto"
-#define D_WEB_LINE_SPACING_1        "1 px &mdash; normal"
-#define D_WEB_LINE_SPACING_2        "2 px &mdash; relajado"
-#define D_WEB_LINE_SPACING_3        "3 px &mdash; suelto"
-#define D_WEB_LINE_SPACING_HINT     "Un pequeño cambio aquí puede facilitar mucho la lectura."
-#define D_WEB_NO_SCREENSAVER_LABEL  "Modo sin salvapantallas"
-#define D_WEB_NO_SCREENSAVER_HINT   "El dispositivo sigue durmiéndose según el temporizador habitual y actualiza la pantalla antes de dormirse. Luego muestra la última página del libro y omite la actualización completa al despertar, para que puedas continuar leyendo con un solo clic sin la interrupción de un refresco de pantalla."
-#define D_WEB_LOCK_ON_SLEEP_LABEL   "Bloquear al dormir"
-#define D_WEB_LOCK_ON_SLEEP_HINT    "Bloquea el dispositivo automáticamente cada vez que se duerme. Necesitarás una pulsación larga para desbloquearlo al despertar."
-#define D_WEB_SAVE_SETTINGS_BUTTON  "Guardar ajustes"
-#define D_WEB_LIBRARY_ORDER_HEADING  "Menú de la biblioteca"
-#define D_WEB_LIBRARY_ORDER_INTRO    "Elige qué elementos aparecen en la biblioteca y coloca su orden en la secuencia que quieras. Los elementos ocultos no aparecen."
-#define D_WEB_LIBRARY_ORDER_REQUIRED "La opción " D_MENU_UPLOAD " es obligatoria y siempre permanecerá en la biblioteca."
-#define D_WEB_LIBRARY_ORDER_SLOT_LABEL "Posición"
-#define D_WEB_LIBRARY_ORDER_HIDDEN   "Oculto"
-#define D_WEB_LIBRARY_ORDER_RESET    "Restaurar orden predeterminado"
-#define D_WEB_LIBRARY_ORDER_HINT     "La pantalla usa este orden de inmediato y lo conserva tras reiniciar."
-#define D_WEB_SETTINGS_NO_EXTRAS    "Sin archivos extra, scripts ni fuentes."
-#define D_WEB_SCREENSAVER_HEADING   "Salvapantallas"
-#define D_WEB_SCREENSAVER_SPECS     "Suba bytes XBM en bruto: <b>3904 bytes</b>, 250&times;122 px, 1 bit, LSB primero, 32 bytes por fila."
-#define D_WEB_SCREENSAVER_TIP       "Consejo: use <a class='link' href='https://javl.github.io/image2cpp/' target='_blank'>image2cpp</a> con <b>Plain bytes</b>. Invierta los colores si es necesario."
-#define D_WEB_SCREENSAVER_ACTIVE    "&#10003; Salvapantallas personalizado activo."
-#define D_WEB_CONFIRM_DEL_SCREENSAVER "¿Eliminar salvapantallas personalizado?"
-#define D_WEB_SCREENSAVER_DEFAULT   "Usando salvapantallas predeterminado."
-#define D_WEB_SLEEP_IMAGE_LABEL     "Archivo de imagen de suspensión"
-#define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Subir imagen"
-#define D_WEB_MISSING_REQUIRED_BUTTON_MSG "Las siguientes acciones siempre deben estar presentes:" D_WEB_BUTTONS_ACTION_HOME ", " D_WEB_BUTTONS_ACTION_NEXT ", " D_WEB_BUTTONS_ACTION_MENU
-
-// Buttons / remappable hold-gestures section.
-#define D_WEB_BUTTONS_HEADING       "Botones"
-#define D_WEB_BUTTONS_HINT          "Puedes reasignar los patrones de clic a diferentes acciones." //AI tranlsated
-#define D_WEB_BUTTONS_SHORT         "Clic único" // AI translated
-#define D_WEB_BUTTONS_DOUBLE        "Clic doble" // AI translated
-#define D_WEB_BUTTONS_TRIPLE        "Clic trilple" // AI translated
-#define D_WEB_BUTTONS_LONG          "Pulsación larga"
-#define D_WEB_BUTTONS_EXTRA_LONG    "Pulsación muy larga"
-#define D_WEB_BUTTONS_CLICK_HOLD    "Clic y mantener"
-#define D_WEB_BUTTONS_SAVE          "Guardar botones"
-#define D_WEB_BUTTONS_LOCK_HINT     "Si está bloqueado, repita cualquier pulsación larga para desbloquear."
-#define D_WEB_BUTTONS_ACTION_NONE     "Ninguna"
-#define D_WEB_BUTTONS_ACTION_BOOKMARK "Marcar página"
-#define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
-#define D_WEB_BUTTONS_ACTION_MENU     "OK/Abrir el menú (depende del contexto)"
-#define D_WEB_BUTTONS_ACTION_ROTATE  "Voltear orientación de la pantalla" // Translate by ChatGPT
-#define D_WEB_BUTTONS_ACTION_NEXT "Siguiente elemento/página" // AI translated
-#define D_WEB_BUTTONS_ACTION_PREV "Elemento/página anterior" // AI translated
-#define D_WEB_BUTTONS_ACTION_HOME "Ir al menú principal" // AI translated
-#define D_WEB_BUTTONS_LEGACY_HINT "Si está habilitado, el mapeo de los clics único, doble y triple no tiene efecto." //AI translated
-
-// Click timing section.
-#define D_WEB_TIMINGS_HEADING        "Tiempos de clic"
-#define D_WEB_TIMINGS_INTRO          "Ajusta cómo el clasificador separa los clics rápidos de las pulsaciones largas."
-#define D_WEB_TIMINGS_GAP_LABEL      "Intervalo entre clics"
-#define D_WEB_TIMINGS_GAP_HINT       "Cuánto puede durar la pausa entre pulsaciones antes de confirmar la secuencia actual."
-#define D_WEB_TIMINGS_SEQUENCE_LABEL "Secuencia de clics"
-#define D_WEB_TIMINGS_SEQUENCE_HINT  "Tiempo total máximo permitido para una secuencia de varios clics, medido desde la primera liberación."
-#define D_WEB_TIMINGS_LONG_LABEL     "Umbral de " D_WEB_BUTTONS_LONG
-#define D_WEB_TIMINGS_LONG_HINT      "Duración de la pulsación que convierte una pulsación en " D_WEB_BUTTONS_LONG " en lugar de otro " D_WEB_BUTTONS_SHORT "."
-#define D_WEB_TIMINGS_VLONG_LABEL    "Umbral de " D_WEB_BUTTONS_EXTRA_LONG
-#define D_WEB_TIMINGS_VLONG_HINT "Duración de la pulsación que convierte una pulsación sola de " D_WEB_BUTTONS_LONG " a " D_WEB_BUTTONS_EXTRA_LONG "."
-#define D_WEB_TIMINGS_DEBOUNCE_LABEL "Debounce"
-#define D_WEB_TIMINGS_DEBOUNCE_HINT  "Los cambios de borde más cercanos que esto se tratan como rebote del botón y se ignoran."
-#define D_WEB_TIMINGS_RESET          "Restablecer"
-#define D_WEB_TIMINGS_SAVE           "Guardar tiempos"
-#define D_WEB_TIMINGS_DEFAULT_PREFIX "Predeterminado: "
- 
-// Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
-// joins.
-#define D_WEB_WIFI_HEADING            "Wi-Fi"
-#define D_WEB_WIFI_INTRO              "La red a la que el dispositivo se une para subir archivos. Por motivos de seguridad, las contraseñas guardadas nunca se mostrarán." // Translated by Claude
-#define D_WEB_WIFI_SSID_LABEL         "SSID"
-#define D_WEB_WIFI_PASSWORD_LABEL     "Contraseña" // Translated by Claude
-#define D_WEB_WIFI_SSID_PLACEHOLDER   "Nombre de la red" // Translated by Claude
-#define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Contraseña" // Translated by Claude
-#define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<guardada>" // Translated by Claude
-#define D_WEB_WIFI_SHOW_PASSWORD      "Mostrar contraseña" // Translated by Claude
-#define D_WEB_WIFI_SAVE_BUTTON        "Guardar red" // Translated by Claude
-#define D_WEB_WIFI_HINT               "Se almacena en el dispositivo. Deja el SSID en blanco para olvidarla." // Translated by Claude
-
-// Device personalization card (src/web/settings.cpp).
-#define D_WEB_DEVICE_HEADING        "Dispositivo"
-#define D_WEB_DEVICE_INTRO          "Personaliza el nombre que aparece en el encabezado de la biblioteca."
-#define D_WEB_HEADER_TITLE_LABEL    "Título del encabezado"
-#define D_WEB_HEADER_TITLE_HINT     "Se muestra arriba de la pantalla de biblioteca. Deja vacío para ocultarlo."
-#define D_WEB_HEADER_TITLE_RESET    "Restaurar predeterminado"
-#define D_WEB_FLIP_SCREEN           "Voltear orientación de la pantalla" // Translate by ChatGPT
-#define D_WEB_BATTERY_INDICATORS_LABEL "Ocultar indicadores de batería"
-#define D_WEB_BATTERY_INDICATORS_HINT "Cuando se selecciona, el estado de la batería solo es visible en la pantalla " D_ABOUT_HEADER "."
-
-// Header status icons card (src/web/settings.cpp) — see src/ui/icons.h.
-#define D_WEB_ICONS_HEADING         "Iconos de estado"
-#define D_WEB_ICONS_INTRO           "Indicadores pequeños que aparecen en el encabezado del menú para estados que consumen más batería."
-#define D_WEB_ICON_SLEEP_LABEL      "Mostrar icono de suspensión bloqueada"
-#define D_WEB_ICON_SLEEP_HINT       "Una luna tachada, que se muestra mientras algo mantiene despierto al dispositivo: una computadora conectada o una subida en curso."
-// ----------------------------------------------------------------------------
-//  Upload routes
-// ----------------------------------------------------------------------------
-#define D_WEB_UPLOAD_COMPLETE_HEADING "Subida completa"
-#define D_WEB_UPLOAD_COMPLETE_DESC  "Su libro está ahora almacenado en el dispositivo y disponible en la biblioteca."
-#define D_WEB_UPLOAD_BOOK_LABEL     "Libro"
-#define D_WEB_UPLOAD_STORED_SIZE    "Tamaño almacenado"
-#define D_WEB_UPLOAD_BOOKS_NOW      "Libros ahora"
-#define D_WEB_UPLOAD_FREE_SPACE     "Espacio libre"
-#define D_WEB_UPLOAD_ANOTHER        "Subir otro"
-#define D_WEB_UPLOAD_BOOK_SAVED     "Libro guardado con éxito."
-#define D_WEB_UPLOAD_FINISHED       "&#10003; Subida finalizada."
 #define D_WEB_UPLOAD_ERR_FALLBACK   "Subida fallida"
 #define D_WEB_ERR_LIBRARY_FULL      "Biblioteca llena"
 #define D_WEB_ERR_NOT_ENOUGH_SPACE  "Espacio insuficiente"
@@ -478,27 +242,11 @@
 #define D_WEB_ERR_FINALIZE_UPLOAD   "Fallo al finalizar la subida"
 #define D_WEB_ERR_EMPTY_UPLOAD      "Subida vacía"
 #define D_WEB_ERR_UPLOAD_ABORTED    "Subida abortada"
-#define D_WEB_SLEEP_UPLOAD_ERR_FALLBACK "Fallo al subir imagen de suspensión"
-#define D_WEB_SLEEP_UPLOAD_HEADING  "Salvapantallas actualizado"
-#define D_WEB_SLEEP_UPLOAD_DESC     "Su imagen de suspensión personalizada se guardó con éxito y se mostrará la próxima vez que el dispositivo se suspenda."
-#define D_WEB_BACK_TO_SETTINGS      "Volver a ajustes"
-#define D_WEB_SLEEP_UPLOAD_SUBTITLE "Salvapantallas guardado con éxito."
-#define D_WEB_SLEEP_UPLOAD_BANNER   "&#10003; Imagen de suspensión personalizada subida."
-#define D_WEB_SLEEP_ERR_TEMP        "No se pudo crear archivo temporal de suspensión"
-#define D_WEB_SLEEP_ERR_SIZE        "La imagen de suspensión debe ser exactamente 3904 bytes"
-#define D_WEB_SLEEP_ERR_SAVE        "Fallo al guardar imagen de suspensión"
-#define D_WEB_SLEEP_ERR_ABORTED     "Subida de imagen de suspensión abortada"
 
 // ----------------------------------------------------------------------------
 //  App upload route
 // ----------------------------------------------------------------------------
 #define D_WEB_APP_UPLOAD_ERR_FALLBACK "Subida de app fallida"
-#define D_WEB_APP_INSTALLED_HEADING "App instalada"
-#define D_WEB_APP_INSTALLED_DESC    "Abra el dispositivo, vaya a <b>Apps</b> en la biblioteca y haga doble clic para ejecutarla."
-#define D_WEB_APP_LABEL             "App"
-#define D_WEB_APPS_NOW              "Apps ahora"
-#define D_WEB_APP_INSTALLED_SUBTITLE "App guardada en /apps/."
-#define D_WEB_APP_INSTALLED_BANNER  "&#10003; App lista para ejecutarse."
 #define D_WEB_APP_VALID_OK          "OK"
 #define D_WEB_APP_VALID_TOO_SMALL   "App inválida (archivo muy pequeño)"
 #define D_WEB_APP_VALID_BAD_MAGIC   "App inválida (firma incorrecta)"
@@ -515,20 +263,9 @@
 #define D_WEB_APP_UPLOAD_ABORTED    "Subida de app abortada"
 
 // ----------------------------------------------------------------------------
-//  Bookmarks web page
+//  Bookmarks API + .txt export
 // ----------------------------------------------------------------------------
-#define D_WEB_BOOKMARKS_HEADING     "Marcapáginas"
-#define D_WEB_BOOKMARKS_SUBTITLE    "Posiciones de lectura guardadas para Pala One, agrupadas por libro."
-#define D_WEB_NO_BOOKS_YET          "Aún no hay libros disponibles."
-#define D_WEB_NO_BOOKMARKS_CARD     "Sin marcapáginas"
 #define D_WEB_BOOKMARKS_OPEN_FAILED_CARD "Error al abrir"
-#define D_WEB_BOOKMARK_PILL_PREFIX  "Marcapáginas "
-#define D_WEB_BOOKMARK_VIEW         "Ver"
-#define D_WEB_CONFIRM_DELETE_BOOKMARK "¿Eliminar marcapáginas?"
-#define D_WEB_BOOKMARK_DOWNLOAD_ALL "Descargar todos los marcapáginas"
-#define D_WEB_BOOKMARK_VIEW_HEADING "Vista de marcapáginas"
-#define D_WEB_BOOKMARK_VIEW_SUBTITLE "Previsualice el texto de página guardado para este marcapáginas."
-#define D_WEB_BOOKMARK_VIEW_BACK_NAV "&#8592; Atrás"
 #define D_WEB_BOOKMARK_PAGE_EMPTY   "(vacío)"
 #define D_WEB_BOOKMARK_OPEN_FAILED_DOT "Error al abrir."
 
@@ -539,101 +276,8 @@
 #define D_WEB_NO_BOOKMARKS_THIS_BOOK "Sin marcapáginas para este libro"
 
 // ----------------------------------------------------------------------------
-//  Lector en el navegador + buscar/saltar (src/web/find.cpp).
+//  Rutas de miniatura / descarga / subida de salvapantallas (src/web/screensavers.cpp).
 // ----------------------------------------------------------------------------
-#define D_WEB_READ_TITLE            "Leer"
-#define D_WEB_READ_SUBTITLE         "Explora y busca el libro en tu navegador. Usa Saltar para fijar el punto de retoma del dispositivo."
-#define D_WEB_READ_BYTES_LABEL      "bytes"
-#define D_WEB_READ_CURRENT_PAGE_LABEL "página actual:"
-#define D_WEB_READ_FIND_PLACEHOLDER "Buscar en el libro"
-#define D_WEB_READ_FIND_ALL         "Buscar todo"
-#define D_WEB_READ_FIND_PREV        "Anterior"
-#define D_WEB_READ_FIND_NEXT        "Siguiente"
-#define D_WEB_READ_JUMP_HERE        "Saltar aquí"
-#define D_WEB_READ_LOADING          "Cargando texto del libro..."
-#define D_WEB_READ_PAGE_PLACEHOLDER "Número de página"
-#define D_WEB_READ_JUMP_PAGE        "Saltar a página"
-#define D_WEB_READ_JUMP_HINT        "Guarda directamente la próxima página de apertura."
-#define D_WEB_READ_AND_FIND_LINK    "Leer y buscar"
-
-// Estados del JS de buscar/saltar. Sin apóstrofos ni barras invertidas: se
-// insertan dentro de literales JS entre comillas simples.
-#define D_WEB_READ_JS_NO_MATCHES    "Sin coincidencias"
-#define D_WEB_READ_JS_MATCH_FMT     "Coincidencia %1 de %2  (byte %3)"
-#define D_WEB_READ_JS_ENTER_PHRASE  "Escribe una frase para buscar."
-#define D_WEB_READ_JS_FIND_FIRST    "Busca algo primero."
-#define D_WEB_READ_JS_SAVING        "Guardando..."
-#define D_WEB_READ_JS_SAVED_FMT     "Guardado. Abre el libro en el dispositivo para saltar al byte %1."
-#define D_WEB_READ_JS_SAVE_HTTP_FMT "Fallo al guardar: HTTP %1"
-#define D_WEB_READ_JS_SAVE_FAIL_FMT "Fallo al guardar: %1"
-#define D_WEB_READ_JS_ERROR         "error"
-#define D_WEB_READ_JS_LOADED_FMT    "Cargados %1 bytes. Escribe una frase para buscar."
-#define D_WEB_READ_JS_LOAD_FAILED   "No se pudo cargar el texto del libro."
-
-// ----------------------------------------------------------------------------
-//  Familia de fuente + lectura biónica + retención de posición
-//  (src/web/settings.cpp).
-// ----------------------------------------------------------------------------
-#define D_WEB_READING_INTRO         "Cambiar la fuente, familia, espaciado de línea o modo biónico mantiene tu lugar en el libro actual &mdash; el dispositivo reorganiza las páginas alrededor del byte que estás leyendo y aterriza en la página que lo contiene."
-#define D_WEB_FONT_FAMILY_LABEL     "Familia de fuente"
-#define D_WEB_FONT_FAMILY_HELVETICA "Helvetica"
-#define D_WEB_FONT_FAMILY_DYSLEXIC  "OpenDyslexic"
-#define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic usa formas de letra más gruesas diseñadas para una lectura más fácil."
-#define D_WEB_BIONIC_LABEL          "Lectura biónica"
-#define D_WEB_BIONIC_HINT           "Resalta en negrita las primeras letras de cada palabra para anclar la mirada."
-#define D_WEB_PARA_GAP_LABEL        "Espacios de párrafo compactos"
-#define D_WEB_PARA_GAP_HINT         "Si está activado, los saltos de párrafo se reducirán a la mitad de su altura normal, permitiendo que quepan más líneas de texto en una sola página."
-#define D_WEB_SETTINGS_APPLY_HINT   "Los cambios se aplican en la próxima página renderizada."
-#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Habilitar los controles heredados" // AI translated
-
-// ----------------------------------------------------------------------------
-
-// ----------------------------------------------------------------------------
-//  Editor y administrador multi-ranura de salvapantallas (src/web/screensavers.cpp).
-//  Las cadenas internas del editor en JS (estado / errores) aún NO están i18n'd.
-// ----------------------------------------------------------------------------
-#define D_WEB_SS_TITLE              "Salvapantallas"
-#define D_WEB_SS_SUBTITLE           "Imágenes de suspensión personalizadas, rotación multi-ranura y editor de bitmap en el firmware."
-#define D_WEB_SS_ROTATION_HEADING   "Rotación"
-#define D_WEB_SS_ROTATION_INTRO     "Elige qué se muestra en la pantalla cuando el dispositivo se suspende. Cycle recorre las ranuras pobladas en orden; Shuffle elige al azar sin repeticiones inmediatas."
-#define D_WEB_SS_MODE_LABEL         "Modo"
-#define D_WEB_SS_MODE_SINGLE        "Solo una imagen"
-#define D_WEB_SS_MODE_CYCLE         "Ciclar entre ranuras"
-#define D_WEB_SS_MODE_SHUFFLE       "Mezclar ranuras"
-#define D_WEB_SS_SLOTS_POPULATED    "Ranuras pobladas: "
-#define D_WEB_SS_SAVE_MODE          "Guardar modo"
-#define D_WEB_SS_SLOTS_HEADING      "Ranuras de rotación"
-#define D_WEB_SS_SLOT_LABEL         "Ranura"
-#define D_WEB_SS_SLOT_EMPTY         "vacía"
-#define D_WEB_SS_CONFIRM_DEL_SLOT   "¿Eliminar esta ranura?"
-#define D_WEB_SS_DOWNLOAD_ARIA      "Descargar salvapantallas"
-#define D_WEB_SS_UPLOAD_ARIA        "Subir salvapantallas .bin"
-#define D_WEB_SS_DELETE_ARIA        "Eliminar salvapantallas"
-#define D_WEB_SS_ROTATE             "Girar 90\u00b0"
-#define D_WEB_SS_SINGLE_HEADING     "Salvapantallas único"
-#define D_WEB_SS_SINGLE_ALT         "Salvapantallas único"
-#define D_WEB_SS_CONFIRM_DEL_SINGLE "¿Eliminar el salvapantallas único?"
-#define D_WEB_SS_NO_SINGLE          "Sin salvapantallas único cargado."
-#define D_WEB_SS_EDITOR_HEADING     "Editor"
-#define D_WEB_SS_EDITOR_INTRO       "Arrastra una imagen al editor y súbela a una ranura de rotación o como el salvapantallas único heredado. Todas las imágenes se renderizan en 250&times;122 1 bit (3904 bytes)."
-#define D_WEB_SS_SOURCE_IMAGE       "Imagen fuente"
-#define D_WEB_SS_TOLERANCE          "Tolerancia de negro"
-#define D_WEB_SS_INVERT             "Invertir blanco/negro"
-#define D_WEB_SS_PRECISE_CONTROL    "Control preciso"
-#define D_WEB_SS_ZOOM               "Zoom"
-#define D_WEB_SS_MOVE_X             "Mover X"
-#define D_WEB_SS_MOVE_Y             "Mover Y"
-#define D_WEB_SS_PREVIEW_LABEL      "Vista previa (arrastra para mover, pellizca o usa la rueda para zoom)"
-#define D_WEB_SS_RESET_FIT          "Reiniciar ajuste"
-#define D_WEB_SS_NO_IMAGE           "Sin imagen cargada"
-#define D_WEB_SS_SAVE_TO            "Guardar en"
-#define D_WEB_SS_DST_SINGLE         "Salvapantallas único (/sleep.bin)"
-#define D_WEB_SS_DST_AUTO_PREFIX    "Próxima ranura libre (ranura "
-#define D_WEB_SS_DST_AUTO_SUFFIX    ")"
-#define D_WEB_SS_DST_FULL           "(Todas las ranuras llenas)"
-#define D_WEB_SS_DST_SLOT_PREFIX    "Ranura de rotación "
-#define D_WEB_SS_DST_OVERWRITE      " (sobrescribir)"
-#define D_WEB_SS_UPLOAD_EDITED      "Subir imagen editada"
 
 // Fallos de subida de protector de pantalla
 #define D_WEB_SS_ERR_THUMB_NOT_FOUND "Miniatura no encontrada"
@@ -646,17 +290,5 @@
 #define D_WEB_SS_ERR_EXACT_BYTES_FMT "La imagen debe tener exactamente %d bytes"
 #define D_WEB_SS_ERR_SAVE_SLEEP      "Fallo al guardar la imagen de reposo"
 #define D_WEB_SS_ERR_SAVE_SLOT       "Fallo al guardar la ranura de rotación"
-
-// Estados del JS del editor
-#define D_WEB_SS_JS_PX_SUFFIX        " px"
-#define D_WEB_SS_JS_PREVIEW_FMT      "Vista previa: %1x%2  umbral %3  bytes %4"
-#define D_WEB_SS_JS_DECODE_FAILED    "No se pudo decodificar la imagen."
-#define D_WEB_SS_JS_READ_FAILED      "No se pudo leer la imagen."
-#define D_WEB_SS_JS_PREVIEW_NOT_READY "La vista previa aún no está lista."
-#define D_WEB_SS_JS_UPLOADING        "Subiendo..."
-#define D_WEB_SS_JS_HTTP_FMT         "HTTP %1"
-#define D_WEB_SS_JS_UPLOAD_COMPLETE  "Subida completa. Actualizando..."
-#define D_WEB_SS_JS_UPLOAD_FAIL_FMT  "Fallo en la subida: %1"
-#define D_WEB_SS_JS_ERROR            "error"
 
 #endif  // PALA_LANG_ES_LA_H

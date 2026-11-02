@@ -1,0 +1,36 @@
+name: webui bundle check
+
+# Guards against a stale committed SPA bundle.
+#
+# Pala_One_2_1/src/web/generated/webui.gz.h is generated from the webui/
+# sources by scripts/build_webui.py and committed so Arduino IDE users get
+# a prebuilt header (Arduino IDE has no pre-build hook). PlatformIO devs
+# get it regenerated on every `pio run`, but it's easy to edit webui/ and
+# forget to rebuild + commit. The deploy-installer workflow only runs on
+# pushes to `dev` and on `v*` tags, so without this a stale bundle could
+# merge and only surface later on an unrelated deploy.
+#
+# This runs on every PR (and on pushes to dev/main) and fails if the
+# regenerated header doesn't match what's committed. Python-only; no
+# PlatformIO, so it finishes in seconds.
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify webui.gz.h matches webui/ sources
+        run: |
+          python scripts/build_webui.py
+          if ! git diff --exit-code Pala_One_2_1/src/web/generated/; then
+            echo "::error::webui.gz.h is stale. Run \`python scripts/build_webui.py\` and commit the result."
+            exit 1
+          fi
