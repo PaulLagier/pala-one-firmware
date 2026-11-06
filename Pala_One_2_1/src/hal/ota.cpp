@@ -27,6 +27,8 @@ static constexpr uint32_t kDownloadStallMs = 30000;
 
 #if defined(LANG_ES_LA)
   static constexpr const char* kLangToken = "es";
+#elif defined(LANG_FR)
+  static constexpr const char* kLangToken = "fr";
 #else
   static constexpr const char* kLangToken = "en";
 #endif
