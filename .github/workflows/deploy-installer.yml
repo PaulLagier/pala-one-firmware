@@ -96,7 +96,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Publishing channel=$CHANNEL version=$VERSION"
 
-      # Four leaf envs: (V1.1, V1.2) x (English, Spanish-LA). One language
+      # Six leaf envs: (V1.1, V1.2) x (English, Spanish-LA, French). One language
       # per binary by design — see README "Language".
       #
       # Stable channel always builds clean (no git-hash UI). Dev keeps
@@ -111,6 +111,11 @@ jobs:
           PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
         run: pio run -e wireless-paper-v1_2-es
 
+      - name: Build firmware (V1.2 FR)
+        env:
+          PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
+        run: pio run -e wireless-paper-v1_2-fr
+
       - name: Build firmware (V1.1 EN)
         env:
           PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
@@ -120,6 +125,11 @@ jobs:
         env:
           PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
         run: pio run -e wireless-paper-v1_1-es
+
+      - name: Build firmware (V1.1 FR)
+        env:
+          PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
+        run: pio run -e wireless-paper-v1_1-fr
 
       - name: Assemble site
         run: |
@@ -148,7 +158,7 @@ jobs:
           path: site/${{ steps.meta.outputs.channel }}/firmware-*.bin
           retention-days: 30
 
-      # Tag pushes also get a GitHub Release with four self-contained zips
+      # Tag pushes also get a GitHub Release with six self-contained zips
       # — one per (board x language) variant. Each zip has everything
       # esptool needs to flash a board from scratch (bootloader +
       # partitions + boot_app0 + firmware), so users can roll back to an
@@ -160,7 +170,7 @@ jobs:
           mkdir -p release
           cd site/stable
           for board in v1_1 v1_2; do
-            for lang in en es; do
+            for lang in en es fr; do
               name="pala-one-${{ steps.meta.outputs.version }}-${board}-${lang}"
               mkdir -p "../../release/${name}"
               cp bootloader.bin partitions.bin boot_app0.bin \
