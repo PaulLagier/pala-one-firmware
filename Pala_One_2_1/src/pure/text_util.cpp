@@ -135,33 +135,46 @@ String normalizeTypography(const String& in) {
   return out;
 }
 
-// String addFormattingDirectiveChars(const String& in) {
-//   String out;
-//   // not sure what length it needs because we are adding characters to the book now
-//   // maybe do a pass on book (regex, doubtful) for all delineators and all headings, then add that
-//   out.reserve(in.length() + 8);
-//   size_t i = 0;
-//   let isBold = false;
-//   let inHeading = false;
-//   for each line
-//     String out_line = ''
-//     if heading
-//       inHeading = true
-//       out_line += bold directive
-//       out_line += line text
-//       out_line += normal directive
-//     endif
-//     if delineator is found
-//       flip isBold
-//       while not inHeading and delineator ahead
-//         out_line += before segment
-//         out_line += isBold ? bold directive : normal directive
-//       endif
-//     endif
-//     out += out_line
-//   endfor
-//   return out
-// }
+String addFormattingDirectiveChars(const String& in) {
+  String out;
+  // not sure what length it needs because we are adding characters to the book now
+  // maybe do a pass on book (regex, doubtful) for all delineators and all headings, then add that
+  out.reserve(in.length() + 8);
+  size_t i = 0;
+  bool isBold = false;
+  // let inHeading = false;
+  // Bold directives are all we currently handle. We stop at `length - 1`
+  // because we need to search for two-character long delinerators.
+  char c;
+  char c2;
+  for (i = 0; i < in.length(); i++) {
+    c = in[i];
+    c2 = in[i + 1];
+
+    String out_line = "";
+    // if (c == '\n' && c2 == '#') {
+      // inHeading = true;
+      // out_line += 0x11;
+      // out_line += line text
+      // out_line += normal directive
+    // }
+    if ((c == '*' && c2 == '*') || (c == '_' && c2 =='_')) {
+      isBold = !isBold;
+      char buffer[8];
+      if (isBold) {
+        snprintf(buffer, sizeof buffer, "%c%c%c", DIRECTIVE_BOLD_ON, c, c2);
+      } else {
+        snprintf(buffer, sizeof buffer, "%c%c%c", c, c2, DIRECTIVE_BOLD_OFF);
+      }
+      out_line += buffer;
+      i += 1;
+    } else {
+      out_line += c;
+    }
+    out += out_line;
+  }
+  return out;
+}
 
 String compactText(const String& in,
                    bool* ioLastWasSpace,

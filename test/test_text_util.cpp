@@ -205,3 +205,57 @@ TEST_CASE("truncateWithEllipsis right-trims spaces before the ellipsis") {
 TEST_CASE("truncateWithEllipsis tolerates a null measure function") {
   CHECK_EQ(truncateWithEllipsis("abcdef", 6, nullptr), String("abcdef"));
 }
+
+// ============================================================================
+//  addFormattingDirectiveChars
+// ============================================================================
+
+TEST_CASE("addFormattingDirectiveChars outputs same string when delineators do not exist") {
+  CHECK_EQ(addFormattingDirectiveChars("abc"), "abc");
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs different string when delineators exist") {
+  CHECK_NOT_EQ(addFormattingDirectiveChars("**abc**"), "**abc**");
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround whole string") {
+  char buffer[128];
+  snprintf(buffer, sizeof buffer, "%c%s%c", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF);
+  CHECK_EQ(addFormattingDirectiveChars("**abc**"), buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround isolated substring") {
+  char buffer[128];
+  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello ", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, " world");
+  CHECK_EQ(addFormattingDirectiveChars("hello **abc** world"), buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround substring at start") {
+  char buffer[128];
+  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello ", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, "world");
+  CHECK_EQ(addFormattingDirectiveChars("hello **abc**world"), buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround substring at end") {
+  char buffer[128];
+  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, " world");
+  CHECK_EQ(addFormattingDirectiveChars("hello**abc** world"), buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround substring in word") {
+  char buffer[128];
+  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, "world");
+  CHECK_EQ(addFormattingDirectiveChars("hello**abc**world"), buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives when multiline") {
+  char buffer[128];
+  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello ", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, "\nworld");
+  CHECK_EQ(addFormattingDirectiveChars("hello **abc**\nworld"), buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives when multiline separates start and end") {
+  char buffer[128];
+  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello ", DIRECTIVE_BOLD_ON, "**ab\nc**", DIRECTIVE_BOLD_OFF, " world");
+  CHECK_EQ(addFormattingDirectiveChars("hello **ab\nc** world"), buffer);
+}
