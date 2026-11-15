@@ -43,6 +43,7 @@ struct PageCacheLayout {
   uint8_t bionic;           // 0 / 1
   uint8_t halfGaps;         // 0 / 1 - half-height paragraph gaps
   uint8_t statusbarReserve; // pixels reserved at the bottom; from Statusbar::reserveH()
+  uint8_t markdown;         // 0 / 1 - encoded markdown formatting
 };
 
 // Bulk-load the persisted offset table for `path` into `out`. Layout-stamped

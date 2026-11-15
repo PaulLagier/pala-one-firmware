@@ -27,17 +27,19 @@ static const uint8_t *s_uiTiny = pala_font_ui_tiny08;
 static const uint8_t *s_toast = pala_font_sans_r08;
 
 // Owned settings.
-//   s_size    — body font size (8/10/12/14). Out-of-set values fall back to 10.
-//   s_lineGap — extra px between body lines, [0, 4].
-//   s_family  — body face family. Drives which table set applyBodySize picks.
-//   s_bionic  — render body text in "bionic reading" mode (bold prefix of
-//               each word). Hooked into text.cpp's draw path; the paginator
-//               picks it up via measureBionicWord.
+//   s_size     — body font size (8/10/12/14). Out-of-set values fall back to 10.
+//   s_lineGap  — extra px between body lines, [0, 4].
+//   s_family   — body face family. Drives which table set applyBodySize picks.
+//   s_bionic   — render body text in "bionic reading" mode (bold prefix of
+//                each word). Hooked into text.cpp's draw path; the paginator
+//                picks it up via measureBionicWord.
+//   s_markdown — render markdown bold formatting.
 static int s_size = 10;
 static int s_lineGap = 0;
 static Family s_family = Family::Helvetica;
 static bool s_bionic = false;
 static bool s_halfGaps = false;
+static bool s_markdown = false;
 
 // Layout-metrics cache. Invalid after the mutators below; recomputed on the
 // next bodyLayout() call.
@@ -50,6 +52,7 @@ static constexpr const char *kKeyLineGap = "cfg_lgap";
 static constexpr const char *kKeyFamily = "cfg_font_fam";
 static constexpr const char *kKeyBionic = "cfg_bionic";
 static constexpr const char *kKeyHalfGaps = "cfg_hgap";
+static constexpr const char* kKeyMarkdown = "cfg_markdown";
 
 // Pick the (regular, bold) pair for a given size + family. Centralized so
 // applyBodySize and applyFamily share one switch. Returns true if `sz` was
@@ -202,6 +205,7 @@ void loadSettings() {
   s_bionic = (prefs.getInt(kKeyBionic, 0) != 0);
   // Public key wins; retain the earlier local boolean preference on upgrade.
   s_halfGaps = (prefs.getInt(kKeyHalfGaps, prefs.getBool("cfg_half_gaps", false) ? 1 : 0) != 0);
+  s_markdown = (prefs.getInt(kKeyMarkdown, prefs.getBool("cfg_markdown", false) ? 1 : 0) != 0);
 }
 
 void setBodySize(int sz) {
@@ -239,11 +243,21 @@ void setHalfParagraphGaps(bool on) {
   prefs.putInt(kKeyHalfGaps, on ? 1 : 0);
 }
 
+void setMarkdown(bool on) {
+  if (s_markdown == on) return;
+  s_markdown = on;
+  // Layout cache is unchanged (per-line height/width-budget don't move), but
+  // the on-disk page cache is stamped with the markdown flag so it'll reject
+  // any stale entries on the next load — no explicit invalidation needed.
+  prefs.putInt(kKeyMarkdown, on ? 1 : 0);
+}
+
 int currentBodySize() { return s_size; }
 int currentLineGap() { return s_lineGap; }
 Family currentFamily() { return s_family; }
 bool bionicEnabled() { return s_bionic; }
 bool halfParagraphGapsEnabled() { return s_halfGaps; }
+bool markdownEnabled()          { return s_markdown; }
 
 PageCacheLayout layoutForCache() {
   // Statusbar reserve goes into the cache stamp too — toggling between
@@ -256,6 +270,7 @@ PageCacheLayout layoutForCache() {
       /*family          =*/(uint8_t)s_family,
       /*bionic          =*/(uint8_t)(s_bionic ? 1 : 0),
       /*halfGaps        =*/(uint8_t)(s_halfGaps ? 1 : 0),
+      /*markdown        =*/(uint8_t)(s_markdown ? 1 : 0),
       /*statusbarReserve=*/(uint8_t)Statusbar::reserveH(),
   };
 }

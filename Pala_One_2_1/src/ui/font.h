@@ -75,6 +75,7 @@ void setBodySize(int sz);
 void setLineGap(int gap);
 void setFamily(Family fam);
 void setBionic(bool on);
+void setBold(bool on);
 void setHalfParagraphGaps(bool on);
 
 // Current applied values. Page-cache stamping passes everything through
@@ -84,6 +85,7 @@ int currentBodySize();
 int currentLineGap();
 Family currentFamily();
 bool bionicEnabled();
+bool markdownEnabled();
 bool halfParagraphGapsEnabled();
 
 // One-shot snapshot of every layout-affecting setting, packed for stamping
