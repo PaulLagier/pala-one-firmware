@@ -329,6 +329,10 @@ TEST_CASE("addFormattingDirectiveChars outputs string without directives if no h
   CHECK_EQ(addFormattingDirectiveChars("abc"), "abc");
 }
 
+TEST_CASE("addFormattingDirectiveChars outputs string without directives if heading delineator is not at the start of a line") {
+  CHECK_EQ(addFormattingDirectiveChars("abc # not a heading"), "abc # not a heading");
+}
+
 TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists") {
     char out_buffer[128];
     snprintf(out_buffer, sizeof out_buffer, "%c%s%c", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF);
