@@ -214,48 +214,101 @@ TEST_CASE("addFormattingDirectiveChars outputs same string when delineators do n
   CHECK_EQ(addFormattingDirectiveChars("abc"), "abc");
 }
 
+int totalDelineators = 2;
+String delineators[2] = { "**", "__" };
+
 TEST_CASE("addFormattingDirectiveChars outputs different string when delineators exist") {
-  CHECK_NOT_EQ(addFormattingDirectiveChars("**abc**"), "**abc**");
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i].c_str();
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s", d.c_str(), "abc", d.c_str());
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%s%s", d.c_str(), "abc", d.c_str());
+    CHECK_NOT_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround whole string") {
-  char buffer[128];
-  snprintf(buffer, sizeof buffer, "%c%s%c", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF);
-  CHECK_EQ(addFormattingDirectiveChars("**abc**"), buffer);
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i].c_str();
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s", d.c_str(), "abc", d.c_str());
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%c%s%s%s%c", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF);
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround isolated substring") {
-  char buffer[128];
-  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello ", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, " world");
-  CHECK_EQ(addFormattingDirectiveChars("hello **abc** world"), buffer);
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i];
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello ", d.c_str(), "abc", d.c_str(), " world");
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, " world");
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround substring at start") {
-  char buffer[128];
-  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello ", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, "world");
-  CHECK_EQ(addFormattingDirectiveChars("hello **abc**world"), buffer);
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i];
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello ", d.c_str(), "abc", d.c_str(), "world");
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, "world");
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround substring at end") {
-  char buffer[128];
-  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, " world");
-  CHECK_EQ(addFormattingDirectiveChars("hello**abc** world"), buffer);
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i];
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello", d.c_str(), "abc", d.c_str(), " world");
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, " world");
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives when delineators surround substring in word") {
-  char buffer[128];
-  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, "world");
-  CHECK_EQ(addFormattingDirectiveChars("hello**abc**world"), buffer);
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i];
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello", d.c_str(), "abc", d.c_str(), "world");
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, "world");
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives when multiline") {
-  char buffer[128];
-  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello ", DIRECTIVE_BOLD_ON, "**abc**", DIRECTIVE_BOLD_OFF, "\nworld");
-  CHECK_EQ(addFormattingDirectiveChars("hello **abc**\nworld"), buffer);
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i];
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello ", d.c_str(), "abc", d.c_str(), "\nworld");
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, "\nworld");
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives when multiline separates start and end") {
-  char buffer[128];
-  snprintf(buffer, sizeof buffer, "%s%c%s%c%s", "hello ", DIRECTIVE_BOLD_ON, "**ab\nc**", DIRECTIVE_BOLD_OFF, " world");
-  CHECK_EQ(addFormattingDirectiveChars("hello **ab\nc** world"), buffer);
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i];
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello ", d.c_str(), "ab\nc", d.c_str(), " world");
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "ab\nc", d.c_str(), DIRECTIVE_BOLD_OFF, " world");
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
 }
