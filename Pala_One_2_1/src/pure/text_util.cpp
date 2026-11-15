@@ -142,11 +142,10 @@ String addFormattingDirectiveChars(const String& in) {
   out.reserve(in.length() + 8);
   size_t i = 0;
   bool isBold = false;
-  // let inHeading = false;
-  // Bold directives are all we currently handle. We stop at `length - 1`
-  // because we need to search for two-character long delinerators.
+  bool isHeading = false;
   char c;
   char c2;
+
   for (i = 0; i < in.length(); i++) {
     c = in[i];
     c2 = in[i + 1];
@@ -154,27 +153,21 @@ String addFormattingDirectiveChars(const String& in) {
     String out_line = "";
 
     // HEADING
-    if ((c == '\n' && c2 == '#') || (i == 0 && c == '#')) {
-      char pre_buffer[8];
+    if (isHeading && c == '\n') {
+      isHeading = !isHeading;
+      char buffer[8];
+      snprintf(buffer, sizeof buffer, "%c%c", DIRECTIVE_BOLD_OFF, c);
+      out_line += buffer;
+    } else if ((c == '\n' && c2 == '#') || (i == 0 && c == '#')) {
+      isHeading = !isHeading;
+      char buffer[8];
       // If it's the first thing in the book, bold goes first
       if (i == 0) {
-        snprintf(pre_buffer, sizeof pre_buffer, "%c%c", DIRECTIVE_BOLD_ON, c);
+        snprintf(buffer, sizeof buffer, "%c%c", DIRECTIVE_BOLD_ON, c);
       } else {
-        snprintf(pre_buffer, sizeof pre_buffer, "%c%c", c, DIRECTIVE_BOLD_ON);
+        snprintf(buffer, sizeof buffer, "%c%c", c, DIRECTIVE_BOLD_ON);
       }
-      out_line += pre_buffer;
-      i++;
-      char inner_c = in[i];
-      String content = "";
-      while (inner_c != '\n' && inner_c != '\0') {
-        content += inner_c;
-        i++;
-        inner_c = in[i];
-      }
-      out_line += content;
-      char post_buffer[8];
-      snprintf(post_buffer, sizeof post_buffer, "%c%c", DIRECTIVE_BOLD_OFF, inner_c);
-      out_line += post_buffer;
+      out_line += buffer;
     // BOLD
     } else if ((c == '*' && c2 == '*') || (c == '_' && c2 =='_')) {
       isBold = !isBold;
@@ -191,7 +184,7 @@ String addFormattingDirectiveChars(const String& in) {
     }
     out += out_line;
   }
-  if (isBold) {
+  if (isBold || isHeading) {
     char buffer[8];
     snprintf(buffer, sizeof buffer, "%c", DIRECTIVE_BOLD_OFF);
     out += buffer;
