@@ -352,3 +352,15 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading
     snprintf(out_buffer, sizeof out_buffer, "%s%c%s%c%s", "a bear\n", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF, "\ngoes into the woods");
     CHECK_EQ(addFormattingDirectiveChars("a bear\n# hello world\ngoes into the woods"), out_buffer);
 }
+
+TEST_CASE("addFormattingDirectiveChars ignores calls for bold in a heading") {
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i];
+
+    char in_buffer[128];
+    snprintf(in_buffer, sizeof in_buffer, "%s%s%s%s%s", "a bear\n# hello ", d.c_str(), "big", d.c_str(), " world\ngoes into the woods");
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%s%s%c%s", "a bear\n", DIRECTIVE_BOLD_ON, "# hello ", d.c_str(), "big", d.c_str(), " world", DIRECTIVE_BOLD_OFF, "\ngoes into the woods");
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
+}

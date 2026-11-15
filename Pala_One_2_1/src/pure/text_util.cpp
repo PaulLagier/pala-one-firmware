@@ -169,7 +169,7 @@ String addFormattingDirectiveChars(const String& in) {
       }
       out_line += buffer;
     // BOLD
-    } else if ((c == '*' && c2 == '*') || (c == '_' && c2 =='_')) {
+    } else if (!isHeading && ((c == '*' && c2 == '*') || (c == '_' && c2 =='_'))) {
       isBold = !isBold;
       char buffer[8];
       if (isBold) {
