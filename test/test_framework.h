@@ -73,6 +73,22 @@ inline int& tf_totalChecks() {
     }                                                                                \
   } while (0)
 
+#define CHECK_NOT_EQ(A, B)                                                           \
+  do {                                                                               \
+    ++tf_totalChecks();                                                              \
+    auto _a = (A);                                                                   \
+    auto _b = (B);                                                                   \
+    if (_a == _b) {                                                                  \
+      ++tf_currentFailures();                                                        \
+      std::ostringstream _oss;                                                       \
+      _oss << "  FAIL " << __FILE__ << ":" << __LINE__                               \
+           << "  CHECK_NOT_EQ(" << #A << ", " << #B << ")\n"                         \
+           << "    lhs = " << _a << "\n"                                             \
+           << "    rhs = " << _b << "\n";                                            \
+      std::fputs(_oss.str().c_str(), stderr);                                        \
+    }                                                                                \
+  } while (0)
+
 #define REQUIRE(EXPR)                                                                \
   do {                                                                               \
     ++tf_totalChecks();                                                              \
