@@ -312,3 +312,43 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives when multi
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
+
+TEST_CASE("addFormattingDirectiveChars handles unterminated delineator") {
+  for (int i = 0; i < totalDelineators; i++) {
+    String d = delineators[i];
+
+    char in_buffer[128];
+    snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s", "hello ", d.c_str(), "abc world");
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%c", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "abc world", DIRECTIVE_BOLD_OFF);
+    CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
+  }
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string without directives if no heading exists") {
+  CHECK_EQ(addFormattingDirectiveChars("abc"), "abc");
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists") {
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%c%s%c", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF);
+    CHECK_EQ(addFormattingDirectiveChars("# hello world"), out_buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists at start") {
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%c%s%c%s", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF, "\na bear");
+    CHECK_EQ(addFormattingDirectiveChars("# hello world\na bear"), out_buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists at end") {
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%c", "a bear\n", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF);
+    CHECK_EQ(addFormattingDirectiveChars("a bear\n# hello world"), out_buffer);
+}
+
+TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists in the middle") {
+    char out_buffer[128];
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%c%s", "a bear\n", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF, "\ngoes into the woods");
+    CHECK_EQ(addFormattingDirectiveChars("a bear\n# hello world\ngoes into the woods"), out_buffer);
+}

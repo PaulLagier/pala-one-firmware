@@ -152,13 +152,31 @@ String addFormattingDirectiveChars(const String& in) {
     c2 = in[i + 1];
 
     String out_line = "";
-    // if (c == '\n' && c2 == '#') {
-      // inHeading = true;
-      // out_line += 0x11;
-      // out_line += line text
-      // out_line += normal directive
-    // }
-    if ((c == '*' && c2 == '*') || (c == '_' && c2 =='_')) {
+
+    // HEADING
+    if ((c == '\n' && c2 == '#') || (i == 0 && c == '#')) {
+      char pre_buffer[8];
+      // If it's the first thing in the book, bold goes first
+      if (i == 0) {
+        snprintf(pre_buffer, sizeof pre_buffer, "%c%c", DIRECTIVE_BOLD_ON, c);
+      } else {
+        snprintf(pre_buffer, sizeof pre_buffer, "%c%c", c, DIRECTIVE_BOLD_ON);
+      }
+      out_line += pre_buffer;
+      i++;
+      char inner_c = in[i];
+      String content = "";
+      while (inner_c != '\n' && inner_c != '\0') {
+        content += inner_c;
+        i++;
+        inner_c = in[i];
+      }
+      out_line += content;
+      char post_buffer[8];
+      snprintf(post_buffer, sizeof post_buffer, "%c%c", DIRECTIVE_BOLD_OFF, inner_c);
+      out_line += post_buffer;
+    // BOLD
+    } else if ((c == '*' && c2 == '*') || (c == '_' && c2 =='_')) {
       isBold = !isBold;
       char buffer[8];
       if (isBold) {
@@ -172,6 +190,11 @@ String addFormattingDirectiveChars(const String& in) {
       out_line += c;
     }
     out += out_line;
+  }
+  if (isBold) {
+    char buffer[8];
+    snprintf(buffer, sizeof buffer, "%c", DIRECTIVE_BOLD_OFF);
+    out += buffer;
   }
   return out;
 }
