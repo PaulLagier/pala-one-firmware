@@ -236,7 +236,7 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives when delin
     char in_buffer[128];
     snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s", d.c_str(), "abc", d.c_str());
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%c%s%s%s%c", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF);
+    snprintf(out_buffer, sizeof out_buffer, "%c%s%s%s%c", DIRECTIVE_BOLD, d.c_str(), "abc", d.c_str(), DIRECTIVE_NORMAL);
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
@@ -248,7 +248,7 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives when delin
     char in_buffer[128];
     snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello ", d.c_str(), "abc", d.c_str(), " world");
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, " world");
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD, d.c_str(), "abc", d.c_str(), DIRECTIVE_NORMAL, " world");
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
@@ -260,7 +260,7 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives when delin
     char in_buffer[128];
     snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello ", d.c_str(), "abc", d.c_str(), "world");
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, "world");
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD, d.c_str(), "abc", d.c_str(), DIRECTIVE_NORMAL, "world");
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
@@ -272,7 +272,7 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives when delin
     char in_buffer[128];
     snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello", d.c_str(), "abc", d.c_str(), " world");
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, " world");
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello", DIRECTIVE_BOLD, d.c_str(), "abc", d.c_str(), DIRECTIVE_NORMAL, " world");
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
@@ -284,7 +284,7 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives when delin
     char in_buffer[128];
     snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello", d.c_str(), "abc", d.c_str(), "world");
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, "world");
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello", DIRECTIVE_BOLD, d.c_str(), "abc", d.c_str(), DIRECTIVE_NORMAL, "world");
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
@@ -296,7 +296,7 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives when multi
     char in_buffer[128];
     snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello ", d.c_str(), "abc", d.c_str(), "\nworld");
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "abc", d.c_str(), DIRECTIVE_BOLD_OFF, "\nworld");
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD, d.c_str(), "abc", d.c_str(), DIRECTIVE_NORMAL, "\nworld");
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
@@ -308,7 +308,7 @@ TEST_CASE("addFormattingDirectiveChars outputs string with directives when multi
     char in_buffer[128];
     snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s%s%s", "hello ", d.c_str(), "ab\nc", d.c_str(), " world");
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "ab\nc", d.c_str(), DIRECTIVE_BOLD_OFF, " world");
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%c%s", "hello ", DIRECTIVE_BOLD, d.c_str(), "ab\nc", d.c_str(), DIRECTIVE_NORMAL, " world");
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
@@ -320,7 +320,7 @@ TEST_CASE("addFormattingDirectiveChars handles unterminated delineator") {
     char in_buffer[128];
     snprintf(in_buffer,  sizeof in_buffer,  "%s%s%s", "hello ", d.c_str(), "abc world");
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%c", "hello ", DIRECTIVE_BOLD_ON, d.c_str(), "abc world", DIRECTIVE_BOLD_OFF);
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%c", "hello ", DIRECTIVE_BOLD, d.c_str(), "abc world", DIRECTIVE_NORMAL);
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }
@@ -335,25 +335,25 @@ TEST_CASE("addFormattingDirectiveChars outputs string without directives if head
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists") {
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%c%s%c", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF);
+    snprintf(out_buffer, sizeof out_buffer, "%c%s%c", DIRECTIVE_HEADING, "# hello world", DIRECTIVE_NORMAL);
     CHECK_EQ(addFormattingDirectiveChars("# hello world"), out_buffer);
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists at start") {
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%c%s%c%s", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF, "\na bear");
+    snprintf(out_buffer, sizeof out_buffer, "%c%s%c%s", DIRECTIVE_HEADING, "# hello world", DIRECTIVE_NORMAL, "\na bear");
     CHECK_EQ(addFormattingDirectiveChars("# hello world\na bear"), out_buffer);
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists at end") {
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%c", "a bear\n", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF);
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%c", "a bear\n", DIRECTIVE_HEADING, "# hello world", DIRECTIVE_NORMAL);
     CHECK_EQ(addFormattingDirectiveChars("a bear\n# hello world"), out_buffer);
 }
 
 TEST_CASE("addFormattingDirectiveChars outputs string with directives if heading exists in the middle") {
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%c%s", "a bear\n", DIRECTIVE_BOLD_ON, "# hello world", DIRECTIVE_BOLD_OFF, "\ngoes into the woods");
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%c%s", "a bear\n", DIRECTIVE_HEADING, "# hello world", DIRECTIVE_NORMAL, "\ngoes into the woods");
     CHECK_EQ(addFormattingDirectiveChars("a bear\n# hello world\ngoes into the woods"), out_buffer);
 }
 
@@ -364,7 +364,7 @@ TEST_CASE("addFormattingDirectiveChars ignores calls for bold in a heading") {
     char in_buffer[128];
     snprintf(in_buffer, sizeof in_buffer, "%s%s%s%s%s", "a bear\n# hello ", d.c_str(), "big", d.c_str(), " world\ngoes into the woods");
     char out_buffer[128];
-    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%s%s%c%s", "a bear\n", DIRECTIVE_BOLD_ON, "# hello ", d.c_str(), "big", d.c_str(), " world", DIRECTIVE_BOLD_OFF, "\ngoes into the woods");
+    snprintf(out_buffer, sizeof out_buffer, "%s%c%s%s%s%s%s%c%s", "a bear\n", DIRECTIVE_HEADING, "# hello ", d.c_str(), "big", d.c_str(), " world", DIRECTIVE_NORMAL, "\ngoes into the woods");
     CHECK_EQ(addFormattingDirectiveChars(in_buffer), out_buffer);
   }
 }

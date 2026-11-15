@@ -156,16 +156,16 @@ String addFormattingDirectiveChars(const String& in) {
     if (isHeading && c == '\n') {
       isHeading = !isHeading;
       char buffer[8];
-      snprintf(buffer, sizeof buffer, "%c%c", DIRECTIVE_BOLD_OFF, c);
+      snprintf(buffer, sizeof buffer, "%c%c", DIRECTIVE_NORMAL, c);
       out_line += buffer;
     } else if ((c == '\n' && c2 == '#') || (i == 0 && c == '#')) {
       isHeading = !isHeading;
       char buffer[8];
       // If it's the first thing in the book, bold goes first
       if (i == 0) {
-        snprintf(buffer, sizeof buffer, "%c%c", DIRECTIVE_BOLD_ON, c);
+        snprintf(buffer, sizeof buffer, "%c%c", DIRECTIVE_HEADING, c);
       } else {
-        snprintf(buffer, sizeof buffer, "%c%c", c, DIRECTIVE_BOLD_ON);
+        snprintf(buffer, sizeof buffer, "%c%c", c, DIRECTIVE_HEADING);
       }
       out_line += buffer;
     // BOLD
@@ -173,9 +173,9 @@ String addFormattingDirectiveChars(const String& in) {
       isBold = !isBold;
       char buffer[8];
       if (isBold) {
-        snprintf(buffer, sizeof buffer, "%c%c%c", DIRECTIVE_BOLD_ON, c, c2);
+        snprintf(buffer, sizeof buffer, "%c%c%c", DIRECTIVE_BOLD, c, c2);
       } else {
-        snprintf(buffer, sizeof buffer, "%c%c%c", c, c2, DIRECTIVE_BOLD_OFF);
+        snprintf(buffer, sizeof buffer, "%c%c%c", c, c2, DIRECTIVE_NORMAL);
       }
       out_line += buffer;
       i += 1;
@@ -184,9 +184,11 @@ String addFormattingDirectiveChars(const String& in) {
     }
     out += out_line;
   }
+  // Handle edge case of unfinished state
+  // Not sure if this will end up after a `\0`, need to verify
   if (isBold || isHeading) {
     char buffer[8];
-    snprintf(buffer, sizeof buffer, "%c", DIRECTIVE_BOLD_OFF);
+    snprintf(buffer, sizeof buffer, "%c", DIRECTIVE_NORMAL);
     out += buffer;
   }
   return out;

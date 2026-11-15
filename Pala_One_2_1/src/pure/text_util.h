@@ -55,8 +55,12 @@ String addFormattingDirectiveChars(const String& in);
 // I'm using "Device Control" 1 and 2. See
 // https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
 // for more info on the used codes.
-#define DIRECTIVE_BOLD_ON  0x11
-#define DIRECTIVE_BOLD_OFF 0x12
+// `useBody`
+#define DIRECTIVE_NORMAL   0x11
+// `useBold`
+#define DIRECTIVE_BOLD     0x12
+// `useBold` (or `useAppLarge`)
+#define DIRECTIVE_HEADING  0x13
 
 // Compact text for storage: collapse runs of spaces, normalize line endings,
 // limit consecutive newlines to 2, strip trailing whitespace.
