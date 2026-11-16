@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/web/upload.h"
 
 #include "src/config.h"
@@ -84,13 +85,13 @@ static void handleUploadDone() {
 
   String inner;
   inner.reserve(1200);
-  inner += "<div class='card'><h2>" D_WEB_UPLOAD_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_UPLOAD_COMPLETE_DESC "</p>";
+  inner += Language::join({"<div class='card'><h2>", D_WEB_UPLOAD_COMPLETE_HEADING, "</h2><p class='muted'>", D_WEB_UPLOAD_COMPLETE_DESC, "</p>"}).c_str();
   inner += "<div class='stats'>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOK_LABEL  "</span><b>" + htmlEscape(s_book.finalName) + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOKS_NOW   "</span><b>" + String(g_library.bookCount)    + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe())  + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a><a class='btn secondary' href='/files'>" D_WEB_OPEN_FILES_BUTTON "</a></div></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>", D_WEB_UPLOAD_BOOK_LABEL, "</span><b>"}).c_str() + htmlEscape(s_book.finalName) + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>", D_WEB_UPLOAD_STORED_SIZE, "</span><b>"}).c_str() + humanBytes(storedSize)         + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>", D_WEB_UPLOAD_BOOKS_NOW, "</span><b>"}).c_str() + String(g_library.bookCount)    + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>", D_WEB_UPLOAD_FREE_SPACE, "</span><b>"}).c_str() + humanBytes(fsFreeBytesSafe())  + "</b></div>";
+  inner += Language::join({"</div><div class='actions'><a class='btn' href='/'>", D_WEB_UPLOAD_ANOTHER, "</a><a class='btn secondary' href='/files'>", D_WEB_OPEN_FILES_BUTTON, "</a></div></div>"}).c_str();
   inner += storageCardHtml();
 
   String page = successPage(
@@ -265,7 +266,7 @@ static void handleUploadSleepDone() {
 
   String inner;
   inner.reserve(500);
-  inner += "<div class='card'><h2>" D_WEB_SLEEP_UPLOAD_HEADING "</h2><p class='muted'>" D_WEB_SLEEP_UPLOAD_DESC "</p><div class='actions'><a class='btn' href='/settings'>" D_WEB_BACK_TO_SETTINGS "</a><a class='btn secondary' href='/'>" D_WEB_NAV_HOME "</a></div></div>";
+  inner += Language::join({"<div class='card'><h2>", D_WEB_SLEEP_UPLOAD_HEADING, "</h2><p class='muted'>", D_WEB_SLEEP_UPLOAD_DESC, "</p><div class='actions'><a class='btn' href='/settings'>", D_WEB_BACK_TO_SETTINGS, "</a><a class='btn secondary' href='/'>", D_WEB_NAV_HOME, "</a></div></div>"}).c_str();
 
   String page = successPage(
     D_WEB_UPLOAD_COMPLETE_HEADING,

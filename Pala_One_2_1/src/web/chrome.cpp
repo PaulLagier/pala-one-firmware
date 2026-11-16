@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/web/chrome.h"
 
 #include "src/state.h"            // server, FS
@@ -156,11 +157,7 @@ String webPageStart(const String& title, const String& subtitle,
     out += navHtml;
     out += "</div>";
   }
-  out += "<button type='button' class='btn secondary theme-toggle' "
-         "onclick='palaToggleTheme()' title='" D_WEB_THEME_TOGGLE_TITLE "'>"
-         "<span class='tgl'>" D_WEB_THEME_DARK_MODE "</span>"
-         "<span class='tgd'>" D_WEB_THEME_LIGHT_MODE "</span>"
-         "</button></div></div>";
+  out += Language::join({"<button type='button' class='btn secondary theme-toggle' ", "onclick='palaToggleTheme()' title='", D_WEB_THEME_TOGGLE_TITLE, "'>", "<span class='tgl'>", D_WEB_THEME_DARK_MODE, "</span>", "<span class='tgd'>", D_WEB_THEME_LIGHT_MODE, "</span>", "</button></div></div>"}).c_str();
   return out;
 }
 
@@ -171,7 +168,7 @@ String webPageEnd() {
 String successPage(const String& title, const String& subtitle,
                    const String& banner, const String& innerHtml) {
   String out = webPageStart(title, subtitle,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>");
+    Language::join({"<a href='/'>", D_WEB_NAV_HOME, "</a><a href='/files'>", D_WEB_NAV_FILES, "</a><a href='/settings'>", D_WEB_NAV_SETTINGS, "</a>"}).c_str());
   out += "<div class='banner-ok'>" + banner + "</div>";
   out += innerHtml;
   out += webPageEnd();
@@ -223,11 +220,31 @@ String storageCardHtml(const char* title) {
   out += "<div class='card'><h2>";
   out += title;
   out += "</h2><div class='stats'>";
-  out += "<div class='stat'><span class='muted'>" D_WEB_STORAGE_BOOKS "</span><b>" + String(g_library.bookCount) + "</b></div>";
-  out += "<div class='stat'><span class='muted'>" D_WEB_STORAGE_USED  "</span><b>" + humanBytes(usedBytes)         + "</b></div>";
-  out += "<div class='stat'><span class='muted'>" D_WEB_STORAGE_FREE  "</span><b>" + humanBytes(freeBytes)         + "</b></div>";
-  out += "<div class='stat'><span class='muted'>" D_WEB_STORAGE_TOTAL "</span><b>" + humanBytes(totalBytes)        + "</b></div>";
+  out += Language::join({"<div class='stat'><span class='muted'>", D_WEB_STORAGE_BOOKS, "</span><b>"}).c_str() + String(g_library.bookCount) + "</b></div>";
+  out += Language::join({"<div class='stat'><span class='muted'>", D_WEB_STORAGE_USED, "</span><b>"}).c_str() + humanBytes(usedBytes)         + "</b></div>";
+  out += Language::join({"<div class='stat'><span class='muted'>", D_WEB_STORAGE_FREE, "</span><b>"}).c_str() + humanBytes(freeBytes)         + "</b></div>";
+  out += Language::join({"<div class='stat'><span class='muted'>", D_WEB_STORAGE_TOTAL, "</span><b>"}).c_str() + humanBytes(totalBytes)        + "</b></div>";
   out += "</div><div class='bar'><span style='width:" + String(pct) + "%'></span></div>";
-  out += "<div class='muted' style='margin-top:8px'>" + String(pct) + D_WEB_STORAGE_PCT_SUFFIX "</div></div>";
+  out += "<div class='muted' style='margin-top:8px'>" + String(pct) + Language::join({D_WEB_STORAGE_PCT_SUFFIX, "</div></div>"}).c_str();
+  return out;
+}
+
+String webJsString(const char* text) {
+  String out = "\"";
+  if (text) {
+    for (const unsigned char* p = reinterpret_cast<const unsigned char*>(text); *p; ++p) {
+      const unsigned char c = *p;
+      if (c == '\\' || c == '"') { out += '\\'; out += char(c); }
+      else if (c < 0x20 || c == '<' || c == '>' || c == '&') {
+        char escaped[7];
+        snprintf(escaped, sizeof(escaped), "\\u%04x", unsigned(c));
+        out += escaped;
+      } else if (c == 0xe2 && p[1] == 0x80 && (p[2] == 0xa8 || p[2] == 0xa9)) {
+        out += p[2] == 0xa8 ? "\\u2028" : "\\u2029";
+        p += 2;
+      } else out += char(c);
+    }
+  }
+  out += '"';
   return out;
 }

@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/web/find.h"
 
 #include <WiFi.h>   // WiFiClient
@@ -144,61 +145,33 @@ static const char kReadStyle[] PROGMEM =
 
 // Embedded JS — loads the book text, builds a match list, scrolls between
 // matches, and POSTs the byte offset of the active match to /jumpoffset.
-static const char kReadScript[] PROGMEM =
-  "<script>(function(){"
-  "var bookId=parseInt(document.getElementById('bvData').dataset.id,10);"
-  "var elText=document.getElementById('bvText'),elQ=document.getElementById('bvFind'),"
-  "elBtnAll=document.getElementById('bvFindBtn'),elNext=document.getElementById('bvFindNext'),"
-  "elPrev=document.getElementById('bvFindPrev'),elStat=document.getElementById('bvFindStat'),"
-  "elJump=document.getElementById('bvJumpBtn'),elJumpStat=document.getElementById('bvJumpStat');"
-  "var rawText='',hits=[],curHit=-1;"
-  "function esc(s){return s.replace(/[&<>]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':'&gt;'});}"
-  "function render(highlight){"
-    "if(!highlight){elText.textContent=rawText;return;}"
-    "var html='',last=0;"
-    "for(var i=0;i<hits.length;i++){"
-      "var h=hits[i];"
-      "html+=esc(rawText.slice(last,h.start));"
-      "html+='<span class=\"find-hit'+(i===curHit?' find-cur':'')+'\" data-i=\"'+i+'\">'+esc(rawText.slice(h.start,h.end))+'</span>';"
-      "last=h.end;"
-    "}"
-    "html+=esc(rawText.slice(last));"
-    "elText.innerHTML=html;"
-  "}"
-  "function gotoHit(i){"
-    "if(hits.length===0){elStat.textContent='" D_WEB_READ_JS_NO_MATCHES "';return;}"
-    "curHit=((i%hits.length)+hits.length)%hits.length;"
-    "render(true);"
-    "var n=elText.querySelector('.find-cur');"
-    "if(n)n.scrollIntoView({block:'center',behavior:'smooth'});"
-    "elStat.textContent=palaFmt('" D_WEB_READ_JS_MATCH_FMT "',curHit+1,hits.length,hits[curHit].start);"
-  "}"
-  "function search(){"
-    "var q=elQ.value;"
-    "if(!q){hits=[];curHit=-1;render(false);elStat.textContent='" D_WEB_READ_JS_ENTER_PHRASE "';return;}"
-    "hits=[];var qLow=q.toLowerCase(),rLow=rawText.toLowerCase(),i=0;"
-    "while(true){var p=rLow.indexOf(qLow,i);if(p<0)break;hits.push({start:p,end:p+q.length});i=p+q.length;}"
-    "curHit=hits.length>0?0:-1;render(true);"
-    "if(hits.length===0)elStat.textContent='" D_WEB_READ_JS_NO_MATCHES "';"
-    "else gotoHit(0);"
-  "}"
-  "elBtnAll.addEventListener('click',search);"
-  "elQ.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();search();}});"
-  "elNext.addEventListener('click',function(){if(hits.length)gotoHit(curHit+1);});"
-  "elPrev.addEventListener('click',function(){if(hits.length)gotoHit(curHit-1);});"
-  "elText.addEventListener('click',function(e){var t=e.target;if(t.classList&&t.classList.contains('find-hit')){var idx=parseInt(t.dataset.i,10);if(!isNaN(idx))gotoHit(idx);}});"
-  "elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent='" D_WEB_READ_JS_FIND_FIRST "';return;}"
-    "var off=new TextEncoder().encode(rawText.slice(0,hits[curHit].start)).length;var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));"
-    "elJumpStat.textContent='" D_WEB_READ_JS_SAVING "';elJump.disabled=true;"
-    "fetch('/jumpoffset',{method:'POST',body:fd,redirect:'follow'}).then(function(r){"
-      "elJumpStat.textContent=r.ok?palaFmt('" D_WEB_READ_JS_SAVED_FMT "',off):palaFmt('" D_WEB_READ_JS_SAVE_HTTP_FMT "',r.status);"
-    "}).catch(function(e){elJumpStat.textContent=palaFmt('" D_WEB_READ_JS_SAVE_FAIL_FMT "',(e&&e.message?e.message:'" D_WEB_READ_JS_ERROR "'));"
-    "}).finally(function(){elJump.disabled=false;});"
-  "});"
-  "fetch('/readbook-text?id='+encodeURIComponent(bookId)).then(function(r){return r.text();}).then(function(t){"
-    "rawText=t;render(false);elStat.textContent=palaFmt('" D_WEB_READ_JS_LOADED_FMT "',rawText.length);"
-  "}).catch(function(){elStat.textContent='" D_WEB_READ_JS_LOAD_FAILED "';});"
-  "})();</script>";
+static void appendReadScript(String& out) {
+  out += "<script>(function(){var bookId=parseInt(document.getElementById('bvData').dataset.id,10);var elText=document.getElementById('bvText'),elQ=document.getElementById('bvFind'),elBtnAll=document.getElementById('bvFindBtn'),elNext=document.getElementById('bvFindNext'),elPrev=document.getElementById('bvFindPrev'),elStat=document.getElementById('bvFindStat'),elJump=document.getElementById('bvJumpBtn'),elJumpStat=document.getElementById('bvJumpStat');var rawText='',hits=[],curHit=-1;function esc(s){return s.replace(/[&<>]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':'&gt;'});}function render(highlight){if(!highlight){elText.textContent=rawText;return;}var html='',last=0;for(var i=0;i<hits.length;i++){var h=hits[i];html+=esc(rawText.slice(last,h.start));html+='<span class=\"find-hit'+(i===curHit?' find-cur':'')+'\" data-i=\"'+i+'\">'+esc(rawText.slice(h.start,h.end))+'</span>';last=h.end;}html+=esc(rawText.slice(last));elText.innerHTML=html;}function gotoHit(i){if(hits.length===0){elStat.textContent=";
+  out += webJsString(D_WEB_READ_JS_NO_MATCHES);
+  out += ";return;}curHit=((i%hits.length)+hits.length)%hits.length;render(true);var n=elText.querySelector('.find-cur');if(n)n.scrollIntoView({block:'center',behavior:'smooth'});elStat.textContent=palaFmt(";
+  out += webJsString(D_WEB_READ_JS_MATCH_FMT);
+  out += ",curHit+1,hits.length,hits[curHit].start);}function search(){var q=elQ.value;if(!q){hits=[];curHit=-1;render(false);elStat.textContent=";
+  out += webJsString(D_WEB_READ_JS_ENTER_PHRASE);
+  out += ";return;}hits=[];var qLow=q.toLowerCase(),rLow=rawText.toLowerCase(),i=0;while(true){var p=rLow.indexOf(qLow,i);if(p<0)break;hits.push({start:p,end:p+q.length});i=p+q.length;}curHit=hits.length>0?0:-1;render(true);if(hits.length===0)elStat.textContent=";
+  out += webJsString(D_WEB_READ_JS_NO_MATCHES);
+  out += ";else gotoHit(0);}elBtnAll.addEventListener('click',search);elQ.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();search();}});elNext.addEventListener('click',function(){if(hits.length)gotoHit(curHit+1);});elPrev.addEventListener('click',function(){if(hits.length)gotoHit(curHit-1);});elText.addEventListener('click',function(e){var t=e.target;if(t.classList&&t.classList.contains('find-hit')){var idx=parseInt(t.dataset.i,10);if(!isNaN(idx))gotoHit(idx);}});elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent=";
+  out += webJsString(D_WEB_READ_JS_FIND_FIRST);
+  out += ";return;}var off=new TextEncoder().encode(rawText.slice(0,hits[curHit].start)).length;var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));elJumpStat.textContent=";
+  out += webJsString(D_WEB_READ_JS_SAVING);
+  out += ";elJump.disabled=true;fetch('/jumpoffset',{method:'POST',body:fd,redirect:'follow'}).then(function(r){elJumpStat.textContent=r.ok?palaFmt(";
+  out += webJsString(D_WEB_READ_JS_SAVED_FMT);
+  out += ",off):palaFmt(";
+  out += webJsString(D_WEB_READ_JS_SAVE_HTTP_FMT);
+  out += ",r.status);}).catch(function(e){elJumpStat.textContent=palaFmt(";
+  out += webJsString(D_WEB_READ_JS_SAVE_FAIL_FMT);
+  out += ",(e&&e.message?e.message:";
+  out += webJsString(D_WEB_READ_JS_ERROR);
+  out += "));}).finally(function(){elJump.disabled=false;});});fetch('/readbook-text?id='+encodeURIComponent(bookId)).then(function(r){return r.text();}).then(function(t){rawText=t;render(false);elStat.textContent=palaFmt(";
+  out += webJsString(D_WEB_READ_JS_LOADED_FMT);
+  out += ",rawText.length);}).catch(function(){elStat.textContent=";
+  out += webJsString(D_WEB_READ_JS_LOAD_FAILED);
+  out += ";});})();</script>";
+}
 
 static void handleReadView() {
   int id = requireBookId();
@@ -211,7 +184,7 @@ static void handleReadView() {
   String out = webPageStart(
     D_WEB_READ_TITLE,
     D_WEB_READ_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a>",
+    Language::join({"<a href='/'>", D_WEB_NAV_HOME, "</a><a href='/files'>", D_WEB_NAV_FILES, "</a><a href='/bookmarks'>", D_WEB_NAV_BOOKMARKS, "</a>"}).c_str(),
     true
   );
   out.reserve(out.length() + 6000);
@@ -221,35 +194,23 @@ static void handleReadView() {
   out += htmlEscape(String(g_library.books[id].name));
   out += "</h2><div class='meta'>";
   out += String((int)g_library.books[id].size);
-  out += " " D_WEB_READ_BYTES_LABEL " &middot; " D_WEB_READ_CURRENT_PAGE_LABEL " ";
+  out += Language::join({" ", D_WEB_READ_BYTES_LABEL, " &middot; ", D_WEB_READ_CURRENT_PAGE_LABEL, " "}).c_str();
   out += String(savedPage);
   out += "</div>";
 
   // Find UI.
-  out += "<div class='bv-find'>"
-         "<input id='bvFind' type='search' placeholder='" D_WEB_READ_FIND_PLACEHOLDER "' autocomplete='off'>"
-         "<button type='button' class='btn small' id='bvFindBtn'>" D_WEB_READ_FIND_ALL "</button>"
-         "<button type='button' class='btn secondary small' id='bvFindPrev'>&#9650; " D_WEB_READ_FIND_PREV "</button>"
-         "<button type='button' class='btn secondary small' id='bvFindNext'>&#9660; " D_WEB_READ_FIND_NEXT "</button>"
-         "<button type='button' class='btn small' id='bvJumpBtn'>" D_WEB_READ_JUMP_HERE "</button>"
-         "</div>"
-         "<div class='bv-status' id='bvFindStat'>" D_WEB_READ_LOADING "</div>"
-         "<div class='bv-status' id='bvJumpStat'></div>";
+  out += Language::join({"<div class='bv-find'>", "<input id='bvFind' type='search' placeholder='", D_WEB_READ_FIND_PLACEHOLDER, "' autocomplete='off'>", "<button type='button' class='btn small' id='bvFindBtn'>", D_WEB_READ_FIND_ALL, "</button>", "<button type='button' class='btn secondary small' id='bvFindPrev'>&#9650; ", D_WEB_READ_FIND_PREV, "</button>", "<button type='button' class='btn secondary small' id='bvFindNext'>&#9660; ", D_WEB_READ_FIND_NEXT, "</button>", "<button type='button' class='btn small' id='bvJumpBtn'>", D_WEB_READ_JUMP_HERE, "</button>", "</div>", "<div class='bv-status' id='bvFindStat'>", D_WEB_READ_LOADING, "</div>", "<div class='bv-status' id='bvJumpStat'></div>"}).c_str();
 
   // Jump-by-page form (uses the existing /jumppage route).
   out += "<div style='margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px'>"
          "<form method='POST' action='/jumppage' class='bv-find'>"
-         "<input type='hidden' name='id' value='" + String(id) + "'>"
-         "<input type='text' name='page' inputmode='numeric' placeholder='" D_WEB_READ_PAGE_PLACEHOLDER "' value='" + String(savedPage) + "' style='max-width:140px'>"
-         "<button type='submit' class='btn small'>" D_WEB_READ_JUMP_PAGE "</button>"
-         "<span class='muted small'>" D_WEB_READ_JUMP_HINT "</span>"
-         "</form></div>";
+         "<input type='hidden' name='id' value='" + String(id) + Language::join({"'>", "<input type='text' name='page' inputmode='numeric' placeholder='", D_WEB_READ_PAGE_PLACEHOLDER, "' value='"}).c_str() + String(savedPage) + Language::join({"' style='max-width:140px'>", "<button type='submit' class='btn small'>", D_WEB_READ_JUMP_PAGE, "</button>", "<span class='muted small'>", D_WEB_READ_JUMP_HINT, "</span>", "</form></div>"}).c_str();
 
   out += "<div id='bvData' data-id='" + String(id) + "'></div>";
   out += "<div id='bvText' class='bv-text'></div>";
   out += "</div>";
 
-  out += FPSTR(kReadScript);
+  appendReadScript(out);
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }

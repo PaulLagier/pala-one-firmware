@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/web/bookmarks.h"
 
 #include "src/config.h"
@@ -31,11 +32,11 @@ static void handleBookmarksWeb() {
   String out = webPageStart(
     D_WEB_BOOKMARKS_HEADING,
     D_WEB_BOOKMARKS_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    Language::join({"<a href='/'>", D_WEB_NAV_HOME, "</a><a href='/files'>", D_WEB_NAV_FILES, "</a><a href='/settings'>", D_WEB_NAV_SETTINGS, "</a>"}).c_str(),
     true
   );
 
-  if (g_library.bookCount == 0) out += "<div class='card'><p class='muted'>" D_WEB_NO_BOOKS_YET "</p></div>";
+  if (g_library.bookCount == 0) out += Language::join({"<div class='card'><p class='muted'>", D_WEB_NO_BOOKS_YET, "</p></div>"}).c_str();
 
   for (int i = 0; i < g_library.bookCount; i++) {
     String filePath = String(g_library.books[i].path);
@@ -49,13 +50,13 @@ static void handleBookmarksWeb() {
     out += "</h2>";
 
     if (count == 0) {
-      out += "<p class='muted'>" D_WEB_NO_BOOKMARKS_CARD "</p></div>";
+      out += Language::join({"<p class='muted'>", D_WEB_NO_BOOKMARKS_CARD, "</p></div>"}).c_str();
       continue;
     }
 
     File f = FS.open(filePath, "r");
     if (!f) {
-      out += "<p class='muted'>" D_WEB_BOOKMARKS_OPEN_FAILED_CARD "</p></div>";
+      out += Language::join({"<p class='muted'>", D_WEB_BOOKMARKS_OPEN_FAILED_CARD, "</p></div>"}).c_str();
       continue;
     }
 
@@ -66,19 +67,19 @@ static void handleBookmarksWeb() {
       uint32_t pageOff = resolveBookmarkOffset(filePath, (uint16_t)targetPage, offsets[j]);
       FileReadStream fs(f);
       String sn = readBookmarkLabelAtOffset(fs, pageOff, targetPage);
-      out += "<li><div class='row'><div><div class='pill'>" D_WEB_BOOKMARK_PILL_PREFIX;
+      out += Language::join({"<li><div class='row'><div><div class='pill'>", D_WEB_BOOKMARK_PILL_PREFIX}).c_str();
       out += String(j + 1);
       out += "</div><p class='meta' style='margin-top:8px'>";
       out += htmlEscape(sn);
-      out += "</p></div><div><a class='link' href='/viewbm?book=" + String(i) + "&idx=" + String(j) + "'>" D_WEB_BOOKMARK_VIEW "</a> | ";
+      out += "</p></div><div><a class='link' href='/viewbm?book=" + String(i) + "&idx=" + String(j) + Language::join({"'>", D_WEB_BOOKMARK_VIEW, "</a> | "}).c_str();
       out += "<form method='POST' action='/delbm' style='display:inline'>";
       out += "<input type='hidden' name='book' value='" + String(i) + "'>";
       out += "<input type='hidden' name='idx' value='" + String(j) + "'>";
-      out += "<button type='submit' class='btn secondary' style='padding:4px 8px;font-size:13px' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_BOOKMARK "')\">" D_WEB_DELETE_BUTTON "</button>";
+      out += Language::join({"<button type='submit' class='btn secondary' style='padding:4px 8px;font-size:13px' onclick=\"return confirm('", D_WEB_CONFIRM_DELETE_BOOKMARK, "')\">", D_WEB_DELETE_BUTTON, "</button>"}).c_str();
       out += "</form></div></div></li>";
     }
 
-    out += "</ul><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(i) + "'>" D_WEB_BOOKMARK_DOWNLOAD_ALL "</a></div></div>";
+    out += "</ul><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(i) + Language::join({"'>", D_WEB_BOOKMARK_DOWNLOAD_ALL, "</a></div></div>"}).c_str();
     f.close();
   }
 
@@ -158,17 +159,17 @@ static void handleViewBookmarkWeb() {
   String out = webPageStart(
     D_WEB_BOOKMARK_VIEW_HEADING,
     D_WEB_BOOKMARK_VIEW_SUBTITLE,
-    "<a href='/bookmarks'>" D_WEB_BOOKMARK_VIEW_BACK_NAV "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/'>" D_WEB_NAV_HOME "</a>",
+    Language::join({"<a href='/bookmarks'>", D_WEB_BOOKMARK_VIEW_BACK_NAV, "</a><a href='/files'>", D_WEB_NAV_FILES, "</a><a href='/'>", D_WEB_NAV_HOME, "</a>"}).c_str(),
     true
   );
 
   out += "<div class='card'><h2>";
   out += htmlEscape(String(g_library.books[b].name));
-  out += "</h2><p class='muted'>" D_WEB_BOOKMARK_PILL_PREFIX;
+  out += Language::join({"</h2><p class='muted'>", D_WEB_BOOKMARK_PILL_PREFIX}).c_str();
   out += String(idx + 1);
   out += "</p><pre class='pre'>";
   out += htmlEscape(txt);
-  out += "</pre><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(b) + "'>" D_WEB_BOOKMARK_DOWNLOAD_ALL "</a></div></div>";
+  out += "</pre><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(b) + Language::join({"'>", D_WEB_BOOKMARK_DOWNLOAD_ALL, "</a></div></div>"}).c_str();
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }

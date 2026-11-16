@@ -165,7 +165,8 @@ void UpdateScreen::draw() {
 
   // Version line
   u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPDATE_VERSION_PREFIX FW_VERSION);
+  u8g2.print(D_UPDATE_VERSION_PREFIX);
+  u8g2.print(FW_VERSION);
   y += 16;
 
   // Channel label on its own line

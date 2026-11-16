@@ -1,0 +1,146 @@
+[
+  {
+    "symbol": "pala_font_sans_r08",
+    "bytes": 6958,
+    "rasterPixels": 11,
+    "glyphs": 538,
+    "preservedGlyphs": 446,
+    "ascent": 14,
+    "descent": 4
+  },
+  {
+    "symbol": "pala_font_sans_b08",
+    "bytes": 7232,
+    "rasterPixels": 11,
+    "glyphs": 538,
+    "preservedGlyphs": 446,
+    "ascent": 14,
+    "descent": 5
+  },
+  {
+    "symbol": "pala_font_sans_r10",
+    "bytes": 8763,
+    "rasterPixels": 14,
+    "glyphs": 538,
+    "preservedGlyphs": 446,
+    "ascent": 17,
+    "descent": 5
+  },
+  {
+    "symbol": "pala_font_sans_b10",
+    "bytes": 9093,
+    "rasterPixels": 14,
+    "glyphs": 538,
+    "preservedGlyphs": 446,
+    "ascent": 17,
+    "descent": 4
+  },
+  {
+    "symbol": "pala_font_sans_r12",
+    "bytes": 10126,
+    "rasterPixels": 17,
+    "glyphs": 538,
+    "preservedGlyphs": 446,
+    "ascent": 19,
+    "descent": 5
+  },
+  {
+    "symbol": "pala_font_sans_b12",
+    "bytes": 10392,
+    "rasterPixels": 16,
+    "glyphs": 538,
+    "preservedGlyphs": 446,
+    "ascent": 20,
+    "descent": 6
+  },
+  {
+    "symbol": "pala_font_sans_r14",
+    "bytes": 11868,
+    "rasterPixels": 20,
+    "glyphs": 538,
+    "preservedGlyphs": 446,
+    "ascent": 21,
+    "descent": 6
+  },
+  {
+    "symbol": "pala_font_sans_b14",
+    "bytes": 11867,
+    "rasterPixels": 20,
+    "glyphs": 538,
+    "preservedGlyphs": 446,
+    "ascent": 22,
+    "descent": 7
+  },
+  {
+    "symbol": "pala_font_dys_r08",
+    "bytes": 3474,
+    "rasterPixels": 9,
+    "glyphs": 286,
+    "preservedGlyphs": 95,
+    "ascent": 12,
+    "descent": 3
+  },
+  {
+    "symbol": "pala_font_dys_b08",
+    "bytes": 3700,
+    "rasterPixels": 9,
+    "glyphs": 286,
+    "preservedGlyphs": 95,
+    "ascent": 13,
+    "descent": 4
+  },
+  {
+    "symbol": "pala_font_dys_r10",
+    "bytes": 4473,
+    "rasterPixels": 12,
+    "glyphs": 286,
+    "preservedGlyphs": 95,
+    "ascent": 17,
+    "descent": 6
+  },
+  {
+    "symbol": "pala_font_dys_b10",
+    "bytes": 4460,
+    "rasterPixels": 12,
+    "glyphs": 286,
+    "preservedGlyphs": 95,
+    "ascent": 17,
+    "descent": 6
+  },
+  {
+    "symbol": "pala_font_dys_r12",
+    "bytes": 5102,
+    "rasterPixels": 14,
+    "glyphs": 286,
+    "preservedGlyphs": 95,
+    "ascent": 19,
+    "descent": 6
+  },
+  {
+    "symbol": "pala_font_dys_b12",
+    "bytes": 5385,
+    "rasterPixels": 14,
+    "glyphs": 286,
+    "preservedGlyphs": 95,
+    "ascent": 20,
+    "descent": 7
+  },
+  {
+    "symbol": "pala_font_dys_r14",
+    "bytes": 6857,
+    "rasterPixels": 18,
+    "glyphs": 286,
+    "preservedGlyphs": 95,
+    "ascent": 25,
+    "descent": 9
+  },
+  {
+    "symbol": "pala_font_dys_b14",
+    "bytes": 6547,
+    "rasterPixels": 17,
+    "glyphs": 286,
+    "preservedGlyphs": 95,
+    "ascent": 25,
+    "descent": 8
+  }
+]

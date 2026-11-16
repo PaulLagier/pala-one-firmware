@@ -1,0 +1,20 @@
+[
+  {
+    "symbol": "pala_font_ui_tiny08",
+    "bytes": 123,
+    "rasterPixels": 8,
+    "glyphs": 11,
+    "preservedGlyphs": 11,
+    "ascent": 6,
+    "descent": 0
+  },
+  {
+    "symbol": "pala_font_ui_small10",
+    "bytes": 159,
+    "rasterPixels": 10,
+    "glyphs": 13,
+    "preservedGlyphs": 13,
+    "ascent": 7,
+    "descent": 0
+  }
+]

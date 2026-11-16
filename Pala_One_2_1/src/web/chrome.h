@@ -27,6 +27,9 @@ String successPage(const String& title, const String& subtitle,
 // HTML-escape user-supplied text so we don't break the page or open XSS.
 String htmlEscape(const String& in);
 
+// Quoted JavaScript string; escape HTML delimiters to protect inline scripts.
+String webJsString(const char* text);
+
 // "1.4 KB" / "23.7 MB" formatting for storage stats.
 String humanBytes(size_t bytes);
 

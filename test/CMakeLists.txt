@@ -133,7 +133,7 @@ target_compile_definitions(packed_book_tests PRIVATE PACKED_FIXTURES="${PACKED_F
 add_test(NAME pack_book_encoder COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/test_pack_book.py)
 
 add_executable(book_upload_tests main.cpp native/book_upload/upload.cpp
-  ${FW_SRC}/web/upload.cpp ${FW_SRC}/pure/text_util.cpp ${FW_SRC}/pure/paths.cpp)
+  ${FW_SRC}/web/upload.cpp ${FW_SRC}/lang/join.cpp ${FW_SRC}/pure/text_util.cpp ${FW_SRC}/pure/paths.cpp)
 target_compile_definitions(book_upload_tests PRIVATE LANG_EN PACKED_FIXTURES="${PACKED_FIXTURES}")
 target_include_directories(book_upload_tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/native/book_upload/stubs
@@ -205,3 +205,16 @@ foreach(locale IN ITEMS EN ES_LA)
     ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
   add_test(NAME ${connection_target} COMMAND ${connection_target})
 endforeach()
+
+foreach(locale IN ITEMS EN ES_LA FR)
+  set(locale_target runtime_locales_${locale})
+  add_executable(${locale_target} main.cpp test_runtime_locales.cpp
+    ${FW_SRC}/lang/locale_core.cpp ${FW_SRC}/lang/locale_data.cpp ${FW_SRC}/pure/catalog_inflater.cpp)
+  target_compile_definitions(${locale_target} PRIVATE LANG_${locale} PALA_RUNTIME_LANG
+    CATALOG_DIRECTORY="${FW_SRC}/lang/catalogs")
+  target_include_directories(${locale_target} PRIVATE
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR} ${arduinojson_SOURCE_DIR}/src)
+  target_link_libraries(${locale_target} PRIVATE ZLIB::ZLIB)
+  add_test(NAME ${locale_target} COMMAND ${locale_target})
+endforeach()
+add_test(NAME locale_generator COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/test_locale_generator.py)
