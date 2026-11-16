@@ -30,3 +30,5 @@ payloads cannot change the selected language. The command never starts Wi-Fi.
 
 Native tests compile this exact source with deterministic Stream/Wi-Fi adapters.
 They test the existing Improv wire protocol, without accessing real networks.
+
+Vendor RPC `0x82` selects reading-focused menus. Its payload is exactly one ASCII byte (`0` or `1`). A successful reply echoes that value as one RPC string, only after the preference was saved. Other lengths and values are rejected without changing settings or starting Wi-Fi.

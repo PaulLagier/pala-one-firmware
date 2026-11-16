@@ -288,3 +288,16 @@ add_test(NAME navigation_profile_tests COMMAND navigation_profile_tests)
 
 add_test(NAME compressed_web_assets COMMAND ${Python3_EXECUTABLE} -B
   ${CMAKE_CURRENT_SOURCE_DIR}/test_web_assets.py)
+
+add_test(NAME reader_window_integration COMMAND ${Python3_EXECUTABLE} -B
+  ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_reader_window.py
+  --firmware ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+add_executable(factory_reset_tests main.cpp native/factory_reset/main.cpp
+  ${FW_SRC}/storage/factory_reset.cpp)
+target_include_directories(factory_reset_tests PRIVATE native/factory_reset/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME factory_reset_tests COMMAND factory_reset_tests)
+
+add_test(NAME release_packaging COMMAND ${Python3_EXECUTABLE} -B
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_release_package.py)

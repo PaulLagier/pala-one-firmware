@@ -739,3 +739,19 @@
 #define D_WEB_HOME_BOOKS_ONE " libro"
 
 #define D_SETTINGS_READING_MENU "Menús centrados en la lectura"
+
+#define D_READER_INDEX_CANCEL "Pulsa para cancelar"
+
+#define D_ABOUT_BACK "Volver"
+
+#define D_BOOKMARKS_PREVIEW "Vista previa"
+
+#define D_BOOKMARKS_READ "Leer"
+
+#define D_WEB_RESET_FAILED "Error al restablecer"
+
+#define D_WEB_RESET_FAILURE_DESC "El proceso no se ha completado. Inténtalo de nuevo."
+
+#define D_WEB_RESET_RESTARTING "Pala One se está reiniciando. Después, abre de nuevo el modo de conexión."
+
+#define D_MENU_CONNECT "Conectar"

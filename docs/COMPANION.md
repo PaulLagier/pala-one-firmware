@@ -120,3 +120,5 @@ for a physical radio/phone pairing test or claim V1.1 hardware coverage.
 ### Reading-focused navigation
 
 `settings.set` accepts the boolean `readingMenu`; `settings.advanced.get` reports it. The compact `settings.get` response keeps its existing size budget. The reading view shows books and folders, bookmarks, connection and Device. Device contains statistics, updates, firmware information and a library return. Short presses move focus; a double press or hold opens the selected item. Reader gesture mappings remain unchanged. Turning the view off restores the complete custom library menu order and installed apps without changing their data. The web settings page provides a separate reading-menu form.
+
+Bookmarks support unsigned 32-bit page labels. Existing V1 and V2 records remain readable; ordinary records are still written as V2. A bookmark beyond page 65535 uses the extended V3 format with its canonical byte offset. Firmware predating V3 cannot read those extended records; retain a data backup before rolling back across this format boundary.

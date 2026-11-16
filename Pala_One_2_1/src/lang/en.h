@@ -763,3 +763,19 @@
 #define D_WEB_HOME_BOOKS_ONE " book"
 
 #define D_SETTINGS_READING_MENU "Reading-focused menus"
+
+#define D_READER_INDEX_CANCEL "Press to cancel"
+
+#define D_ABOUT_BACK "Back"
+
+#define D_BOOKMARKS_PREVIEW "Preview"
+
+#define D_BOOKMARKS_READ "Read"
+
+#define D_WEB_RESET_FAILED "Reset failed"
+
+#define D_WEB_RESET_FAILURE_DESC "The reset did not finish. Please try again."
+
+#define D_WEB_RESET_RESTARTING "Pala One is restarting. Open its connection mode again afterwards."
+
+#define D_MENU_CONNECT "Connect"

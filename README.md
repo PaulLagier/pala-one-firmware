@@ -30,6 +30,21 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 
 Each channel page lists both display revisions (V1.1 / V1.2) and EN/ES/FR initial-default images. Every image contains all eleven runtime languages. Pick your board, install, close the dialog and apply your preferred language with **Apply language over USB**; its initial selection follows the browser language. The Pala app and reader web settings can also change the language. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
 
+## Reading-focused view
+
+Enable **Reading-focused menus** in the reader web settings or through the Pala
+app's `readingMenu` setting. Books and folders, bookmarks, connection and Device
+remain visible. Device groups statistics, updates and firmware information.
+Short presses move focus; double presses or holds open the selected item.
+Turning the view off restores the complete custom menu order and installed apps.
+Reader gesture mappings remain independent of menu navigation.
+
+The shared firmware captures intentional input during wake, avoids an extra
+V1.2 warm-start clear and prepares the next page while idle. Large books use a
+bounded page window rather than stopping at 10000 pages. Saved reading positions
+remain canonical byte offsets. Each release includes board-specific downloads,
+English installation instructions, source provenance and SHA-256 checksums.
+
 ## Connect the Pala app
 
 In **Upload**, choose **Bluetooth / app** and pair using the six-digit PIN

@@ -72,7 +72,7 @@ void draw() {
   size_t total = g_bookview.book.size();
   if (total == 0)
     total = 1;
-  uint32_t pos = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+  uint32_t pos = g_bookview.pages.offsetAt(g_bookview.cursor.pageIndex);
   int pct = (int)((pos * 100UL) / (uint32_t)total);
 
   // pages.count grows lazily as the reader walks the book; only show it as
@@ -81,7 +81,7 @@ void draw() {
   char buf[64];
   if (g_bookview.pages.eofReached && g_bookview.pages.count > 0) {
     snprintf(buf, sizeof(buf), D_READER_MENU_PAGE_OF_FMT, g_bookview.cursor.pageIndex + 1,
-             g_bookview.pages.count, pct);
+             g_bookview.pages.endPage(), pct);
   } else {
     snprintf(buf, sizeof(buf), D_READER_MENU_PAGE_PCT_FMT, g_bookview.cursor.pageIndex + 1, pct);
   }

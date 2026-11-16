@@ -55,14 +55,14 @@ int bookIndexForPath(const String &path) {
       return i;
   return -1;
 }
-uint8_t loadBookmarksForKey(const String &key, uint16_t pages[MAX_BOOKMARKS],
+uint8_t loadBookmarksForKey(const String &key, uint32_t pages[MAX_BOOKMARKS],
                             uint32_t offsets[MAX_BOOKMARKS]) {
   const auto marks = loadBookmarks(kv, key);
   std::copy_n(marks.pages, marks.count, pages);
   std::copy_n(marks.offsets, marks.count, offsets);
   return marks.count;
 }
-void saveBookmarksForKey(const String &key, const uint16_t pages[MAX_BOOKMARKS],
+void saveBookmarksForKey(const String &key, const uint32_t pages[MAX_BOOKMARKS],
                          const uint32_t offsets[MAX_BOOKMARKS], uint8_t count) {
   if (failBookmarkSave)
     return;
@@ -76,7 +76,7 @@ void deleteBookMetadata(const String &path) {
   ++metadataDeletes;
   clearBookMetadata(kv, prefKeyForBook(path));
 }
-uint32_t resolveBookmarkOffset(const String &, uint16_t page, uint32_t stored) {
+uint32_t resolveBookmarkOffset(const String &, uint32_t page, uint32_t stored) {
   return stored == kOffsetUnset ? uint32_t(page) * 10 : stored;
 }
 uint32_t extractPageText(File &file, uint32_t offset, String &out) {
@@ -155,7 +155,7 @@ void seed(const char *path, const std::string &bytes) {
   file.print(bytes.c_str());
   loadBooks();
 }
-void mark(const char *path, uint16_t page = 2, uint32_t offset = 0) {
+void mark(const char *path, uint32_t page = 2, uint32_t offset = 0) {
   Bookmarks marks{};
   marks.count = 1;
   marks.pages[0] = page;

@@ -29,6 +29,8 @@ private:
 
   Phase phase_ = Phase::Choose;
   uint8_t choice_ = 0;
+  int view_ = 0;
+  void drawReadingView();
   uint32_t startedMs_ = 0;    // for the auto-exit timer (set on entry to Ready)
   uint32_t staStartedMs_ = 0; // when wifiStaBegin() was called (for the 5s timeout)
   WifiSession net_;           // cached session info shown by draw()

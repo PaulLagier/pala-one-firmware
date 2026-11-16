@@ -737,3 +737,19 @@
 #define D_WEB_HOME_BOOKS_ONE " livre"
 
 #define D_SETTINGS_READING_MENU "Menus de lecture simplifiés"
+
+#define D_READER_INDEX_CANCEL "Appuyer pour annuler"
+
+#define D_ABOUT_BACK "Retour"
+
+#define D_BOOKMARKS_PREVIEW "Aperçu"
+
+#define D_BOOKMARKS_READ "Lire"
+
+#define D_WEB_RESET_FAILED "Échec de la réinitialisation"
+
+#define D_WEB_RESET_FAILURE_DESC "La réinitialisation n’a pas abouti. Réessayez."
+
+#define D_WEB_RESET_RESTARTING "Pala One redémarre. Rouvrez ensuite son mode de connexion."
+
+#define D_MENU_CONNECT "Connexion"

@@ -1,3 +1,4 @@
+#include "src/storage/navigation_profile.h"
 #include "src/ui/screens/upload_screen.h"
 
 #include "src/config.h"
@@ -23,6 +24,16 @@ static constexpr uint32_t kStaTimeoutMs = 5000;
 
 // ---- Drawing --------------------------------------------------------------
 static void drawConnecting(const String &ssid) {
+  if (NavigationProfile::readingFocused()) {
+    prepareMenuFrame();
+    drawPalaList(D_UPLOAD_CONNECTING, 3, 2, [&](int i) -> String {
+      return i == 0   ? ssid
+             : i == 1 ? String(D_UPLOAD_HOTSPOT_HINT_L1)
+                      : String(D_UPLOAD_HOTSPOT_HINT_L2);
+    });
+    display.update();
+    return;
+  }
   prepareMenuFrame();
   int y = drawSectionHeader(D_UPLOAD_HEADER);
 
@@ -47,6 +58,10 @@ static void drawConnecting(const String &ssid) {
 }
 
 void UploadScreen::draw() {
+  if (NavigationProfile::readingFocused()) {
+    drawReadingView();
+    return;
+  }
   prepareMenuFrame();
 
   int y = drawSectionHeader(D_UPLOAD_HEADER);
@@ -202,6 +217,7 @@ void UploadScreen::beginSession() {
 
 void UploadScreen::enterReady() {
   phase_ = Phase::Ready;
+  view_ = 0;
   startedMs_ = millis();
   server.begin();
   draw();
@@ -238,6 +254,52 @@ void UploadScreen::stopSessionToLibrary() {
 
 // ---- Per-iteration input + tick -------------------------------------------
 void UploadScreen::onButton(const ButtonEvent &e) {
+  if (NavigationProfile::readingFocused() && e.any()) {
+    const bool open = e.kind == ButtonEvent::Long || e.kind == ButtonEvent::Double;
+    if (e.kind == ButtonEvent::Triple) {
+      stopSessionToLibrary();
+      return;
+    }
+#ifdef PALA_COMPANION
+    if (phase_ == Phase::Choose) {
+      if (e.kind == ButtonEvent::Short) {
+        choice_ = (choice_ + 1) % 3;
+        draw();
+      } else if (open) {
+        if (choice_ == 0)
+          beginSession();
+        else if (choice_ == 1) {
+          phase_ = Phase::StartingBluetooth;
+          draw();
+        } else
+          stopSessionToLibrary();
+      }
+      return;
+    }
+    if (phase_ == Phase::StartingBluetooth)
+      return;
+    if (phase_ == Phase::Bluetooth || phase_ == Phase::BluetoothError) {
+      if (open)
+        stopSessionToLibrary();
+      return;
+    }
+#endif
+    if (phase_ == Phase::ConnectingSta) {
+      fallbackToAp();
+      return;
+    }
+    const int exitView = net_.fallbackUrl.length() ? 3 : 2;
+    if (open && view_ == exitView) {
+      stopSessionToLibrary();
+      return;
+    }
+    if (open || e.kind == ButtonEvent::Short) {
+      view_ = (view_ + 1) % (exitView + 1);
+      draw();
+    }
+    return;
+  }
+
   if (!e.any())
     return;
 
@@ -320,4 +382,50 @@ void UploadScreen::onIdleTick() {
   if ((uint32_t)(millis() - startedMs_) > UPLOAD_AUTO_EXIT_MS) {
     stopSessionToLibrary();
   }
+}
+
+void UploadScreen::drawReadingView() {
+  prepareMenuFrame();
+#ifdef PALA_COMPANION
+  if (phase_ == Phase::Choose) {
+    drawPalaList(D_MENU_CONNECT, 3, choice_, [](int i) -> String {
+      return i == 0 ? D_BLE_CHOICE_WIFI : i == 1 ? D_BLE_CHOICE_APP : D_BLE_BACK;
+    });
+    display.update();
+    return;
+  }
+  if (phase_ == Phase::Bluetooth || phase_ == Phase::BluetoothError ||
+      phase_ == Phase::StartingBluetooth) {
+    drawPalaList(D_BLE_CHOICE_APP, 3, 2, [&](int i) -> String {
+      if (i == 2)
+        return D_BLE_BACK;
+      if (phase_ == Phase::BluetoothError)
+        return i ? String("") : String(D_BLE_ERROR);
+      if (phase_ == Phase::StartingBluetooth)
+        return i ? String("") : String(D_BLE_STARTING);
+      if (i == 0)
+        return String(D_BLE_PIN) + " " + companionPairingPin();
+      return companionBleConnected() ? D_BLE_CONNECTED : D_BLE_WAITING;
+    });
+    display.update();
+    return;
+  }
+#endif
+  const int exitView = net_.fallbackUrl.length() ? 3 : 2;
+  drawPalaList(D_UPLOAD_HEADER, 3, 2, [&](int i) -> String {
+    if (i == 2)
+      return view_ == exitView ? D_READER_BACK_LIBRARY : D_UPLOAD_OPEN;
+    if (view_ == exitView)
+      return "";
+    if (view_ == 0) {
+      if (i == 0)
+        return net_.mode == WifiMode::Station ? net_.staSsid : String(net_.apSsid);
+      return net_.mode == WifiMode::Station ? String(D_UPLOAD_CONNECTED)
+                                            : String(D_UPLOAD_PASSWORD) + " " + net_.apPass;
+    }
+    if (i == 0)
+      return D_UPLOAD_OPEN;
+    return view_ == 1 ? net_.primaryUrl : net_.fallbackUrl;
+  });
+  display.update();
 }

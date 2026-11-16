@@ -10,7 +10,7 @@ String cachedKey, cachedText;
 uint32_t cachedOffset = 0;
 struct BookmarksForPath {
   String key;
-  uint16_t pages[MAX_BOOKMARKS]{};
+  uint32_t pages[MAX_BOOKMARKS]{};
   uint32_t offsets[MAX_BOOKMARKS]{};
   uint8_t count = 0;
   explicit BookmarksForPath(const String &path) : key(prefKeyForBook(path)) {
@@ -18,7 +18,7 @@ struct BookmarksForPath {
   }
 };
 int findMark(const BookmarksForPath &marks, JsonDocument &in) {
-  if (!in["page"].is<uint16_t>())
+  if (!in["page"].is<uint32_t>())
     return -1;
   const auto page = in["page"].as<uint32_t>();
   for (int i = 0; i < marks.count; i++) {

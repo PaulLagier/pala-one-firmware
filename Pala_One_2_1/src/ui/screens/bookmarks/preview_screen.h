@@ -6,11 +6,15 @@
 class BookmarkPreviewScreen : public Screen {
 public:
   void onEnter() override;
-  void onButton(const ButtonEvent& e) override;
+  void onButton(const ButtonEvent &e) override;
   void draw() override;
   void onSleep() override;
+
+private:
+  bool readSelected_ = true;
+  void cancel();
 };
 
 extern BookmarkPreviewScreen g_bmPreviewScreen;
 
-#endif  // PALA_UI_SCREENS_BOOKMARKS_PREVIEW_SCREEN_H
+#endif // PALA_UI_SCREENS_BOOKMARKS_PREVIEW_SCREEN_H

@@ -526,7 +526,7 @@ static void handleSettings() {
                       D_WEB_WIFI_PASSWORD_PLACEHOLDER, "' value='"})
           .c_str();
   // Never echo out the saved password verbatim for security reasons.
-  out += WifiCreds::pass().isEmpty() ? "" : D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER;
+  // Keep the input empty; never render the stored password or a magic placeholder value.
   // Pasword area includes a crude SVG of an eye with a strike through that
   // acts as a button to allow it to be shown/hidden as appropriate.
   out += Language::join(
@@ -612,9 +612,6 @@ static bool validateRequiredActionsOnPost() {
 // decide whether to remap the reader's byte-offset cursor afterwards.
 static bool applySettingsForm() {
   bool layoutChanged = false;
-  if (server.hasArg("menuForm"))
-    NavigationProfile::setReadingFocused(server.hasArg("readingMenu") &&
-                                         server.arg("readingMenu") == "1");
 
   // Font::setBodySize / setLineGap / setFamily / Sleep::setIdleTimeout all
   // clamp + validate internally — no inline guards needed here.
@@ -679,6 +676,20 @@ static void applyTimingSettingsForm() {
 }
 
 static void handleSettingsPost() {
+  if (server.hasArg("menuForm")) {
+    if (!NavigationProfile::setReadingFocused(server.hasArg("readingMenu") &&
+                                              server.arg("readingMenu") == "1")) {
+      server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_WRITE_FAILED);
+      return;
+    }
+    forceNextMenuFrameFull();
+    if (g_currentScreen)
+      g_currentScreen->draw();
+    server.sendHeader("Location", "/settings");
+    server.send(303, "text/plain", "");
+    return;
+  }
+
   if (server.hasArg("language")) {
     const String code = server.arg("language");
     if (code.length() != 2 || !Language::setLanguage(code.c_str())) {
@@ -700,9 +711,8 @@ static void handleSettingsPost() {
   // page table will rebuild lazily — no explicit cache wipe needed.
   bool readerActive = (g_currentScreen == &g_readerScreen) && g_bookview.book.isOpen();
   uint32_t savedByte = 0;
-  if (readerActive && g_bookview.cursor.pageIndex >= 0 &&
-      g_bookview.cursor.pageIndex < g_bookview.pages.count) {
-    savedByte = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+  if (readerActive && g_bookview.pages.contains(g_bookview.cursor.pageIndex)) {
+    savedByte = g_bookview.pages.offsetAt(g_bookview.cursor.pageIndex);
   }
 
   bool layoutChanged = applySettingsForm();
@@ -715,9 +725,7 @@ static void handleSettingsPost() {
   // contains the saved byte offset. Then render so the user sees the new
   // layout immediately when they return to the device.
   if (readerActive && layoutChanged) {
-    g_bookview.pages.count = 1;
-    g_bookview.pages.offsets[0] = 0;
-    g_bookview.pages.eofReached = false;
+    g_bookview.pages.reset();
     int newPage = findPageForOffset(savedByte);
     if (newPage < 0)
       newPage = 0;
@@ -818,10 +826,9 @@ static void handleSettingsPost() {
     if (ssid.length() == 0) {
       WifiCreds::clear();
     } else {
-      // If we get the saved password placeholder back, assume the user wants to keep that password
-      // as is.
+      // An empty password keeps credentials only for the unchanged network.
       String pass = server.hasArg("wpass") ? server.arg("wpass") : "";
-      if (pass == D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER) {
+      if (pass.isEmpty() && ssid == WifiCreds::ssid()) {
         pass = WifiCreds::pass();
       }
       WifiCreds::save(ssid, pass);

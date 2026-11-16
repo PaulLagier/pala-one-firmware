@@ -4,16 +4,13 @@
 #include <Arduino.h>
 #endif
 
-
-
 #ifndef MAX_ATTEMPTS_WIFI_CONNECTION
-  #define MAX_ATTEMPTS_WIFI_CONNECTION 20
+#define MAX_ATTEMPTS_WIFI_CONNECTION 20
 #endif
 
 #ifndef DELAY_MS_WAIT_WIFI_CONNECTION
-  #define DELAY_MS_WAIT_WIFI_CONNECTION 500
+#define DELAY_MS_WAIT_WIFI_CONNECTION 500
 #endif
-
 
 #include <cstdint>
 #include <functional>
@@ -21,7 +18,6 @@
 #include <vector>
 
 namespace ImprovTypes {
-
 
 enum Error : uint8_t {
   ERROR_NONE = 0x00,
@@ -49,6 +45,7 @@ enum Command : uint8_t {
   GET_WIFI_NETWORKS = 0x04,
   // Pala vendor extension: two lowercase ISO language bytes.
   PALA_SET_LANGUAGE = 0x81,
+  PALA_SET_READING_MENU = 0x82,
   BAD_CHECKSUM = 0xFF,
 };
 
@@ -67,15 +64,10 @@ struct ImprovCommand {
   std::string ssid;
   std::string password;
   std::string language;
+  bool readingMenu = false;
 };
 
-enum ChipFamily : uint8_t {
-  CF_ESP32,
-  CF_ESP32_C3,
-  CF_ESP32_S2,
-  CF_ESP32_S3,
-  CF_ESP8266
-};
+enum ChipFamily : uint8_t { CF_ESP32, CF_ESP32_C3, CF_ESP32_S2, CF_ESP32_S3, CF_ESP8266 };
 
 struct ImprovWiFiParamsStruct {
   std::string firmwareName;
@@ -85,5 +77,4 @@ struct ImprovWiFiParamsStruct {
   std::string deviceUrl;
 };
 
-
-}
+} // namespace ImprovTypes

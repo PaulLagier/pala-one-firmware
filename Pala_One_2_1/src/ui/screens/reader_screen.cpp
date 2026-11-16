@@ -94,3 +94,8 @@ void ReaderScreen::onSleep() {
   armResumeOnWake(); // captures path before resetBookView() drops it
   resetBookView();
 }
+
+void ReaderScreen::onIdleTick() {
+  if (!nextScreen && !ReaderMenu::isActive())
+    prefetchNextReaderPage();
+}
