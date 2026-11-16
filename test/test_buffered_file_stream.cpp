@@ -1,6 +1,6 @@
 #include "test_framework.h"
-#include "src/hal/file_stream.h"
 #include "src/pure/paginator.h"
+#include "src/hal/file_stream.h"
 
 static std::string patternedBytes(size_t count) {
   std::string out;

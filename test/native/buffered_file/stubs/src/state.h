@@ -1,9 +1,9 @@
 #pragma once
-#include "src/config.h"
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include "src/config.h"
 
 // Deterministic adapter for the actual HAL stream, not a second buffer model.
 struct File {
