@@ -3,36 +3,19 @@
 
 #include <Arduino.h>
 
-// Browser-side Wi-Fi provisioning over the USB-CDC port. Listens whenever a
-// host has the CDC port open — i.e. a computer is on the other end of the
-// cable. Wall chargers and disconnected cables register as "no host" and we
-// stay idle, so there's no battery cost when nobody's around to provision.
-//
-// On a successful provisioning the saved credentials get persisted via
-// [[wifi-creds]] so the next upload-mode entry can use STA.
-//
-// "Listening" just means calling `loop()` from the main loop; the underlying
-// library is only polled when `Serial` is truthy. The protocol is driven
-// byte-by-byte on each call — no thread, no interrupt.
-//
-// Two flavours of listening — only matters for Wi-Fi ownership accounting:
-//   * Outside upload mode: we may bring Wi-Fi up to verify creds and are
-//     responsible for tearing it down again ~2s after a successful provision.
-//   * Inside upload mode: Wi-Fi is owned by the upload session; we just
-//     persist creds and don't touch Wi-Fi state. Upload screen toggles
-//     this via notifyUploadSession().
-//
-// Underlying protocol: Improv Serial (https://www.improv-wifi.com). The
-// chip-side library is jnthas/Improv-WiFi-Library, pinned in platformio.ini.
-// "Improv" is the protocol name — this namespace wraps it under a more
-// self-explanatory name for callers in the rest of the firmware.
+// Browser-side Improv Serial provisioning. USB commands keep a finite
+// activity window awake; an idle USB cable/host does not inhibit sleep.
+// Connection progress is cooperative and does not wait for association in
+// the input loop. Credentials are saved only after a successful connection.
+// Outside upload mode the wrapper releases its radio after success/failure;
+// an upload screen retains ownership of its own radio.
 namespace WifiProvisioning {
 
 void beginLocalSetup(); // USB metadata and NVS settings only; no radio or book storage.
 void loopLocalSetup();
 void begin();    // setup() — register lib callbacks
 void loop();     // main loop — gated internally by Serial
-bool isActive(); // true while listening (for lightsleep gate)
+bool isActive(); // queued/recent host traffic, not mere cable attachment
 
 // upload_screen marks the session boundaries so we know to keep our hands
 // off Wi-Fi while a session is up.

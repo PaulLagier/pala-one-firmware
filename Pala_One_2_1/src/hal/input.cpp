@@ -28,6 +28,10 @@ static void commitPendingClicks(ButtonState& state) {
 }
 
 ButtonState g_btns;
+bool buttonInputPending() {
+  return g_btns.isPressed() || g_btns.hasPendingClicks() || buttonQueueNonEmpty() ||
+         digitalRead(BTN) == LOW;
+}
 static bool s_discardWakeRelease = false;
 
 // Time of the last accepted user input. Used by the loop to decide when

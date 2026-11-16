@@ -22,8 +22,9 @@ struct State {
   bool uploadSession = false;
   bool credsReceived = false;
   uint32_t credsReceivedMs = 0;
-  bool ownsWifi = false;       // true iff we brought Wi-Fi up to verify creds
-  uint32_t lastHostByteMs = 0; // 0 = no byte ever received this boot
+  bool ownsWifi = false; // true iff we brought Wi-Fi up to verify creds
+  uint32_t lastHostByteMs = 0;
+  bool hostTrafficSeen = false;
 };
 
 State s_state;
@@ -40,25 +41,13 @@ static constexpr uint32_t kShutdownGraceMs = 2000;
 // genuinely abandoned session eventually lets the device idle.
 static constexpr uint32_t kHostActivityMs = 5 * 60 * 1000;
 
-// True when we believe a USB host is actively driving our bus. Combines two
-// signals because each fails independently:
-//
-//   * HWCDC::isPlugged() polls for USB SOF packets. When it works, it's
-//     authoritative — false means "no host on this cable". But on at least
-//     one observed pioarduino + Heltec V3 build it returns 0 even while a
-//     browser is plainly reading bytes (CDC link is up, logs are flowing).
-//
-//   * lastHostByteMs being recent means the host sent us a byte recently.
-//     A polling tool (ESP Web Tools, Improv probe loops, a terminal with a
-//     user typing) keeps this fresh; a wall charger or unplugged cable
-//     never bumps it.
-//
-// Trusting either signal individually catches the failure mode of the other.
-static bool hostPresent() {
-  if (HWCDC::isPlugged())
-    return true;
-  return s_state.lastHostByteMs != 0 &&
-         (uint32_t)(millis() - s_state.lastHostByteMs) < kHostActivityMs;
+// USB power or SOF packets alone must not disable automatic sleep forever.
+// Pending bytes protect a request arriving immediately before the sleep gate;
+// the explicit flag also makes a first byte at millis()==0 and rollover valid.
+static bool hostActive() {
+  return Serial.available() > 0 ||
+         (s_state.hostTrafficSeen &&
+          static_cast<uint32_t>(millis() - s_state.lastHostByteMs) < kHostActivityMs);
 }
 
 static void releaseWifi() {
@@ -87,23 +76,26 @@ void beginLocalSetup() {
 void loopLocalSetup() {
   if (Serial.available() > 0) {
     s_state.lastHostByteMs = millis();
+    s_state.hostTrafficSeen = true;
     s_state.lib.handleSerial();
   }
 }
 void begin() {
   beginLocalSetup();
   s_state.lib.setLocalSetupOnly(false);
+  s_state.lib.setCooperativeConnections(true);
+  s_state.lib.onImprovError([](ImprovTypes::Error error) {
+    if (error == ImprovTypes::ERROR_UNABLE_TO_CONNECT && !s_state.uploadSession)
+      releaseWifi();
+  });
 
   // The library handles WiFi.begin() itself; we only persist creds once the
   // association succeeds. If the association fails the library reports the
   // error back to the browser and the saved creds stay untouched, which is
   // exactly what we want (don't poison NVS with bad creds).
   //
-  // Known edge case (only when an upload session is active): the library
-  // calls WiFi.mode(WIFI_STA)+begin() internally, which kills the upload
-  // session's SoftAP and disconnects any phone mid-upload. Considered narrow
-  // enough to defer; fix would be `setCustomConnectWiFi(...)` to bypass the
-  // lib's connect while a session is up and just save creds.
+  // Association is advanced by loop(), so button input and screen updates
+  // continue while DHCP/association completes. The SDK's STA begin preserves AP.
   s_state.lib.onImprovConnected([](const char *ssid, const char *password) {
     WifiCreds::save(ssid, password);
     if (!s_state.uploadSession) {
@@ -118,35 +110,31 @@ void begin() {
 }
 
 void notifyUploadSession(bool active) {
+  // Cancel the USB attempt before another screen takes ownership of the radio.
+  // Never switch off an upload-owned radio from a later USB callback.
+  s_state.lib.cancelConnection();
+  releaseWifi();
+  clearGraceTimer();
   s_state.uploadSession = active;
-  if (active) {
-    // Upload takes over the radio. Cancel any pending teardown so the grace
-    // timer doesn't yank Wi-Fi out from under it.
-    s_state.ownsWifi = false;
-    clearGraceTimer();
-  }
 }
 
-bool isActive() {
-  // Stay awake whenever a USB host is on the bus. Wall chargers and
-  // unplugged cables register as not-plugged, so they don't pin us awake.
-  return hostPresent();
-}
+bool isActive() { return hostActive(); }
 
 void loop() {
-  // Track bytes from host for the activity-window fallback in hostPresent().
+  // Track actual host traffic for the finite provisioning activity window.
   // Do this *before* handleSerial drains the buffer so we don't miss the
   // moment the browser starts talking.
   if (Serial.available() > 0) {
     s_state.lastHostByteMs = millis();
+    s_state.hostTrafficSeen = true;
   }
 
-  if (!hostPresent()) {
-    // Host went away (unplug, browser closed the port, etc.). Drop anything
-    // we'd been holding.
+  if (!hostActive()) {
+    s_state.lib.cancelConnection();
+    // The host stopped sending commands. Release only our own radio state.
     releaseWifi();
     clearGraceTimer();
-    s_state.lastHostByteMs = 0;
+    s_state.hostTrafficSeen = false;
     return;
   }
 
@@ -157,6 +145,10 @@ void loop() {
   }
 
   s_state.lib.handleSerial();
+  if (s_state.lib.connectionPending() && !s_state.uploadSession) {
+    s_state.ownsWifi = true;
+    clearGraceTimer();
+  }
 }
 
 } // namespace WifiProvisioning

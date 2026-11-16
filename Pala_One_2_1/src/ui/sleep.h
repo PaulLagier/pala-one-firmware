@@ -35,7 +35,7 @@ void setLockOnSleep(bool val);
 
 // True when something is actively holding sleep off: either the current
 // screen declines it (UploadScreen always; UpdateScreen while its Wi-Fi
-// session is up) or a USB host has the Improv CDC listener open. Both are
+// session is up) or queued/recent USB commands keep provisioning active. Both are
 // battery drains the user can't otherwise see, which is what the header
 // status icon reports.
 //

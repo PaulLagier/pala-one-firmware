@@ -365,3 +365,58 @@ TEST_CASE("Failed Wi-Fi association reports connection failure while keeping set
   CHECK(validFrames(wire.output));CHECK(savedSsid=="new network");CHECK(savedPassword=="correct password");
   CHECK_EQ(WiFi.beginCalls,2u);
 }
+
+TEST_CASE("Cooperative association leaves USB queries responsive and completes without wait loops") {
+  Wire wire;ImprovWiFi parser(&wire);setup(parser);WiFi={};WiFi.failConnection=true;
+  parser.setCooperativeConnections(true);parser.onImprovConnected(connected);
+  testMillis=0;savedSsid="old";savedPassword="keep";
+  send(parser,wire,credentials("new","secret"));
+  REQUIRE(parser.connectionPending());CHECK_EQ(testMillis,0u);CHECK(savedSsid=="old");
+  wire.output.clear();send(parser,wire,{3,0});CHECK(validReply(wire.output));
+  wire.output.clear();send(parser,wire,{2,0});REQUIRE(validFrame(wire.output));
+  CHECK_EQ(wire.output[9],ImprovTypes::STATE_PROVISIONING);
+  wire.output.clear();testMillis=22000;parser.handleSerial();CHECK(parser.connectionPending());
+  WiFi.connected=true;parser.handleSerial();CHECK(!parser.connectionPending());
+  CHECK(savedSsid=="new");CHECK(savedPassword=="secret");CHECK(validFrames(wire.output));
+  CHECK_EQ(testMillis,22000u);
+}
+TEST_CASE("Cooperative association times out across timer rollover and permits a clean retry") {
+  Wire wire;ImprovWiFi parser(&wire);setup(parser);WiFi={};WiFi.failConnection=true;
+  parser.setCooperativeConnections(true);parser.onImprovConnected(connected);
+  savedSsid="old";savedPassword="keep";testMillis=0xfffffff0u;
+  send(parser,wire,credentials("bad","wrong"));REQUIRE(parser.connectionPending());
+  wire.output.clear();testMillis+=29999;parser.handleSerial();CHECK(parser.connectionPending());
+  testMillis+=1;parser.handleSerial();CHECK(!parser.connectionPending());
+  CHECK(savedSsid=="old");CHECK(savedPassword=="keep");CHECK(validFrames(wire.output));
+  bool failed=false;for(size_t at=0;at<wire.output.size();at+=10+wire.output[at+8])
+    if(wire.output[at+7]==2)failed=wire.output[at+9]==ImprovTypes::ERROR_UNABLE_TO_CONNECT;
+  CHECK(failed);wire.output.clear();parser.handleSerial();CHECK(wire.output.empty());
+  WiFi.failConnection=false;send(parser,wire,credentials("retry","correct"));
+  CHECK(savedSsid=="retry");CHECK(savedPassword=="correct");CHECK(!parser.connectionPending());
+}
+TEST_CASE("Replacing or cancelling a pending association cannot commit stale credentials") {
+  Wire wire;ImprovWiFi parser(&wire);setup(parser);WiFi={};WiFi.failConnection=true;
+  parser.setCooperativeConnections(true);parser.onImprovConnected(connected);savedSsid="old";
+  send(parser,wire,credentials("first","one"));send(parser,wire,credentials("second","two"));
+  CHECK(savedSsid=="old");WiFi.connected=true;parser.handleSerial();CHECK(savedSsid=="second");
+  WiFi.connected=false;send(parser,wire,credentials("cancelled","three"));
+  REQUIRE(parser.connectionPending());parser.cancelConnection();WiFi.connected=true;
+  parser.handleSerial();CHECK(savedSsid=="second");CHECK(!parser.connectionPending());
+}
+TEST_CASE("Overlong Wi-Fi fields are rejected before a radio connection starts") {
+  Wire wire;ImprovWiFi parser(&wire);setup(parser);WiFi={};
+  for(auto data:{credentials(std::string(33,'s'),"pw"),credentials("ssid",std::string(65,'p'))}) {
+    send(parser,wire,data);CHECK_EQ(WiFi.beginCalls,0u);CHECK(validFrames(wire.output));
+    wire.output.clear();send(parser,wire,{3,0});CHECK(validReply(wire.output));wire.output.clear();
+  }
+}
+
+TEST_CASE("Entering local recovery discards pending association without radio work or stale callbacks") {
+  Wire wire;ImprovWiFi parser(&wire);setup(parser);WiFi={};WiFi.failConnection=true;
+  parser.setCooperativeConnections(true);parser.onImprovConnected(connected);savedSsid="old";
+  send(parser,wire,credentials("pending","secret"));REQUIRE(parser.connectionPending());
+  parser.setLocalSetupOnly(true);const auto calls=WiFi.radioCalls;WiFi.connected=true;
+  wire.output.clear();send(parser,wire,{3,0});CHECK(validReply(wire.output));
+  CHECK_EQ(WiFi.radioCalls,calls);CHECK(savedSsid=="old");CHECK(!parser.connectionPending());
+  parser.setLocalSetupOnly(false);parser.handleSerial();CHECK(savedSsid=="old");
+}
