@@ -28,6 +28,12 @@
 // observe the file-closed-with-path-still-set intermediate state.
 class OpenBook {
 public:
+  OpenBook() = default;
+  // The stream refers to file_: its owner's address must stay fixed.
+  OpenBook(const OpenBook&) = delete;
+  OpenBook& operator=(const OpenBook&) = delete;
+  OpenBook(OpenBook&&) = delete;
+  OpenBook& operator=(OpenBook&&) = delete;
   // Open `path` for reading. Sets path + key + opens file as one atomic
   // step. Returns false (and leaves the object closed/empty) if the file
   // can't be opened or is a directory.
