@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <algorithm>
 // Canonical pairs used by the bundled Latin/Cyrillic alphabets.
 namespace PalaUtf8 {
 inline uint32_t compose(uint32_t base, uint32_t mark) {
@@ -241,8 +242,10 @@ inline uint32_t compose(uint32_t base, uint32_t mark) {
     {0x0438, 0x0306, 0x0439},
     {0x0456, 0x0308, 0x0457},
   };
-  for (const auto& pair : pairs)
-    if (pair.base == base && pair.mark == mark) return pair.composed;
-  return 0;
+  const auto end = pairs + sizeof(pairs)/sizeof(pairs[0]);
+  const auto found = std::find_if(pairs, end, [=](const Pair& pair) {
+    return pair.base == base && pair.mark == mark;
+  });
+  return found == end ? 0 : found->composed;
 }
 }

@@ -709,7 +709,6 @@ local int dynamic(struct state *s)
     index = 0;
     while (index < nlen + ndist) {
         int symbol;             /* decoded value */
-        int len;                /* last length to repeat */
 
         symbol = decode(s, &lencode);
         if (symbol < 0)
@@ -717,7 +716,7 @@ local int dynamic(struct state *s)
         if (symbol < 16)                /* length in 0..15 */
             lengths[index++] = symbol;
         else {                          /* repeat instruction */
-            len = 0;                    /* assume repeating zeros */
+            int len = 0;                /* last length to repeat; assume zeros */
             if (symbol == 16) {         /* repeat last length 3..6 times */
                 if (index == 0)
                     return -5;          /* no last length! */
@@ -803,7 +802,6 @@ int puffWorkspace(struct state *workspace, unsigned char *dest,           /* poi
          unsigned long *sourcelen)      /* amount of input available */
 {
     struct state& s=*workspace; /* caller-owned heap state */
-    int last, type;             /* block information */
     int err;                    /* return value */
 
     /* initialize output state */
@@ -822,10 +820,11 @@ int puffWorkspace(struct state *workspace, unsigned char *dest,           /* poi
     if (setjmp(s.env) != 0)             /* if came back here via longjmp() */
         err = 2;                        /* then skip do-loop, return error */
     else {
+        int last;               /* final-block flag */
         /* process blocks until last block or error */
         do {
             last = bits(&s, 1);         /* one if last block */
-            type = bits(&s, 2);         /* block type 0..3 */
+            int type = bits(&s, 2);     /* block type 0..3 */
             err = type == 0 ?
                     stored(&s) :
                     (type == 1 ?

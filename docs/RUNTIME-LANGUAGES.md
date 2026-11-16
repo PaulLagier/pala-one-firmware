@@ -69,6 +69,10 @@ magic changes to reject old font/layout offsets; source bytes and canonical
 positions are unchanged. Existing half-paragraph, family and Bionic settings
 and their public persistence keys are retained.
 
+The companion RPC host target uses the real runtime core rather than its old
+single-language adapter. It exercises every selectable code and maximum-length
+plain/quoted/backslash titles with the existing bounded response format.
+
 Host checks also exercise allocation/decode/persistence rollback, corrupted
 catalogs, every localized reader/editor script, script-safe string round trips,
 malformed/truncated/wrong-language USB replies, serial cleanup, compact metrics,

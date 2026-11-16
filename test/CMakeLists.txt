@@ -172,9 +172,11 @@ endif()
 find_package(OpenSSL REQUIRED)
 add_executable(companion_rpc_tests main.cpp native/companion_rpc/rpc.cpp
   ${FW_SRC}/hal/companion_rpc.cpp ${FW_SRC}/hal/companion_bookmarks.cpp
+  native/companion_rpc/runtime_language.cpp ${FW_SRC}/lang/locale_core.cpp
+  ${FW_SRC}/lang/locale_data.cpp ${FW_SRC}/pure/catalog_inflater.cpp
   ${FW_SRC}/pure/paths.cpp ${FW_SRC}/pure/hashing.cpp ${FW_SRC}/pure/bookmarks_codec.cpp
   ${FW_SRC}/storage/book_metadata.cpp ${FW_SRC}/storage/click_timings.cpp)
-target_compile_definitions(companion_rpc_tests PRIVATE LANG_EN PALA_COMPANION
+target_compile_definitions(companion_rpc_tests PRIVATE LANG_EN PALA_COMPANION PALA_RUNTIME_LANG
   ARDUINOJSON_ENABLE_ARDUINO_STRING=1 PACKED_FIXTURES="${PACKED_FIXTURES}")
 target_include_directories(companion_rpc_tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/native/companion_rpc/stubs
