@@ -11,12 +11,10 @@
 //  power cycles via NVS, so a locked device that fully powers down still
 //  comes back locked.
 //
-//  Unlock policy is permissive: any of {Long, VeryLong, ClickHold} unlocks,
-//  not strictly the gesture currently bound to ACTION_LOCK. After a
-//  deep-sleep wake the firmware can't reliably reconstruct a chord
-//  (the wake press's start edge happens before the ISR is attached), so
-//  strict matching would leave a user unable to unlock if they bound LOCK
-//  to the chord.
+//  Custom controls unlock only with a gesture bound to ACTION_LOCK. Legacy
+//  controls, or automatic locking with no assigned lock gesture, retain the
+//  Long / VeryLong / ClickHold fallback. Wake input is captured early enough
+//  to reconstruct click-then-hold gestures.
 // ============================================================================
 namespace Lock {
 
@@ -34,7 +32,7 @@ void engage();
 // Disengage the lock and persist.
 void disengage();
 
-// Does this event count as an unlock gesture under the permissive policy?
+// Does this event match the configured lock gesture or the hold fallback?
 bool isUnlockGesture(const ButtonEvent& ev);
 
 }  // namespace Lock

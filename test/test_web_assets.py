@@ -19,4 +19,4 @@ with tempfile.TemporaryDirectory() as temp:
     subprocess.run(['python3',str(root/'scripts/generate_web_assets.py'),'--assets',str(web/'assets'),'--out',temp,'--quiet'],check=True)
     for name in ['web_assets.h','web_assets_data.cpp','web-assets-manifest.json']:
         assert (Path(temp)/name).read_bytes()==(web/name).read_bytes(),name
-print('All browser stylesheets decode exactly and regenerate deterministically.')
+print('All browser assets decode exactly and regenerate deterministically.')

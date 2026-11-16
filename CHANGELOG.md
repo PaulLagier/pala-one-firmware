@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.1.3
+
+- Reject browser book uploads that would replace an existing destination,
+  including sanitized/truncated filename collisions and late destination creation.
+- Honor configured custom lock gestures after wake and during storage recovery;
+  retain the legacy/unassigned automatic-lock hold fallback.
+- Report failed Wi-Fi association without declaring the radio unavailable, so
+  setup can retry and saved credentials remain unchanged on failure.
+- Serve the existing image-editor script as a deterministic gzip asset, keeping
+  all eleven localized editors and the existing OTA partition layout.
+
 ## v3.1.2
 
 - Compact browser-script local names without changing reader/search/editor behavior

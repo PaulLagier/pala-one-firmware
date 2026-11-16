@@ -22,6 +22,7 @@ struct BookUpload {
   String pendingUtf8Tail;
   String finalName;
   bool   ok = false;
+  int    errorStatus = 400;
   String error;
   size_t maxBytes = 0;
   bool packed = false;
@@ -66,7 +67,7 @@ void resetSleepUpload() {
 
 static void handleUploadDone() {
   if (!s_book.ok) {
-    server.send(400, "text/plain; charset=utf-8",
+    server.send(s_book.errorStatus, "text/plain; charset=utf-8",
                 s_book.error.length()
                   ? s_book.error
                   : String(D_WEB_UPLOAD_ERR_FALLBACK));
@@ -130,6 +131,11 @@ static void handleUploadBookStream() {
     s_book.maxBytes = freeBytes;
 
     String clean = sanitizeUploadedFilename(up.filename);
+    if (FS.exists("/books/" + clean)) {
+      s_book.error = D_WEB_ERR_DEST_EXISTS;
+      s_book.errorStatus = 409;
+      return;
+    }
     s_book.finalName = clean;
     s_book.packed = clean.endsWith(".pbt");
     if (s_book.packed && s_book.maxBytes > PalaPacked::MaximumPhysicalSize)
@@ -222,8 +228,13 @@ static void handleUploadBookStream() {
         }
       } else if (s_book.tmpPath.length() > 0 && up.totalSize > 0) {
         String finalPath = s_book.tmpPath.substring(0, s_book.tmpPath.length() - 4);
-        // LittleFS rename replaces atomically; retain the old book on failure.
-        if (FS.rename(s_book.tmpPath, finalPath)) {
+        // Another transfer may have created the destination since START.
+        // LittleFS rename replaces files, so check again before promotion.
+        if (FS.exists(finalPath)) {
+          FS.remove(s_book.tmpPath);
+          s_book.error = D_WEB_ERR_DEST_EXISTS;
+          s_book.errorStatus = 409;
+        } else if (FS.rename(s_book.tmpPath, finalPath)) {
           deletePageCacheForBook(finalPath);
           s_book.ok = true;
         } else {

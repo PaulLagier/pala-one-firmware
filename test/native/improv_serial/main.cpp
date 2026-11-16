@@ -345,3 +345,23 @@ TEST_CASE("uninitialized storage setup accepts local settings without touching t
   send(parser, wire, {2, 0});
   CHECK(WiFi.radioCalls > 0);
 }
+
+TEST_CASE("Failed Wi-Fi association reports connection failure while keeping setup authorized for retry") {
+  Wire wire;ImprovWiFi parser(&wire);setup(parser);WiFi={};
+  savedSsid="previous network";savedPassword="previous password";
+  parser.onImprovConnected(connected);WiFi.failConnection=true;
+  send(parser,wire,credentials("new network","wrong password"));
+  REQUIRE(validFrames(wire.output));
+  bool authorized=false,connectionError=false;
+  for(size_t at=0;at<wire.output.size();at+=10+wire.output[at+8]) {
+    const auto type=wire.output[at+7],value=wire.output[at+9];
+    if(type==1) { CHECK(value!=ImprovTypes::STATE_STOPPED);authorized=value==ImprovTypes::STATE_AUTHORIZED; }
+    if(type==2)connectionError=value==ImprovTypes::ERROR_UNABLE_TO_CONNECT;
+  }
+  CHECK(authorized);CHECK(connectionError);
+  CHECK(savedSsid=="previous network");CHECK(savedPassword=="previous password");
+  wire.output.clear();WiFi.failConnection=false;
+  send(parser,wire,credentials("new network","correct password"));
+  CHECK(validFrames(wire.output));CHECK(savedSsid=="new network");CHECK(savedPassword=="correct password");
+  CHECK_EQ(WiFi.beginCalls,2u);
+}

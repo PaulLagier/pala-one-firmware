@@ -91,7 +91,9 @@ bool ImprovWiFi::onCommandCallback(ImprovTypes::ImprovCommand cmd) {
         onImprovConnectedCallback(cmd.ssid.c_str(), cmd.password.c_str());
       }
     } else {
-      setState(ImprovTypes::STATE_STOPPED);
+      // The radio is available; only association failed. STOPPED makes
+      // clients report "Wi-Fi is turned off" and can disable retries.
+      setState(ImprovTypes::STATE_AUTHORIZED);
       setError(ImprovTypes::ERROR_UNABLE_TO_CONNECT);
       onErrorCallback(ImprovTypes::ERROR_UNABLE_TO_CONNECT);
     }
