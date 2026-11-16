@@ -30,6 +30,16 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 
 Each channel page lists both display revisions (V1.1 / V1.2) and both languages (English / Spanish-LA) — four install buttons total. Pick the one that matches your board + language and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
 
+## Connect the Pala app
+
+In **Upload**, choose **Bluetooth / app** and pair using the six-digit PIN
+shown on the reader. Books, packed books, bookmarks and reader settings can
+then be managed through Pala. **Wi-Fi / browser** retains the existing web
+workflow, including app uploads and advanced settings. See
+[Companion connection](docs/COMPANION.md) for controls, protocol and build notes.
+The app-enabled firmware uses the PlatformIO targets; the existing Arduino IDE
+core build retains Wi-Fi without the optional Bluetooth flag.
+
 ## Storage recovery
 
 If storage cannot be mounted, boot stops at a recovery screen instead of

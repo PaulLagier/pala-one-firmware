@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -49,6 +50,10 @@ public:
   const char* c_str() const { return s_.c_str(); }
   unsigned    length() const { return (unsigned)s_.size(); }
   void        reserve(size_t n) { s_.reserve(n); }
+  bool concat(const char* value) { if (!value) return false; s_ += value; return true; }
+  bool concat(const char* value, unsigned length) { if (!value) return false; s_.append(value,length); return true; }
+  void setCharAt(unsigned index,char value) { if(index<s_.size())s_[index]=value; }
+  void toLowerCase() { for(char& c:s_)c=char(std::tolower(static_cast<unsigned char>(c))); }
 
   char operator[](unsigned i) const { return i < s_.size() ? s_[i] : 0; }
   char& operator[](unsigned i)      { return s_[i]; }

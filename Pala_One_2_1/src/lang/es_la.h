@@ -683,4 +683,19 @@
 #define D_RECOVERY_CHECKING "Revisando almacenamiento..."
 #define D_RECOVERY_WORKING "Inicializando..."
 
+
+// Companion connection (existing Wi-Fi upload remains available).
+#define D_BLE_CHOICE_WIFI "Wi-Fi / navegador"
+#define D_BLE_CHOICE_APP "Bluetooth / app"
+#define D_BLE_BACK "Volver"
+#define D_BLE_STARTING "Iniciando Bluetooth..."
+#define D_BLE_ERROR "Falló Bluetooth."
+#define D_BLE_OPEN_APP "Abre Pala y elige Pala One."
+#define D_BLE_PIN "Código de enlace:"
+#define D_BLE_CONNECTED "Conectado."
+#define D_BLE_WAITING "Esperando la app..."
+
+#define D_BLE_EXIT_LEGACY "Pulsa para salir."
+#define D_BLE_EXIT_STANDARD "Acción Inicio: salir."
+
 #endif  // PALA_LANG_ES_LA_H

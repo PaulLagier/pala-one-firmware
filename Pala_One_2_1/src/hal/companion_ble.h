@@ -1,0 +1,11 @@
+#pragma once
+#include <Arduino.h>
+void companionBleBegin();
+void companionBleEnd();
+void companionBleTick();
+void companionBleRefreshIdentity();
+bool companionBleRunning();
+bool companionBleConnected();
+bool companionBleNeedsRedraw();
+String companionPairingPin();
+void companionResetPairing();
