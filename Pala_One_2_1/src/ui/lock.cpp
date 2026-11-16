@@ -2,6 +2,7 @@
 
 #include "src/state.h" // prefs
 #include "src/ui/reader_actions.h"
+#include <algorithm>
 #include <initializer_list>
 
 namespace Lock {
@@ -32,11 +33,12 @@ bool isUnlockGesture(const ButtonEvent &ev) {
   if (!Gestures::legacyControlsOn()) {
     // Match saved lock bindings, including clicks. If none is assigned,
     // retain the hold fallback for automatic locking and older settings.
-    for (auto kind : {ButtonEvent::Short, ButtonEvent::Double, ButtonEvent::Triple,
-                      ButtonEvent::Long, ButtonEvent::VeryLong, ButtonEvent::ClickHold}) {
-      if (Gestures::actionFor(kind) == ACTION_LOCK)
-        return Gestures::actionFor(ev.kind) == ACTION_LOCK;
-    }
+    const auto kinds = {ButtonEvent::Short, ButtonEvent::Double, ButtonEvent::Triple,
+                        ButtonEvent::Long, ButtonEvent::VeryLong, ButtonEvent::ClickHold};
+    if (std::any_of(kinds.begin(), kinds.end(), [](ButtonEvent::Kind kind) {
+          return Gestures::actionFor(kind) == ACTION_LOCK;
+        }))
+      return Gestures::actionFor(ev.kind) == ACTION_LOCK;
   }
   return ev.kind == ButtonEvent::Long || ev.kind == ButtonEvent::VeryLong ||
          ev.kind == ButtonEvent::ClickHold;
