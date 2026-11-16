@@ -1,7 +1,8 @@
 #include "test_framework.h"
 #include "pure/paths.h"
+#include "config.h"
 
-TEST_CASE("stripTxtExt removes only .txt") {
+TEST_CASE("stripTxtExt removes supported book extensions") {
   CHECK(stripTxtExt("book.txt") == "book");
   CHECK(stripTxtExt("book") == "book");
   CHECK(stripTxtExt("book.TXT") == "book.TXT");  // case-sensitive
@@ -105,4 +106,16 @@ TEST_CASE("sanitizeUploadedAppFilename") {
   CHECK(sanitizeUploadedAppFilename(".hidden.bin") == "_hidden.bin");
   // Mixed legal punctuation survives.
   CHECK(sanitizeUploadedAppFilename("a1-b2.bin") == "a1-b2.bin");
+}
+
+TEST_CASE("Packed book filenames preserve extension and fit catalog paths") {
+  CHECK(stripTxtExt("book.pbt") == "book");
+  CHECK(bookLeafLabel("/books/a_book.pbt") == "a book");
+  CHECK(prettyRelativeLabel("folder/a_book.pbt") == "folder / a book");
+  CHECK(sanitizeUploadedFilename("../book.pbt") == "book.pbt");
+  String longName;
+  for (int i = 0; i < 200; ++i) longName += 'a';
+  auto clean = sanitizeUploadedFilename(longName + ".pbt");
+  CHECK(clean.endsWith(".pbt"));
+  CHECK(clean.length() < MAX_UPLOAD_FILE_NAME);
 }

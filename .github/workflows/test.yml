@@ -22,6 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Install packed-book test dependencies
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev python3
+
       - name: Configure
         run: cmake -S test -B test/build
 

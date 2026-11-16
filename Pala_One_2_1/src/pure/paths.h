@@ -5,7 +5,7 @@
 
 // Pure path / folder / filename utilities. No hardware deps.
 
-// ".txt" extension stripping. "book.txt" -> "book", "book" -> "book".
+// Book extension stripping (".txt" and ".pbt"). "book.txt" -> "book", "book" -> "book".
 String stripTxtExt(const String& s);
 
 // Last "/" component. "/a/b/c" -> "c", "c" -> "c".
@@ -14,14 +14,14 @@ String lastPathComponent(const String& path);
 // Parent folder of a relative path. "a/b/c" -> "a/b", "c" -> "".
 String folderParent(const String& relPath);
 
-// Replace '_' with ' ' and '/' with ' / ', strip ".txt". For UI display.
+// Replace '_' with ' ' and '/' with ' / ', strip the book extension. For UI display.
 String prettyRelativeLabel(const String& relPath);
 
 // Last component with '_' -> ' '. For UI display.
 String folderLeafLabel(const String& relPath);
 
 // Display label for a book path: strip the leading folders, strip the
-// ".txt" suffix, replace '_' with ' '.
+// book suffix, replace '_' with ' '.
 String bookLeafLabel(const String& path);
 
 // Byte-level character set used by sanitizeFolderSegment.
@@ -35,7 +35,7 @@ String sanitizeFolderSegment(const String& segment);
 String sanitizeFolderInput(const String& raw);
 
 // Sanitize a user-uploaded filename. Removes path components, restricts to a
-// safe byte set, kills repeated "..", ensures ".txt" suffix, falls back to
+// safe byte set, kills repeated "..", preserves ".pbt" or ensures ".txt", falls back to
 // "book.txt" if empty, ensures filename doesn't exceed max length.
 String sanitizeUploadedFilename(String fname);
 

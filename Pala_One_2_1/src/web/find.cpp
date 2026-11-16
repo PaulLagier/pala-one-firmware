@@ -32,11 +32,10 @@ int requireBookId(const char* arg = "id") {
 }  // namespace
 
 // ============================================================================
-//  GET /readbook-text?id=N — stream the raw book bytes.
+//  GET /readbook-text?id=N — stream decoded UTF-8 book bytes.
 //
-//  Books are stored as normalized UTF-8 plain text after upload, so the
-//  client can search them directly without any device-side processing. Use
-//  chunked transfer so we don't have to load the whole book into RAM.
+//  Plain text and independently compressed PBT blocks share logical offsets.
+//  Decode incrementally; never load a complete book into device RAM.
 // ============================================================================
 static void handleReadbookText() {
   int id = requireBookId();
@@ -49,17 +48,22 @@ static void handleReadbookText() {
     return;
   }
 
-  size_t total = f.size();
+  BookReadStream stream(f);
+  if (!stream.valid()) { server.send(500, "text/plain", D_WEB_ERR_OPEN_FAILED); return; }
+  size_t total = stream.size();
   server.setContentLength(total);
   server.send(200, "text/plain; charset=utf-8", "");
   WiFiClient client = server.client();
 
   uint8_t buf[512];
-  while (f.available() && client.connected()) {
-    size_t want = f.available() > sizeof(buf) ? sizeof(buf) : f.available();
-    size_t got = f.read(buf, want);
-    if (got == 0) break;
-    client.write(buf, got);
+  while (stream.available() && client.connected()) {
+    size_t got = 0;
+    while (got < sizeof(buf)) {
+      const int byte = stream.read();
+      if (byte < 0) break;
+      buf[got++] = uint8_t(byte);
+    }
+    if (!got || client.write(buf, got) != got) break;
   }
   f.close();
 }
@@ -88,7 +92,7 @@ static void handleJumpOffset() {
     server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_OPEN_FAILED);
     return;
   }
-  size_t fileSize = f.size();
+  size_t fileSize = bookLogicalSize(f);
   long requested = server.arg("offset").toInt();
   if (requested < 0) requested = 0;
   if ((size_t)requested >= fileSize) requested = (long)(fileSize > 0 ? fileSize - 1 : 0);
@@ -184,7 +188,7 @@ static const char kReadScript[] PROGMEM =
   "elPrev.addEventListener('click',function(){if(hits.length)gotoHit(curHit-1);});"
   "elText.addEventListener('click',function(e){var t=e.target;if(t.classList&&t.classList.contains('find-hit')){var idx=parseInt(t.dataset.i,10);if(!isNaN(idx))gotoHit(idx);}});"
   "elJump.addEventListener('click',function(){if(curHit<0){elJumpStat.textContent='" D_WEB_READ_JS_FIND_FIRST "';return;}"
-    "var off=hits[curHit].start;var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));"
+    "var off=new TextEncoder().encode(rawText.slice(0,hits[curHit].start)).length;var fd=new FormData();fd.append('id',String(bookId));fd.append('offset',String(off));"
     "elJumpStat.textContent='" D_WEB_READ_JS_SAVING "';elJump.disabled=true;"
     "fetch('/jumpoffset',{method:'POST',body:fd,redirect:'follow'}).then(function(r){"
       "elJumpStat.textContent=r.ok?palaFmt('" D_WEB_READ_JS_SAVED_FMT "',off):palaFmt('" D_WEB_READ_JS_SAVE_HTTP_FMT "',r.status);"

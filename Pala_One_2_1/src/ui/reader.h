@@ -4,6 +4,7 @@
 #include "src/config.h"
 #include "src/state.h"  // File, FS macro
 #include "src/pure/page_offset_table.h"
+#include "src/hal/packed_file_stream.h"
 
 // ============================================================================
 //  The currently open book and where the user is looking at it. Shared
@@ -27,6 +28,12 @@
 // observe the file-closed-with-path-still-set intermediate state.
 class OpenBook {
 public:
+  OpenBook() = default;
+  // The stream refers to file_: its owner's address must stay fixed.
+  OpenBook(const OpenBook&) = delete;
+  OpenBook& operator=(const OpenBook&) = delete;
+  OpenBook(OpenBook&&) = delete;
+  OpenBook& operator=(OpenBook&&) = delete;
   // Open `path` for reading. Sets path + key + opens file as one atomic
   // step. Returns false (and leaves the object closed/empty) if the file
   // can't be opened or is a directory.
@@ -39,10 +46,12 @@ public:
   const String& path() const   { return path_; }
   const String& key() const    { return key_; }
   File&         file()         { return file_; }
-  size_t        size()         { return file_ ? file_.size() : 0; }
+  IReadStream&  stream()       { return *stream_; }
+  size_t        size()         { return stream_ ? stream_->size() : 0; }
 
 private:
   File   file_;
+  std::unique_ptr<BookReadStream> stream_;
   String path_;
   String key_;
 };

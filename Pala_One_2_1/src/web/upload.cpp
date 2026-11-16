@@ -6,7 +6,9 @@
 #include "src/pure/text_util.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
+#include "src/storage/page_cache.h"
 #include "src/web/chrome.h"
+#include "src/hal/packed_file_stream.h"
 
 // ============================================================================
 //  Per-session state. File-static because the route handlers below are the
@@ -21,6 +23,7 @@ struct BookUpload {
   bool   ok = false;
   String error;
   size_t maxBytes = 0;
+  bool packed = false;
   // Cross-chunk state for streaming compactText() during upload, so a
   // whitespace or newline run that spans a chunk boundary collapses
   // correctly. Reset in UPLOAD_FILE_START. See pure/text_util.h.
@@ -41,6 +44,7 @@ SleepUpload s_sleep;
 
 void resetBookUpload() {
   if (s_book.tmpFile) s_book.tmpFile.close();
+  if (s_book.tmpPath.length()) FS.remove(s_book.tmpPath);
   s_book = BookUpload{};
 }
 
@@ -102,6 +106,7 @@ static void handleUploadBookStream() {
   HTTPUpload& up = server.upload();
 
   if (up.status == UPLOAD_FILE_START) {
+    resetBookUpload();
     s_book.ok = false;
     s_book.error = "";
     s_book.finalName = "";
@@ -125,6 +130,9 @@ static void handleUploadBookStream() {
 
     String clean = sanitizeUploadedFilename(up.filename);
     s_book.finalName = clean;
+    s_book.packed = clean.endsWith(".pbt");
+    if (s_book.packed && s_book.maxBytes > PalaPacked::MaximumPhysicalSize)
+      s_book.maxBytes = PalaPacked::MaximumPhysicalSize;
     s_book.tmpPath   = "/books/" + clean + ".tmp";
 
     if (FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
@@ -141,6 +149,14 @@ static void handleUploadBookStream() {
         s_book.error = D_WEB_ERR_WRITE_FAILED;
         s_book.tmpFile.close();
         if (s_book.tmpPath.length() > 0 && FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
+        return;
+      }
+      if (s_book.packed) {
+        if (s_book.tmpFile.write(up.buf, up.currentSize) != up.currentSize) {
+          s_book.error = D_WEB_ERR_WRITE_FAILED;
+          s_book.tmpFile.close();
+          FS.remove(s_book.tmpPath);
+        }
         return;
       }
       String chunk = s_book.pendingUtf8Tail + String(reinterpret_cast<const char*>(up.buf), up.currentSize);
@@ -190,6 +206,11 @@ static void handleUploadBookStream() {
         s_book.pendingUtf8Tail = "";
       }
       s_book.tmpFile.close();
+      if (s_book.packed && s_book.error.length() == 0) {
+        File staged = FS.open(s_book.tmpPath, "r");
+        if (!staged || !validatePackedBook(staged)) s_book.error = D_WEB_ERR_FINALIZE_UPLOAD;
+        if (staged) staged.close();
+      }
 
       if (s_book.error.length() > 0) {
         // Short write or earlier error — never promote a truncated tmp file
@@ -200,8 +221,9 @@ static void handleUploadBookStream() {
         }
       } else if (s_book.tmpPath.length() > 0 && up.totalSize > 0) {
         String finalPath = s_book.tmpPath.substring(0, s_book.tmpPath.length() - 4);
-        if (FS.exists(finalPath)) FS.remove(finalPath);
+        // LittleFS rename replaces atomically; retain the old book on failure.
         if (FS.rename(s_book.tmpPath, finalPath)) {
+          deletePageCacheForBook(finalPath);
           s_book.ok = true;
         } else {
           if (FS.exists(s_book.tmpPath)) FS.remove(s_book.tmpPath);
