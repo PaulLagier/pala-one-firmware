@@ -77,6 +77,7 @@ void setFamily(Family fam);
 void setBionic(bool on);
 void setBold(bool on);
 void setHalfParagraphGaps(bool on);
+void setMarkdown(bool on);
 
 // Current applied values. Page-cache stamping passes everything through
 // `layoutForCache()`; these direct accessors exist for places that need
@@ -117,6 +118,7 @@ int measureLine(const char* line);
 int measureBionicLine(const char* line);
 void drawLine(int x, int y, const char* line);
 void drawBionicLine(int x, int y, const char* line);
+void drawMarkdownLine(int x, int y, const char* line);
 
 // Byte length of the leading "strong" (bold) prefix of `word` when rendered
 // in bionic mode. Returns 0 if the word doesn't qualify (punctuation-only,

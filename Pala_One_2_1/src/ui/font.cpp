@@ -362,6 +362,29 @@ void drawLine(int x, int y, const char* line) {
     drawBionicLine(x, y, line);
     return;
   }
+  if (s_markdown) {
+    drawMarkdownLine(x, y, line);
+    return;
+  }
+  int cursorX = x;
+  forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
+    if (segLen <= 0) return;
+    if (!isWord) {
+      useBody(); // isBold ? useBold() : useBody();
+      printSlice(cursorX, y, seg, segLen);
+      cursorX += measureSlice(seg, segLen);
+      return;
+    }
+    // find next delineator char in segment
+    // while delineator char exists
+    // print current segment at current weight
+    useBody(); // idBold ? useBold() : useBody();
+    printSlice(cursorX, y, seg, segLen);
+    cursorX += measureSlice(seg, segLen);
+    // set isBold to new value, ensuring it exists for next line to be printed
+    // end while
+    return;
+  });
   useBody();
   renderText(u8g2, line, strlen(line), x, y, true);
   return;
@@ -386,6 +409,35 @@ void drawBionicLine(int x, int y, const char* line) {
       // while delineator char exists
       // print current segment at current weight
       useBody(); // idBold ? useBold() : useBody();
+      printSlice(cursorX, y, seg, segLen);
+      cursorX += measureSlice(seg, segLen);
+      return;
+    }
+    useBold();
+    printSlice(cursorX, y, seg, strong);
+    cursorX += measureSlice(seg, strong);
+    cursorX += kBionicRestGapPx;
+    useBody();
+    printSlice(cursorX, y, seg + strong, segLen - strong);
+    cursorX += measureSlice(seg + strong, segLen - strong);
+  });
+  useBody();
+}
+
+void drawMarkdownLine(int x, int y, const char* line) {
+  int cursorX = x;
+  bool isBold = false;
+  forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
+    if (segLen <= 0) return;
+    if (!isWord) {
+      isBold ? useBold() : useBody();
+      printSlice(cursorX, y, seg, segLen);
+      cursorX += measureSlice(seg, segLen);
+      return;
+    }
+    int strong = bionicPrefixBytes(seg, segLen);
+    if (strong <= 0) {
+      useBody();
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
       return;
