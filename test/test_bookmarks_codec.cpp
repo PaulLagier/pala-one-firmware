@@ -99,3 +99,26 @@ TEST_CASE("addBookmark evicts oldest when full") {
   CHECK(!foundOld);
   CHECK(foundNew);
 }
+
+TEST_CASE("bookmarks codec rejects truncated legacy records") {
+  // Allocate exactly the declared length so ASan detects any over-read.
+  for (uint8_t count = 1; count <= MAX_BOOKMARKS; ++count) {
+    const size_t required = 1u + static_cast<size_t>(count) * 2u;
+    for (size_t length = 1; length < required; ++length) {
+      uint8_t* bytes = new uint8_t[length]{};
+      bytes[0] = count;
+      Bookmarks result;
+      result.count = 1;
+      CHECK_EQ(decodeBookmarks(bytes, length, result), 0);
+      CHECK_EQ(result.count, 0);
+      delete[] bytes;
+    }
+  }
+}
+
+TEST_CASE("bookmarks codec rejects null input with a nonzero length") {
+  Bookmarks result;
+  result.count = 1;
+  CHECK_EQ(decodeBookmarks(nullptr, 1, result), 0);
+  CHECK_EQ(result.count, 0);
+}

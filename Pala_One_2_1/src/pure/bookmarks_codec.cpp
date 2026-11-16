@@ -4,10 +4,14 @@
 
 uint8_t decodeBookmarks(const uint8_t* buf, size_t got, Bookmarks& out) {
   out.count = 0;
-  if (got < 1) return 0;
+  if (!buf || got < 1) return 0;
 
   uint8_t count = buf[0];
   if (count > MAX_BOOKMARKS) count = MAX_BOOKMARKS;
+
+  // Legacy records still need two bytes per entry. Reject truncated data
+  // before either decode loop can read beyond the supplied buffer.
+  if (got < 1u + static_cast<size_t>(count) * 2u) return 0;
 
   bool hasOffsets = (got >= (size_t)(1 + count * 6));
   if (hasOffsets) {

@@ -71,6 +71,15 @@ endif()
 enable_testing()
 add_test(NAME host_tests COMMAND host_tests)
 
+# Exercise the production HAL buffer with a counting File adapter.
+add_executable(buffered_file_tests
+  main.cpp test_buffered_file_stream.cpp
+  ${FW_SRC}/pure/paginator.cpp ${FW_SRC}/pure/text_util.cpp)
+target_include_directories(buffered_file_tests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/buffered_file/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME buffered_file_tests COMMAND buffered_file_tests)
+
 # Compile the production storage service and boot screen against deterministic
 # filesystem/graphics adapters. No user volume or hardware is needed.
 add_executable(storage_recovery_tests
