@@ -16,7 +16,7 @@ without another PIN prompt. The PIN is never printed to the serial console.
 
 ## Builds
 
-All four published PlatformIO board/language targets enable `PALA_COMPANION`.
+All six PlatformIO board/initial-language targets enable `PALA_COMPANION`.
 They pin NimBLE-Arduino 2.5.2 and use LTO; the public flash partition layout is
 unchanged. The existing Arduino IDE core build remains available without that
 flag and retains Wi-Fi upload. The app-enabled images should be built with
@@ -76,8 +76,9 @@ mapped to public firmware IDs. A public binding outside those four values is
 reported as `-1`; merely reading settings does not change it. Advanced
 `rawActions` reports the original bindings. Short/double/triple bindings are
 preserved. Timing changes reject values that would silently adjust another
-field. The current compiled language is advertised as the sole selectable
-language until the separate runtime-catalog contribution is integrated.
+field. All eleven runtime languages are advertised. Setting `language` selects and
+persists a supported ISO code; failed preparation or persistence leaves the
+previous selection active. See [Runtime languages](RUNTIME-LANGUAGES.md).
 
 ### Transfers
 

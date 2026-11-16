@@ -20,7 +20,7 @@ publishes a two-channel layout suitable for the gh-pages branch:
     └── <channel>/
         ├── index.html          # the ESP Web Tools installer page
         ├── manifest-v1_{1,2}-{en,es,fr}.json   # 6 manifests (board x language)
-        ├── firmware-v1_{1,2}-{en,es}.bin    # 4 firmware images
+        ├── firmware-v1_{1,2}-{en,es,fr}.bin # 6 initial-default images
         └── bootloader.bin / partitions.bin / boot_app0.bin
 
 connected.html lives at the gh-pages root, not under a channel, because
@@ -69,8 +69,8 @@ def find_boot_app0() -> Path:
 def write_installer_bundle(out: Path, repo: Path, version: str,
                            channel: Optional[str]) -> None:
     """Populate `out` with the installer page + firmware artefacts."""
-    # Six leaf envs: (board) x (language). One language per binary by
-    # design — see README "Language".
+    # Six leaf envs preserve the EN/ES/FR initial-default asset names.
+    # Every image includes all eleven runtime-selectable catalogs.
     leaves = [
         ("wireless-paper-v1_1-en", "firmware-v1_1-en.bin"),
         ("wireless-paper-v1_1-es", "firmware-v1_1-es.bin"),
@@ -105,6 +105,9 @@ def write_installer_bundle(out: Path, repo: Path, version: str,
     index_html = index_html.replace("{{CHANNEL}}", channel or "local")
     index_html = index_html.replace("{{VERSION}}", version)
     (out / "index.html").write_text(index_html)
+
+    for name in ("one-language.js", "language-picker.js"):
+        shutil.copy(require_file(inst / name), out / name)
 
     for name in ("manifest-v1_1-en.json", "manifest-v1_1-es.json",
                  "manifest-v1_1-fr.json",

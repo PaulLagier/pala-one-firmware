@@ -135,8 +135,9 @@ bool ensurePool(size_t index) {
   std::unique_ptr<uint8_t[]> prepared(new (std::nothrow) uint8_t[bytes]);
   if (!prepared)
     return reject("cache-allocation", index, bytes);
-  if (!currentInflater(source.packed, source.packedSize, prepared.get() + prefix, source.rawSize) ||
-      !indexPool(prepared.get(), bytes, keys))
+  uint8_t* const output = prepared.get();
+  if (!currentInflater(source.packed, source.packedSize, output + prefix, source.rawSize) ||
+      !indexPool(output, bytes, keys))
     return reject("cache-decode", index, bytes);
   activePools[index] = prepared.get();
   ownedPools()[index] = std::move(prepared);

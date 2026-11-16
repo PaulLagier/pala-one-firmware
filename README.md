@@ -28,7 +28,7 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 - **Stable** ([`/stable/`](https://paullagier.github.io/pala-one-firmware/stable/)) — latest tagged release (`vX.Y.Z`). Use this unless you have a reason not to.
 - **Development** ([`/dev/`](https://paullagier.github.io/pala-one-firmware/dev/)) — latest build from `dev`; new features, may break.
 
-Each channel page lists both display revisions (V1.1 / V1.2) and all three languages (English / Spanish-LA / French) — six install buttons total. Pick the one that matches your board + language and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
+Each channel page lists both display revisions (V1.1 / V1.2) and EN/ES/FR initial-default images. Every image contains all eleven runtime languages. Pick your board, install, close the dialog and apply your preferred language with **Apply language over USB**; its initial selection follows the browser language. The Pala app and reader web settings can also change the language. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
 
 ## Connect the Pala app
 
@@ -147,17 +147,30 @@ Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-pr
 
 ## Language
 
-The firmware ships with three built-in languages, selected at build time:
+Every firmware image includes German, English, French, Spanish, Polish,
+Italian, Czech, Russian, Ukrainian, Dutch and Portuguese. Change the reader
+language in the Pala app, its web settings, or the installer's USB language
+setup. The selection persists across sleep and firmware updates; it does not
+change book content, reading preferences or the selected font family.
 
-- `LANG_EN` — English (default)
-- `LANG_ES_LA` — Spanish (Latin America)
-- `LANG_FR` — French
+The six PlatformIO leaf environments retain their EN/ES/FR asset names for
+compatibility. `LANG_EN`, `LANG_ES_LA` and `LANG_FR` now choose only the initial
+fallback on a device without a saved language. Arduino IDE users choose the
+fallback in `src/lang/default_language.h`, shared by every translation unit.
+Board selection remains separate; V1.1 and V1.2 keep their existing display drivers.
 
-One language per binary. PlatformIO users pick a leaf env that already encodes both the board and the language (`wireless-paper-v1_2-en`, `wireless-paper-v1_2-es`, `wireless-paper-v1_2-fr`, `wireless-paper-v1_1-en`, `wireless-paper-v1_1-es`, `wireless-paper-v1_1-fr`). Arduino IDE users uncomment one of `LANG_EN` / `LANG_ES_LA` / `LANG_FR` near the top of `Pala_One_2_1/Pala_One_2_1.ino`, alongside the board `#define`. If nothing is set, the firmware compiles with `LANG_EN` and a `#pragma message` warning.
+Canonical strings live in `src/lang/catalogs/*.json`. The generator validates
+all eleven catalogs, native/JavaScript placeholders and quoting before emitting
+the firmware tables. New translations use the catalogs, not another firmware
+environment. See [Runtime languages](docs/RUNTIME-LANGUAGES.md) for generation,
+UTF-8 font coverage, memory behavior and protocol details. French retains the
+original contribution history from #164.
 
-Strings live in `Pala_One_2_1/src/lang/` — `en.h` is the canonical key set; `es_la.h` and `fr.h` mirror it. Adding a new language is additive: clone one of the headers, add the include arm in `src/lang/lang.h`, and add two leaf envs in `platformio.ini` (one per board). See `src/lang/lang.h` for the authoring rules (key set, placeholders, JS-confirm quoting constraint).
+Body, bold, toast and app-large fonts cover the native Latin/Cyrillic interface.
+Small fixed fonts remain for ASCII status/build information. Compact reader
+line metrics grow only for glyphs present on the current page; geometry changes
+invalidate the old page-offset cache while retaining canonical byte positions.
 
-Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
 
 ## Web UI theme
 

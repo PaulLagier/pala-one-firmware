@@ -1,4 +1,4 @@
-# Runtime languages — integration branch
+# Runtime languages
 
 The canonical catalogs in `src/lang/catalogs` cover German, English, French,
 Spanish, Polish, Italian, Czech, Russian, Ukrainian, Dutch and Portuguese.
@@ -47,15 +47,31 @@ Web page fragments resolve translated strings per request; reader/screensaver
 scripts quote translated JavaScript strings and escape HTML script delimiters.
 Settings tables resolve labels on use instead of retaining catalog pointers.
 
-Integration checkpoint: the complete V1.2 EN-default firmware builds within the
-existing partition (1,839,764 bytes before adding multilingual fonts). All 18
-host targets pass after rebuilding, including all three default dictionaries.
-This is not a release or a hardware-language validation claim.
-
 USB RPC `0x81` now accepts and persists a supported two-byte language code;
 see the vendored Improv README for framing and failure behavior. Parser tests
 cover malformed/unsupported codes and ordinary query recovery.
 
-Remaining integration: browser selection and flasher wiring, multilingual glyphs and
-license/glyph checks, independent web escaping/script checks, remaining cached
-pointer audit, all board/default builds and final combined validation.
+The reader web settings have a separate language form. Invalid or unsupported
+codes return an error before other settings are changed. Language-only changes
+refresh the active interface without repaginating the book. The static installer
+adds browser-language preselection and an explicit USB language action after
+closing the normal installation dialog. Its JavaScript assets are included by
+`assemble_site.py`; standard board/default manifests remain compatible.
+
+Native interface coverage is verified with the pinned upstream U8g2 decoder for
+all catalog codepoints in every regular/bold face and size. Original source and
+font licenses live under `ui/font_licenses`. The body uses compact ordinary-line
+bounds and grows page geometry for accents actually encountered. Composed and
+decomposed supported Latin/Cyrillic pairs share measurement and rasterization;
+Bionic prefixes and long-word splits retain combining clusters. Page offset
+scans, drawing and extraction use the same converged metrics. The page-cache
+magic changes to reject old font/layout offsets; source bytes and canonical
+positions are unchanged. Existing half-paragraph, family and Bionic settings
+and their public persistence keys are retained.
+
+Host checks also exercise allocation/decode/persistence rollback, corrupted
+catalogs, every localized reader/editor script, script-safe string round trips,
+malformed/truncated/wrong-language USB replies, serial cleanup, compact metrics,
+Unicode rasterization and matching draw/scan offsets under ASan/UBSan. They do
+not claim physical V1.1 testing or phone pairing. Firmware-size/build evidence
+for the exact final commit belongs with the PR and release artifacts.
