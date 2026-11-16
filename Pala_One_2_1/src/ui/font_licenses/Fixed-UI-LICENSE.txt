@@ -1,0 +1,6 @@
+Original u8g2_font_5x8_tf: -Misc-Fixed-Medium-R-Normal--8-80-75-75-C-50-ISO10646-1
+Copyright: Public domain font. Share and enjoy.
+Original u8g2_font_6x10_tf: -Misc-Fixed-Medium-R-Normal--10-100-75-75-C-60-ISO10646-1
+Copyright: Public domain terminal emulator font. Share and enjoy.
+Source: U8g2_for_Adafruit_GFX 1.8.0, src/u8g2_fonts.c
+Pala number-role subsets retain all used glyph pixels and advances exactly.

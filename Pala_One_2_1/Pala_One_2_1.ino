@@ -28,12 +28,10 @@
 // #define BOARD_V1_2
 // ────────────────────────────────────────────────────────────────────────────
 
-// ── Language selection: uncomment exactly one (Arduino IDE) ─────────────────
-//   PlatformIO users pick the env in platformio.ini (-en / -es leaf envs)
-//   and can leave these defines commented out. Default if nothing is set:
-//   English (with a #pragma message warning from src/config.h).
-#define LANG_EN
-// #define LANG_ES_LA
+// ── Initial language ────────────────────────────────────────────────────────
+// PlatformIO selects an EN/ES/FR flash default in the environment name.
+// Arduino IDE: choose the fallback in src/lang/default_language.h so every
+// translation unit agrees. All eleven languages remain selectable at runtime.
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Web UI default theme: uncomment exactly one ─────────────────────────────
@@ -188,6 +186,7 @@ void setup() {
   // Load Sleep and Lock settings early — before display.clear() — so both
   // flags are available to gate the full-refresh boot clear below.
   prefs.begin("ereader", false);
+  Language::loadSettings();
   Sleep::loadSettings();
   Lock::loadSettings();
 

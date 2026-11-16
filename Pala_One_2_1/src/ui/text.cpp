@@ -1,17 +1,16 @@
 #include "src/ui/text.h"
+#include "src/ui/body_page.h"
 
-#include "src/hal/display.h"            // u8g2
-#include "src/pure/bookmarks_codec.h"   // kOffsetUnset
-#include "src/storage/page_cache.h"     // on-disk page-offset cache
-#include "src/ui/font.h"                // Font::useBody / bodyLayout / measureBionicLine / layoutForCache
+#include "src/hal/display.h"          // u8g2
+#include "src/pure/bookmarks_codec.h" // kOffsetUnset
+#include "src/storage/page_cache.h"   // on-disk page-offset cache
+#include "src/ui/font.h" // Font::useBody / bodyLayout / measureBionicLine / layoutForCache
 
 // Measure-width adapter for the paginator. Routes through Font::measureBionicLine
 // so the bionic 1-px-per-split-word adjustment is folded into the same width
 // budget the paginator wraps against — without bionic this collapses to a
 // plain getUTF8Width under the Body face.
-static int bodyMeasure(const char* s) {
-  return Font::measureBionicLine(s);
-}
+static int bodyMeasure(const char *s) { return Font::measureBionicLine(s); }
 
 // ============================================================================
 //  Page primitives — one page at `startPos`, three flavors.
@@ -20,19 +19,23 @@ static int bodyMeasure(const char* s) {
 //  function and the metrics describe the same face. Each returns the byte
 //  offset where the next page begins.
 // ============================================================================
-uint32_t drawPageAt(File& f, uint32_t startPos) {
+uint32_t drawPageAt(File &f, uint32_t startPos) {
   BookReadStream stream(f);
   return drawPageAt(stream, startPos);
 }
 
-uint32_t drawPageAt(IReadStream& stream, uint32_t startPos) {
-  const LayoutMetrics& m = Font::bodyLayout();
+uint32_t drawPageAt(IReadStream &stream, uint32_t startPos) {
+  LayoutMetrics m;
+  prepareBodyPage(stream, startPos, m);
   Font::useBody();
 
   int cursorY = TOP_PAD + m.ascent;
-  auto onLine = [&](const char* buf, size_t len) {
+  auto onLine = [&](const char *buf, size_t len) {
     // len 0 indicates a paragraph gap. Advance by gap height.
-    if (len == 0) { cursorY += m.paragraphGapH; return; }
+    if (len == 0) {
+      cursorY += m.paragraphGapH;
+      return;
+    }
     // drawBionicLine sets the active u8g2 font back to Body before returning,
     // so the next line measurement (via bodyMeasure) is consistent.
     Font::drawBionicLine(MARGIN_X, cursorY, buf);
@@ -42,18 +45,25 @@ uint32_t drawPageAt(IReadStream& stream, uint32_t startPos) {
   return paginatePage(stream, startPos, m, bodyMeasure, onLine);
 }
 
-uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
+uint32_t extractPageText(File &f, uint32_t startPos, String &out) {
   BookReadStream stream(f);
-  const LayoutMetrics& m = Font::bodyLayout();
+  LayoutMetrics m;
+  prepareBodyPage(stream, startPos, m);
   Font::useBody();
 
-  auto onLine = [&](const char* buf, size_t len) {
+  auto onLine = [&](const char *buf, size_t len) {
     // len 0 indicates paragraph break.
-    if (len == 0) { out.concat('\n'); return; }
+    if (len == 0) {
+      out.concat('\n');
+      return;
+    }
     // Trim leading whitespace (paginator already trims trailing).
-    const char* start = buf;
+    const char *start = buf;
     size_t remaining = len;
-    while (remaining > 0 && (*start == ' ' || *start == '\t')) { start++; remaining--; }
+    while (remaining > 0 && (*start == ' ' || *start == '\t')) {
+      start++;
+      remaining--;
+    }
     out.concat(start, remaining);
     out.concat('\n');
   };
@@ -61,44 +71,46 @@ uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
   return paginatePage(stream, startPos, m, bodyMeasure, onLine);
 }
 
-uint32_t nextPageOffset(File& f, uint32_t startPos) {
+uint32_t nextPageOffset(File &f, uint32_t startPos) {
   BookReadStream stream(f);
   return nextPageOffset(stream, startPos);
 }
 
-uint32_t nextPageOffset(IReadStream& stream, uint32_t startPos) {
-  const LayoutMetrics& m = Font::bodyLayout();
-  Font::useBody();
-  return paginatePage(stream, startPos, m, bodyMeasure, nullptr);
+uint32_t nextPageOffset(IReadStream &stream, uint32_t startPos) {
+  LayoutMetrics m;
+  return prepareBodyPage(stream, startPos, m);
 }
 
 // ============================================================================
 //  Cross-book offset lookup
 // ============================================================================
-uint32_t pageOffsetForPage(File& f, const String& path, int page) {
-  if (page < 0) page = 0;
+uint32_t pageOffsetForPage(File &f, const String &path, int page) {
+  if (page < 0)
+    page = 0;
 
   // On-disk fast path: O(1) seek to the highest cached page <= target.
   // The active reader keeps this file fresh for books it visits; cross-book
   // lookups (web bookmark resolve, page-text export) ride along.
   uint32_t off = 0;
   BookReadStream stream(f);
-  int startPage = loadOffsetForPageFromDisk(path, stream.size(),
-                                            Font::layoutForCache(),
-                                            page, &off);
-  if (startPage < 0) startPage = 0;
+  int startPage =
+      loadOffsetForPageFromDisk(path, stream.size(), Font::layoutForCache(), page, &off);
+  if (startPage < 0)
+    startPage = 0;
 
   for (int p = startPage; p < page; p++) {
     uint32_t next = nextPageOffset(stream, off);
-    if (next == off) break;
+    if (next == off)
+      break;
     off = next;
   }
   return off;
 }
 
-uint32_t resolveBookmarkOffset(const String& path, uint16_t page, uint32_t storedOffset) {
+uint32_t resolveBookmarkOffset(const String &path, uint16_t page, uint32_t storedOffset) {
   File f = FS.open(path, "r");
-  if (!f) return 0;
+  if (!f)
+    return 0;
 
   size_t size = bookLogicalSize(f);
   if (storedOffset != kOffsetUnset && storedOffset < size) {

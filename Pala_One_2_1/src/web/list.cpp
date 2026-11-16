@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/web/list.h"
 
 #include "src/config.h"
@@ -12,18 +13,18 @@ static void handleListWeb() {
   String out = webPageStart(
     D_WEB_LIST_HEADING,
     D_WEB_LIST_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    Language::join({"<a href='/'>", D_WEB_NAV_HOME, "</a><a href='/files'>", D_WEB_NAV_FILES, "</a><a href='/bookmarks'>", D_WEB_NAV_BOOKMARKS, "</a><a href='/settings'>", D_WEB_NAV_SETTINGS, "</a>"}).c_str(),
     true
   );
 
-  out += "<div class='card'><h2>" D_WEB_LIST_EDIT_HEADING "</h2><p class='muted'>" D_WEB_LIST_EDIT_DESC "</p>";
+  out += Language::join({"<div class='card'><h2>", D_WEB_LIST_EDIT_HEADING, "</h2><p class='muted'>", D_WEB_LIST_EDIT_DESC, "</p>"}).c_str();
   out += "<form method='POST' action='/list' class='stack' accept-charset='UTF-8' style='margin-top:12px'>";
   for (int i = 0; i < MAX_LIST_ITEMS; i++) {
     String value   = (i < g_list.count) ? htmlEscape(String(g_list.items[i].text)) : String("");
     String checked = (i < g_list.count && g_list.items[i].done) ? " checked" : "";
-    out += "<div class='row' style='align-items:center;gap:10px'><div style='width:26px;text-align:center'><input type='checkbox' name='done" + String(i) + "' value='1'" + checked + "></div><div style='flex:1'><input type='text' name='item" + String(i) + "' value='" + value + "' maxlength='64' placeholder='" D_WEB_LIST_ITEM_PLACEHOLDER "'></div></div>";
+    out += "<div class='row' style='align-items:center;gap:10px'><div style='width:26px;text-align:center'><input type='checkbox' name='done" + String(i) + "' value='1'" + checked + "></div><div style='flex:1'><input type='text' name='item" + String(i) + "' value='" + value + Language::join({"' maxlength='64' placeholder='", D_WEB_LIST_ITEM_PLACEHOLDER, "'></div></div>"}).c_str();
   }
-  out += "<div class='actions'><button type='submit'>" D_WEB_LIST_SAVE_BUTTON "</button><button type='submit' formaction='/list-clear-done'>" D_WEB_LIST_DELETE_DONE "</button><span class='muted'>" D_WEB_LIST_HINT "</span></div></form></div>";
+  out += Language::join({"<div class='actions'><button type='submit'>", D_WEB_LIST_SAVE_BUTTON, "</button><button type='submit' formaction='/list-clear-done'>", D_WEB_LIST_DELETE_DONE, "</button><span class='muted'>", D_WEB_LIST_HINT, "</span></div></form></div>"}).c_str();
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }

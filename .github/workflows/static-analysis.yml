@@ -38,7 +38,7 @@ jobs:
       - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      # One environment is enough — all 4 leaf envs share the same source
+      # One environment is enough — all 6 leaf envs share the same source
       # tree; only preprocessor defines differ (board revision, language).
       - name: Run cppcheck via pio check
         run: pio check -e wireless-paper-v1_2-en --fail-on-defect low

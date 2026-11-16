@@ -133,7 +133,7 @@ target_compile_definitions(packed_book_tests PRIVATE PACKED_FIXTURES="${PACKED_F
 add_test(NAME pack_book_encoder COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/test_pack_book.py)
 
 add_executable(book_upload_tests main.cpp native/book_upload/upload.cpp
-  ${FW_SRC}/web/upload.cpp ${FW_SRC}/pure/text_util.cpp ${FW_SRC}/pure/paths.cpp)
+  ${FW_SRC}/web/upload.cpp ${FW_SRC}/lang/join.cpp ${FW_SRC}/pure/text_util.cpp ${FW_SRC}/pure/paths.cpp)
 target_compile_definitions(book_upload_tests PRIVATE LANG_EN PACKED_FIXTURES="${PACKED_FIXTURES}")
 target_include_directories(book_upload_tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/native/book_upload/stubs
@@ -172,9 +172,11 @@ endif()
 find_package(OpenSSL REQUIRED)
 add_executable(companion_rpc_tests main.cpp native/companion_rpc/rpc.cpp
   ${FW_SRC}/hal/companion_rpc.cpp ${FW_SRC}/hal/companion_bookmarks.cpp
+  native/companion_rpc/runtime_language.cpp ${FW_SRC}/lang/locale_core.cpp
+  ${FW_SRC}/lang/locale_data.cpp ${FW_SRC}/pure/catalog_inflater.cpp
   ${FW_SRC}/pure/paths.cpp ${FW_SRC}/pure/hashing.cpp ${FW_SRC}/pure/bookmarks_codec.cpp
   ${FW_SRC}/storage/book_metadata.cpp ${FW_SRC}/storage/click_timings.cpp)
-target_compile_definitions(companion_rpc_tests PRIVATE LANG_EN PALA_COMPANION
+target_compile_definitions(companion_rpc_tests PRIVATE LANG_EN PALA_COMPANION PALA_RUNTIME_LANG
   ARDUINOJSON_ENABLE_ARDUINO_STRING=1 PACKED_FIXTURES="${PACKED_FIXTURES}")
 target_include_directories(companion_rpc_tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/native/companion_rpc/stubs
@@ -205,3 +207,47 @@ foreach(locale IN ITEMS EN ES_LA)
     ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
   add_test(NAME ${connection_target} COMMAND ${connection_target})
 endforeach()
+
+foreach(locale IN ITEMS EN ES_LA FR)
+  set(locale_target runtime_locales_${locale})
+  add_executable(${locale_target} main.cpp test_runtime_locales.cpp
+    ${FW_SRC}/lang/locale_core.cpp ${FW_SRC}/lang/locale_data.cpp ${FW_SRC}/pure/catalog_inflater.cpp)
+  target_compile_definitions(${locale_target} PRIVATE LANG_${locale} PALA_RUNTIME_LANG
+    CATALOG_DIRECTORY="${FW_SRC}/lang/catalogs")
+  target_include_directories(${locale_target} PRIVATE
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR} ${arduinojson_SOURCE_DIR}/src)
+  target_link_libraries(${locale_target} PRIVATE ZLIB::ZLIB)
+  add_test(NAME ${locale_target} COMMAND ${locale_target})
+endforeach()
+add_test(NAME locale_generator COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/test_locale_generator.py)
+
+# Real pinned U8g2 decoder; only the drawing surface is a host adapter.
+add_executable(font_catalog_probe native/font_catalog/glyphs.cpp
+  native/font_catalog/decoder/U8g2_for_Adafruit_GFX.cpp ${FW_SRC}/ui/language_fonts.cpp)
+target_include_directories(font_catalog_probe PRIVATE native/font_catalog/stubs
+  native/font_catalog/decoder ${CMAKE_SOURCE_DIR}/../Pala_One_2_1)
+add_test(NAME font_catalog_coverage COMMAND ${Python3_EXECUTABLE}
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_font_catalog.py $<TARGET_FILE:font_catalog_probe>)
+
+find_program(NODE_EXECUTABLE NAMES node nodejs)
+if(NOT NODE_EXECUTABLE)
+  message(FATAL_ERROR "Node.js is required for localized browser-script checks")
+endif()
+add_executable(web_script_probe native/font_catalog/web_scripts.cpp
+  ${FW_SRC}/lang/locale_core.cpp ${FW_SRC}/lang/locale_data.cpp
+  ${FW_SRC}/pure/catalog_inflater.cpp ${FW_SRC}/pure/web_script.cpp
+  ${FW_SRC}/web/localized_scripts.cpp)
+target_compile_definitions(web_script_probe PRIVATE LANG_EN PALA_RUNTIME_LANG)
+target_include_directories(web_script_probe PRIVATE ${CMAKE_SOURCE_DIR}/../Pala_One_2_1)
+add_test(NAME localized_web_scripts COMMAND ${Python3_EXECUTABLE} -B
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_web_scripts.py $<TARGET_FILE:web_script_probe> ${NODE_EXECUTABLE})
+add_test(NAME installer_language COMMAND ${NODE_EXECUTABLE}
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_installer_language.mjs)
+add_executable(font_layout_tests main.cpp native/font_catalog/layout.cpp
+  ${FW_SRC}/ui/font.cpp ${FW_SRC}/ui/language_fonts.cpp
+  ${FW_SRC}/pure/paginator.cpp ${FW_SRC}/pure/text_util.cpp
+  native/font_catalog/decoder/U8g2_for_Adafruit_GFX.cpp)
+target_compile_definitions(font_layout_tests PRIVATE LANG_EN)
+target_include_directories(font_layout_tests PRIVATE native/font_catalog/stubs
+  native/font_catalog/decoder ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME font_layout_tests COMMAND font_layout_tests)

@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/web/apps_upload.h"
 
 #include <WiFi.h>
@@ -64,14 +65,14 @@ static void handleUploadAppDone() {
 
   String inner;
   inner.reserve(900);
-  inner += "<div class='card'><h2>" D_WEB_APP_INSTALLED_HEADING "</h2>";
-  inner += "<p class='muted'>" D_WEB_APP_INSTALLED_DESC "</p>";
+  inner += Language::join({"<div class='card'><h2>", D_WEB_APP_INSTALLED_HEADING, "</h2>"}).c_str();
+  inner += Language::join({"<p class='muted'>", D_WEB_APP_INSTALLED_DESC, "</p>"}).c_str();
   inner += "<div class='stats'>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_APP_LABEL          "</span><b>" + htmlEscape(s.finalName)      + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)        + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_APPS_NOW           "</span><b>" + String(g_apps.count)          + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe()) + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a></div></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>", D_WEB_APP_LABEL, "</span><b>"}).c_str() + htmlEscape(s.finalName)      + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>", D_WEB_UPLOAD_STORED_SIZE, "</span><b>"}).c_str() + humanBytes(storedSize)        + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>", D_WEB_APPS_NOW, "</span><b>"}).c_str() + String(g_apps.count)          + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>", D_WEB_UPLOAD_FREE_SPACE, "</span><b>"}).c_str() + humanBytes(fsFreeBytesSafe()) + "</b></div>";
+  inner += Language::join({"</div><div class='actions'><a class='btn' href='/'>", D_WEB_UPLOAD_ANOTHER, "</a></div></div>"}).c_str();
   inner += storageCardHtml();
 
   String page = successPage(

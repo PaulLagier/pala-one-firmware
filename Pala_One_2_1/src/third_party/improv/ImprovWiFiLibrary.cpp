@@ -127,6 +127,18 @@ bool ImprovWiFi::onCommandCallback(ImprovTypes::ImprovCommand cmd)
     break;
   }
 
+  case ImprovTypes::Command::PALA_SET_LANGUAGE:
+  {
+    if (!languageCallback || !languageCallback(cmd.language.c_str())) {
+      setError(ImprovTypes::ERROR_INVALID_RPC);
+      return false;
+    }
+    setError(ImprovTypes::ERROR_NONE);
+    auto response = build_rpc_response(ImprovTypes::PALA_SET_LANGUAGE, {cmd.language}, false);
+    sendResponse(response);
+    break;
+  }
+
   case ImprovTypes::Command::GET_WIFI_NETWORKS:
   {
     getAvailableWifiNetworks();
@@ -345,6 +357,14 @@ ImprovTypes::ImprovCommand ImprovWiFi::parseImprovData(const uint8_t *data, size
       improv_command.command = ImprovTypes::Command::BAD_CHECKSUM;
       return improv_command;
     }
+  }
+
+  if (command == ImprovTypes::Command::PALA_SET_LANGUAGE) {
+    if (data_length != 2 || data[2] < 'a' || data[2] > 'z' || data[3] < 'a' || data[3] > 'z')
+      return improv_command;
+    improv_command.command = command;
+    improv_command.language.assign(reinterpret_cast<const char*>(data + 2), 2);
+    return improv_command;
   }
 
   if (command == ImprovTypes::Command::WIFI_SETTINGS)

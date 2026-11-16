@@ -1,0 +1,134 @@
+[
+  {
+    "name": "bdfconv/Makefile",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/Makefile",
+    "sha256": "879e22fe78972f739081d7802648bf5ee6e5bbf3c630974231b8b1e0d5a92e0d",
+    "bytes": 37706
+  },
+  {
+    "name": "bdfconv/bdf_8x8.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_8x8.c",
+    "sha256": "b81941e22e0c02de2dd8907f68591ae5433f5afb7ad7d4cf69f55adf502519f6",
+    "bytes": 3969
+  },
+  {
+    "name": "bdfconv/bdf_font.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_font.c",
+    "sha256": "9fa8af5c740fb8a351f126d6203f7aea992e4013d323999d9b798c0c6e389710",
+    "bytes": 17789
+  },
+  {
+    "name": "bdfconv/bdf_font.h",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_font.h",
+    "sha256": "caead0b6bbc6d44ea3fc95a02e16a3758433a91a8cfdcd0c62d8854becc30e83",
+    "bytes": 4663
+  },
+  {
+    "name": "bdfconv/bdf_glyph.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_glyph.c",
+    "sha256": "99892612e097bce9521a0d850472ff571e6d068ae992e8a4f131793f1006fabf",
+    "bytes": 9454
+  },
+  {
+    "name": "bdfconv/bdf_glyph.h",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_glyph.h",
+    "sha256": "8c35cd11fef94d7025a719d5e10e99fb4a7313a8096c4b0ae599f1830c840608",
+    "bytes": 2166
+  },
+  {
+    "name": "bdfconv/bdf_kern.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_kern.c",
+    "sha256": "3e66c1f2afdc752de7d4d682ef3bda294d8a2227157ff58d4d9aa21f760d0855",
+    "bytes": 6306
+  },
+  {
+    "name": "bdfconv/bdf_map.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_map.c",
+    "sha256": "53d1eaba15c41ca0acb1738dc68f9504d5369e101483028628243fdc394ead3f",
+    "bytes": 7487
+  },
+  {
+    "name": "bdfconv/bdf_parser.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_parser.c",
+    "sha256": "e9298b3f25090e8975d7a53087e7cf2a7a2f1dce4388cbac7723e9e97d4552b9",
+    "bytes": 9718
+  },
+  {
+    "name": "bdfconv/bdf_rle.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_rle.c",
+    "sha256": "a344661a175865820791739dc003dfb093c2aff9f488184bbfd063f06b2e071a",
+    "bytes": 24128
+  },
+  {
+    "name": "bdfconv/bdf_tga.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/bdf_tga.c",
+    "sha256": "be42fa8bdcf9ec321bf5b86bd14510bd20bd87cf6ffde7b6ba04e14c9360dc1c",
+    "bytes": 10770
+  },
+  {
+    "name": "bdfconv/fd.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/fd.c",
+    "sha256": "8e296ffcbce49736614c596e79f1cf4732b7853a09558f0d6c6b464e35c04bb7",
+    "bytes": 4255
+  },
+  {
+    "name": "bdfconv/fd.h",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/fd.h",
+    "sha256": "a8204f37e31e55a2dc22d7d2623d050f50b17d0278fff2455de3bac67996fa97",
+    "bytes": 1090
+  },
+  {
+    "name": "bdfconv/main.c",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdfconv/main.c",
+    "sha256": "86eda8898c3bf4bfaccd1f7f2ae89abf196dfc4375537e9746840a1e564bc181",
+    "bytes": 14970
+  },
+  {
+    "name": "helvR08.bdf",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdf/helvR08.bdf",
+    "sha256": "bf5917a86d13ddfe53fb8d9a3707ae25cc24d0bd0be23b540a428849c5a89f40",
+    "bytes": 85018
+  },
+  {
+    "name": "helvR10.bdf",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdf/helvR10.bdf",
+    "sha256": "8974855b72a59c8ef21b1773c86e350f6b7ec976ac6d09c37bc910f1ecb0e347",
+    "bytes": 94845
+  },
+  {
+    "name": "helvR12.bdf",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdf/helvR12.bdf",
+    "sha256": "d5e5336e595b06b480c9655ab597eedfbdc166e33ddd4df5a141d12fe6b30e98",
+    "bytes": 102416
+  },
+  {
+    "name": "helvR14.bdf",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdf/helvR14.bdf",
+    "sha256": "84dad849581fd2bf823dd87bc3a53d8868c73c33e9a4e9dac1584af2f04805b5",
+    "bytes": 112288
+  },
+  {
+    "name": "helvB08.bdf",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdf/helvB08.bdf",
+    "sha256": "2307f867fb249d43c606c665ce107b601e0a8975876c3b0884b7637765f57798",
+    "bytes": 85281
+  },
+  {
+    "name": "helvB10.bdf",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdf/helvB10.bdf",
+    "sha256": "bc63f2c266a25b1451a74940615b4c784057c5224afdf4d73f9f9ab799a4f530",
+    "bytes": 97319
+  },
+  {
+    "name": "helvB12.bdf",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdf/helvB12.bdf",
+    "sha256": "b62473c8b0f33e1d754c7a0f885b4b82d58ca20346c0c5c742d866cf8eab1fe4",
+    "bytes": 102822
+  },
+  {
+    "name": "helvB14.bdf",
+    "url": "https://raw.githubusercontent.com/olikraus/u8g2/master/tools/font/bdf/helvB14.bdf",
+    "sha256": "023255cad4709b852885292d7f21fc8d0b49e87e4ae1df9ed58c8b7a41527ba7",
+    "bytes": 117250
+  }
+]

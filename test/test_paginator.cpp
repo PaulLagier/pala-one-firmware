@@ -144,3 +144,28 @@ TEST_CASE("skip empty lines at start of page") {
   CHECK_EQ(lines[1], String("Two"));
   CHECK_EQ(lines[2], String("Three"));
 }
+TEST_CASE("paginator bounds lines even when glyphs have zero measured width") {
+  std::string text(1600, 'x');
+  StringReadStream in(text.c_str());
+  LayoutMetrics metrics=m(250,32);
+  size_t bytes=0;
+  auto next=paginatePage(in,0,metrics,[](const char*){return 0;},
+    [&](const char* line,size_t len){CHECK(len<256);CHECK_EQ(strlen(line),len);bytes+=len;});
+  CHECK_EQ(next,(uint32_t)text.size());CHECK_EQ(bytes,text.size());
+}
+TEST_CASE("paginator keeps UTF-8 intact at token buffer capacity") {
+  std::string text;for(int i=0;i<600;++i)text+="é";
+  StringReadStream in(text.c_str());uint32_t pos=0;std::string result;
+  while(pos<text.size()){
+    auto next=paginatePage(in,pos,m(5000,2),[](const char*){return 0;},
+      [&](const char* line,size_t len){CHECK(len%2==0);result.append(line,len);});
+    REQUIRE(next>pos);pos=next;
+  }
+  CHECK(result==text);
+}
+
+TEST_CASE("paginator does not read another position when seek fails") {
+  StringReadStream in("abcdef");in.seek(2);
+  auto next=paginatePage(in,100,m(10,2),byteWidth,nullptr);
+  CHECK_EQ(next,100u);CHECK_EQ(in.position(),2u);
+}

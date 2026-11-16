@@ -10,6 +10,7 @@
 #include "src/ui/font.h"
 #include "src/ui/header_title.h"
 #include "src/hal/companion_rpc.h"
+#include "src/lang/locale_core.h"
 #include "src/hal/companion_bookmarks.h"
 #include "src/hal/packed_file_stream.h"
 #include <openssl/evp.h>
@@ -88,6 +89,7 @@ uint32_t extractPageText(File &file, uint32_t offset, String &out) {
 namespace {
 void reset() {
   companionRpcReset();
+  REQUIRE(Language::setLanguage("en"));
   FS = MemoryFS{};
   kv.clear();
   loadBooks();
@@ -441,4 +443,28 @@ TEST_CASE("Companion book names retain UTF8 beyond the catalog display buffer") 
   auto result = call("{\"id\":1,\"op\":\"books.list\"}");
   REQUIRE(result["ok"].as<bool>());
   CHECK(result["books"][0]["name"].as<std::string>() == name);
+}
+
+TEST_CASE("Companion exposes every runtime language within the response limit") {
+  reset();
+  for (char titleChar : {'x', '\"', '\\'}) {
+    HeaderTitle::title = std::string(31, titleChar).c_str();
+    for (size_t i = 0; i < Language::count(); ++i) {
+      const std::string code = Language::codeAt(i);
+      auto changed = call("{\"id\":4294967295,\"op\":\"settings.set\",\"key\":\"language\",\"value\":\"" + code + "\"}");
+      REQUIRE(changed["ok"].as<bool>());
+      CHECK(changed["settings"]["language"] == code);
+      auto result = call("{\"id\":4294967295,\"op\":\"settings.get\"}");
+      REQUIRE(result["ok"].as<bool>());
+      CHECK_EQ(result["settings"]["availableLanguages"].size(), 11u);
+      CHECK(result["settings"]["language"] == code);
+      // Advanced settings are a separate bounded object, not the base schema.
+      result = call("{\"id\":4294967295,\"op\":\"settings.advanced.get\"}");
+      REQUIRE(result["ok"].as<bool>());
+      CHECK(result["settings"]["rawActions"].is<JsonObject>());
+    }
+  }
+  const std::string before = Language::currentCode();
+  auto invalid = call("{\"id\":1,\"op\":\"settings.set\",\"key\":\"language\",\"value\":\"zz\"}");
+  CHECK(!invalid["ok"].as<bool>()); CHECK_EQ(std::string(Language::currentCode()), before);
 }

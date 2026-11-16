@@ -1,0 +1,38 @@
+[
+  {
+    "name": "NotoSans-Regular.ttf",
+    "url": "https://raw.githubusercontent.com/notofonts/noto-fonts/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf",
+    "bytes": 569208,
+    "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+  },
+  {
+    "name": "NotoSans-Bold.ttf",
+    "url": "https://raw.githubusercontent.com/notofonts/noto-fonts/main/hinted/ttf/NotoSans/NotoSans-Bold.ttf",
+    "bytes": 575740,
+    "sha256": "c976e4b1b99edc88775377fcc21692ca4bfa46b6d6ca6522bfda505b28ff9d6a"
+  },
+  {
+    "name": "Noto-LICENSE",
+    "url": "https://raw.githubusercontent.com/notofonts/noto-fonts/main/LICENSE",
+    "bytes": 4377,
+    "sha256": "0dab92d0544f7b233403f14b84a663bdbfa746982eda629e7f4f9ffe1b036feb"
+  },
+  {
+    "name": "OpenDyslexic-Regular.otf",
+    "url": "https://raw.githubusercontent.com/antijingoist/opendyslexic/main/compiled/OpenDyslexic-Regular.otf",
+    "bytes": 175872,
+    "sha256": "32f5840fb2bf844bdabafe372591ddfb9286e98117f5b21950aaf54ea856919a"
+  },
+  {
+    "name": "OpenDyslexic-Bold.otf",
+    "url": "https://raw.githubusercontent.com/antijingoist/opendyslexic/main/compiled/OpenDyslexic-Bold.otf",
+    "bytes": 184472,
+    "sha256": "5d690ea4c87ccb0d5d5d81487826a395e9b20a6c1d606f1f262c060d2bef4f03"
+  },
+  {
+    "name": "OpenDyslexic-LICENSE",
+    "url": "https://raw.githubusercontent.com/antijingoist/opendyslexic/main/OFL.txt",
+    "bytes": 4453,
+    "sha256": "caafcccfb70fc72458fcbda812ec8f0a06cb300cbabb87eabbb30b946124394b"
+  }
+]

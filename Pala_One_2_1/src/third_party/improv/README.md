@@ -18,7 +18,15 @@ Changes from that commit:
   time arithmetic, and resynchronize overlapping signature prefixes.
 - Make the stream constructor explicit and use equivalent standard checksum sums
   to satisfy the project static-analysis rules.
-- Use portable C++17 aggregate initialization and bounded IPv4 formatting. No private/vendor commands are introduced.
+- Use portable C++17 aggregate initialization and bounded IPv4 formatting.
+
+Pala vendor extension: RPC `0x81` has exactly two payload bytes containing a
+lowercase ISO language code (for example `de`). Standard framing and checksums
+are unchanged. The firmware callback validates support, prepares the catalog
+and persists the selection before accepting. Success clears the error state
+and returns one length-prefixed string containing the accepted code. Missing
+handlers, unsupported codes, allocation/persistence failures and malformed
+payloads cannot change the selected language. The command never starts Wi-Fi.
 
 Native tests compile this exact source with deterministic Stream/Wi-Fi adapters.
 They test the existing Improv wire protocol, without accessing real networks.

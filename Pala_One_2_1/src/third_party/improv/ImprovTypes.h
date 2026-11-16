@@ -47,6 +47,8 @@ enum Command : uint8_t {
   GET_CURRENT_STATE = 0x02,
   GET_DEVICE_INFO = 0x03,
   GET_WIFI_NETWORKS = 0x04,
+  // Pala vendor extension: two lowercase ISO language bytes.
+  PALA_SET_LANGUAGE = 0x81,
   BAD_CHECKSUM = 0xFF,
 };
 
@@ -64,6 +66,7 @@ struct ImprovCommand {
   Command command;
   std::string ssid;
   std::string password;
+  std::string language;
 };
 
 enum ChipFamily : uint8_t {

@@ -164,6 +164,25 @@
   </p>
 
   <div class="variant">
+    <h3>Device language</h3>
+    <label for="device-language">Language after installation</label>
+    <select id="device-language">
+      <option value="de">Deutsch</option><option value="en">English</option>
+      <option value="fr">Français</option><option value="es">Español</option>
+      <option value="pl">Polski</option><option value="it">Italiano</option>
+      <option value="cs">Čeština</option><option value="ru">Русский</option>
+      <option value="uk">Українська</option><option value="nl">Nederlands</option>
+      <option value="pt">Português</option>
+    </select>
+    <p>All images include these eleven languages. Choose your board and install
+      below, close the installation dialog, then apply your language over USB.
+      You can change it later in the Pala app or the reader's web settings.</p>
+    <button id="apply-language" type="button">Apply language over USB</button>
+    <p id="language-status" role="status" aria-live="polite"></p>
+  </div>
+  <script type="module" src="./language-picker.js"></script>
+
+  <div class="variant">
     <h3>V1.2 board</h3>
     <p>Newer Heltec Wireless Paper. If your board's silkscreen says <code>V1.2</code>, pick this.</p>
     <div class="lang-row">
@@ -176,6 +195,13 @@
       </esp-web-install-button>
       <esp-web-install-button manifest="manifest-v1_2-es.json">
         <button slot="activate">Install V1.2 — Español</button>
+        <span slot="unsupported">
+          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
+        </span>
+        <span slot="not-allowed">Open this page over HTTPS.</span>
+      </esp-web-install-button>
+      <esp-web-install-button manifest="manifest-v1_2-fr.json">
+        <button slot="activate">Install V1.2 — Français</button>
         <span slot="unsupported">
           Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
         </span>
@@ -197,6 +223,13 @@
       </esp-web-install-button>
       <esp-web-install-button manifest="manifest-v1_1-es.json">
         <button slot="activate">Install V1.1 — Español</button>
+        <span slot="unsupported">
+          Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
+        </span>
+        <span slot="not-allowed">Open this page over HTTPS.</span>
+      </esp-web-install-button>
+      <esp-web-install-button manifest="manifest-v1_1-fr.json">
+        <button slot="activate">Install V1.1 — Français</button>
         <span slot="unsupported">
           Your browser doesn't support Web Serial. Use desktop Chrome, Edge, or Opera.
         </span>

@@ -13,7 +13,7 @@
 //    Body / Bold   Regular/bold body face at the user-chosen body size
 //                  (8/10/12/14) AND family (Helvetica or OpenDyslexic).
 //                  Reader text, menu rows, section headers.
-//    Toast         Helvetica regular 8 — Latin Extended (accent-capable);
+//    Toast         Sans regular 8 — extended Latin/Cyrillic;
 //                  used for toast text where translated strings may carry
 //                  á é í ó ú ñ ¿ ¡ ü.
 //    UiSmall       Fixed 6x10 (ASCII only). Battery percentage — digits/% only.
@@ -30,8 +30,7 @@
 namespace Font {
 
 // Body face family. OpenDyslexic is the alternative face for users with
-// dyslexia; tables come from opendyslexic_u8g2_fonts.h (already vendored
-// at the sketch root).
+// dyslexia; extended tables and source licenses live under ui/.
 enum class Family : uint8_t { Helvetica = 0, OpenDyslexic = 1 };
 
 // Switch the active u8g2 font to the named role. After one of these, raw
@@ -50,7 +49,9 @@ void useAppLarge();
 // Layout metrics for the body font under the current line gap and screen
 // dimensions. Cached; invalidated automatically by the mutators below.
 // Calling this leaves the active u8g2 font set to Body.
-const LayoutMetrics& bodyLayout();
+const LayoutMetrics &bodyLayout();
+void completePageLayout(LayoutMetrics &metrics);
+void includeTextBounds(LayoutMetrics &metrics, const char *text, size_t length);
 
 // Drop the cached layout. External owners of layout-affecting state call
 // this after they mutate (e.g. `Statusbar::setMode` changes the bottom
@@ -77,11 +78,11 @@ void setHalfParagraphGaps(bool on);
 // Current applied values. Page-cache stamping passes everything through
 // `layoutForCache()`; these direct accessors exist for places that need
 // the individual values (web settings form, debug output).
-int    currentBodySize();
-int    currentLineGap();
+int currentBodySize();
+int currentLineGap();
 Family currentFamily();
-bool   bionicEnabled();
-bool   halfParagraphGapsEnabled();
+bool bionicEnabled();
+bool halfParagraphGapsEnabled();
 
 // One-shot snapshot of every layout-affecting setting, packed for stamping
 // the on-disk page cache. Centralizing this here means call sites in
@@ -108,14 +109,14 @@ constexpr int kBionicRestGapPx = 1;
 //
 // `line` is NUL-terminated. drawBionicLine sets u8g2's cursor to (x, y)
 // and leaves the active u8g2 font on Body afterwards.
-int  measureBionicLine(const char* line);
-void drawBionicLine(int x, int y, const char* line);
+int measureBionicLine(const char *line);
+void drawBionicLine(int x, int y, const char *line);
 
 // Byte length of the leading "strong" (bold) prefix of `word` when rendered
 // in bionic mode. Returns 0 if the word doesn't qualify (punctuation-only,
 // or short enough that splitting would look wrong). UTF-8-aware.
-int bionicPrefixBytes(const char* word, int byteLen);
+int bionicPrefixBytes(const char *word, int byteLen);
 
-}  // namespace Font
+} // namespace Font
 
-#endif  // PALA_UI_FONT_H
+#endif // PALA_UI_FONT_H

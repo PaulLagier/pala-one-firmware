@@ -21,11 +21,11 @@ static const int SETTINGS_OPTION_INDENT = 10;
 
 struct SettingOption {
   int         value;
-  const char* label;
+  const char* (*label)();
 };
 
 struct SettingItem {
-  const char*          label;
+  const char*        (*label)();
   const SettingOption* options;      // nullptr for toggles
   int                  optionCount;  // 0 for toggles
   int  (*get)();
@@ -33,22 +33,22 @@ struct SettingItem {
 };
 
 static const SettingOption kSizeOptions[] = {
-  {  8, D_SETTINGS_SIZE_8  },
-  { 10, D_SETTINGS_SIZE_10 },
-  { 12, D_SETTINGS_SIZE_12 },
-  { 14, D_SETTINGS_SIZE_14 },
+  {  8, []() -> const char* { return D_SETTINGS_SIZE_8; }  },
+  { 10, []() -> const char* { return D_SETTINGS_SIZE_10; } },
+  { 12, []() -> const char* { return D_SETTINGS_SIZE_12; } },
+  { 14, []() -> const char* { return D_SETTINGS_SIZE_14; } },
 };
 
 static const SettingOption kFamilyOptions[] = {
-  { (int)Font::Family::Helvetica,    D_WEB_FONT_FAMILY_HELVETICA },
-  { (int)Font::Family::OpenDyslexic, D_WEB_FONT_FAMILY_DYSLEXIC  },
+  { (int)Font::Family::Helvetica,    []() -> const char* { return D_WEB_FONT_FAMILY_HELVETICA; } },
+  { (int)Font::Family::OpenDyslexic, []() -> const char* { return D_WEB_FONT_FAMILY_DYSLEXIC; }  },
 };
 
 static const SettingOption kGapOptions[] = {
-  { 0, D_SETTINGS_GAP_0 },
-  { 1, D_SETTINGS_GAP_1 },
-  { 2, D_SETTINGS_GAP_2 },
-  { 3, D_SETTINGS_GAP_3 },
+  { 0, []() -> const char* { return D_SETTINGS_GAP_0; } },
+  { 1, []() -> const char* { return D_SETTINGS_GAP_1; } },
+  { 2, []() -> const char* { return D_SETTINGS_GAP_2; } },
+  { 3, []() -> const char* { return D_SETTINGS_GAP_3; } },
 };
 
 static int  getSize(void)      { return Font::currentBodySize(); }
@@ -61,10 +61,10 @@ static int  getBionic(void)    { return Font::bionicEnabled() ? 1 : 0; }
 static void setBionic(int v)   { Font::setBionic(v != 0); }
 
 static const SettingItem kItems[] = {
-  { D_WEB_FONT_SIZE_LABEL,    kSizeOptions,   4, getSize,     setSize     },
-  { D_WEB_FONT_FAMILY_LABEL,  kFamilyOptions, 2, getFamily,   setFamily   },
-  { D_WEB_LINE_SPACING_LABEL, kGapOptions,    4, getLineGap,  setLineGap  },
-  { D_WEB_BIONIC_LABEL,       nullptr,        0, getBionic,   setBionic   },
+  { []() -> const char* { return D_WEB_FONT_SIZE_LABEL; },    kSizeOptions,   4, getSize,     setSize     },
+  { []() -> const char* { return D_WEB_FONT_FAMILY_LABEL; },  kFamilyOptions, 2, getFamily,   setFamily   },
+  { []() -> const char* { return D_WEB_LINE_SPACING_LABEL; }, kGapOptions,    4, getLineGap,  setLineGap  },
+  { []() -> const char* { return D_WEB_BIONIC_LABEL; },       nullptr,        0, getBionic,   setBionic   },
 };
 static const int kItemCount = sizeof(kItems) / sizeof(kItems[0]);
 
@@ -103,7 +103,7 @@ static void buildRows() {
 static const char* currentOptionLabel(const SettingItem& it) {
   int v = it.get();
   for (int o = 0; o < it.optionCount; o++) {
-    if (it.options[o].value == v) return it.options[o].label;
+    if (it.options[o].value == v) return it.options[o].label();
   }
   return "";
 }
@@ -112,13 +112,13 @@ static String rowLabel(const SettingRow& r) {
   const SettingItem& it = kItems[r.item];
   if (r.option >= 0) {
     const SettingOption& op = it.options[r.option];
-    return String(it.get() == op.value ? "[x] " : "[ ] ") + op.label;
+    return String(it.get() == op.value ? "[x] " : "[ ] ") + op.label();
   }
   if (isChoice(it)) {
     return String(s_expanded[r.item] ? "- " : "+ ")
-         + it.label + ": " + currentOptionLabel(it);
+         + it.label() + ": " + currentOptionLabel(it);
   }
-  return String(it.get() ? "[x] " : "[ ] ") + it.label;
+  return String(it.get() ? "[x] " : "[ ] ") + it.label();
 }
 
 // ----------------------------------------------------------------------------

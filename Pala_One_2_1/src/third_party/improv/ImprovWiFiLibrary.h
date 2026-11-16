@@ -70,6 +70,10 @@ private:
   std::vector<uint8_t> build_rpc_response(ImprovTypes::Command command, const std::vector<std::string> &datum, bool add_checksum);
 
 public:
+  // Optional vendor RPC; absent/rejected handlers report INVALID_RPC.
+  void onSetLanguage(bool (*callback)(const char*)) { languageCallback = callback; }
+
+
   /**
    * ## Constructors
    **/
@@ -168,6 +172,7 @@ public:
   bool isConnected();
 
 private:
+  bool (*languageCallback)(const char*) = nullptr;
   OnImprovError *onImproErrorCallback = nullptr;
   OnImprovConnected *onImprovConnectedCallback = nullptr;
   CustomConnectWiFi *customConnectWiFiCallback = nullptr;
