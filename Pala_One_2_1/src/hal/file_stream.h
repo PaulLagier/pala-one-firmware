@@ -30,10 +30,12 @@ private:
 // virtually within the buffer layer and wont necessarily be reflected on the underlying
 // file object. At the time of writing this is okay because all callsites perform an
 // explicit seek before starting to read, but care should be taken for new callsites.
+// The stream owns the File cursor while in use; do not read/seek File directly.
 class BufferedFileReadStream : public IReadStream {
 public:
   explicit BufferedFileReadStream(File& f)
-      : f_(f), size_(static_cast<uint32_t>(f.size())), pos_(static_cast<uint32_t>(f.position())) {
+      : f_(f), size_(static_cast<uint32_t>(f.size())),
+        pos_(static_cast<uint32_t>(f.position())), physicalPos_(pos_) {
     buf_ = static_cast<uint8_t*>(malloc(kBufCap));
   }
   ~BufferedFileReadStream() override { free(buf_); }
@@ -64,8 +66,16 @@ public:
 
 private:
   bool fill(uint32_t at) {
-    if (!f_.seek(at)) return false;
+    // The previous refill leaves File at the end of that window. Sequential
+    // reads can continue there without another filesystem seek. Keep this
+    // cursor separate from pos_, which moves during buffered look-ahead.
+    if ((!physicalPosKnown_ || at != physicalPos_) && !f_.seek(at)) {
+      physicalPosKnown_ = false;
+      return false;
+    }
     size_t n = f_.read(buf_, kBufCap);
+    physicalPos_ = at + static_cast<uint32_t>(n);
+    physicalPosKnown_ = true;
     if (n == 0) return false;
     winStart_ = at;
     winLen_ = (uint32_t)n;
@@ -78,6 +88,8 @@ private:
   uint8_t* buf_;
   uint32_t size_;
   uint32_t pos_;
+  uint32_t physicalPos_;
+  bool physicalPosKnown_ = true;
   uint32_t winStart_ = 0;
   uint32_t winLen_ = 0;
 };
