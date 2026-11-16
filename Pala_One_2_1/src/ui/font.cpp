@@ -5,9 +5,10 @@
 #include <U8g2_for_Adafruit_GFX.h>
 
 #include "src/config.h"
-#include "src/hal/display.h"  // u8g2 instance
-#include "src/state.h"        // prefs
-#include "src/ui/statusbar.h" // Statusbar::reserveH
+#include "src/hal/display.h"    // u8g2 instance
+#include "src/state.h"          // prefs
+#include "src/ui/statusbar.h"   // Statusbar::reserveH
+#include "src/pure/text_util.h" // constants for markdown
 
 // Extended Latin/Cyrillic faces preserve the saved family IDs.
 // Source attribution and licenses live in ui/font_licenses/.
@@ -356,14 +357,14 @@ int measureBionicLine(const char *line) {
   return total;
 }
 
-void drawLine(int x, int y, const char* line) {
+void drawLine(int x, int y, const char* line, PrintState state) {
   if (!line) return;
   if (s_bionic) {
-    drawBionicLine(x, y, line);
+    drawBionicLine(x, y, line, state);
     return;
   }
   if (s_markdown) {
-    drawMarkdownLine(x, y, line);
+    drawMarkdownLine(x, y, line, state);
     return;
   }
   int cursorX = x;
@@ -390,7 +391,7 @@ void drawLine(int x, int y, const char* line) {
   return;
 }
 
-void drawBionicLine(int x, int y, const char* line) {
+void drawBionicLine(int x, int y, const char* line, PrintState state) {
   int cursorX = x;
   forEachLineSegment(line, [&](const char *seg, int segLen, bool isWord) {
     if (segLen <= 0)
@@ -422,35 +423,37 @@ void drawBionicLine(int x, int y, const char* line) {
     cursorX += measureSlice(seg + strong, segLen - strong);
   });
   useBody();
+  state.isBold = false;
 }
 
-void drawMarkdownLine(int x, int y, const char* line) {
+void drawMarkdownLine(int x, int y, const char* line, PrintState state) {
   int cursorX = x;
   bool isBold = false;
   forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
     if (segLen <= 0) return;
     if (!isWord) {
+      printSlice(cursorX, y, seg, segLen);
+      cursorX += measureSlice(seg, segLen);
+      return;
+    };
+    for (int i = 0; i < segLen; i++) {
       isBold ? useBold() : useBody();
-      printSlice(cursorX, y, seg, segLen);
-      cursorX += measureSlice(seg, segLen);
-      return;
+      if (i == DIRECTIVE_BOLD) {
+        useBold();
+        continue;
+      } else if (i == DIRECTIVE_HEADING) {
+        // useHeading();
+        useBold();
+        continue;
+      } else if (i == DIRECTIVE_NORMAL) {
+        useBody();
+        continue;
+      }
+      printSlice(cursorX, y, seg, 1);
+      cursorX += 1;
     }
-    int strong = bionicPrefixBytes(seg, segLen);
-    if (strong <= 0) {
-      useBody();
-      printSlice(cursorX, y, seg, segLen);
-      cursorX += measureSlice(seg, segLen);
-      return;
-    }
-    useBold();
-    printSlice(cursorX, y, seg, strong);
-    cursorX += measureSlice(seg, strong);
-    cursorX += kBionicRestGapPx;
-    useBody();
-    printSlice(cursorX, y, seg + strong, segLen - strong);
-    cursorX += measureSlice(seg + strong, segLen - strong);
   });
-  useBody();
+  state.isBold = isBold;
 }
 
 void invalidateLayoutCache() { s_layoutValid = false; }
