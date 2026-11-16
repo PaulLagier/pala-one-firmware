@@ -30,6 +30,25 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 
 Each channel page lists both display revisions (V1.1 / V1.2) and both languages (English / Spanish-LA) — four install buttons total. Pick the one that matches your board + language and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
 
+## Storage recovery
+
+If storage cannot be mounted, boot stops at a recovery screen instead of
+formatting automatically. **Try again** retries the mount without erasing;
+**Help** explains the alternatives. A blank, never-initialized device also uses
+this screen for its first storage initialization.
+
+To initialize storage, select **Erase storage**, switch from the default
+**Cancel** to **Continue**, then on the final warning switch from **Cancel** to
+**Erase storage** and hold the button. A double click cannot perform the final
+erase; a triple click returns to the safe menu. Release the button between
+steps. If locked, hold to unlock before using recovery.
+
+Erasing deletes all books and files in storage, while device settings in NVS
+are kept. If files matter, try again or reflash compatible firmware before
+choosing erase. Recovery rechecks the mount immediately before formatting and
+keeps the files if the volume has become readable. Normal menus and wireless
+services start only once storage mounts successfully.
+
 ## Board Versions
 
 There are currently two supported Heltec Wireless Paper versions:

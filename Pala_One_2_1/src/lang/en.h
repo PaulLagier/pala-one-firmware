@@ -683,4 +683,28 @@
 #define D_WEB_SS_JS_UPLOAD_FAIL_FMT  "Upload failed: %1"
 #define D_WEB_SS_JS_ERROR            "error"
 
+
+// Explicit boot storage recovery.
+#define D_RECOVERY_RETRY "Try again"
+#define D_RECOVERY_HELP "Help"
+#define D_RECOVERY_ERASE "Erase storage"
+#define D_RECOVERY_LOCKED "Reader is locked."
+#define D_RECOVERY_UNLOCK "Hold to unlock."
+#define D_RECOVERY_KEYS "Click: next; double: select"
+#define D_RECOVERY_PRESERVED "Mount errors do not erase files."
+#define D_RECOVERY_REFLASH "Try again or reflash firmware."
+#define D_RECOVERY_BACKUP "Back up files before erasing."
+#define D_RECOVERY_BACK "Double click: back"
+#define D_RECOVERY_DELETE_FILES "Erase ALL books and files?"
+#define D_RECOVERY_KEEP_SETTINGS "Device settings will be kept."
+#define D_RECOVERY_HOLD "Select erase, then hold."
+#define D_RECOVERY_CANCEL "Cancel"
+#define D_RECOVERY_CONTINUE "Continue"
+#define D_RECOVERY_RETRY_FAILED "Storage is still unreadable."
+#define D_RECOVERY_FORMAT_FAILED "Storage initialization failed."
+#define D_RECOVERY_MOUNT_FAILED "Storage still cannot mount."
+#define D_RECOVERY_DIRECTORY_FAILED "Cannot create books folder."
+#define D_RECOVERY_CHECKING "Checking storage..."
+#define D_RECOVERY_WORKING "Initializing storage..."
+
 #endif  // PALA_LANG_EN_H
