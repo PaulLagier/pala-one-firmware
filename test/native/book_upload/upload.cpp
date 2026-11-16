@@ -55,7 +55,7 @@ TEST_CASE("Web packed upload rejects corrupt containers without replacing existi
   for(size_t at : {0u,4u,16u,unsigned(bytes.size()-1)}) {
     reset(); oldBook(); auto bad=bytes; bad[at]^=0x40;
     upload(bad,"new-book.pbt"); CHECK_EQ(server.status,400); CHECK(oldRetained());
-    CHECK_EQ(cacheDeletes,0u); CHECK(!FS.exists("/books/book.pbt.tmp"));
+    CHECK_EQ(cacheDeletes,0u); CHECK(!FS.exists("/books/new-book.pbt.tmp"));
   }
   reset(); oldBook(); upload({},"new-book.pbt"); CHECK_EQ(server.status,400); CHECK(oldRetained());
 }
@@ -65,7 +65,7 @@ TEST_CASE("Web packed upload preserves old book on failed writes rename and low 
     FS.shortWrite=failure==0; FS.failRename=failure==1;
     if(failure==2) FS.freeBytes=1;
     upload(fixture(),"new-book.pbt"); CHECK_EQ(server.status,400); CHECK(oldRetained());
-    CHECK_EQ(cacheDeletes,0u); CHECK(!FS.exists("/books/book.pbt.tmp"));
+    CHECK_EQ(cacheDeletes,0u); CHECK(!FS.exists("/books/new-book.pbt.tmp"));
   }
 }
 TEST_CASE("Web packed upload abort and session reset remove staging only") {
@@ -73,7 +73,7 @@ TEST_CASE("Web packed upload abort and session reset remove staging only") {
     reset(); oldBook(); server.incoming.filename="new-book.pbt";
     event(UPLOAD_FILE_START); REQUIRE(FS.exists("/books/new-book.pbt.tmp"));
     if(abort) event(UPLOAD_FILE_ABORTED); else resetBookUpload();
-    CHECK(!FS.exists("/books/book.pbt.tmp")); CHECK(oldRetained());
+    CHECK(!FS.exists("/books/new-book.pbt.tmp")); CHECK(oldRetained());
     CHECK_EQ(cacheDeletes,0u);
   }
 }
@@ -109,6 +109,9 @@ TEST_CASE("Browser uploads reject exact sanitized and truncated name collisions 
         CHECK(*FS.files.at(path)==original); CHECK_EQ(cacheDeletes,deleted);
         CHECK_EQ(FS.files.size(),1u);
       }
+      upload(bytes,("different"+extension).c_str());
+      CHECK_EQ(server.status,200);CHECK_EQ(FS.files.size(),2u);
+      CHECK(*FS.files.at(path)==original);
     }
   }
 }
