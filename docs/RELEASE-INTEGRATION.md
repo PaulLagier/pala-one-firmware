@@ -2,7 +2,9 @@
 
 The shared firmware combines public development commit
 `71e3f84050657a1c81b8e37198f23a0e09ce2e46` with the completed local reader behavior.
-Community commits and attribution remain in the normal merge history.
+Main’s existing forgiving browser-search and UTF-8 offset correction is retained
+in the runtime-localized script. Community commits and attribution remain in the
+normal merge history.
 
 ## Compatibility
 

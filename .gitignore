@@ -28,3 +28,6 @@ Thumbs.db
 
 # Claude
 .claude/
+# Generated sketch translations and numbered sync copies
+Pala_One_2_1/*.ino.cpp
+Pala_One_2_1/*.ino [0-9]*.cpp

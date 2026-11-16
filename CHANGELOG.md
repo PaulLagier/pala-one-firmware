@@ -17,5 +17,7 @@
   public gesture mappings and the hardened app/upload protocols.
 - Compress browser stylesheets without changing their decoded content. Keep
   stored Wi-Fi passwords out of form values and report factory-reset failures.
+- Preserve main’s forgiving browser search and UTF-8 jump/status offsets in all
+  eleven localized reader scripts, including Unicode expansion boundaries.
 - Include source provenance, board-specific packages, English installation
   instructions and SHA-256 checksums. Keep prerelease tags off the stable site.

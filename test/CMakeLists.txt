@@ -301,3 +301,6 @@ add_test(NAME factory_reset_tests COMMAND factory_reset_tests)
 
 add_test(NAME release_packaging COMMAND ${Python3_EXECUTABLE} -B
   ${CMAKE_CURRENT_SOURCE_DIR}/test_release_package.py)
+
+add_test(NAME browser_read_search COMMAND ${NODE_EXECUTABLE}
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_read_search.mjs $<TARGET_FILE:web_script_probe>)
