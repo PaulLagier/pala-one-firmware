@@ -28,14 +28,16 @@
 // self-explanatory name for callers in the rest of the firmware.
 namespace WifiProvisioning {
 
-void begin();                                // setup() — register lib callbacks
-void loop();                                 // main loop — gated internally by Serial
-bool isActive();                             // true while listening (for lightsleep gate)
+void beginLocalSetup(); // USB metadata and NVS settings only; no radio or book storage.
+void loopLocalSetup();
+void begin();    // setup() — register lib callbacks
+void loop();     // main loop — gated internally by Serial
+bool isActive(); // true while listening (for lightsleep gate)
 
 // upload_screen marks the session boundaries so we know to keep our hands
 // off Wi-Fi while a session is up.
 void notifyUploadSession(bool active);
 
-}  // namespace WifiProvisioning
+} // namespace WifiProvisioning
 
-#endif  // PALA_HAL_WIFI_PROVISIONING_H
+#endif // PALA_HAL_WIFI_PROVISIONING_H

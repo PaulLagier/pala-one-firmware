@@ -28,7 +28,7 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 - **Stable** ([`/stable/`](https://paullagier.github.io/pala-one-firmware/stable/)) — latest tagged release (`vX.Y.Z`). Use this unless you have a reason not to.
 - **Development** ([`/dev/`](https://paullagier.github.io/pala-one-firmware/dev/)) — latest build from `dev`; new features, may break.
 
-Each channel page lists both display revisions (V1.1 / V1.2) and EN/ES/FR initial-default images. Every image contains all eleven runtime languages. Pick your board, install, close the dialog and apply your preferred language with **Apply language over USB**; its initial selection follows the browser language. The Pala app and reader web settings can also change the language. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
+Each channel page lists both display revisions (V1.1 / V1.2) and EN/ES/FR initial-default images. Every image contains all eleven runtime languages. Pick your board, install, close the dialog and apply your preferred language with **Apply language over USB**; its initial selection follows the browser language. The Pala app and reader web settings can also change the language. Leave the installer’s erase option disabled to retain stored content with the unchanged partition layout. Back up content before migrating another layout or rolling back.
 
 ## Reading-focused view
 
@@ -60,7 +60,8 @@ core build retains Wi-Fi without the optional Bluetooth flag.
 If storage cannot be mounted, boot stops at a recovery screen instead of
 formatting automatically. **Try again** retries the mount without erasing;
 **Help** explains the alternatives. A blank, never-initialized device also uses
-this screen for its first storage initialization.
+this screen for its first storage initialization. USB language and menu choices
+can already be saved while this screen is shown.
 
 To initialize storage, select **Erase storage**, switch from the default
 **Cancel** to **Continue**, then on the final warning switch from **Cancel** to

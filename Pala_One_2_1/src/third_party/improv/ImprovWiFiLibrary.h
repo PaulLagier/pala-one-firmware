@@ -73,6 +73,7 @@ private:
                                           const std::vector<std::string> &datum, bool add_checksum);
 
 public:
+  void setLocalSetupOnly(bool enabled) { localSetupOnly = enabled; }
   // Optional vendor RPC; absent/rejected handlers report INVALID_RPC.
   void onSetReadingMenu(bool (*callback)(bool)) { readingMenuCallback = callback; }
   void onSetLanguage(bool (*callback)(const char *)) { languageCallback = callback; }
@@ -181,6 +182,7 @@ public:
   bool isConnected();
 
 private:
+  bool localSetupOnly = false;
   bool (*readingMenuCallback)(bool) = nullptr;
   bool (*languageCallback)(const char *) = nullptr;
   OnImprovError *onImproErrorCallback = nullptr;

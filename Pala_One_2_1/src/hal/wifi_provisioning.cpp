@@ -74,13 +74,25 @@ static void clearGraceTimer() {
   s_state.credsReceivedMs = 0;
 }
 
-void begin() {
+void beginLocalSetup() {
+  NavigationProfile::loadSettings();
+  s_state.lib.setLocalSetupOnly(true);
   s_state.lib.onSetReadingMenu(
       [](bool enabled) { return NavigationProfile::setReadingFocused(enabled); });
   s_state.lib.onSetLanguage([](const char *code) { return Language::setLanguage(code); });
   s_state.lib.setDeviceInfo(ImprovTypes::ChipFamily::CF_ESP32_S3, "Pala One", FW_VERSION,
                             "Pala One",
                             "https://paullagier.github.io/pala-one-firmware/connected.html");
+}
+void loopLocalSetup() {
+  if (Serial.available() > 0) {
+    s_state.lastHostByteMs = millis();
+    s_state.lib.handleSerial();
+  }
+}
+void begin() {
+  beginLocalSetup();
+  s_state.lib.setLocalSetupOnly(false);
 
   // The library handles WiFi.begin() itself; we only persist creds once the
   // association succeeds. If the association fails the library reports the

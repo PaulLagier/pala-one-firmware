@@ -1,3 +1,4 @@
+#include "src/hal/wifi_provisioning.h"
 #include "src/ui/screens/storage_recovery_screen.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"
@@ -7,16 +8,17 @@
 #include "src/ui/widgets.h"
 
 namespace {
-void line(int y, const char* text) {
+void line(int y, const char *text) {
   Font::useToast();
   u8g2.setCursor(MARGIN_X + 4, y);
   u8g2.print(text);
 }
-void choice(int y, const char* text, bool selected) {
-  if (selected) gfx.drawRect(MARGIN_X, y - 11, SCREEN_W - 2 * MARGIN_X, 15, 1);
+void choice(int y, const char *text, bool selected) {
+  if (selected)
+    gfx.drawRect(MARGIN_X, y - 11, SCREEN_W - 2 * MARGIN_X, 15, 1);
   line(y, text);
 }
-}
+} // namespace
 
 StorageRecoveryScreen::StorageRecoveryScreen()
     : actions_{fsRecoveryRetry, fsRecoveryInitializeConfirmed} {}
@@ -40,7 +42,8 @@ void StorageRecoveryScreen::transition(Page page, int selected) {
 }
 
 void StorageRecoveryScreen::onIdleTick() {
-  if (!awaitRelease_) return;
+  if (!awaitRelease_)
+    return;
   // The classifier is reset even if resetInputFrontend's release wait times
   // out. Require a physically released pin for a whole debounce interval.
   if (digitalRead(BTN) != HIGH) {
@@ -56,7 +59,7 @@ void StorageRecoveryScreen::onIdleTick() {
   }
 }
 
-void StorageRecoveryScreen::working(const char* message) {
+void StorageRecoveryScreen::working(const char *message) {
   forceNextMenuFrameFull();
   prepareMenuFrame();
   drawSectionHeader(D_BOOT_STORAGE_ERROR, false, false);
@@ -86,14 +89,16 @@ void StorageRecoveryScreen::draw() {
     line(45, D_RECOVERY_DELETE_FILES);
     line(61, page_ == Page::Confirm ? D_RECOVERY_KEEP_SETTINGS : D_RECOVERY_HOLD);
     choice(83, D_RECOVERY_CANCEL, selected_ == 0);
-    choice(103, page_ == Page::Confirm ? D_RECOVERY_CONTINUE : D_RECOVERY_ERASE,
-           selected_ == 1);
+    choice(103, page_ == Page::Confirm ? D_RECOVERY_CONTINUE : D_RECOVERY_ERASE, selected_ == 1);
   } else {
-    const char* reason = D_RECOVERY_RETRY_FAILED;
+    const char *reason = D_RECOVERY_RETRY_FAILED;
     if (page_ == Page::InitializeFailed) {
-      if (failure_ == FsRecoveryResult::FormatFailed) reason = D_RECOVERY_FORMAT_FAILED;
-      else if (failure_ == FsRecoveryResult::MountFailed) reason = D_RECOVERY_MOUNT_FAILED;
-      else reason = D_RECOVERY_DIRECTORY_FAILED;
+      if (failure_ == FsRecoveryResult::FormatFailed)
+        reason = D_RECOVERY_FORMAT_FAILED;
+      else if (failure_ == FsRecoveryResult::MountFailed)
+        reason = D_RECOVERY_MOUNT_FAILED;
+      else
+        reason = D_RECOVERY_DIRECTORY_FAILED;
     }
     line(52, reason);
     line(76, D_RECOVERY_REFLASH);
@@ -102,8 +107,9 @@ void StorageRecoveryScreen::draw() {
   display.update();
 }
 
-void StorageRecoveryScreen::onButton(const ButtonEvent& event) {
-  if (!event.any() || ready_ || awaitRelease_) return;
+void StorageRecoveryScreen::onButton(const ButtonEvent &event) {
+  if (!event.any() || ready_ || awaitRelease_)
+    return;
   if (Lock::isLocked()) {
     if (Lock::isUnlockGesture(event)) {
       Lock::disengage();
@@ -116,44 +122,55 @@ void StorageRecoveryScreen::onButton(const ButtonEvent& event) {
     return;
   }
   if (event.kind == ButtonEvent::Short) {
-    if (page_ == Page::Menu) selected_ = (selected_ + 1) % 3;
-    else if (page_ == Page::Confirm || page_ == Page::Final) selected_ = 1 - selected_;
-    else return;
+    if (page_ == Page::Menu)
+      selected_ = (selected_ + 1) % 3;
+    else if (page_ == Page::Confirm || page_ == Page::Final)
+      selected_ = 1 - selected_;
+    else
+      return;
     transition(page_, selected_);
     return;
   }
-  const bool extendedFinalHold = page_ == Page::Final && selected_ == 1
-      && event.kind == ButtonEvent::VeryLong;
-  if (event.kind != ButtonEvent::Double && event.kind != ButtonEvent::Long
-      && !extendedFinalHold) return;
+  const bool extendedFinalHold =
+      page_ == Page::Final && selected_ == 1 && event.kind == ButtonEvent::VeryLong;
+  if (event.kind != ButtonEvent::Double && event.kind != ButtonEvent::Long && !extendedFinalHold)
+    return;
   if (page_ == Page::Menu) {
     if (selected_ == 0) {
       working(D_RECOVERY_CHECKING);
-      if (actions_.retry()) ready_ = true;
-      else transition(Page::RetryFailed);
-    } else if (selected_ == 1) transition(Page::Help);
-    else transition(Page::Confirm);  // Cancel is always selected first.
+      if (actions_.retry())
+        ready_ = true;
+      else
+        transition(Page::RetryFailed);
+    } else if (selected_ == 1)
+      transition(Page::Help);
+    else
+      transition(Page::Confirm); // Cancel is always selected first.
   } else if (page_ == Page::Help || page_ == Page::RetryFailed || page_ == Page::InitializeFailed) {
     transition(Page::Menu);
   } else if (selected_ == 0) {
     transition(Page::Menu);
   } else if (page_ == Page::Confirm) {
-    transition(Page::Final);  // Another independent Cancel default.
+    transition(Page::Final); // Another independent Cancel default.
   } else if (event.kind == ButtonEvent::Long || extendedFinalHold) {
     working(D_RECOVERY_WORKING);
     failure_ = actions_.initializeConfirmed();
-    if (failure_ == FsRecoveryResult::Ready) ready_ = true;
-    else transition(Page::InitializeFailed);
+    if (failure_ == FsRecoveryResult::Ready)
+      ready_ = true;
+    else
+      transition(Page::InitializeFailed);
   }
 }
 
 void runStorageRecovery() {
+  WifiProvisioning::beginLocalSetup();
   Font::loadSettings();
   ClickTimings::loadSettings();
   setCpuFrequencyMhz(80);
   StorageRecoveryScreen screen;
   screen.onEnter();
   while (!screen.ready()) {
+    WifiProvisioning::loopLocalSetup();
     g_btns.poll();
     maybeRecoverFromIsrOverflow();
     screen.onButton(ButtonEvent::fromButtonState(g_btns));

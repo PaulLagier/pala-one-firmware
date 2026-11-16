@@ -45,6 +45,14 @@ void ImprovWiFi::onErrorCallback(ImprovTypes::Error err) {
 }
 
 bool ImprovWiFi::onCommandCallback(ImprovTypes::ImprovCommand cmd) {
+  // Recovery has no mounted book storage. Permit only metadata and NVS-only
+  // settings, before any network status/scan/connect operation can run.
+  if (localSetupOnly && cmd.command != ImprovTypes::GET_DEVICE_INFO &&
+      cmd.command != ImprovTypes::PALA_SET_LANGUAGE &&
+      cmd.command != ImprovTypes::PALA_SET_READING_MENU) {
+    setError(ImprovTypes::ERROR_INVALID_RPC);
+    return false;
+  }
 
   switch (cmd.command) {
   case ImprovTypes::Command::GET_CURRENT_STATE: {
