@@ -6,7 +6,7 @@
 class LibraryScreen : public Screen {
 public:
   void onEnter() override;
-  void onButton(const ButtonEvent& e) override;
+  void onButton(const ButtonEvent &e) override;
   void draw() override;
 };
 
@@ -22,4 +22,4 @@ void navigateToLibraryRoot();
 // (which preserves folder expansion).
 void resetLibraryNav();
 
-#endif  // PALA_UI_SCREENS_LIBRARY_SCREEN_H
+#endif // PALA_UI_SCREENS_LIBRARY_SCREEN_H

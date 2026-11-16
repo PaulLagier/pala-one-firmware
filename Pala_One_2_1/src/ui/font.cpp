@@ -133,6 +133,8 @@ static void applyLineGap(int gap) {
   s_layoutValid = false;
 }
 
+void useMenu() { u8g2.setFont(pala_font_sans_r10); }
+void useMenuBold() { u8g2.setFont(pala_font_sans_b10); }
 void useBody() { useTransparentFace(u8g2, s_body); }
 void useBold() { useTransparentFace(u8g2, s_bold); }
 void useToast() { u8g2.setFont(s_toast); }

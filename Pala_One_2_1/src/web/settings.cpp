@@ -1,3 +1,4 @@
+#include "src/storage/navigation_profile.h"
 #include "src/lang/join.h"
 #include "src/web/settings.h"
 
@@ -282,6 +283,18 @@ static void handleSettings() {
   out += "</select><div class='actions'><button type='submit'>";
   out += htmlEscape(D_WEB_SAVE_SETTINGS_BUTTON);
   out += "</button></div></form></div>";
+
+  // Separate form: changing menu visibility must not rewrite reader preferences.
+  out += "<div class='card'><form method='POST' action='/settings'>";
+  out += "<input type='hidden' name='menuForm' value='1'><label>";
+  out += "<input type='checkbox' name='readingMenu' value='1'";
+  if (NavigationProfile::readingFocused())
+    out += " checked";
+  out += "> ";
+  out += htmlEscape(D_SETTINGS_READING_MENU);
+  out += "</label><button type='submit'>";
+  out += htmlEscape(D_WEB_SAVE_SETTINGS_BUTTON);
+  out += "</button></form></div>";
 
   // Device personalization card — separate form, no layout-remap interaction.
   out += Language::join({"<div class='card'><h2>", D_WEB_DEVICE_HEADING, "</h2>"}).c_str();
@@ -599,6 +612,9 @@ static bool validateRequiredActionsOnPost() {
 // decide whether to remap the reader's byte-offset cursor afterwards.
 static bool applySettingsForm() {
   bool layoutChanged = false;
+  if (server.hasArg("menuForm"))
+    NavigationProfile::setReadingFocused(server.hasArg("readingMenu") &&
+                                         server.arg("readingMenu") == "1");
 
   // Font::setBodySize / setLineGap / setFamily / Sleep::setIdleTimeout all
   // clamp + validate internally — no inline guards needed here.

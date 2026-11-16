@@ -1,88 +1,105 @@
+#include "src/lang/plural.h"
 #include "src/ui/screens/statistics_screen.h"
-
-#include "src/config.h"               // MARGIN_X, SCREEN_W, STATUS_H
+#include "src/config.h"
 #include "src/hal/display.h"
-#include "src/pure/streak_log.h"      // ReadingStreakFile field semantics
-#include "src/storage/statistics.h"
 #include "src/ui/font.h"
+#include "src/ui/pala_chrome.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
-#include "src/ui/reader_actions.h"
+#include "src/storage/navigation_profile.h"
+#include "src/ui/screens/settings_screen.h"
 
+namespace {
+void face(const uint8_t *font) {
+  u8g2.setFont(font);
+  u8g2.setFontMode(1);
+  u8g2.setForegroundColor(1);
+  u8g2.setBackgroundColor(0);
+}
+void text(const char *value, int x, int baseline) {
+  u8g2.setCursor(x, baseline);
+  u8g2.print(value);
+}
+// Fall back to compact, ungrouped digits rather than losing a counter's precision.
+void metric(int x, const char *label, uint64_t value) {
+  char number[24];
+  snprintf(number, sizeof(number), "%llu", (unsigned long long)value);
+  gfx.drawRoundRect(x, 92, 116, 25, 12, 1);
+  face(pala_font_sans_r08);
+  const int labelWidth = u8g2.getUTF8Width(label);
+  face(pala_font_sans_b08);
+  const int valueWidth = u8g2.getUTF8Width(number);
+  if (labelWidth + valueWidth + 4 <= 94) {
+    text(number, x + 105 - valueWidth, 108);
+    face(pala_font_sans_r08);
+    text(label, x + 11, 107);
+  } else {
+    face(pala_font_sans_r08);
+    PalaChrome::fitted(u8g2, label, x + 11, 102, 94);
+    face(pala_font_sans_b08);
+    if (u8g2.getUTF8Width(number) > 96)
+      face(pala_font_ui_tiny08);
+    text(number, x + 105 - u8g2.getUTF8Width(number), 113);
+  }
+}
+void smallMetric(const char *label, uint32_t value, int baseline) {
+  char number[16];
+  snprintf(number, sizeof(number), "%u", unsigned(value));
+  face(pala_font_sans_b10);
+  if (u8g2.getUTF8Width(number) > 43)
+    face(pala_font_ui_tiny08);
+  const int width = u8g2.getUTF8Width(number);
+  text(number, 233 - width, baseline);
+  face(pala_font_sans_r08);
+  PalaChrome::fitted(u8g2, label, 143, baseline - 1, 233 - width - 148);
+}
+} // namespace
 void StatisticsScreen::onEnter() {
+  nextScreen = nullptr;
+  snapshot_ = Statistics::snapshot();
   draw();
 }
-
 void StatisticsScreen::draw() {
-  StatisticsSnapshot s = Statistics::snapshot();
-
   prepareMenuFrame();
-  Font::useBody();
-  int ascent = u8g2.getFontAscent();
-  int lineH  = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 1;
-  int y = drawSectionHeader(D_STATS_HEADING);
-
-  char buf[64];
-
-  // Row 1 (bold): current streak.
-  snprintf(buf, sizeof(buf), D_STATS_STREAK_CURRENT_FMT, (unsigned)s.currentStreak);
-  Font::useBold();
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(buf);
-  Font::useBody();
-  y += lineH;
-
-  // Row 2: longest streak + total sessions on one line if it fits, else two.
-  snprintf(buf, sizeof(buf), D_STATS_STREAK_LONGEST_FMT,
-           (unsigned)s.longestStreak, (unsigned)s.totalSessions);
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(buf);
-  y += lineH;
-
-  // Row 3: lifetime pages.
-  snprintf(buf, sizeof(buf), D_STATS_LIFETIME_PAGES_FMT, (unsigned long long)s.pagesRead);
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(buf);
-  y += lineH;
-
-  // Row 4: lifetime button presses.
-  snprintf(buf, sizeof(buf), D_STATS_LIFETIME_PRESSES_FMT, (unsigned long long)s.buttonPresses);
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(buf);
-
-  // Bottom row: 30-day bitmap. Each cell = 1 streak day (a rolling day, not a
-  // calendar one — see src/pure/streak_log.h). Right-most cell = bit 0: the
-  // most recent logged day while the streak is live, or today once it has
-  // lapsed (Statistics::snapshot applies streakAsOf). A filled rect means
-  // "read that day"; an outlined rect means "not read". A lapse advances the
-  // head by the whole gap, so missed days show up as blanks. Sits in the
-  // bottom strip above the statusbar reserve.
-  static const int CELLS = 30;
-  const int cellW = 6;
-  const int cellH = 6;
-  const int totalW = CELLS * cellW;
-  const int x0 = (SCREEN_W - totalW) / 2;
-  const int yTop = SCREEN_H - STATUS_H - cellH - 1;
-
-  for (int i = 0; i < CELLS; i++) {
-    // i = 0 is the leftmost cell (oldest, 29 cells back); CELLS-1 is rightmost (bit 0).
-    int bit = (CELLS - 1) - i;
-    bool logged = (s.bitmap >> bit) & 1u;
-    int x = x0 + i * cellW;
-    if (logged) gfx.fillRect(x, yTop, cellW - 1, cellH, 1);
-    else        gfx.drawRect(x, yTop, cellW - 1, cellH, 1);
+  drawBackSectionHeader(D_STATS_HEADING);
+  gfx.drawRoundRect(5, 31, 240, 40, 12, 1);
+  gfx.drawFastVLine(132, 40, 24, 1);
+  char number[16];
+  snprintf(number, sizeof(number), "%u", unsigned(snapshot_.currentStreak));
+  face(pala_font_ui_digits29);
+  if (u8g2.getUTF8Width(number) > 35)
+    face(pala_font_sans_b14);
+  if (u8g2.getUTF8Width(number) > 35)
+    face(pala_font_sans_b10);
+  if (u8g2.getUTF8Width(number) <= 35) {
+    text(number, 17, 61);
+    face(pala_font_sans_r08);
+    PalaChrome::fitted(u8g2, Language::days(snapshot_.currentStreak), 58, 47, 66);
+    PalaChrome::fitted(u8g2, D_STATS_IN_ROW, 58, 59, 66);
+  } else {
+    face(pala_font_sans_b10);
+    text(number, 17, 47);
+    face(pala_font_sans_r08);
+    const String unit = String(Language::days(snapshot_.currentStreak)) + " " + D_STATS_IN_ROW;
+    PalaChrome::fitted(u8g2, unit.c_str(), 17, 63, 106);
   }
-
+  smallMetric(D_STATS_RECORD_LABEL, snapshot_.longestStreak, 47);
+  smallMetric(D_STATS_SESSIONS_LABEL, snapshot_.totalSessions, 62);
+  for (int day = 0; day < 30; ++day) {
+    const int x = 9 + day * 8;
+    if ((snapshot_.bitmap >> (29 - day)) & 1u)
+      gfx.fillCircle(x, 81, 3, 1);
+    else
+      gfx.drawCircle(x, 81, 3, 1);
+  }
+  metric(5, D_STATS_PAGE_LABEL, snapshot_.pagesRead);
+  metric(129, D_STATS_PRESSES, snapshot_.buttonPresses);
+  Font::useBody();
   display.update();
 }
-
-void StatisticsScreen::onButton(const ButtonEvent& e) {
-  if (Gestures::legacyControlsOn()){
-    if (e.any()) nextScreen = &g_libraryScreen;
-  }
-  else {
-    if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
-      nextScreen = &g_libraryScreen;
-    }
-  }
+void StatisticsScreen::onButton(const ButtonEvent &event) {
+  if (!event.any() || event.kind == ButtonEvent::Short)
+    return;
+  nextScreen = NavigationProfile::readingFocused() ? static_cast<Screen *>(&g_settingsScreen)
+                                                   : static_cast<Screen *>(&g_libraryScreen);
 }

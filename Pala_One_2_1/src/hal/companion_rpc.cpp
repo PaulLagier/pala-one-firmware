@@ -1,5 +1,6 @@
 #include "src/hal/companion_rpc.h"
 #include "src/hal/companion_language.h"
+#include "src/storage/navigation_profile.h"
 #include "src/hal/packed_file_stream.h"
 #ifdef PALA_COMPANION
 #include <ArduinoJson.h>
@@ -122,6 +123,8 @@ bool setSetting(const String &key, JsonVariant v) {
     Font::setFamily(f == "dys" ? Font::Family::OpenDyslexic : Font::Family::Helvetica);
     return true;
   }
+  if (key == "readingMenu" && v.is<bool>())
+    return NavigationProfile::setReadingFocused(v.as<bool>());
   if (key == "halfParagraphGaps" && v.is<bool>()) {
     Font::setHalfParagraphGaps(v.as<bool>());
     return true;
@@ -304,6 +307,7 @@ String companionRpcControl(const uint8_t *bytes, size_t length) {
       return fail(id, error);
   } else if (op == "settings.advanced.get") {
     auto o = out["settings"].to<JsonObject>();
+    o["readingMenu"] = NavigationProfile::readingFocused();
     o["halfParagraphGaps"] = Font::halfParagraphGapsEnabled();
     o["flipped"] = ScreenSettings::isScreenFlipped();
     o["statusbar"] = int(Statusbar::mode());

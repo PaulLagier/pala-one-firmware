@@ -36,6 +36,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_text_util.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hashing.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_paginator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_page_text_buffer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_nav.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_bookmark_label.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_bookmarks_codec.cpp
@@ -175,7 +176,8 @@ add_executable(companion_rpc_tests main.cpp native/companion_rpc/rpc.cpp
   native/companion_rpc/runtime_language.cpp ${FW_SRC}/lang/locale_core.cpp
   ${FW_SRC}/lang/locale_data.cpp ${FW_SRC}/pure/catalog_inflater.cpp
   ${FW_SRC}/pure/paths.cpp ${FW_SRC}/pure/hashing.cpp ${FW_SRC}/pure/bookmarks_codec.cpp
-  ${FW_SRC}/storage/book_metadata.cpp ${FW_SRC}/storage/click_timings.cpp)
+  ${FW_SRC}/storage/book_metadata.cpp ${FW_SRC}/storage/click_timings.cpp
+  ${FW_SRC}/storage/navigation_profile.cpp)
 target_compile_definitions(companion_rpc_tests PRIVATE LANG_EN PALA_COMPANION PALA_RUNTIME_LANG
   ARDUINOJSON_ENABLE_ARDUINO_STRING=1 PACKED_FIXTURES="${PACKED_FIXTURES}")
 target_include_directories(companion_rpc_tests PRIVATE
@@ -276,3 +278,13 @@ foreach(board IN ITEMS V1_1 V1_2)
     ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_BINARY_DIR})
   add_test(NAME wake_setup_${board} COMMAND wake_setup_${board})
 endforeach()
+
+add_executable(navigation_profile_tests main.cpp native/navigation_profile/main.cpp
+  ${FW_SRC}/storage/navigation_profile.cpp)
+target_compile_definitions(navigation_profile_tests PRIVATE LANG_EN)
+target_include_directories(navigation_profile_tests PRIVATE native/navigation_profile/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME navigation_profile_tests COMMAND navigation_profile_tests)
+
+add_test(NAME compressed_web_assets COMMAND ${Python3_EXECUTABLE} -B
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_web_assets.py)

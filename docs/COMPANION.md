@@ -116,3 +116,7 @@ queue overflow, exact binary transfers/hash failures, metadata format retention,
 UTF-8 cursors and settings compatibility. Firmware builds compile the real
 NimBLE/mbedTLS/miniz APIs for both board revisions. Host tests do not substitute
 for a physical radio/phone pairing test or claim V1.1 hardware coverage.
+
+### Reading-focused navigation
+
+`settings.set` accepts the boolean `readingMenu`; `settings.advanced.get` reports it. The compact `settings.get` response keeps its existing size budget. The reading view shows books and folders, bookmarks, connection and Device. Device contains statistics, updates, firmware information and a library return. Short presses move focus; a double press or hold opens the selected item. Reader gesture mappings remain unchanged. Turning the view off restores the complete custom library menu order and installed apps without changing their data. The web settings page provides a separate reading-menu form.

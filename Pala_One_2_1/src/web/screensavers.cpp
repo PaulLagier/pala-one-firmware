@@ -1,3 +1,4 @@
+#include "src/web/web_assets.h"
 #include "src/web/localized_scripts.h"
 #include "src/lang/join.h"
 #include "src/web/screensavers.h"
@@ -346,54 +347,6 @@ static void handleScreensaverUploadStream() {
 //  endpoint rewired to /screensavers/upload.
 // ============================================================================
 
-static const char kEditorStyle[] PROGMEM =
-    "<style>"
-    ".ss-wrap{display:grid;gap:12px}"
-    ".ss-card{border:1px solid var(--line-soft);border-radius:12px;padding:10px "
-    "11px;background:var(--stat-bg)}"
-    ".ss-grid{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}"
-    ".ss-grid .full{grid-column:1/-1}"
-    ".ss-grid > div{min-width:0}"
-    ".ss-adv{border:1px solid var(--line);border-radius:10px;padding:8px "
-    "10px;background:var(--card)}"
-    ".ss-adv summary{cursor:pointer;font-weight:600;list-style:none}"
-    ".ss-adv summary::-webkit-details-marker{display:none}"
-    ".ss-adv summary:after{content:'\\25BE';float:right;color:var(--muted)}"
-    ".ss-adv[open] summary:after{content:'\\25B4'}"
-    ".ss-adv-body{margin-top:10px}"
-    ".ss-label-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 "
-    "0 6px}"
-    ".ss-value{font-size:12px;color:var(--muted);white-space:nowrap}"
-    ".ss-preview-wrap{display:flex;flex-direction:column;gap:8px;min-height:240px}"
-    ".ss-preview-stage{flex:1;display:flex;align-items:center;justify-content:center;min-height:"
-    "140px}"
-    ".ss-preview-stage canvas{width:100%;max-width:520px;border:1px solid "
-    "var(--line);border-radius:10px;background:#fff;image-rendering:pixelated;touch-action:none}"
-    ".ss-meta,.ss-status{font-size:12px;color:var(--muted)}"
-    ".ss-slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}"
-    ".ss-slot{border:1px solid "
-    "var(--line-soft);border-radius:10px;padding:8px;background:var(--stat-bg);display:flex;flex-"
-    "direction:column;gap:6px;align-items:center}"
-    ".ss-slot-actions{display:flex;gap:8px;align-items:center;justify-content:center;width:100%;"
-    "margin-top:4px}"
-    ".btn-icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:"
-    "36px;padding:0;margin:0;border:1px solid "
-    "var(--line);border-radius:10px;background:var(--card);color:inherit;text-decoration:none;"
-    "cursor:pointer;transition:background .2s ease}"
-    ".btn-icon "
-    "svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;"
-    "stroke-linejoin:round}"
-    ".btn-icon:hover{background:var(--line-soft); }"
-    ".btn-icon.danger{color:var(--danger);border-color:var(--danger)}"
-    ".ss-slot img{width:100%;height:auto;border:1px solid "
-    "var(--line);border-radius:6px;background:#fff;image-rendering:pixelated}"
-    ".ss-slot "
-    ".ss-slot-empty{width:100%;aspect-ratio:250/"
-    "122;display:flex;align-items:center;justify-content:center;border:1px dashed "
-    "var(--line);border-radius:6px;color:var(--muted);font-size:12px}"
-    "@media(max-width:560px){.ss-grid{grid-template-columns:1fr}}"
-    "</style>";
-
 static const char kIconDownload[] PROGMEM = "<svg viewBox='0 0 24 24' aria-hidden='true'><path "
                                             "d='M12 4v10m0 0l4-4m-4 4l-4-4M5 20h14'/></svg>";
 static const char kIconUpload[] PROGMEM = "<svg viewBox='0 0 24 24' aria-hidden='true'><path "
@@ -492,7 +445,7 @@ static String slotGridHtml() {
 static String editorCardHtml(int nextFreeSlot) {
   String out;
   out.reserve(3500);
-  out += FPSTR(kEditorStyle);
+  WebAssets::appendStyle(out, WebAssets::Id::EditorCss);
   out +=
       Language::join({"<div class='card'><h2>",
                       D_WEB_SS_EDITOR_HEADING,

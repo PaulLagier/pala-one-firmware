@@ -723,3 +723,43 @@
 #define D_BLE_EXIT_STANDARD "Home action: leave."
 
 #endif  // PALA_LANG_EN_H
+
+// Additional literals for host adapters; firmware uses the runtime catalogs.
+#define D_ABOUT_ACTION_BOOKMARK "Bookmark"
+#define D_ABOUT_ACTION_LOCK "Lock"
+#define D_ABOUT_ACTION_MENU "Menu"
+#define D_ABOUT_ACTION_NONE "None"
+#define D_ABOUT_CLICK_HOLD_PREFIX "Click + hold: "
+#define D_ABOUT_CONTROLS "Controls"
+#define D_ABOUT_FIRMWARE "Firmware"
+#define D_ABOUT_GESTURE_HOME "3x home"
+#define D_ABOUT_HOLD_PREFIX "Hold: "
+#define D_ABOUT_LONG_HOLD_PREFIX "Long hold: "
+#define D_ABOUT_MENU_NEXT "1x: next item"
+#define D_ABOUT_MENU_OPEN "Hold: select"
+#define D_ABOUT_READER_NEXT "1x: next page"
+#define D_ABOUT_READER_PREVIOUS "2x: previous page"
+#define D_READER_MENU_BOOKMARK "Add bookmark"
+#define D_READER_MENU_CONTINUE "Continue reading · 2x"
+
+#define D_STATS_DAY "day"
+
+#define D_STATS_DAYS "days"
+
+#define D_STATS_DAYS_FEW "days"
+
+#define D_STATS_IN_ROW "in a row"
+
+#define D_STATS_PAGE_LABEL "Pages"
+
+#define D_STATS_PRESSES "Button presses"
+
+#define D_STATS_RECORD_LABEL "Best"
+
+#define D_STATS_SESSIONS_LABEL "Sessions"
+
+#define D_WEB_HOME_BOOKS_FEW " books"
+
+#define D_WEB_HOME_BOOKS_ONE " book"
+
+#define D_SETTINGS_READING_MENU "Reading-focused menus"

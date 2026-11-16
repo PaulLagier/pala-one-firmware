@@ -47,7 +47,7 @@ class GeneratorTests(unittest.TestCase):
         result = self.generate()
         self.assertEqual(result.returncode, 0, result.stderr)
         manifest = json.loads((self.output / 'locale-manifest.json').read_text())
-        self.assertEqual(manifest['keyCount'], 521)
+        self.assertEqual(manifest['keyCount'], len(json.loads((self.catalogs/'en.json').read_text())))
         self.assertEqual(len(manifest['implementedCatalogs']), 11)
         self.assertLess(manifest['interfacePoolCount'], manifest['poolsPerCatalog'])
         self.assertLessEqual(manifest['largestAllocation'], 2048)

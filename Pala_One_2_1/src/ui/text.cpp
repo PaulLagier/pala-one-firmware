@@ -10,6 +10,10 @@
 // so the bionic 1-px-per-split-word adjustment is folded into the same width
 // budget the paginator wraps against — without bionic this collapses to a
 // plain getUTF8Width under the Body face.
+// Main-thread staging avoids repeating an already validated page layout.
+// Static storage keeps the bounded 4 KiB buffer off the Arduino task stack.
+static PageTextBuffer s_pageText;
+
 static int bodyMeasure(const char *s) { return Font::measureBionicLine(s); }
 
 // ============================================================================
@@ -26,7 +30,7 @@ uint32_t drawPageAt(File &f, uint32_t startPos) {
 
 uint32_t drawPageAt(IReadStream &stream, uint32_t startPos) {
   LayoutMetrics m;
-  prepareBodyPage(stream, startPos, m);
+  const uint32_t next = prepareBodyPage(stream, startPos, m, &s_pageText);
   Font::useBody();
 
   int cursorY = TOP_PAD + m.ascent;
@@ -42,6 +46,14 @@ uint32_t drawPageAt(IReadStream &stream, uint32_t startPos) {
     cursorY += m.lineH;
   };
 
+  if (s_pageText.valid) {
+    for (size_t i = 0; i < s_pageText.count; ++i) {
+      const char *line = s_pageText.line(i);
+      onLine(line, strlen(line));
+    }
+    return next;
+  }
+  // A pathological page must fall back to direct pagination, never truncation.
   return paginatePage(stream, startPos, m, bodyMeasure, onLine);
 }
 

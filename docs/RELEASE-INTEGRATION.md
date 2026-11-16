@@ -45,3 +45,5 @@ covered by native checks for both boards, including cold/warm boot, locked and
 unlocked states, library/reader, retained first input and the failed-mount guard.
 The complete V1.2 image builds within the existing OTA slot. This checkpoint is
 not a release and does not represent a new device flash.
+
+The current integration also stages converged page text in a bounded 4 KiB buffer, with a complete direct-render fallback when it fills. Real-font tests compare staged and direct pixels. Reading-focused menus are opt-in through the web and typed companion settings; the original custom order and apps remain intact. Firmware/help, statistics and update layouts use fixed menu typography and bounded cards. Static browser stylesheets are served as deterministic gzip assets, preserving their decoded bytes and reducing embedded payload size.
