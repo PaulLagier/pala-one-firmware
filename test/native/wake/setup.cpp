@@ -47,6 +47,9 @@ namespace Lock {
 void loadSettings() {}
 bool isLocked() { return locked; }
 } // namespace Lock
+namespace Gestures {
+void loadSettings() {}
+} // namespace Gestures
 namespace Sleep {
 void loadSettings() {}
 bool noScreensaver() { return ::noScreensaver; }

@@ -189,6 +189,7 @@ void setup() {
   Language::loadSettings();
   Sleep::loadSettings();
   Lock::loadSettings();
+  Gestures::loadSettings(); // Recovery must honor the same saved unlock gesture.
 
   const bool keptReaderImage = wokeFromSleep && Sleep::noScreensaver() &&
       prefs.getString("wake_path", "").length() > 0;
@@ -225,7 +226,6 @@ void setup() {
   Statusbar::loadSettings();
   ClickTimings::loadSettings();
   Icons::loadSettings();
-  Gestures::loadSettings();
   HeaderTitle::loadSettings();
   ScreenSettings::loadSettings();
   LibraryMenuOrder::loadSettings();

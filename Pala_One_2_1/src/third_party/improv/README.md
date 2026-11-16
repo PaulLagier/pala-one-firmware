@@ -19,6 +19,8 @@ Changes from that commit:
 - Make the stream constructor explicit and use equivalent standard checksum sums
   to satisfy the project static-analysis rules.
 - Use portable C++17 aggregate initialization and bounded IPv4 formatting.
+- Keep setup authorized after a failed Wi-Fi association and report
+  ERROR_UNABLE_TO_CONNECT instead of claiming the radio is stopped.
 
 Pala vendor extension: RPC `0x81` has exactly two payload bytes containing a
 lowercase ISO language code (for example `de`). Standard framing and checksums

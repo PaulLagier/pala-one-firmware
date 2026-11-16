@@ -7,6 +7,7 @@ struct IPAddress {
 };
 struct TestWiFi {
   bool connected = false;
+  bool failConnection = false;
   unsigned beginCalls = 0, radioCalls = 0;
   int status() {
     ++radioCalls;
@@ -23,7 +24,7 @@ struct TestWiFi {
   void begin(const char *, const char *) {
     ++radioCalls;
     ++beginCalls;
-    connected = true;
+    connected = !failConnection;
   }
   int scanNetworks() {
     ++radioCalls;

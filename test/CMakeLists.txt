@@ -239,7 +239,8 @@ add_executable(web_script_probe native/font_catalog/web_scripts.cpp
   ${FW_SRC}/lang/locale_core.cpp ${FW_SRC}/lang/locale_data.cpp
   ${FW_SRC}/pure/catalog_inflater.cpp ${FW_SRC}/pure/web_script.cpp
   ${FW_SRC}/web/localized_scripts.cpp)
-target_compile_definitions(web_script_probe PRIVATE LANG_EN PALA_RUNTIME_LANG)
+target_compile_definitions(web_script_probe PRIVATE LANG_EN PALA_RUNTIME_LANG
+  WEB_EDITOR_ASSET="${FW_SRC}/web/assets/editor.js")
 target_include_directories(web_script_probe PRIVATE ${CMAKE_SOURCE_DIR}/../Pala_One_2_1)
 add_test(NAME localized_web_scripts COMMAND ${Python3_EXECUTABLE} -B
   ${CMAKE_CURRENT_SOURCE_DIR}/test_web_scripts.py $<TARGET_FILE:web_script_probe> ${NODE_EXECUTABLE})
@@ -304,3 +305,13 @@ add_test(NAME release_packaging COMMAND ${Python3_EXECUTABLE} -B
 
 add_test(NAME browser_read_search COMMAND ${NODE_EXECUTABLE}
   ${CMAKE_CURRENT_SOURCE_DIR}/test_read_search.mjs $<TARGET_FILE:web_script_probe>)
+
+# Persisted custom lock bindings use the production settings and lock modules.
+add_executable(lock_gesture_tests main.cpp native/lock/main.cpp
+  ${FW_SRC}/ui/lock.cpp ${FW_SRC}/ui/reader_actions.cpp)
+target_include_directories(lock_gesture_tests PRIVATE native/lock/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME lock_gesture_tests COMMAND lock_gesture_tests)
+
+add_test(NAME browser_image_editor COMMAND ${NODE_EXECUTABLE}
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_editor.mjs $<TARGET_FILE:web_script_probe>)

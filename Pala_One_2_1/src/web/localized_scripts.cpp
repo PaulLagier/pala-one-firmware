@@ -1,6 +1,7 @@
 #include "src/web/localized_scripts.h"
 #include "src/lang/lang.h"
 #include "src/pure/web_script.h"
+#include "src/web/web_assets.h"
 
 // Retain main #128 typography folding and UTF-8 offsets with runtime-localized labels.
 void appendReadScript(String &out) {
@@ -105,119 +106,30 @@ raw=t;cacheN=null;render(false);stat.textContent=palaFmt()PALA";
 }
 
 void appendEditorScript(String &out) {
-  out +=
-      "<script>(function(){if(window.__palaSleepEditorInit)return;window.__palaSleepEditorInit=1;"
-      "var W=250,H=122,ROW=32,TOTAL=H*ROW;var fi=document.getElementById('ssEditFile');var "
-      "tol=document.getElementById('ssTolerance');var "
-      "tl=document.getElementById('ssToleranceLabel');var "
-      "zoom=document.getElementById('ssZoom');var "
-      "zl=document.getElementById('ssZoomLabel');var "
-      "panX=document.getElementById('ssPanX');var panY=document.getElementById('ssPanY');var "
-      "pxl=document.getElementById('ssPanXLabel');var "
-      "pyl=document.getElementById('ssPanYLabel');var "
-      "inv=document.getElementById('ssInvert');var canvas=document.getElementById('ssPreview');var "
-      "meta=document.getElementById('ssMeta');var "
-      "status=document.getElementById('ssUploadStatus');var "
-      "rb=document.getElementById('ssResetBtn');var "
-      "ub=document.getElementById('ssUploadBtn');var "
-      "dstSel=document.getElementById('ssDestination');if(!fi||!tol||!zoom||!panX||!panY||!"
-      "inv||!canvas||!meta||!status||!rb||!ub)return;var "
-      "ctx=canvas.getContext('2d',{willReadFrequently:true});var "
-      "work=document.createElement('canvas');work.width=W;work.height=H;var "
-      "wc=work.getContext('2d',{willReadFrequently:true});var pic=null;var "
-      "dragging=false,dsx=0,dsy=0,dpx=0,dpy=0;var pointers={};var "
-      "pinch={active:false,sd:0,sz:100,sx:0,sy:0,mx:0,my:"
-      "0};function clamp(v,a,b){return v<a?a:(v>b?b:v)}function "
-      "thr(o){o=clamp(parseInt(o||0,10)||0,-100,100);return "
-      "clamp(128+Math.round(o*(255-128)/100),0,255)}function labels(){var "
-      "t=parseInt(tol.value,10)||0;tl.textContent=(t>0?'+':'')+t+'%';zl.textContent=zoom."
-      "value+'%';pxl.textContent=panX.value+";
+  out += "<script>window.palaEditorLabels=[";
   out += webJsString(D_WEB_SS_JS_PX_SUFFIX);
-  out += ";pyl.textContent=panY.value+";
-  out += webJsString(D_WEB_SS_JS_PX_SUFFIX);
-  out += ";}function "
-         "fit(){if(!pic)return;zoom.value='100';panX.value='0';panY.value='0';labels();"
-         "render();}function "
-         "drawWork(){wc.fillStyle='#fff';wc.fillRect(0,0,W,H);if(!pic)return;"
-         "var base=Math.min(W/pic.width,H/pic.height);var "
-         "s=base*((parseInt(zoom.value,10)||100)/100);if(!isFinite(s)||s<=0)s=base;var "
-         "dw=Math.max(1,Math.round(pic.width*s));var "
-         "dh=Math.max(1,Math.round(pic.height*s));var "
-         "x=((W-dw)/2)+(parseInt(panX.value,10)||0);var "
-         "y=((H-dh)/"
-         "2)+(parseInt(panY.value,10)||0);wc.drawImage(pic,x,y,dw,dh);}function "
-         "toOneBit(){var "
-         "img=wc.getImageData(0,0,W,H),d=img.data,t=thr(tol.value),iv=!!inv.checked;for(var "
-         "i=0;i<d.length;i+=4){var L=((d[i]*299)+(d[i+1]*587)+(d[i+2]*114))/1000;var "
-         "w=(L>=t);if(iv)w=!w;var "
-         "c=w?255:0;d[i]=c;d[i+1]=c;d[i+2]=c;d[i+3]=255;}ctx.putImageData(img,0,0);return "
-         "img;}function pack(img){var d=img.data,o=new Uint8Array(TOTAL);for(var "
-         "y=0;y<H;y++)for(var x=0;x<W;x++){var i=(y*W+x)*4;if(d[i]>=128){var "
-         "b=(y*ROW)+(x>>3);o[b]=o[b]|(1<<(x&7));}}return o;}function "
-         "render(){labels();drawWork();var i=toOneBit();if(!pic){meta.textContent=";
+  out += ",";
   out += webJsString(D_WEB_SS_NO_IMAGE);
-  out += ";return null;}meta.textContent=palaFmt(";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_PREVIEW_FMT);
-  out += ",W,H,thr(tol.value),TOTAL);return i;}function pts(){var a=[];for(var k in "
-         "pointers){a.push(pointers[k]);}return a;}function dist(a,b){var "
-         "dx=a.x-b.x,dy=a.y-b.y;return Math.sqrt(dx*dx+dy*dy);}function "
-         "mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2};}function pinchStart(){var "
-         "p=pts();if(p.length===2){pinch.active=true;pinch.sd=Math.max(8,dist(p[0],p[1]));"
-         "pinch.sz=parseInt(zoom.value,10)||100;pinch.sx=parseInt(panX.value,10)||0;"
-         "pinch.sy=parseInt(panY.value,10)||0;var "
-         "m=mid(p[0],p[1]);pinch.mx=m.x;pinch.my=m.y;}else "
-         "pinch.active=false;}fi.addEventListener('change',function(){var "
-         "f=fi.files&&fi.files[0];if(!f){pic=null;render();return;}status."
-         "textContent='';var r=new FileReader();r.onload=function(){var im=new "
-         "Image();im.onload=function(){pic=im;fit();};im.onerror=function(){status."
-         "textContent=";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_DECODE_FAILED);
-  out += ";};im.src=r.result;};r.onerror=function(){status.textContent=";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_READ_FAILED);
-  out +=
-      ";};r.readAsDataURL(f);});[tol,zoom,panX,panY,inv].forEach(function(el){el.addEventListener('"
-      "input',render);el.addEventListener('change',render);});rb.addEventListener('click',"
-      "function(){fit();status.textContent='';});canvas.addEventListener('pointerdown',function(e){"
-      "pointers[e.pointerId]={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);var "
-      "p=pts();if(p.length===1){dragging=true;dsx=e.clientX;dsy=e.clientY;dpx="
-      "parseInt(panX.value,10)||0;dpy=parseInt(panY.value,10)||0;}pinchStart();});canvas."
-      "addEventListener('pointermove',function(e){if(!pointers[e.pointerId])return;pointers[e."
-      "pointerId].x=e.clientX;pointers[e.pointerId].y=e.clientY;var "
-      "p=pts();if(pinch.active&&p.length===2){var "
-      "d=Math.max(8,dist(p[0],p[1])),r=d/"
-      "pinch.sd;zoom.value=String(clamp(Math.round(pinch.sz*r),10,400));var "
-      "m=mid(p[0],p[1]);panX.value=String(clamp(pinch.sx+Math.round(m.x-pinch.mx),-"
-      "250,250));panY.value=String(clamp(pinch.sy+Math.round(m.y-pinch.my),-180,180))"
-      ";render();return;}if(dragging&&p.length===1){panX.value=String(clamp(dpx+Math.round("
-      "e.clientX-dsx),-250,250));panY.value=String(clamp(dpy+Math.round(e.clientY-"
-      "dsy),-180,180));render();}});function endP(e){delete pointers[e.pointerId];var "
-      "p=pts();if(p.length===1){dragging=true;dsx=p[0].x;dsy=p[0].y;dpx="
-      "parseInt(panX.value,10)||0;dpy=parseInt(panY.value,10)||0;}else "
-      "dragging=false;pinchStart();}canvas.addEventListener('pointerup',endP);canvas."
-      "addEventListener('pointercancel',endP);canvas.addEventListener('wheel',function(e){if(!"
-      "pic)return;e.preventDefault();var "
-      "z=parseInt(zoom.value,10)||100,s=Math.max(2,Math.round(Math.abs(e.deltaY)/"
-      "25));zoom.value=String(clamp(z-(e.deltaY>0?s:-s),10,400));render();},{passive:false});"
-      "ub.addEventListener('click',function(){if(!pic){alert(";
+  out += ",";
   out += webJsString(D_WEB_SS_ERR_CHOOSE_IMAGE);
-  out += ");return;}var img=render();if(!img){status.textContent=";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_PREVIEW_NOT_READY);
-  out += ";return;}var bytes=pack(img);var fd=new FormData();fd.append('file',new "
-         "Blob([bytes],{type:'application/octet-stream'}),'sleep-editor.bin');var "
-         "url='/screensavers/upload';var "
-         "sel=dstSel?dstSel.value:'auto';if(sel==='single')url+='?single=1';else "
-         "if(sel!=='auto')url+='?slot='+encodeURIComponent(sel);status.textContent=";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_UPLOADING);
-  out += ";ub.disabled=true;fetch(url,{method:'POST',body:fd}).then(function(r){if(!r.ok)"
-         "return r.text().then(function(t){throw new Error(t||palaFmt(";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_HTTP_FMT);
-  out += ",r.status));});status.textContent=";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_UPLOAD_COMPLETE);
-  out += ";setTimeout(function(){window.location.href='/"
-         "screensavers';},600);}).catch(function(e){status.textContent=palaFmt(";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_UPLOAD_FAIL_FMT);
-  out += ",(e&&e.message?e.message:";
+  out += ",";
   out += webJsString(D_WEB_SS_JS_ERROR);
-  out +=
-      "));}).finally(function(){ub.disabled=false;});});labels();render();})();</script>";
+  out += "];</script>";
+  WebAssets::appendScript(out, WebAssets::Id::EditorJs);
 }

@@ -47,6 +47,8 @@ bounded page window rather than stopping at 10000 pages. Saved reading positions
 remain canonical byte offsets. Each release includes board-specific downloads,
 English installation instructions, source provenance and SHA-256 checksums.
 
+Browser book uploads reject an existing destination with HTTP 409, including collisions after filename sanitization or shortening. Rename the incoming file or explicitly remove the old book before uploading a replacement. A rejected upload preserves the existing book, progress, bookmarks and page cache.
+
 ## Connect the Pala app
 
 In **Upload**, choose **Bluetooth / app** and pair using the six-digit PIN
@@ -69,7 +71,7 @@ To initialize storage, select **Erase storage**, switch from the default
 **Cancel** to **Continue**, then on the final warning switch from **Cancel** to
 **Erase storage** and hold the button. A double click cannot perform the final
 erase; a triple click returns to the safe menu. Release the button between
-steps. If locked, hold to unlock before using recovery.
+steps. If locked, use the configured unlock gesture before using recovery.
 
 Erasing deletes all books and files in storage, while device settings in NVS
 are kept. If files matter, try again or reflash compatible firmware before
@@ -211,7 +213,7 @@ Locking is a remappable button action. In the web UI under **Settings → Button
 - **Very-long press** (≥ 2 s) → Lock device
 - **Click-hold** → Menu
 
-So by default you lock with a very-long press. Unlocking is intentionally **permissive**: *any* long, very-long, or click-hold press unlocks the device and shows an "Unlocked" toast — after a deep-sleep wake the firmware can't reconstruct a specific chord, so it accepts any hold gesture rather than risk locking you out. While locked, the sleep screen shows a small padlock badge in the top-right corner.
+With custom controls enabled, unlock using a gesture assigned to **Lock device**. Unrelated gestures do not unlock the reader. Legacy controls, and automatic locking with no assigned lock gesture, retain the long/very-long/click-hold fallback. Saved bindings are loaded before storage recovery, and wake input preserves click-hold sequences. While locked, the sleep screen shows a small padlock badge in the top-right corner.
 
 ## Apps
 
