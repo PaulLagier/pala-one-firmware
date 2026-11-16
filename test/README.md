@@ -15,11 +15,14 @@ ESP32 toolchain.
 ## Requirements
 
 - **CMake 3.13+**
+- **Python 3.8+** and the **zlib development library** for packed-book tests.
 - A **C++17 compiler** — MSVC, GCC, or Clang. CMake picks one automatically.
 
 ### Installing the prerequisites
 
 **Windows**
+
+Install Python 3 and zlib (for example `vcpkg install zlib`, then supply the vcpkg CMake toolchain).
 
 - Install [Visual Studio 2019 or newer](https://visualstudio.microsoft.com/downloads/) with the *"Desktop development with C++"* workload (this gets you MSVC + the Windows SDK), **or** install [Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) if you don't want the full IDE.
 - Install CMake from [cmake.org/download](https://cmake.org/download/), or via `winget install Kitware.CMake` / `choco install cmake`. Make sure it's on `PATH`.
@@ -29,13 +32,13 @@ ESP32 toolchain.
 
 ```bash
 # Debian / Ubuntu
-sudo apt install build-essential cmake
+sudo apt install build-essential cmake python3 zlib1g-dev
 
 # Fedora
-sudo dnf install gcc-c++ cmake make
+sudo dnf install gcc-c++ cmake make python3 zlib-devel
 
 # Arch
-sudo pacman -S base-devel cmake
+sudo pacman -S base-devel cmake python zlib
 ```
 
 **macOS**
@@ -126,3 +129,20 @@ cmake -S test -B test/build-sanitized -DCMAKE_CXX_FLAGS="-fsanitize=address,unde
 cmake --build test/build-sanitized
 ctest --test-dir test/build-sanitized --output-on-failure
 ```
+
+## Packed books
+
+`packed_book_tests` exercises the production container stream with an independent
+system-zlib callback: compressed/raw blocks, all header truncations, corrupted
+metadata/payload/CRC, exact decoded/input sizes, the 2 MiB boundary, random seeks,
+UTF-8 across block boundaries and identical pagination versus plain text. Python
+encoder fixtures are consumed by the C++ stream. `pack_book_encoder` checks the
+CLI separately, including refusal to overwrite the input or an existing output.
+Firmware builds compile the SDK miniz callback; host zlib tests do not claim to
+exercise the ESP32 ROM decoder or physical display.
+
+`book_upload_tests` compiles the production multipart upload handler and book
+HAL against an in-memory filesystem/server and a host zlib adapter. It checks
+binary chunk boundaries, replacement only after full validation, cleanup on
+abort/reset, failed writes/rename, low space, cache invalidation and logical
+size/seek behavior. The adapter is not a power-loss test of LittleFS.

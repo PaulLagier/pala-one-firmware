@@ -76,12 +76,15 @@ bool OpenBook::open(const String& path) {
     return false;
   }
   file_ = f;
+  stream_.reset(new(std::nothrow) BookReadStream(file_));
+  if (!stream_ || !stream_->valid()) { close(); return false; }
   path_ = path;
   key_  = prefKeyForBook(path);
   return true;
 }
 
 void OpenBook::close() {
+  stream_.reset();
   if (file_) file_.close();
   path_ = "";
   key_  = "";
@@ -152,7 +155,7 @@ static bool tryExtendPageTable() {
   if (g_bookview.pages.count >= MAX_PAGES) return false;
 
   uint32_t start = g_bookview.pages.offsets[g_bookview.pages.count - 1];
-  uint32_t next = nextPageOffset(g_bookview.book.file(), start);
+  uint32_t next = nextPageOffset(g_bookview.book.stream(), start);
   return appendPageOffset(next);
 }
 
@@ -388,7 +391,7 @@ void renderCurrentPage() {
   beginPageCanvas();
   Font::useBody();
 
-  uint32_t nextOff = drawPageAt(g_bookview.book.file(), start);
+  uint32_t nextOff = drawPageAt(g_bookview.book.stream(), start);
   // Record what render learned about the next page so a later advance
   // doesn't re-paginate this same page. Only meaningful when the cursor is
   // at the table's current last page; appendPageOffset is a no-op otherwise.

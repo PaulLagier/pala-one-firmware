@@ -17,7 +17,7 @@
 // ============================================================================
 //  /               — landing page (storage card + upload form)
 //  /files          — file/folder browser
-//  /download-book  — GET: stream book .txt as attachment (?id=N)
+//  /download-book  — GET: download original .txt/.pbt bytes as attachment (?id=N)
 //  /del            — POST: delete book
 //  /mkdir          — POST: create folder
 //  /rmdir          — POST: delete (empty) folder
@@ -47,7 +47,7 @@ static void handleDownloadBook() {
   server.setContentLength(f.size());
   server.sendHeader("Content-Disposition",
                     "attachment; filename=\"" + filename + "\"");
-  server.send(200, "text/plain; charset=utf-8", "");
+  server.send(200, isPackedBook(f) ? "application/octet-stream" : "text/plain; charset=utf-8", "");
 
   WiFiClient client = server.client();
   uint8_t buf[512];
@@ -86,7 +86,7 @@ static void handleRoot() {
     "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
     "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
     "<form method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
-    "<input type='file' name='file' accept='.txt,text/plain' required>"
+    "<input type='file' name='file' accept='.txt,.pbt,text/plain,application/octet-stream' required>"
     "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button><a class='btn secondary' href='/files'>" D_WEB_MANAGE_FILES_BUTTON "</a></div>"
     "</form></div>";
 

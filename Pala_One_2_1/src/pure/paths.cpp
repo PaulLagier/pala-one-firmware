@@ -2,7 +2,7 @@
 #include "paths.h"
 
 String stripTxtExt(const String& s) {
-  return s.endsWith(".txt") ? s.substring(0, s.length() - 4) : s;
+  return (s.endsWith(".txt") || s.endsWith(".pbt")) ? s.substring(0, s.length() - 4) : s;
 }
 
 String lastPathComponent(const String& path) {
@@ -101,14 +101,15 @@ String sanitizeUploadedFilename(String fname) {
   clean.replace("..", "");
   while (clean.startsWith(".")) clean.remove(0, 1);
   if (clean.length() == 0) clean = "book.txt";
-  if (!clean.endsWith(".txt")) clean += ".txt";
+  const bool packed = clean.endsWith(".pbt");
+  if (!clean.endsWith(".txt") && !packed) clean += ".txt";
   if (clean.length() >= MAX_UPLOAD_FILE_NAME) {
-    // clean always ends in ".txt" here; keep at most MAX_UPLOAD_FILE_NAME - 5
+    // Both supported extensions have four bytes; keep at most MAX_UPLOAD_FILE_NAME - 5
     // base bytes so "/books/" + name fits BookInfo::path[MAX_FILE_NAME].
     int cut = MAX_UPLOAD_FILE_NAME - 5;
     // Don't split a multi-byte UTF-8 character: back off continuation bytes.
     while (cut > 0 && ((uint8_t)clean[cut] & 0xC0) == 0x80) cut--;
-    clean = clean.substring(0, cut) + ".txt";
+    clean = clean.substring(0, cut) + (packed ? ".pbt" : ".txt");
   }
   return clean;
 }

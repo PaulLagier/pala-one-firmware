@@ -111,3 +111,33 @@ target_include_directories(improv_serial_tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/native/improv_serial/stubs
   ${FW_SRC}/third_party/improv ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME improv_serial_tests COMMAND improv_serial_tests)
+
+# A system zlib decoder independently checks PBT containers under host sanitizers.
+# Firmware uses the pinned ESP32 SDK's bounded miniz implementation instead.
+find_package(ZLIB REQUIRED)
+add_executable(packed_book_tests main.cpp test_packed_book.cpp
+  ${FW_SRC}/pure/paginator.cpp ${FW_SRC}/pure/text_util.cpp)
+target_include_directories(packed_book_tests PRIVATE
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(packed_book_tests PRIVATE ZLIB::ZLIB)
+add_test(NAME packed_book_tests COMMAND packed_book_tests)
+
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(PACKED_FIXTURES ${CMAKE_CURRENT_BINARY_DIR}/packed-fixtures)
+add_custom_command(OUTPUT ${PACKED_FIXTURES}/book.pbt ${PACKED_FIXTURES}/raw.pbt ${PACKED_FIXTURES}/book.txt
+  COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/test_pack_book.py --fixtures ${PACKED_FIXTURES}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test_pack_book.py ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/pack_book.py)
+add_custom_target(packed_fixtures DEPENDS ${PACKED_FIXTURES}/book.pbt ${PACKED_FIXTURES}/raw.pbt ${PACKED_FIXTURES}/book.txt)
+add_dependencies(packed_book_tests packed_fixtures)
+target_compile_definitions(packed_book_tests PRIVATE PACKED_FIXTURES="${PACKED_FIXTURES}")
+add_test(NAME pack_book_encoder COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/test_pack_book.py)
+
+add_executable(book_upload_tests main.cpp native/book_upload/upload.cpp
+  ${FW_SRC}/web/upload.cpp ${FW_SRC}/pure/text_util.cpp ${FW_SRC}/pure/paths.cpp)
+target_compile_definitions(book_upload_tests PRIVATE LANG_EN PACKED_FIXTURES="${PACKED_FIXTURES}")
+target_include_directories(book_upload_tests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/book_upload/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(book_upload_tests PRIVATE ZLIB::ZLIB)
+add_dependencies(book_upload_tests packed_fixtures)
+add_test(NAME book_upload_tests COMMAND book_upload_tests)

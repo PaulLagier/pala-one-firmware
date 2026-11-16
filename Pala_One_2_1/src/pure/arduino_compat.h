@@ -29,6 +29,7 @@ public:
   String() = default;
   String(const char* s) : s_(s ? s : "") {}
   String(const std::string& s) : s_(s) {}
+  String(const char* s, unsigned int length) : s_(s ? std::string(s, length) : std::string()) {}
   String(const String&) = default;
   String(String&&) noexcept = default;
   String& operator=(const String&) = default;

@@ -61,7 +61,7 @@ static void scanBooksRecursive(const String& absDir, const String& relDir) {
       String childRel = relDir.length() ? (relDir + "/" + leaf) : leaf;
       addFolderIfMissing(childRel);
       scanBooksRecursive(absPath, childRel);
-    } else if (g_library.bookCount < MAX_BOOKS && absPath.endsWith(".txt")) {
+    } else if (g_library.bookCount < MAX_BOOKS && (absPath.endsWith(".txt") || absPath.endsWith(".pbt"))) {
       String relFile = relDir.length() ? (relDir + "/" + leaf) : leaf;
       BookInfo& b = g_library.books[g_library.bookCount];
 

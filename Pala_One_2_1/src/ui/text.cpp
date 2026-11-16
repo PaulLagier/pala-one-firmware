@@ -21,7 +21,11 @@ static int bodyMeasure(const char* s) {
 //  offset where the next page begins.
 // ============================================================================
 uint32_t drawPageAt(File& f, uint32_t startPos) {
-  BufferedFileReadStream stream(f);
+  BookReadStream stream(f);
+  return drawPageAt(stream, startPos);
+}
+
+uint32_t drawPageAt(IReadStream& stream, uint32_t startPos) {
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
 
@@ -39,7 +43,7 @@ uint32_t drawPageAt(File& f, uint32_t startPos) {
 }
 
 uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
-  BufferedFileReadStream stream(f);
+  BookReadStream stream(f);
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
 
@@ -58,7 +62,11 @@ uint32_t extractPageText(File& f, uint32_t startPos, String& out) {
 }
 
 uint32_t nextPageOffset(File& f, uint32_t startPos) {
-  BufferedFileReadStream stream(f);
+  BookReadStream stream(f);
+  return nextPageOffset(stream, startPos);
+}
+
+uint32_t nextPageOffset(IReadStream& stream, uint32_t startPos) {
   const LayoutMetrics& m = Font::bodyLayout();
   Font::useBody();
   return paginatePage(stream, startPos, m, bodyMeasure, nullptr);
@@ -74,13 +82,14 @@ uint32_t pageOffsetForPage(File& f, const String& path, int page) {
   // The active reader keeps this file fresh for books it visits; cross-book
   // lookups (web bookmark resolve, page-text export) ride along.
   uint32_t off = 0;
-  int startPage = loadOffsetForPageFromDisk(path, f.size(),
+  BookReadStream stream(f);
+  int startPage = loadOffsetForPageFromDisk(path, stream.size(),
                                             Font::layoutForCache(),
                                             page, &off);
   if (startPage < 0) startPage = 0;
 
   for (int p = startPage; p < page; p++) {
-    uint32_t next = nextPageOffset(f, off);
+    uint32_t next = nextPageOffset(stream, off);
     if (next == off) break;
     off = next;
   }
@@ -91,7 +100,7 @@ uint32_t resolveBookmarkOffset(const String& path, uint16_t page, uint32_t store
   File f = FS.open(path, "r");
   if (!f) return 0;
 
-  size_t size = f.size();
+  size_t size = bookLogicalSize(f);
   if (storedOffset != kOffsetUnset && storedOffset < size) {
     f.close();
     return storedOffset;
