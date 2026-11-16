@@ -1,8 +1,9 @@
+#include "src/ui/pala_chrome.h"
 #include "src/ui/widgets.h"
 
 #include "src/hal/battery.h"
 #include "src/hal/display.h"
-#include "src/pure/text_util.h"   // truncateWithEllipsis
+#include "src/pure/text_util.h" // truncateWithEllipsis
 #include "src/ui/font.h"
 #include "src/ui/screen_settings.h"
 #include "src/ui/icons.h"
@@ -19,11 +20,9 @@ static bool s_listGutterActive = false;
 // u8g2 measurement, wrapped as a plain function so its address can be handed
 // to the pure truncation helper. Measures under whatever font is current,
 // so callers must select the font first.
-static int measureCurrentFont(const char* s) {
-  return u8g2.getUTF8Width(s);
-}
+static int measureCurrentFont(const char *s) { return u8g2.getUTF8Width(s); }
 
-static String fitLabelWithEllipsis(const String& in, int maxWidth) {
+static String fitLabelWithEllipsis(const String &in, int maxWidth) {
   return truncateWithEllipsis(in, maxWidth, measureCurrentFont);
 }
 
@@ -40,8 +39,7 @@ static bool s_forceMenuFrameFull = false;
 void forceNextMenuFrameFull() { s_forceMenuFrameFull = true; }
 
 void prepareMenuFrame() {
-  bool doFull = s_forceMenuFrameFull
-             || (s_menuDrawsSinceFull >= MENU_FULL_REFRESH_EVERY);
+  bool doFull = s_forceMenuFrameFull || (s_menuDrawsSinceFull >= MENU_FULL_REFRESH_EVERY);
   s_forceMenuFrameFull = false;
   if (doFull) {
     display.fastmodeOff();
@@ -53,14 +51,15 @@ void prepareMenuFrame() {
   s_menuDrawsSinceFull++;
 }
 
-void drawCenter(const char* a, const char* b) {
+void drawCenter(const char *a, const char *b) {
   display.fastmodeOff();
   beginPageCanvas();
   Font::useBody();
 
   const int lineH = 16;
   int y = (SCREEN_H / 2) - lineH / 2;
-  if (b) y -= lineH / 2;
+  if (b)
+    y -= lineH / 2;
 
   int wA = u8g2.getUTF8Width(a);
   u8g2.setCursor((SCREEN_W - wA) / 2, y);
@@ -75,7 +74,7 @@ void drawCenter(const char* a, const char* b) {
   display.update();
 }
 
-int drawSectionHeader(const char* title, bool drawBattery, bool drawIcons) {
+int drawSectionHeader(const char *title, bool drawBattery, bool drawIcons) {
   Font::useBold();
   int ascent = u8g2.getFontAscent();
   int yTitle = UI_HEADER_TOP + ascent - 2;
@@ -114,10 +113,12 @@ int menuRowMaxWidth(int extraIndent) {
   return right - UI_LIST_LEFT - extraIndent;
 }
 
-int drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent) {
+int drawMenuRow(int yBaseline, const String &label, bool selected, int extraIndent) {
   u8g2.setForegroundColor(1);
-  if (selected) Font::useBold();
-  else          Font::useBody();
+  if (selected)
+    Font::useBold();
+  else
+    Font::useBody();
 
   // Truncate under the row's own font — bold is wider, so a selected row
   // fits fewer characters than the same label unselected.
@@ -138,14 +139,17 @@ int menuLineH() {
 
 // A 7x5 triangle inside the 8px gutter, pointing up or down.
 static void drawScrollArrow(int x, int y, bool up) {
-  if (up) gfx.fillTriangle(x + 3, y,     x, y + 4, x + 6, y + 4, 1);
-  else    gfx.fillTriangle(x + 3, y + 4, x, y,     x + 6, y,     1);
+  if (up)
+    gfx.fillTriangle(x + 3, y, x, y + 4, x + 6, y + 4, 1);
+  else
+    gfx.fillTriangle(x + 3, y + 4, x, y, x + 6, y, 1);
 }
 
 void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
-                        const DrawListRowFn& drawRow) {
+                        const DrawListRowFn &drawRow) {
   s_listGutterActive = false;
-  if (itemCount <= 0) return;
+  if (itemCount <= 0)
+    return;
 
   int lineH = menuLineH();
 
@@ -157,16 +161,21 @@ void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
   int descent = u8g2.getFontDescent();
   int available = SCREEN_H - BOT_PAD + descent - contentTopY;
   int visibleRows = (available / lineH) + 1;
-  if (visibleRows < 1) visibleRows = 1;
+  if (visibleRows < 1)
+    visibleRows = 1;
 
-  if (selectedIndex < 0) selectedIndex = 0;
-  if (selectedIndex >= itemCount) selectedIndex = itemCount - 1;
+  if (selectedIndex < 0)
+    selectedIndex = 0;
+  if (selectedIndex >= itemCount)
+    selectedIndex = itemCount - 1;
 
   // Center the selected item in the visible window, then clamp at the
   // ends so we don't leave blank rows past the list.
   int top = selectedIndex - (visibleRows / 2);
-  if (top < 0) top = 0;
-  if (top > itemCount - visibleRows) top = max(0, itemCount - visibleRows);
+  if (top < 0)
+    top = 0;
+  if (top > itemCount - visibleRows)
+    top = max(0, itemCount - visibleRows);
 
   // Whether the list scrolls at all is known before drawing anything, so the
   // gutter can be reserved in time for the rows to be measured against it.
@@ -174,11 +183,12 @@ void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
 
   int y = contentTopY;
   int rowsUsed = 0;
-  int idx = top;                        // hoisted: needed after the loop
+  int idx = top; // hoisted: needed after the loop
   for (; idx < itemCount && rowsUsed < visibleRows; idx++) {
     int budget = visibleRows - rowsUsed;
     int consumed = drawRow(idx, y, idx == selectedIndex, budget);
-    if (consumed < 1) consumed = 1;
+    if (consumed < 1)
+      consumed = 1;
     y += consumed * lineH;
     rowsUsed += consumed;
   }
@@ -187,29 +197,36 @@ void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
     const int gx = SCREEN_W - MARGIN_X - UI_LIST_GUTTER_W;
     // `top` is clamped above and navigation wraps, so these mean "there are
     // items outside the current window", not "a next page exists".
-    if (top > 0) drawScrollArrow(gx, contentTopY - 6, true);
+    if (top > 0)
+      drawScrollArrow(gx, contentTopY - 6, true);
     // Tested against `idx`, not `top + rowsUsed`: a row callback may consume
     // two rows for one item (ListScreen's selected continuation line), so
     // rowsUsed can reach visibleRows having advanced idx fewer times.
-    if (idx < itemCount) drawScrollArrow(gx, SCREEN_H - BOT_PAD - 5, false);
+    if (idx < itemCount)
+      drawScrollArrow(gx, SCREEN_H - BOT_PAD - 5, false);
   }
 
   s_listGutterActive = false;
 }
 
-void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, String& line2) {
+void splitListLabelForDisplay(const String &in, int maxWidth, String &line1, String &line2) {
   line1 = in;
   line2 = "";
-  if (u8g2.getUTF8Width(in.c_str()) <= maxWidth) return;
+  if (u8g2.getUTF8Width(in.c_str()) <= maxWidth)
+    return;
 
   int bestBreak = -1;
   for (int i = 0; i < (int)in.length(); i++) {
-    if (in[i] != ' ') continue;
+    if (in[i] != ' ')
+      continue;
     String left = in.substring(0, i);
     left.trim();
-    if (left.length() == 0) continue;
-    if (u8g2.getUTF8Width(left.c_str()) <= maxWidth) bestBreak = i;
-    else break;
+    if (left.length() == 0)
+      continue;
+    if (u8g2.getUTF8Width(left.c_str()) <= maxWidth)
+      bestBreak = i;
+    else
+      break;
   }
 
   if (bestBreak < 0) {
@@ -222,7 +239,8 @@ void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, Str
     }
   }
 
-  if (bestBreak < 0) return;
+  if (bestBreak < 0)
+    return;
 
   line1 = in.substring(0, bestBreak);
   line1.trim();
@@ -232,4 +250,22 @@ void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, Str
   // Only line 2 gets an ellipsis. Line 1 already fits by construction, and
   // marking it would read as "Foo... bar" when the text simply continues.
   line2 = fitLabelWithEllipsis(line2, maxWidth);
+}
+
+void drawPalaList(const char *title, int itemCount, int selectedIndex,
+                  const std::function<String(int)> &label) {
+  PalaChrome::menuList(gfx, u8g2, title, itemCount, selectedIndex, label);
+#if HAS_BATTERY
+  drawBatteryTopRight();
+#endif
+  Font::useBody();
+}
+
+int drawBackSectionHeader(const char *title, bool focused) {
+  PalaChrome::backHeader(gfx, u8g2, title, focused);
+#if HAS_BATTERY
+  drawBatteryTopRight();
+#endif
+  Font::useBody();
+  return 32;
 }

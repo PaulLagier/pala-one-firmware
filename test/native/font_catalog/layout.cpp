@@ -105,12 +105,55 @@ TEST_CASE("page metrics converge and rendering agrees with scanning across multi
 }
 
 TEST_CASE("public half-paragraph preference takes precedence over earlier local key") {
-  prefs.values.clear(); prefs.values["cfg_half_gaps"] = 1;
-  Font::loadSettings(); CHECK(Font::halfParagraphGapsEnabled());
+  prefs.values.clear();
+  prefs.values["cfg_half_gaps"] = 1;
+  Font::loadSettings();
+  CHECK(Font::halfParagraphGapsEnabled());
   prefs.values["cfg_hgap"] = 0;
-  Font::loadSettings(); CHECK(!Font::halfParagraphGapsEnabled());
+  Font::loadSettings();
+  CHECK(!Font::halfParagraphGapsEnabled());
   Font::setHalfParagraphGaps(true);
   CHECK_EQ(prefs.values["cfg_hgap"], 1);
   prefs.values["cfg_half_gaps"] = 0;
-  Font::loadSettings(); CHECK(Font::halfParagraphGapsEnabled());
+  Font::loadSettings();
+  CHECK(Font::halfParagraphGapsEnabled());
+}
+
+TEST_CASE("prepared multilingual page paints the same pixels without a second layout pass") {
+  Adafruit_GFX gfx;
+  u8g2.begin(gfx);
+  const char *sample = "Reading café, Größe, Українська.\n\nCompact accents and Bionic text. "
+                       "Reading café, Größe, Українська.\n";
+  for (auto family : {Font::Family::Helvetica, Font::Family::OpenDyslexic}) {
+    Font::setFamily(family);
+    for (int size : {8, 10, 12, 14})
+      for (bool bionic : {false, true}) {
+        Font::setBodySize(size);
+        Font::setBionic(bionic);
+        StringReadStream stream(sample);
+        LayoutMetrics metrics;
+        PageTextBuffer buffer;
+        const auto next = prepareBodyPage(stream, 0, metrics, &buffer);
+        REQUIRE(buffer.valid);
+        int y = TOP_PAD + metrics.ascent;
+        memset(gfx.pixels, 0, sizeof(gfx.pixels));
+        const auto direct = paginatePage(stream, 0, metrics, Font::measureBionicLine,
+                                         [&](const char *line, size_t len) {
+                                           if (len)
+                                             Font::drawBionicLine(MARGIN_X, y, line);
+                                           y += len ? metrics.lineH : metrics.paragraphGapH;
+                                         });
+        std::vector<uint8_t> pixels(gfx.pixels, gfx.pixels + sizeof(gfx.pixels));
+        memset(gfx.pixels, 0, sizeof(gfx.pixels));
+        y = TOP_PAD + metrics.ascent;
+        for (size_t i = 0; i < buffer.count; ++i) {
+          const char *line = buffer.line(i);
+          if (*line)
+            Font::drawBionicLine(MARGIN_X, y, line);
+          y += *line ? metrics.lineH : metrics.paragraphGapH;
+        }
+        CHECK_EQ(direct, next);
+        CHECK(std::equal(pixels.begin(), pixels.end(), gfx.pixels));
+      }
+  }
 }

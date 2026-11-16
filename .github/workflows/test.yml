@@ -27,7 +27,7 @@ jobs:
           node-version: 22
 
       - name: Install native test dependencies
-        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev python3 libssl-dev
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev python3 libssl-dev clang
 
       - name: Configure
         run: cmake -S test -B test/build

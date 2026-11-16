@@ -42,6 +42,8 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    # Prerelease tags must never replace the stable installer.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') || !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -84,8 +86,9 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF_NAME}"
           elif [[ "$CHANNEL" == "stable" ]]; then
-            # workflow_dispatch republish without a tag — label by sha.
-            VERSION="manual-${GITHUB_SHA::7}"
+            # A stable republish must use an exact existing release tag.
+            VERSION=$(git describe --tags --exact-match)
+            [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]
           else
             # Match build_info.py: both the manifest and the firmware derive
             # their version from `git describe` so the OTA equality check works.
@@ -167,19 +170,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           set -euo pipefail
-          mkdir -p release
-          cd site/stable
-          for board in v1_1 v1_2; do
-            for lang in en es fr; do
-              name="pala-one-${{ steps.meta.outputs.version }}-${board}-${lang}"
-              mkdir -p "../../release/${name}"
-              cp bootloader.bin partitions.bin boot_app0.bin \
-                 "firmware-${board}-${lang}.bin" \
-                 "../../release/${name}/"
-              (cd ../../release && zip -r "${name}.zip" "${name}" >/dev/null && rm -rf "${name}")
-            done
-          done
-          ls -lh ../../release/
+          python3 scripts/package_release.py \
+            --site "site/${{ steps.meta.outputs.channel }}" \
+            --out release --version "${{ steps.meta.outputs.version }}" \
+            --commit "$GITHUB_SHA"
 
       # Two ways a release can come into being:
       #   1. Someone uses the GitHub UI "Draft a new release" flow — that
@@ -189,7 +183,7 @@ jobs:
       #   2. Someone pushes a bare tag from the CLI — no release exists
       #      yet, so we create one with auto-generated notes.
       #
-      # Either way we want the four zips attached. --clobber lets a
+      # Either way we want the six zips attached. --clobber lets a
       # workflow re-run overwrite previously uploaded assets cleanly.
       - name: Create or update GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -200,11 +194,11 @@ jobs:
           TAG="${{ steps.meta.outputs.version }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists — uploading assets to it"
-            gh release upload "$TAG" --clobber release/*.zip
+            gh release upload "$TAG" --clobber release/*.zip release/release.json release/SHA256SUMS
           else
             echo "Creating new release $TAG"
             gh release create "$TAG" \
-              --generate-notes \
+              --notes-file "docs/releases/$TAG.md" \
               --title "$TAG" \
-              release/*.zip
+              release/*.zip release/release.json release/SHA256SUMS
           fi

@@ -699,3 +699,59 @@
 #define D_BLE_EXIT_STANDARD "Acción Inicio: salir."
 
 #endif  // PALA_LANG_ES_LA_H
+
+// Additional literals for host adapters; firmware uses the runtime catalogs.
+#define D_ABOUT_ACTION_BOOKMARK "Marcapáginas"
+#define D_ABOUT_ACTION_LOCK "Bloquear"
+#define D_ABOUT_ACTION_MENU "Menú"
+#define D_ABOUT_ACTION_NONE "Ninguna"
+#define D_ABOUT_CLICK_HOLD_PREFIX "Pulsar + mantener: "
+#define D_ABOUT_CONTROLS "Controles"
+#define D_ABOUT_FIRMWARE "Firmware"
+#define D_ABOUT_GESTURE_HOME "3x inicio"
+#define D_ABOUT_HOLD_PREFIX "Mantener: "
+#define D_ABOUT_LONG_HOLD_PREFIX "Pulsación larga: "
+#define D_ABOUT_MENU_NEXT "1x: siguiente opción"
+#define D_ABOUT_MENU_OPEN "Mantén: abrir"
+#define D_ABOUT_READER_NEXT "1x: siguiente página"
+#define D_ABOUT_READER_PREVIOUS "2x: página anterior"
+#define D_READER_MENU_BOOKMARK "Añadir marcador"
+#define D_READER_MENU_CONTINUE "Seguir leyendo · 2x"
+
+#define D_STATS_DAY "día"
+
+#define D_STATS_DAYS "días"
+
+#define D_STATS_DAYS_FEW "días"
+
+#define D_STATS_IN_ROW "seguidos"
+
+#define D_STATS_PAGE_LABEL "Páginas"
+
+#define D_STATS_PRESSES "Pulsaciones"
+
+#define D_STATS_RECORD_LABEL "Récord"
+
+#define D_STATS_SESSIONS_LABEL "Sesiones"
+
+#define D_WEB_HOME_BOOKS_FEW " libros"
+
+#define D_WEB_HOME_BOOKS_ONE " libro"
+
+#define D_SETTINGS_READING_MENU "Menús centrados en la lectura"
+
+#define D_READER_INDEX_CANCEL "Pulsa para cancelar"
+
+#define D_ABOUT_BACK "Volver"
+
+#define D_BOOKMARKS_PREVIEW "Vista previa"
+
+#define D_BOOKMARKS_READ "Leer"
+
+#define D_WEB_RESET_FAILED "Error al restablecer"
+
+#define D_WEB_RESET_FAILURE_DESC "El proceso no se ha completado. Inténtalo de nuevo."
+
+#define D_WEB_RESET_RESTARTING "Pala One se está reiniciando. Después, abre de nuevo el modo de conexión."
+
+#define D_MENU_CONNECT "Conectar"

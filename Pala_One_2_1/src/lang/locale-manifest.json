@@ -25,79 +25,79 @@
     "nl",
     "pt"
   ],
-  "keyCount": 521,
+  "keyCount": 556,
   "complete": true,
   "keysPerPool": 32,
-  "poolsPerCatalog": 18,
-  "interfacePoolCount": 5,
-  "interfaceKeyCount": 149,
-  "largestAllocation": 2021,
+  "poolsPerCatalog": 19,
+  "interfacePoolCount": 6,
+  "interfaceKeyCount": 161,
+  "largestAllocation": 1944,
   "catalogs": {
     "cs": {
-      "defaultPoolBytes": 15036,
-      "rawStringsBytes": 14144,
-      "compressedBytes": 8337,
-      "preloadedInterfaceBytes": 3006
+      "defaultPoolBytes": 15656,
+      "rawStringsBytes": 14677,
+      "compressedBytes": 8637,
+      "preloadedInterfaceBytes": 3101
     },
     "de": {
-      "defaultPoolBytes": 15640,
-      "rawStringsBytes": 14707,
-      "compressedBytes": 8284,
-      "preloadedInterfaceBytes": 2915
+      "defaultPoolBytes": 16150,
+      "rawStringsBytes": 15234,
+      "compressedBytes": 8563,
+      "preloadedInterfaceBytes": 3019
     },
     "en": {
-      "defaultPoolBytes": 13400,
-      "rawStringsBytes": 12444,
-      "compressedBytes": 7232,
-      "preloadedInterfaceBytes": 2451
+      "defaultPoolBytes": 13876,
+      "rawStringsBytes": 12882,
+      "compressedBytes": 7475,
+      "preloadedInterfaceBytes": 2530
     },
     "es": {
-      "defaultPoolBytes": 16032,
-      "rawStringsBytes": 15092,
-      "compressedBytes": 8370,
-      "preloadedInterfaceBytes": 2785
+      "defaultPoolBytes": 16618,
+      "rawStringsBytes": 15641,
+      "compressedBytes": 8687,
+      "preloadedInterfaceBytes": 2907
     },
     "fr": {
-      "defaultPoolBytes": 17261,
-      "rawStringsBytes": 16330,
-      "compressedBytes": 8865,
-      "preloadedInterfaceBytes": 2935
+      "defaultPoolBytes": 17833,
+      "rawStringsBytes": 16872,
+      "compressedBytes": 9149,
+      "preloadedInterfaceBytes": 3059
     },
     "it": {
-      "defaultPoolBytes": 15266,
-      "rawStringsBytes": 14365,
-      "compressedBytes": 7786,
-      "preloadedInterfaceBytes": 2904
+      "defaultPoolBytes": 15875,
+      "rawStringsBytes": 14922,
+      "compressedBytes": 8064,
+      "preloadedInterfaceBytes": 3029
     },
     "nl": {
-      "defaultPoolBytes": 14593,
-      "rawStringsBytes": 13671,
-      "compressedBytes": 7484,
-      "preloadedInterfaceBytes": 2811
+      "defaultPoolBytes": 15153,
+      "rawStringsBytes": 14200,
+      "compressedBytes": 7814,
+      "preloadedInterfaceBytes": 2918
     },
     "pl": {
-      "defaultPoolBytes": 15666,
-      "rawStringsBytes": 14762,
-      "compressedBytes": 8581,
-      "preloadedInterfaceBytes": 3072
+      "defaultPoolBytes": 16301,
+      "rawStringsBytes": 15356,
+      "compressedBytes": 8897,
+      "preloadedInterfaceBytes": 3193
     },
     "pt": {
-      "defaultPoolBytes": 15670,
-      "rawStringsBytes": 14761,
-      "compressedBytes": 8090,
-      "preloadedInterfaceBytes": 3103
+      "defaultPoolBytes": 16231,
+      "rawStringsBytes": 15293,
+      "compressedBytes": 8379,
+      "preloadedInterfaceBytes": 3187
     },
     "ru": {
-      "defaultPoolBytes": 24812,
-      "rawStringsBytes": 23993,
-      "compressedBytes": 10221,
-      "preloadedInterfaceBytes": 4768
+      "defaultPoolBytes": 25765,
+      "rawStringsBytes": 24913,
+      "compressedBytes": 10549,
+      "preloadedInterfaceBytes": 4963
     },
     "uk": {
-      "defaultPoolBytes": 25253,
-      "rawStringsBytes": 24438,
-      "compressedBytes": 10227,
-      "preloadedInterfaceBytes": 4915
+      "defaultPoolBytes": 26237,
+      "rawStringsBytes": 25379,
+      "compressedBytes": 10602,
+      "preloadedInterfaceBytes": 5086
     }
   }
 }

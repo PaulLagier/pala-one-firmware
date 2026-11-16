@@ -1,3 +1,4 @@
+#include "src/storage/navigation_profile.h"
 #include <Arduino.h>
 #include "test_framework.h"
 #include "map_kv_store.h"
@@ -54,14 +55,14 @@ int bookIndexForPath(const String &path) {
       return i;
   return -1;
 }
-uint8_t loadBookmarksForKey(const String &key, uint16_t pages[MAX_BOOKMARKS],
+uint8_t loadBookmarksForKey(const String &key, uint32_t pages[MAX_BOOKMARKS],
                             uint32_t offsets[MAX_BOOKMARKS]) {
   const auto marks = loadBookmarks(kv, key);
   std::copy_n(marks.pages, marks.count, pages);
   std::copy_n(marks.offsets, marks.count, offsets);
   return marks.count;
 }
-void saveBookmarksForKey(const String &key, const uint16_t pages[MAX_BOOKMARKS],
+void saveBookmarksForKey(const String &key, const uint32_t pages[MAX_BOOKMARKS],
                          const uint32_t offsets[MAX_BOOKMARKS], uint8_t count) {
   if (failBookmarkSave)
     return;
@@ -75,7 +76,7 @@ void deleteBookMetadata(const String &path) {
   ++metadataDeletes;
   clearBookMetadata(kv, prefKeyForBook(path));
 }
-uint32_t resolveBookmarkOffset(const String &, uint16_t page, uint32_t stored) {
+uint32_t resolveBookmarkOffset(const String &, uint32_t page, uint32_t stored) {
   return stored == kOffsetUnset ? uint32_t(page) * 10 : stored;
 }
 uint32_t extractPageText(File &file, uint32_t offset, String &out) {
@@ -154,7 +155,7 @@ void seed(const char *path, const std::string &bytes) {
   file.print(bytes.c_str());
   loadBooks();
 }
-void mark(const char *path, uint16_t page = 2, uint32_t offset = 0) {
+void mark(const char *path, uint32_t page = 2, uint32_t offset = 0) {
   Bookmarks marks{};
   marks.count = 1;
   marks.pages[0] = page;
@@ -451,7 +452,9 @@ TEST_CASE("Companion exposes every runtime language within the response limit") 
     HeaderTitle::title = std::string(31, titleChar).c_str();
     for (size_t i = 0; i < Language::count(); ++i) {
       const std::string code = Language::codeAt(i);
-      auto changed = call("{\"id\":4294967295,\"op\":\"settings.set\",\"key\":\"language\",\"value\":\"" + code + "\"}");
+      auto changed =
+          call("{\"id\":4294967295,\"op\":\"settings.set\",\"key\":\"language\",\"value\":\"" +
+               code + "\"}");
       REQUIRE(changed["ok"].as<bool>());
       CHECK(changed["settings"]["language"] == code);
       auto result = call("{\"id\":4294967295,\"op\":\"settings.get\"}");
@@ -466,5 +469,32 @@ TEST_CASE("Companion exposes every runtime language within the response limit") 
   }
   const std::string before = Language::currentCode();
   auto invalid = call("{\"id\":1,\"op\":\"settings.set\",\"key\":\"language\",\"value\":\"zz\"}");
-  CHECK(!invalid["ok"].as<bool>()); CHECK_EQ(std::string(Language::currentCode()), before);
+  CHECK(!invalid["ok"].as<bool>());
+  CHECK_EQ(std::string(Language::currentCode()), before);
+}
+
+ProfilePrefs prefs;
+
+TEST_CASE("Companion reading menu selection is typed and reversible") {
+  prefs.flags.clear();
+  prefs.failWrites = false;
+  CHECK(NavigationProfile::setReadingFocused(false));
+  auto result = call(R"({"id":1,"op":"settings.set","key":"readingMenu","value":true})");
+  REQUIRE(result["ok"].as<bool>());
+  NavigationProfile::loadSettings();
+  CHECK(NavigationProfile::readingFocused());
+  result = call(R"({"id":1,"op":"settings.advanced.get"})");
+  REQUIRE(result["ok"].as<bool>());
+  CHECK(result["settings"]["readingMenu"].as<bool>());
+  result = call(R"({"id":1,"op":"settings.set","key":"readingMenu","value":1})");
+  CHECK(!result["ok"].as<bool>());
+  CHECK(NavigationProfile::readingFocused());
+  prefs.failWrites = true;
+  result = call(R"({"id":1,"op":"settings.set","key":"readingMenu","value":false})");
+  CHECK(!result["ok"].as<bool>());
+  CHECK(NavigationProfile::readingFocused());
+  prefs.failWrites = false;
+  result = call(R"({"id":1,"op":"settings.set","key":"readingMenu","value":false})");
+  REQUIRE(result["ok"].as<bool>());
+  CHECK(!NavigationProfile::readingFocused());
 }

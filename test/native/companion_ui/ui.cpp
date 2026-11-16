@@ -1,3 +1,4 @@
+#include "src/storage/navigation_profile.h"
 #include "test_framework.h"
 #include "runtime.h"
 #include "src/ui/screens/upload_screen.h"
@@ -72,6 +73,7 @@ namespace {
 struct Fixture {
   UploadScreen screen;
   Fixture() {
+    NavigationProfile::reading = false;
     bleBegins = bleEnds = bleTicks = wifiBegins = wifiEnds = bookResets = sleepResets = appResets =
         catalogLoads = 0;
     bleResult = true;
@@ -197,4 +199,36 @@ TEST_CASE("Cancelling before the Bluetooth idle start never starts a background 
   CHECK_EQ(bleBegins, 0u);
   CHECK_EQ(wifiEnds, 0u);
   CHECK(!WifiProvisioning::session);
+}
+
+TEST_CASE("Reading menus open Bluetooth by hold and retain deferred radio cancellation") {
+  Fixture f;
+  NavigationProfile::reading = true;
+  legacy = false;
+  f.screen.draw();
+  f.send(ButtonEvent::Short);
+  f.send(ButtonEvent::Long);
+  CHECK(f.shows(D_BLE_STARTING));
+  CHECK_EQ(bleBegins, 0u);
+  f.send(ButtonEvent::Triple);
+  f.screen.onIdleTick();
+  CHECK(f.screen.nextScreen == &g_libraryScreen);
+  CHECK_EQ(bleBegins, 0u);
+  NavigationProfile::reading = false;
+}
+TEST_CASE(
+    "Reading menus show Bluetooth PIN and close with a hold independently of reader mappings") {
+  Fixture f;
+  NavigationProfile::reading = true;
+  legacy = false;
+  f.send(ButtonEvent::Short);
+  f.send(ButtonEvent::Double);
+  f.screen.onIdleTick();
+  CHECK_EQ(bleBegins, 1u);
+  CHECK(!f.screen.allowSleep());
+  f.send(ButtonEvent::Long);
+  CHECK(f.screen.nextScreen == &g_libraryScreen);
+  CHECK_EQ(bleEnds, 1u);
+  CHECK(!WifiProvisioning::session);
+  NavigationProfile::reading = false;
 }

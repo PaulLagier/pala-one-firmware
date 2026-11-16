@@ -36,6 +36,7 @@ set(TEST_SRC
   ${CMAKE_CURRENT_SOURCE_DIR}/test_text_util.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_hashing.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_paginator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_page_text_buffer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_library_nav.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_bookmark_label.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_bookmarks_codec.cpp
@@ -175,7 +176,8 @@ add_executable(companion_rpc_tests main.cpp native/companion_rpc/rpc.cpp
   native/companion_rpc/runtime_language.cpp ${FW_SRC}/lang/locale_core.cpp
   ${FW_SRC}/lang/locale_data.cpp ${FW_SRC}/pure/catalog_inflater.cpp
   ${FW_SRC}/pure/paths.cpp ${FW_SRC}/pure/hashing.cpp ${FW_SRC}/pure/bookmarks_codec.cpp
-  ${FW_SRC}/storage/book_metadata.cpp ${FW_SRC}/storage/click_timings.cpp)
+  ${FW_SRC}/storage/book_metadata.cpp ${FW_SRC}/storage/click_timings.cpp
+  ${FW_SRC}/storage/navigation_profile.cpp)
 target_compile_definitions(companion_rpc_tests PRIVATE LANG_EN PALA_COMPANION PALA_RUNTIME_LANG
   ARDUINOJSON_ENABLE_ARDUINO_STRING=1 PACKED_FIXTURES="${PACKED_FIXTURES}")
 target_include_directories(companion_rpc_tests PRIVATE
@@ -251,3 +253,51 @@ target_compile_definitions(font_layout_tests PRIVATE LANG_EN)
 target_include_directories(font_layout_tests PRIVATE native/font_catalog/stubs
   native/font_catalog/decoder ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME font_layout_tests COMMAND font_layout_tests)
+
+# Exercise the actual ISR queue/classifier while a display delays polling.
+add_executable(input_frontend_tests native/input_frontend/main.cpp
+  ${FW_SRC}/hal/input.cpp ${FW_SRC}/pure/hold_gesture.cpp ${FW_SRC}/storage/click_timings.cpp)
+target_compile_definitions(input_frontend_tests PRIVATE LANG_EN)
+target_include_directories(input_frontend_tests PRIVATE native/input_frontend/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1)
+add_test(NAME input_frontend_tests COMMAND input_frontend_tests)
+
+set(WAKE_SETUP_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/wake-setup.inc)
+add_custom_command(OUTPUT ${WAKE_SETUP_INCLUDE}
+  COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/../scripts/extract_wake_setup.py
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/Pala_One_2_1.ino ${WAKE_SETUP_INCLUDE}
+  DEPENDS ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/Pala_One_2_1.ino
+    ${CMAKE_SOURCE_DIR}/../scripts/extract_wake_setup.py VERBATIM)
+add_custom_target(wake_setup_include DEPENDS ${WAKE_SETUP_INCLUDE})
+foreach(board IN ITEMS V1_1 V1_2)
+  add_executable(wake_setup_${board} native/wake/setup.cpp
+    ${FW_SRC}/hal/input.cpp ${FW_SRC}/pure/hold_gesture.cpp ${FW_SRC}/storage/click_timings.cpp)
+  add_dependencies(wake_setup_${board} wake_setup_include)
+  target_compile_definitions(wake_setup_${board} PRIVATE LANG_EN DISPLAY_${board})
+  target_include_directories(wake_setup_${board} PRIVATE native/input_frontend/stubs
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME wake_setup_${board} COMMAND wake_setup_${board})
+endforeach()
+
+add_executable(navigation_profile_tests main.cpp native/navigation_profile/main.cpp
+  ${FW_SRC}/storage/navigation_profile.cpp)
+target_compile_definitions(navigation_profile_tests PRIVATE LANG_EN)
+target_include_directories(navigation_profile_tests PRIVATE native/navigation_profile/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME navigation_profile_tests COMMAND navigation_profile_tests)
+
+add_test(NAME compressed_web_assets COMMAND ${Python3_EXECUTABLE} -B
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_web_assets.py)
+
+add_test(NAME reader_window_integration COMMAND ${Python3_EXECUTABLE} -B
+  ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test_reader_window.py
+  --firmware ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+add_executable(factory_reset_tests main.cpp native/factory_reset/main.cpp
+  ${FW_SRC}/storage/factory_reset.cpp)
+target_include_directories(factory_reset_tests PRIVATE native/factory_reset/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME factory_reset_tests COMMAND factory_reset_tests)
+
+add_test(NAME release_packaging COMMAND ${Python3_EXECUTABLE} -B
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_release_package.py)

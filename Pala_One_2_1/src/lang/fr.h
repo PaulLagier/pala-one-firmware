@@ -697,3 +697,59 @@
 
 
 #endif  // PALA_LANG_FR_H
+
+// Additional literals for host adapters; firmware uses the runtime catalogs.
+#define D_ABOUT_ACTION_BOOKMARK "Signet"
+#define D_ABOUT_ACTION_LOCK "Verrouiller"
+#define D_ABOUT_ACTION_MENU "Menu"
+#define D_ABOUT_ACTION_NONE "Aucune"
+#define D_ABOUT_CLICK_HOLD_PREFIX "Clic + maintien : "
+#define D_ABOUT_CONTROLS "Commandes"
+#define D_ABOUT_FIRMWARE "Micrologiciel"
+#define D_ABOUT_GESTURE_HOME "3x accueil"
+#define D_ABOUT_HOLD_PREFIX "Maintenir : "
+#define D_ABOUT_LONG_HOLD_PREFIX "Appui prolongé : "
+#define D_ABOUT_MENU_NEXT "1x : élément suivant"
+#define D_ABOUT_MENU_OPEN "Maintenir : choisir"
+#define D_ABOUT_READER_NEXT "1x : page suivante"
+#define D_ABOUT_READER_PREVIOUS "2x : page précédente"
+#define D_READER_MENU_BOOKMARK "Ajouter un signet"
+#define D_READER_MENU_CONTINUE "Continuer · 2x"
+
+#define D_STATS_DAY "jour"
+
+#define D_STATS_DAYS "jours"
+
+#define D_STATS_DAYS_FEW "jours"
+
+#define D_STATS_IN_ROW "de suite"
+
+#define D_STATS_PAGE_LABEL "Pages"
+
+#define D_STATS_PRESSES "Appuis sur le bouton"
+
+#define D_STATS_RECORD_LABEL "Record"
+
+#define D_STATS_SESSIONS_LABEL "Sessions"
+
+#define D_WEB_HOME_BOOKS_FEW " livres"
+
+#define D_WEB_HOME_BOOKS_ONE " livre"
+
+#define D_SETTINGS_READING_MENU "Menus de lecture simplifiés"
+
+#define D_READER_INDEX_CANCEL "Appuyer pour annuler"
+
+#define D_ABOUT_BACK "Retour"
+
+#define D_BOOKMARKS_PREVIEW "Aperçu"
+
+#define D_BOOKMARKS_READ "Lire"
+
+#define D_WEB_RESET_FAILED "Échec de la réinitialisation"
+
+#define D_WEB_RESET_FAILURE_DESC "La réinitialisation n’a pas abouti. Réessayez."
+
+#define D_WEB_RESET_RESTARTING "Pala One redémarre. Rouvrez ensuite son mode de connexion."
+
+#define D_MENU_CONNECT "Connexion"

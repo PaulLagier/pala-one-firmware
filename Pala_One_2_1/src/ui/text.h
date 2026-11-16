@@ -30,19 +30,24 @@
 //    pageOffsetForPage     — locate page N in an arbitrary file (uses disk cache)
 //    resolveBookmarkOffset — return a stored bookmark offset, or look it up
 // ============================================================================
-uint32_t drawPageAt(File& f, uint32_t startPos);
-uint32_t drawPageAt(IReadStream& stream, uint32_t startPos);
-uint32_t extractPageText(File& f, uint32_t startPos, String& out);
-uint32_t nextPageOffset(File& f, uint32_t startPos);
-uint32_t nextPageOffset(IReadStream& stream, uint32_t startPos);
+void clearPagePrefetch();
+void prefetchPage(IReadStream &stream, uint32_t startPos);
+uint32_t drawPageAt(File &f, uint32_t startPos);
+uint32_t drawPageAt(IReadStream &stream, uint32_t startPos);
+uint32_t extractPageText(File &f, uint32_t startPos, String &out);
+uint32_t nextPageOffset(File &f, uint32_t startPos);
+uint32_t nextPageOffset(IReadStream &stream, uint32_t startPos);
 
 // Find page N's byte offset in `f` (which must be opened to `path`). Reads
 // the on-disk page cache for an O(1) start, walks forward via
 // `nextPageOffset` if the requested page is past the cached portion.
-uint32_t pageOffsetForPage(File& f, const String& path, int page);
+using PageLookupProgress = bool (*)(uint32_t current, uint32_t target, void *context);
+uint32_t pageOffsetForPage(File &f, const String &path, int page,
+                           PageLookupProgress progress = nullptr, void *context = nullptr);
 
 // Returns `storedOffset` if it's a usable cached value for this book; falls
 // back to `pageOffsetForPage` otherwise. Owns the file handle internally.
-uint32_t resolveBookmarkOffset(const String& path, uint16_t page, uint32_t storedOffset);
+uint32_t resolveBookmarkOffset(const String &path, uint32_t page, uint32_t storedOffset,
+                               PageLookupProgress progress = nullptr, void *context = nullptr);
 
-#endif  // PALA_UI_TEXT_H
+#endif // PALA_UI_TEXT_H

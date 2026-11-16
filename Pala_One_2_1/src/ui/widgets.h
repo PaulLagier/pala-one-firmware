@@ -17,12 +17,16 @@
 // `drawIcons` exists for AboutScreen, which suppresses the normal battery
 // and then draws the wide *extended* battery block itself — a tray anchored
 // to the right margin would land underneath it.
-int drawSectionHeader(const char* title, bool drawBattery = true, bool drawIcons = true);
+int drawSectionHeader(const char *title, bool drawBattery = true, bool drawIcons = true);
 
 // Full-screen single- or two-line centered message. Always full-refreshes
 // (no fastmode), so use it sparingly — for hard errors or status notices
 // the user should notice. `b` is optional second line.
-void drawCenter(const char* a, const char* b = nullptr);
+int drawBackSectionHeader(const char *title, bool focused = true);
+void drawPalaList(const char *title, int itemCount, int selectedIndex,
+                  const std::function<String(int)> &label);
+
+void drawCenter(const char *a, const char *b = nullptr);
 
 // Set up the canvas for a menu-screen draw: every Nth call does a full
 // refresh to clear e-ink ghosting; the rest go through fastmode. Counts
@@ -46,7 +50,7 @@ void forceNextMenuFrameFull();
 // each one repeating the width arithmetic. Returns the pixel width actually
 // drawn, which ListScreen needs so its strike-through matches the visible
 // text rather than the original label.
-int drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent = 0);
+int drawMenuRow(int yBaseline, const String &label, bool selected, int extraIndent = 0);
 
 // Width available to a menu row's text at the given indent. Accounts for the
 // scroll-indicator gutter, which is only reserved while a list is actually
@@ -58,7 +62,7 @@ int menuRowMaxWidth(int extraIndent = 0);
 // continuation) can advance y consistently with the widget.
 int menuLineH();
 
-void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, String& line2);
+void splitListLabelForDisplay(const String &in, int maxWidth, String &line1, String &line2);
 
 // ============================================================================
 //  Scrollable list widget
@@ -77,10 +81,8 @@ void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, Str
 // ============================================================================
 using DrawListRowFn = std::function<int(int idx, int y, bool selected, int budget)>;
 
-void drawScrollableList(int contentTopY,
-                        int itemCount,
-                        int selectedIndex,
-                        const DrawListRowFn& drawRow);
+void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
+                        const DrawListRowFn &drawRow);
 
 // Leftmost x for menu rows.
 static const int UI_LIST_LEFT = MARGIN_X + 4;
@@ -90,4 +92,4 @@ static const int UI_LIST_LEFT = MARGIN_X + 4;
 // see menuRowMaxWidth().
 static const int UI_LIST_GUTTER_W = 8;
 
-#endif  // PALA_UI_WIDGETS_H
+#endif // PALA_UI_WIDGETS_H

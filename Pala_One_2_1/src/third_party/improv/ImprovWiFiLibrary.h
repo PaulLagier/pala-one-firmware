@@ -1,18 +1,18 @@
 #pragma once
 
 #if defined(ARDUINO_ARCH_ESP8266)
-  #include <ESP8266WiFi.h>
-  #define WIFI_OPEN ENC_TYPE_NONE
+#include <ESP8266WiFi.h>
+#define WIFI_OPEN ENC_TYPE_NONE
 #elif defined(ARDUINO_ARCH_ESP32)
-  #include <WiFi.h>
-  #define WIFI_OPEN WIFI_AUTH_OPEN
+#include <WiFi.h>
+#define WIFI_OPEN WIFI_AUTH_OPEN
 #endif
 
 #include <Stream.h>
 #include "ImprovTypes.h"
 
 #ifdef ARDUINO
-  #include <Arduino.h>
+#include <Arduino.h>
 #endif
 
 /**
@@ -32,7 +32,8 @@
  * ImprovWiFi improvSerial(&Serial);
  *
  * void setup() {
- *   improvSerial.setDeviceInfo(ImprovTypes::ChipFamily::CF_ESP32, "My-Device-9a4c2b", "2.1.5", "My Device");
+ *   improvSerial.setDeviceInfo(ImprovTypes::ChipFamily::CF_ESP32, "My-Device-9a4c2b", "2.1.5", "My
+ * Device");
  * }
  *
  * void loop() {
@@ -41,8 +42,7 @@
  * ```
  *
  */
-class ImprovWiFi
-{
+class ImprovWiFi {
 private:
   const char *const CHIP_FAMILY_DESC[5] = {"ESP32", "ESP32-C3", "ESP32-S2", "ESP32-S3", "ESP8266"};
   ImprovTypes::ImprovWiFiParamsStruct improvWiFiParams{};
@@ -65,14 +65,17 @@ private:
 
   // improv SDK
   bool parseImprovSerial(size_t position, uint8_t byte, const uint8_t *buffer);
-  ImprovTypes::ImprovCommand parseImprovData(const std::vector<uint8_t> &data, bool check_checksum = true);
-  ImprovTypes::ImprovCommand parseImprovData(const uint8_t *data, size_t length, bool check_checksum = true);
-  std::vector<uint8_t> build_rpc_response(ImprovTypes::Command command, const std::vector<std::string> &datum, bool add_checksum);
+  ImprovTypes::ImprovCommand parseImprovData(const std::vector<uint8_t> &data,
+                                             bool check_checksum = true);
+  ImprovTypes::ImprovCommand parseImprovData(const uint8_t *data, size_t length,
+                                             bool check_checksum = true);
+  std::vector<uint8_t> build_rpc_response(ImprovTypes::Command command,
+                                          const std::vector<std::string> &datum, bool add_checksum);
 
 public:
   // Optional vendor RPC; absent/rejected handlers report INVALID_RPC.
-  void onSetLanguage(bool (*callback)(const char*)) { languageCallback = callback; }
-
+  void onSetReadingMenu(bool (*callback)(bool)) { readingMenuCallback = callback; }
+  void onSetLanguage(bool (*callback)(const char *)) { languageCallback = callback; }
 
   /**
    * ## Constructors
@@ -85,10 +88,7 @@ public:
    *
    * - `serial` - Pointer to stream object used to handle requests, for the most cases use `Serial`
    */
-  explicit ImprovWiFi(Stream *serial)
-  {
-    this->serial = serial;
-  }
+  explicit ImprovWiFi(Stream *serial) { this->serial = serial; }
 
   /**
    * ## Type definition
@@ -100,7 +100,8 @@ public:
   typedef void(OnImprovError)(ImprovTypes::Error);
 
   /**
-   * Callback function called when the attempt of wifi connection is successful. It informs the SSID and Password used to that, it's a perfect time to save them for further use.
+   * Callback function called when the attempt of wifi connection is successful. It informs the SSID
+   * and Password used to that, it's a perfect time to save them for further use.
    */
   typedef void(OnImprovConnected)(const char *ssid, const char *password);
 
@@ -127,16 +128,21 @@ public:
    *
    * # Parameters
    *
-   * - `chipFamily` - Chip variant, supported are CF_ESP32, CF_ESP32_C3, CF_ESP32_S2, CF_ESP32_S3, CF_ESP8266. Consult ESP Home [docs](https://esphome.io/components/esp32.html) for more information.
+   * - `chipFamily` - Chip variant, supported are CF_ESP32, CF_ESP32_C3, CF_ESP32_S2, CF_ESP32_S3,
+   * CF_ESP8266. Consult ESP Home [docs](https://esphome.io/components/esp32.html) for more
+   * information.
    * - `firmwareName` - Firmware name
    * - `firmwareVersion` - Firmware version
    * - `deviceName` - Your device name
-   * - `deviceUrl`- The local URL to access your device. A placeholder called {LOCAL_IPV4} is available to form elaboreted URLs. E.g. `http://{LOCAL_IPV4}?name=Guest`.
-   *   There is overloaded method without `deviceUrl`, in this case the URL will be the local IP.
+   * - `deviceUrl`- The local URL to access your device. A placeholder called {LOCAL_IPV4} is
+   * available to form elaboreted URLs. E.g. `http://{LOCAL_IPV4}?name=Guest`. There is overloaded
+   * method without `deviceUrl`, in this case the URL will be the local IP.
    *
    */
-  void setDeviceInfo(ImprovTypes::ChipFamily chipFamily, const char *firmwareName, const char *firmwareVersion, const char *deviceName, const char *deviceUrl);
-  void setDeviceInfo(ImprovTypes::ChipFamily chipFamily, const char *firmwareName, const char *firmwareVersion, const char *deviceName);
+  void setDeviceInfo(ImprovTypes::ChipFamily chipFamily, const char *firmwareName,
+                     const char *firmwareVersion, const char *deviceName, const char *deviceUrl);
+  void setDeviceInfo(ImprovTypes::ChipFamily chipFamily, const char *firmwareName,
+                     const char *firmwareVersion, const char *deviceName);
 
   /**
    * Method to set the typedef OnImprovError callback.
@@ -155,7 +161,9 @@ public:
 
   /**
    * Default method to connect in a WiFi network.
-   * It waits `DELAY_MS_WAIT_WIFI_CONNECTION` milliseconds (default 500) during `MAX_ATTEMPTS_WIFI_CONNECTION` (default 20) until it get connected. If it does not happen, an error `ERROR_UNABLE_TO_CONNECT` is thrown.
+   * It waits `DELAY_MS_WAIT_WIFI_CONNECTION` milliseconds (default 500) during
+   * `MAX_ATTEMPTS_WIFI_CONNECTION` (default 20) until it get connected. If it does not happen, an
+   * error `ERROR_UNABLE_TO_CONNECT` is thrown.
    *
    */
   bool tryConnectToWifi(const char *ssid, const char *password);
@@ -163,7 +171,8 @@ public:
   /**
    * Overload: tryConnectToWifi with custom delay and max attempts.
    */
-  bool tryConnectToWifi(const char *ssid, const char *password, uint32_t delayMs, uint8_t maxAttempts);
+  bool tryConnectToWifi(const char *ssid, const char *password, uint32_t delayMs,
+                        uint8_t maxAttempts);
 
   /**
    * Check if connection is established using `WiFi.status() == WL_CONNECTED`
@@ -172,7 +181,8 @@ public:
   bool isConnected();
 
 private:
-  bool (*languageCallback)(const char*) = nullptr;
+  bool (*readingMenuCallback)(bool) = nullptr;
+  bool (*languageCallback)(const char *) = nullptr;
   OnImprovError *onImproErrorCallback = nullptr;
   OnImprovConnected *onImprovConnectedCallback = nullptr;
   CustomConnectWiFi *customConnectWiFiCallback = nullptr;

@@ -154,6 +154,8 @@ void btnISR();  // IRAM_ATTR is on the definition only — repeating it here
                 // .iram1.* sections, triggering an attribute-conflict warning.
 void clearButtonQueue();
 void resetInputFrontend();
+// Suppress only the already-held boot press, retaining later queued gestures.
+void discardWakePress(bool heldOnAttach, uint32_t attachedAt);
 
 // Synthesize an edge into the ISR queue from a normal (non-IRQ) context.
 // Used after light-sleep GPIO wake: the ext0 wakeup path detects the level

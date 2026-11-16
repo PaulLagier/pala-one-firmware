@@ -1,3 +1,4 @@
+#include "src/web/web_assets.h"
 #include "src/web/localized_scripts.h"
 #include "src/lang/join.h"
 #include "src/web/find.h"
@@ -138,21 +139,6 @@ static void handleJumpOffset() {
 //  button per match that POSTs the byte offset back to the device.
 // ============================================================================
 
-static const char kReadStyle[] PROGMEM =
-    "<style>"
-    ".bv-find{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}"
-    ".bv-find input[type=search]{flex:1;min-width:160px}"
-    ".bv-find .small{padding:6px 12px;font-size:13px}"
-    ".bv-status{margin-top:8px;font-size:13px;color:var(--muted)}"
-    ".bv-text{margin-top:14px;max-height:60vh;overflow:auto;padding:12px;border:1px solid "
-    "var(--line);border-radius:10px;background:var(--pre-bg);white-space:pre-wrap;line-height:1.5;"
-    "font:14px/1.5 system-ui,sans-serif}"
-    ".find-hit{background:#fff4a3;color:#1f2328;padding:0 1px;border-radius:3px}"
-    ".find-cur{background:#ff9c2b;color:#1f2328}"
-    "html[data-theme=dark] .find-hit{background:#3a3220;color:#e8eaef}"
-    "html[data-theme=dark] .find-cur{background:#b46a0a;color:#fff}"
-    "</style>";
-
 // Embedded JS — loads the book text, builds a match list, scrolls between
 // matches, and POSTs the byte offset of the active match to /jumpoffset.
 
@@ -173,7 +159,7 @@ static void handleReadView() {
           .c_str(),
       true);
   out.reserve(out.length() + 6000);
-  out += FPSTR(kReadStyle);
+  WebAssets::appendStyle(out, WebAssets::Id::ReadCss);
 
   out += "<div class='card'><h2>";
   out += htmlEscape(String(g_library.books[id].name));

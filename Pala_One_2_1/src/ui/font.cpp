@@ -21,7 +21,8 @@ static const uint8_t *s_body = pala_font_sans_r08;
 static const uint8_t *s_bold = pala_font_sans_b08;
 // _tf = ASCII only. Translated strings must NOT use these — see font.h.
 static const uint8_t *s_uiSmall = u8g2_font_6x10_tf;
-static const uint8_t *s_uiTiny = u8g2_font_5x8_tf;
+// Page/status counters use the existing compact numeric face.
+static const uint8_t *s_uiTiny = pala_font_ui_tiny08;
 // Extended Latin/Cyrillic toast face, independent of the reading family.
 static const uint8_t *s_toast = pala_font_sans_r08;
 
@@ -133,6 +134,8 @@ static void applyLineGap(int gap) {
   s_layoutValid = false;
 }
 
+void useMenu() { u8g2.setFont(pala_font_sans_r10); }
+void useMenuBold() { u8g2.setFont(pala_font_sans_b10); }
 void useBody() { useTransparentFace(u8g2, s_body); }
 void useBold() { useTransparentFace(u8g2, s_bold); }
 void useToast() { u8g2.setFont(s_toast); }

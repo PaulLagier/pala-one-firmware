@@ -35,6 +35,8 @@ enum class Family : uint8_t { Helvetica = 0, OpenDyslexic = 1 };
 
 // Switch the active u8g2 font to the named role. After one of these, raw
 // u8g2 calls (setCursor/print/getUTF8Width) all use the role's table.
+void useMenu();
+void useMenuBold();
 void useBody();
 void useBold();
 void useToast();

@@ -1,102 +1,103 @@
 #include "src/ui/screens/about_screen.h"
-
 #include "src/hal/display.h"
 #include "src/ui/font.h"
-#include "src/ui/screens/library_screen.h"
-#include "src/ui/widgets.h"
 #include "src/ui/reader_actions.h"
-#include "src/hal/battery.h"
+#include "src/ui/screens/library_screen.h"
+#include "src/ui/screens/settings_screen.h"
+#include "src/ui/widgets.h"
+#include "src/ui/pala_chrome.h"
+#include "src/storage/navigation_profile.h"
 
+namespace {
+const char *actionLabel(ButtonAction action) {
+  switch (action) {
+  case ACTION_ROTATE:
+    return D_ACTION_ROTATE_LABEL;
+  case ACTION_BOOKMARK:
+    return D_ABOUT_ACTION_BOOKMARK;
+  case ACTION_LOCK:
+    return D_ABOUT_ACTION_LOCK;
+  case ACTION_MENU:
+    return D_ABOUT_ACTION_MENU;
+  default:
+    return D_ABOUT_ACTION_NONE;
+  }
+}
+} // namespace
 void AboutScreen::onEnter() {
+  nextScreen = nullptr;
+  page_ = Page::Firmware;
+  selection_ = 0;
+  helpPage_ = 0;
   draw();
 }
-
-static String actionLabel(ButtonAction action) {
-  switch (action) {
-    case ACTION_BOOKMARK:
-      return D_ACTION_BOOKMARK_LABEL;
-    case ACTION_LOCK:
-      return D_ACTION_LOCK_LABEL;
-    case ACTION_MENU:
-      return D_ACTION_MENU_LABEL;
-    case ACTION_ROTATE:
-      return D_ACTION_ROTATE_LABEL;
-    case ACTION_NONE:
-    default:
-      return D_ACTION_NONE_LABEL;
-    }
-}
-
-
-
 void AboutScreen::draw() {
   prepareMenuFrame();
-  Font::useUiSmall();
-  int ascent = u8g2.getFontAscent();
-  int lineH = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 3;
-  // No status tray here: the extended battery block drawn below is ~79px
-  // wide and occupies the same right-hand band the tray would.
-  int y = drawSectionHeader(D_ABOUT_HEADER, false, false);
-  drawBatteryTopRight(true);
-  const int rowNumber = 7;
-  String rows[rowNumber][2] = {
-      {D_ABOUT_FIRMWARE_PREFIX, FW_VERSION},
-      {D_ABOUT_GESTURE_CLICK, D_ACTION_NEXT_LABEL},
-      {D_ABOUT_GESTURE_CLICK_2, D_ACTION_OPEN_LABEL},
-      {D_ABOUT_GESTURE_CLICK_3, D_ACTION_HOME_LABEL},
-      {D_ABOUT_GESTURE_HOLD, actionLabel(Gestures::actionLong())},
-      {D_ABOUT_GESTURE_LONG_HOLD, actionLabel(Gestures::actionExtraLong())},
-      {D_ABOUT_GESTURE_CLICK_HOLD, actionLabel(Gestures::actionClickHold())},
-  };
+  Font::useMenu();
+  if (page_ == Page::Menu) {
+    drawPalaList(D_ABOUT_HEADER, 3, selection_, [](int index) -> String {
+      if (index == 0)
+        return D_ABOUT_FIRMWARE;
+      if (index == 1)
+        return D_ABOUT_CONTROLS;
+      return D_READER_BACK_LIBRARY;
+    });
+  } else {
+    String first, second;
+    if (page_ == Page::Firmware) {
+      drawBackSectionHeader(D_ABOUT_FIRMWARE);
+#if defined(DISPLAY_V1_1)
+      first = "Pala One · V1.1";
+#else
+      first = "Pala One · V1.2";
+#endif
+      second = FW_VERSION;
+    } else {
+      drawBackSectionHeader(D_ABOUT_CONTROLS);
 
-  // Left padding to align all the action labels
-  int leftPad = MARGIN_X;
-
-  for (int i = 0; i < rowNumber; i++) {
-    Font::useBold();
-    int leftStrWidth = MARGIN_X;
-    
-    leftStrWidth += u8g2.getUTF8Width(rows[i][0].c_str());
-    leftStrWidth += u8g2.getUTF8Width(D_ABOUT_GESTURE_SEPARATOR);
-    if (leftStrWidth > leftPad) {
-      leftPad = leftStrWidth;
+      switch (helpPage_) {
+      case 0:
+        first = D_ABOUT_MENU_NEXT;
+        second = D_ABOUT_MENU_OPEN;
+        break;
+      case 1:
+        first = D_ABOUT_READER_NEXT;
+        second = D_ABOUT_READER_PREVIOUS;
+        break;
+      case 2:
+        first = D_ABOUT_GESTURE_HOME;
+        second = String(D_ABOUT_HOLD_PREFIX) + actionLabel(Gestures::actionLong());
+        break;
+      default:
+        first = String(D_ABOUT_LONG_HOLD_PREFIX) + actionLabel(Gestures::actionExtraLong());
+        second = String(D_ABOUT_CLICK_HOLD_PREFIX) + actionLabel(Gestures::actionClickHold());
+        break;
+      }
     }
+    PalaChrome::message(gfx, u8g2, first.c_str(), second.c_str());
+    Font::useBody();
   }
-
-    for (int i = 0; i < rowNumber; i++)
-    {
-      // if (i == 0) Font::useBold();
-      // else        Font::useBody();
-      int x = MARGIN_X;
-      u8g2.setCursor(x, y);
-      Font::useBold();
-      u8g2.print(rows[i][0].c_str());
-      x += u8g2.getUTF8Width(rows[i][0].c_str()) + 1;
-      u8g2.setCursor(x, y);
-      u8g2.print(D_ABOUT_GESTURE_SEPARATOR);
-      x += u8g2.getUTF8Width(D_ABOUT_GESTURE_SEPARATOR) + 1;
-      Font::useBody();
-      if (i == 0) {
-        u8g2.setCursor(x, y);
-      }
-      else {
-        u8g2.setCursor(leftPad, y);
-      }
-      u8g2.print(rows[i][1].c_str());
-
-      y += lineH;
-    }
-
   display.update();
 }
-
-void AboutScreen::onButton(const ButtonEvent& e) {
-  if (Gestures::legacyControlsOn()) {
-    if (e.any()) nextScreen = &g_libraryScreen;
+void AboutScreen::onButton(const ButtonEvent &e) {
+  if (!e.any())
+    return;
+  if (e.kind == ButtonEvent::Triple) {
+    nextScreen = &g_libraryScreen;
+    return;
   }
-  else {
-    if (Gestures::isNonLegacyAction(e, ACTION_HOME)) {
-      nextScreen = &g_libraryScreen;
+  if (e.kind == ButtonEvent::Short) {
+    if (page_ == Page::Firmware) {
+      page_ = Page::Controls;
+      helpPage_ = 0;
+    } else if (++helpPage_ >= 4) {
+      page_ = Page::Firmware;
+      helpPage_ = 0;
     }
+    draw();
+    return;
   }
+  if (e.kind == ButtonEvent::Long || e.kind == ButtonEvent::Double)
+    nextScreen = NavigationProfile::readingFocused() ? static_cast<Screen *>(&g_settingsScreen)
+                                                     : static_cast<Screen *>(&g_libraryScreen);
 }
