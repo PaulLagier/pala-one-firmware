@@ -98,6 +98,18 @@ The pure modules compile here because they include
 a minimal `String` shim when `ARDUINO` isn't defined. If you need a method
 on `String` that isn't there yet, add it to the shim.
 
+## Boot storage recovery
+
+CTest also builds `storage_recovery_tests` and the recovery screen for English
+and Spanish-LA (`storage_recovery_ui_EN`, `storage_recovery_ui_ES_LA`). These
+compile the production storage and screen implementations with deterministic
+filesystem, GPIO and graphics adapters. They cover non-destructive mount/retry,
+explicit initialization and its failures, cancel defaults, final hold-only
+confirmation, held/stale transition input, locking and the isolated boot loop.
+The UI tests use the real `ButtonEvent`/`ButtonState` declarations; they inject
+classified events and do not simulate electrical debounce or an e-ink panel.
+No actual filesystem is formatted by these host tests.
+
 ## Improv Serial regression tests
 
 `improv_serial_tests` compiles the exact vendored serial parser with deterministic
