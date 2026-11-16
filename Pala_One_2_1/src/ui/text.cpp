@@ -70,8 +70,9 @@ uint32_t drawPageAt(IReadStream &stream, uint32_t startPos) {
   const uint32_t next = s_preparedNext;
   Font::useBody();
 
-  Font::PrintState state = Font::PrintState();
+  Text::PrintState state = Text::PrintState();
   state.isBold = false;
+
   int cursorY = TOP_PAD + m.ascent;
   auto onLine = [&](const char *buf, size_t len) {
     // len 0 indicates a paragraph gap. Advance by gap height.

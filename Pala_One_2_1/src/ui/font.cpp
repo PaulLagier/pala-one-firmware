@@ -8,6 +8,7 @@
 #include "src/hal/display.h"    // u8g2 instance
 #include "src/state.h"          // prefs
 #include "src/ui/statusbar.h"   // Statusbar::reserveH
+#include "src/ui/text.h"        // Text::PrintState
 #include "src/pure/text_util.h" // constants for markdown
 
 // Extended Latin/Cyrillic faces preserve the saved family IDs.
@@ -357,7 +358,7 @@ int measureBionicLine(const char *line) {
   return total;
 }
 
-void drawLine(int x, int y, const char* line, PrintState state) {
+void drawLine(int x, int y, const char* line, Text::PrintState state) {
   if (!line) return;
   if (s_bionic) {
     drawBionicLine(x, y, line, state);
@@ -393,7 +394,7 @@ void drawLine(int x, int y, const char* line, PrintState state) {
   return;
 }
 
-void drawBionicLine(int x, int y, const char* line, PrintState state) {
+void drawBionicLine(int x, int y, const char* line, Text::PrintState state) {
   int cursorX = x;
   forEachLineSegment(line, [&](const char *seg, int segLen, bool isWord) {
     if (segLen <= 0)
@@ -431,7 +432,7 @@ void drawBionicLine(int x, int y, const char* line, PrintState state) {
   state.isBold = false;
 }
 
-void drawMarkdownLine(int x, int y, const char* line, PrintState state) {
+void drawMarkdownLine(int x, int y, const char* line, Text::PrintState state) {
   int cursorX = x;
   forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
     state.isBold ? useBold() : useBody();

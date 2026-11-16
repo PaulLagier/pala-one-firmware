@@ -11,6 +11,12 @@
 #include "src/pure/bookmark_label.h"
 #include "src/hal/packed_file_stream.h"
 
+namespace Text {
+struct PrintState {
+  bool isBold;
+};
+} // namespace
+
 // ============================================================================
 //  Page-level operations on a book file.
 //

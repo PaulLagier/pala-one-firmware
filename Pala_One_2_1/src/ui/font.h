@@ -3,6 +3,7 @@
 
 #include "src/pure/paginator.h"     // LayoutMetrics
 #include "src/storage/page_cache.h" // PageCacheLayout
+#include "src/ui/text.h"            // Text::PrintState
 
 // ============================================================================
 //  Font module — owns the device-wide font role mapping (which u8g2 font
@@ -116,13 +117,10 @@ constexpr int kBionicRestGapPx = 1;
 int measureLine(const char* line);
 // drawBionicLine sets u8g2's cursor to (x, y) and leaves the active u8g2 font
 // on Body afterwards.
-int measureBionicLine(const char* line);
-struct PrintState {
-  bool isBold;
-};
-void drawLine(int x, int y, const char* line, struct PrintState state);
-void drawBionicLine(int x, int y, const char* line, struct PrintState state);
-void drawMarkdownLine(int x, int y, const char* line, struct PrintState state);
+int  measureBionicLine(const char* line);
+void drawLine(int x, int y, const char* line, struct Text::PrintState state);
+void drawBionicLine(int x, int y, const char* line, struct Text::PrintState state);
+void drawMarkdownLine(int x, int y, const char* line, struct Text::PrintState state);
 
 // Byte length of the leading "strong" (bold) prefix of `word` when rendered
 // in bionic mode. Returns 0 if the word doesn't qualify (punctuation-only,
