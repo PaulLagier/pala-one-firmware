@@ -30,6 +30,8 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 
 Each channel page lists both display revisions (V1.1 / V1.2) and EN/ES/FR initial-default images. Every image contains all eleven runtime languages. Pick your board, install, close the dialog and apply your preferred language with **Apply language over USB**; its initial selection follows the browser language. The Pala app and reader web settings can also change the language. Leave the installer’s erase option disabled to retain stored content with the unchanged partition layout. Back up content before migrating another layout or rolling back.
 
+Alternatively, use the [Pala online flasher](https://flasher.paullagier.com/) with your Pala One access code. Select **Pala One** and the board revision printed on your PCB. The GitHub installer above remains available without an access code.
+
 ## Reading-focused view
 
 Enable **Reading-focused menus** in the reader web settings or through the Pala
