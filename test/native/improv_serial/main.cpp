@@ -306,3 +306,42 @@ TEST_CASE("vendor menu RPC accepts exact booleans and rejects malformed payloads
   CHECK_EQ(menuCalls, 3u);
   CHECK_EQ(WiFi.beginCalls, 0u);
 }
+
+TEST_CASE("uninitialized storage setup accepts local settings without touching the radio") {
+  Wire wire;
+  ImprovWiFi parser(&wire);
+  setup(parser);
+  WiFi = {};
+  languageCalls = menuCalls = 0;
+  menuWrites = true;
+  selectedLanguage.clear();
+  menuValue = false;
+  parser.onSetLanguage(acceptLanguage);
+  parser.onSetReadingMenu(acceptMenu);
+  parser.setLocalSetupOnly(true);
+  send(parser, wire, {3, 0});
+  CHECK(validReply(wire.output));
+  wire.output.clear();
+  send(parser, wire, {0x81, 2, 'd', 'e'});
+  CHECK_EQ(selectedLanguage, "de");
+  CHECK_EQ(languageCalls, 1u);
+  CHECK(validFrames(wire.output));
+  wire.output.clear();
+  send(parser, wire, {0x82, 1, '1'});
+  CHECK(menuValue);
+  CHECK_EQ(menuCalls, 1u);
+  CHECK(validFrames(wire.output));
+  for (const Bytes request : {Bytes{2, 0}, Bytes{4, 0}, Bytes{1, 4, 1, 'a', 1, 'b'}}) {
+    wire.output.clear();
+    send(parser, wire, request);
+    CHECK(validFrames(wire.output));
+    CHECK_EQ(WiFi.radioCalls, 0u);
+    CHECK_EQ(WiFi.beginCalls, 0u);
+  }
+  wire.output.clear();
+  send(parser, wire, {3, 0});
+  CHECK(validReply(wire.output));
+  parser.setLocalSetupOnly(false);
+  send(parser, wire, {2, 0});
+  CHECK(WiFi.radioCalls > 0);
+}

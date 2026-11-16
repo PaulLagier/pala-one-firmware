@@ -32,3 +32,5 @@ Native tests compile this exact source with deterministic Stream/Wi-Fi adapters.
 They test the existing Improv wire protocol, without accessing real networks.
 
 Vendor RPC `0x82` selects reading-focused menus. Its payload is exactly one ASCII byte (`0` or `1`). A successful reply echoes that value as one RPC string, only after the preference was saved. Other lengths and values are rejected without changing settings or starting Wi-Fi.
+
+During storage recovery the explicit USB allow-list contains only device info (`0x03`), language (`0x81`) and reading menus (`0x82`). These paths use metadata/NVS only. Network state, scans, credentials and unknown commands are rejected before any Wi-Fi API call. Normal provisioning resumes after storage becomes ready.

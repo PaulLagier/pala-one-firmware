@@ -1,6 +1,14 @@
 # Changelog
 
-## v3.1.0
+## v3.1.1
+
+- Allow USB language and menu setup while a new device is waiting for storage
+  initialization. The recovery allow-list permits only device information and
+  these NVS settings; Wi-Fi status, scan and connection commands remain blocked.
+- Retain the complete shared reader update below. The v3.1.0 source tag is kept
+  as a preliminary snapshot; no firmware packages are distributed for it.
+
+## v3.1.0 (source preview)
 
 - Add a reversible reading-focused menu view with clear return actions, fixed
   menu typography, a compact Device menu and read-only bookmark excerpts.
