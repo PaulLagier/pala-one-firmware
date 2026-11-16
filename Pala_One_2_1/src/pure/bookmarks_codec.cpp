@@ -2,57 +2,63 @@
 
 #include <cstring>
 
-uint8_t decodeBookmarks(const uint8_t* buf, size_t got, Bookmarks& out) {
+namespace {
+uint32_t readValue(const uint8_t *bytes, size_t n) {
+  uint32_t value = 0;
+  for (size_t i = 0; i < n; ++i)
+    value |= uint32_t(bytes[i]) << (8 * i);
+  return value;
+}
+void writeValue(uint8_t *bytes, uint32_t value, size_t n) {
+  for (size_t i = 0; i < n; ++i)
+    bytes[i] = uint8_t(value >> (8 * i));
+}
+} // namespace
+uint8_t decodeBookmarks(const uint8_t *buf, size_t got, Bookmarks &out) {
   out.count = 0;
-  if (got < 1) return 0;
-
-  uint8_t count = buf[0];
-  if (count > MAX_BOOKMARKS) count = MAX_BOOKMARKS;
-
-  bool hasOffsets = (got >= (size_t)(1 + count * 6));
-  if (hasOffsets) {
-    for (uint8_t i = 0; i < count; i++) {
-      size_t base = 1u + (size_t)i * 6u;
-      out.pages[i] = (uint16_t)(buf[base + 0] | (buf[base + 1] << 8));
-      out.offsets[i] = (uint32_t)buf[base + 2] |
-                       ((uint32_t)buf[base + 3] << 8) |
-                       ((uint32_t)buf[base + 4] << 16) |
-                       ((uint32_t)buf[base + 5] << 24);
-    }
-  } else {
-    for (uint8_t i = 0; i < count; i++) {
-      size_t base = 1u + (size_t)i * 2u;
-      out.pages[i] = (uint16_t)(buf[base + 0] | (buf[base + 1] << 8));
-      out.offsets[i] = kOffsetUnset;
-    }
+  if (!buf || got < 1)
+    return 0;
+  const bool wide = (buf[0] & 0x80) != 0;
+  uint8_t count = wide ? buf[0] & 0x7f : buf[0];
+  if (wide && count > MAX_BOOKMARKS)
+    return 0;
+  if (count > MAX_BOOKMARKS)
+    count = MAX_BOOKMARKS;
+  const bool offsets = wide || got >= 1u + size_t(count) * 6u;
+  const size_t pageBytes = wide ? 4u : 2u, stride = offsets ? pageBytes + 4u : pageBytes;
+  // A partial record must never be read as a complete bookmark.
+  if (got < 1u + size_t(count) * stride)
+    return 0;
+  for (uint8_t i = 0; i < count; ++i) {
+    const size_t base = 1u + size_t(i) * stride;
+    out.pages[i] = readValue(buf + base, pageBytes);
+    out.offsets[i] = offsets ? readValue(buf + base + pageBytes, 4) : kOffsetUnset;
   }
   out.count = count;
   return count;
 }
-
-size_t encodeBookmarks(const Bookmarks& bm, uint8_t* outBuf) {
+size_t encodeBookmarks(const Bookmarks &bm, uint8_t *outBuf) {
   uint8_t count = bm.count;
-  if (count > MAX_BOOKMARKS) count = MAX_BOOKMARKS;
-
+  if (count > MAX_BOOKMARKS)
+    count = MAX_BOOKMARKS;
+  bool wide = false;
+  for (uint8_t i = 0; i < count; ++i)
+    wide = wide || bm.pages[i] > 0xffff;
+  const size_t pageBytes = wide ? 4u : 2u, stride = pageBytes + 4u;
   std::memset(outBuf, 0, BOOKMARKS_ENCODED_MAX_SIZE);
-  outBuf[0] = count;
-  for (uint8_t i = 0; i < count; i++) {
-    size_t base = 1u + (size_t)i * 6u;
-    uint16_t page = bm.pages[i];
-    uint32_t off  = bm.offsets[i];
-    outBuf[base + 0] = (uint8_t)(page & 0xFF);
-    outBuf[base + 1] = (uint8_t)((page >> 8) & 0xFF);
-    outBuf[base + 2] = (uint8_t)(off & 0xFF);
-    outBuf[base + 3] = (uint8_t)((off >> 8) & 0xFF);
-    outBuf[base + 4] = (uint8_t)((off >> 16) & 0xFF);
-    outBuf[base + 5] = (uint8_t)((off >> 24) & 0xFF);
+  outBuf[0] = count | (wide ? 0x80 : 0);
+  for (uint8_t i = 0; i < count; ++i) {
+    const size_t base = 1u + size_t(i) * stride;
+    writeValue(outBuf + base, bm.pages[i], pageBytes);
+    writeValue(outBuf + base + pageBytes, bm.offsets[i], 4);
   }
-  return 1u + (size_t)count * 6u;
+  return 1u + size_t(count) * stride;
 }
 
-BookmarkAddResult addBookmark(Bookmarks& bm, uint16_t page, uint32_t offset) {
+BookmarkAddResult addBookmark(Bookmarks &bm, uint32_t page, uint32_t offset) {
   for (uint8_t i = 0; i < bm.count; i++) {
-    if (bm.pages[i] == page) return {false, D_TOAST_BOOKMARK_EXISTS};
+    if (bm.pages[i] == page)
+      return {false, D_TOAST_BOOKMARK_EXISTS};
   }
 
   if (bm.count < MAX_BOOKMARKS) {
@@ -74,7 +80,7 @@ BookmarkAddResult addBookmark(Bookmarks& bm, uint16_t page, uint32_t offset) {
   for (uint8_t i = 0; i < bm.count; i++) {
     for (uint8_t j = (uint8_t)(i + 1); j < bm.count; j++) {
       if (bm.pages[j] < bm.pages[i]) {
-        uint16_t tp = bm.pages[i];
+        uint32_t tp = bm.pages[i];
         bm.pages[i] = bm.pages[j];
         bm.pages[j] = tp;
         uint32_t to = bm.offsets[i];

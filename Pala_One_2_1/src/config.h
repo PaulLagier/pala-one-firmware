@@ -48,7 +48,7 @@
   #define LIB_HEADER_TITLE "Pala One"
 #endif
 
-// Language selection (LANG_EN / LANG_ES_LA) and the LANG_EN fallback live in
+// Language selection (LANG_EN / LANG_ES_LA / LANG_FR) and the LANG_EN fallback live in
 // src/lang/lang.h itself — included at the end of this header so every TU
 // that pulls in config.h transitively sees the D_* macros.
 
@@ -57,6 +57,8 @@ static const int SCREEN_H = 122;
 
 static const uint8_t MAX_BOOKMARKS = 12;
 static const int MAX_BOOKS = 80;
+static const int MAX_FILE_NAME = 96;  // chars of full file name
+static const int MAX_UPLOAD_FILE_NAME = MAX_FILE_NAME - 7;  // chars at file upload (no `/books/` prefix)
 static const int MAX_FOLDERS = 32;
 static const int MAX_FOLDER_PATH = 63;  // chars, excluding null
 static const int MAX_PAGES = 10000;
@@ -77,39 +79,24 @@ static const int MAX_APP_PATH = 80;
 // after measuring free exec-capable heap on a real device.
 static const size_t MAX_APP_BINARY = 48u * 1024u;
 
-// Max silence after the most recent release before we commit a click sequence.
-// The press-in-progress gate in input.cpp's trailing-silence check means this
-// effectively bounds "dead time between release and the next press" — once a
-// press starts, the commit pauses until that release lands. So the user can
-// take this long to *start* their next click; the press itself can take as
-// long as it wants (up to LONG_MS).
-static const uint32_t MAX_CLICK_GAP_MS = 175;
-
-// Max total duration of a multi-click sequence, measured from the first release.
-// Conceptually: "the whole multi-click input has to complete within this window."
-// Combined with MAX_CLICK_GAP_MS this caps both per-gap and overall sloppiness.
-static const uint32_t MAX_CLICK_SEQUENCE_MS = 550;
-
-static const uint32_t LONG_MS = 850;
-
-// Hold this long (without a preceding click) and the classifier emits
-// VeryLong instead of Long. Long and VeryLong — plus the click-then-hold
-// chord — are independently bindable to reader actions (bookmark / lock /
-// menu / none) via the web settings UI.
-static const uint32_t VERY_LONG_MS = 2000;
-
-static const uint32_t DEBOUNCE_MS = 14;
-
 static const uint32_t SAVE_EVERY_MS = 7000;
 static const uint32_t TOAST_MS = 650;
 static const uint32_t UPLOAD_AUTO_EXIT_MS = 15UL * 60UL * 1000UL;
 static const uint32_t BAT_CACHE_MS = 180000; // 3 min — battery changes slowly
+static const uint32_t BAT_CHARGING_CHECK_MS = 2000;
+static const float BAT_CHARGING_VOLTAGE = 4.09f;
 
 static const int FULL_REFRESH_EVERY_N_PAGES = 100;
 static const int MENU_FULL_REFRESH_EVERY = 60;
 
+// Buffer size for file read operations. Bigger is not necessarily
+// better as you might wind up just pulling in more data than you need
+// to fill a page. This was a value that worked well with both ASCII
+// unicode inputs.
+static const size_t FILE_STREAM_BUF_BYTES = 512;
+
 static const int MARGIN_X = 6;
-static const int TOP_PAD = 0;
+static const int TOP_PAD = 3;
 static const int BOT_PAD = 0;
 static const int STATUS_H = 8;
 

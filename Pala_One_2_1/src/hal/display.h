@@ -6,6 +6,7 @@
 
 #include "src/config.h"
 #include "src/state.h"
+#include "src/ui/screen_settings.h"
 
 // ============================================================================
 //  Display adapter — wraps the Heltec EInk display so Adafruit_GFX can draw
@@ -21,7 +22,13 @@ public:
     uint16_t c = color ? BLACK : WHITE;
     int16_t xx = (SCREEN_W - 1) - x;
     int16_t yy = (SCREEN_H - 1) - y;
-    disp.drawPixel(xx, yy, c);
+    if (!ScreenSettings::isScreenFlipped())
+    {
+      disp.drawPixel(xx, yy, c);
+    }
+    else {
+      disp.drawPixel(x, y, c);
+    }
   }
 
 private:

@@ -6,9 +6,12 @@
 TEST_CASE("bookmarks codec round-trip preserves pages and offsets") {
   Bookmarks bm;
   bm.count = 3;
-  bm.pages[0] = 1;   bm.offsets[0] = 100;
-  bm.pages[1] = 42;  bm.offsets[1] = 4200;
-  bm.pages[2] = 999; bm.offsets[2] = 0xDEADBEEF;
+  bm.pages[0] = 1;
+  bm.offsets[0] = 100;
+  bm.pages[1] = 42;
+  bm.offsets[1] = 4200;
+  bm.pages[2] = 999;
+  bm.offsets[2] = 0xDEADBEEF;
 
   uint8_t buf[BOOKMARKS_ENCODED_MAX_SIZE];
   size_t n = encodeBookmarks(bm, buf);
@@ -44,7 +47,7 @@ TEST_CASE("bookmarks codec decodes legacy v1 (page-only) entries") {
 
 TEST_CASE("bookmarks codec clamps overflow count to MAX_BOOKMARKS") {
   uint8_t buf[BOOKMARKS_ENCODED_MAX_SIZE] = {0};
-  buf[0] = 200;  // way over MAX_BOOKMARKS
+  buf[0] = 200; // way over MAX_BOOKMARKS
   Bookmarks bm;
   decodeBookmarks(buf, sizeof(buf), bm);
   CHECK(bm.count <= MAX_BOOKMARKS);
@@ -53,8 +56,8 @@ TEST_CASE("bookmarks codec clamps overflow count to MAX_BOOKMARKS") {
 TEST_CASE("addBookmark adds a new bookmark and keeps sorted by page") {
   Bookmarks bm;
   CHECK(addBookmark(bm, 10, 1000).added);
-  CHECK(addBookmark(bm, 3,  300).added);
-  CHECK(addBookmark(bm, 7,  700).added);
+  CHECK(addBookmark(bm, 3, 300).added);
+  CHECK(addBookmark(bm, 7, 700).added);
   CHECK_EQ(bm.count, 3);
   CHECK_EQ(bm.pages[0], 3);
   CHECK_EQ(bm.pages[1], 7);
@@ -93,9 +96,64 @@ TEST_CASE("addBookmark evicts oldest when full") {
   bool foundOld = false;
   bool foundNew = false;
   for (int i = 0; i < bm.count; i++) {
-    if (bm.pages[i] == 1) foundOld = true;
-    if (bm.pages[i] == 999) foundNew = true;
+    if (bm.pages[i] == 1)
+      foundOld = true;
+    if (bm.pages[i] == 999)
+      foundNew = true;
   }
   CHECK(!foundOld);
   CHECK(foundNew);
+}
+
+TEST_CASE("bookmarks codec rejects truncated legacy records") {
+  // Allocate exactly the declared length so ASan detects any over-read.
+  for (uint8_t count = 1; count <= MAX_BOOKMARKS; ++count) {
+    const size_t required = 1u + static_cast<size_t>(count) * 2u;
+    for (size_t length = 1; length < required; ++length) {
+      uint8_t *bytes = new uint8_t[length]{};
+      bytes[0] = count;
+      Bookmarks result;
+      result.count = 1;
+      CHECK_EQ(decodeBookmarks(bytes, length, result), 0);
+      CHECK_EQ(result.count, 0);
+      delete[] bytes;
+    }
+  }
+}
+
+TEST_CASE("bookmarks codec rejects null input with a nonzero length") {
+  Bookmarks result;
+  result.count = 1;
+  CHECK_EQ(decodeBookmarks(nullptr, 1, result), 0);
+  CHECK_EQ(result.count, 0);
+}
+
+TEST_CASE("wide bookmarks retain complete page numbers and reject every partial record") {
+  Bookmarks source;
+  REQUIRE(addBookmark(source, 70000, 120000).added);
+  REQUIRE(addBookmark(source, 160000, 900000).added);
+  uint8_t encoded[BOOKMARKS_ENCODED_MAX_SIZE]{};
+  const auto length = encodeBookmarks(source, encoded);
+  CHECK_EQ(length, 17u);
+  CHECK_EQ(encoded[0], 0x82);
+  Bookmarks decoded;
+  REQUIRE(decodeBookmarks(encoded, length, decoded) == 2);
+  CHECK_EQ(decoded.pages[0], 70000u);
+  CHECK_EQ(decoded.pages[1], 160000u);
+  CHECK_EQ(decoded.offsets[0], 120000u);
+  CHECK_EQ(decoded.offsets[1], 900000u);
+  for (size_t n = 1; n < length; ++n) {
+    auto *truncated = new uint8_t[n];
+    memcpy(truncated, encoded, n);
+    CHECK_EQ(decodeBookmarks(truncated, n, decoded), 0);
+    delete[] truncated;
+  }
+}
+TEST_CASE("ordinary bookmarks continue to emit the public V2 bytes") {
+  Bookmarks source;
+  REQUIRE(addBookmark(source, 65535, 0x12345678).added);
+  uint8_t encoded[BOOKMARKS_ENCODED_MAX_SIZE]{};
+  CHECK_EQ(encodeBookmarks(source, encoded), 7u);
+  const uint8_t expected[] = {1, 255, 255, 120, 86, 52, 18};
+  CHECK(std::memcmp(encoded, expected, sizeof(expected)) == 0);
 }

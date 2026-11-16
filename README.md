@@ -28,7 +28,51 @@ The easiest way to flash a board is via the web installer. Plug your Heltec Wire
 - **Stable** ([`/stable/`](https://paullagier.github.io/pala-one-firmware/stable/)) — latest tagged release (`vX.Y.Z`). Use this unless you have a reason not to.
 - **Development** ([`/dev/`](https://paullagier.github.io/pala-one-firmware/dev/)) — latest build from `dev`; new features, may break.
 
-Each channel page lists both display revisions (V1.1 / V1.2) and both languages (English / Spanish-LA) — four install buttons total. Pick the one that matches your board + language and click **Install**. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
+Each channel page lists both display revisions (V1.1 / V1.2) and EN/ES/FR initial-default images. Every image contains all eleven runtime languages. Pick your board, install, close the dialog and apply your preferred language with **Apply language over USB**; its initial selection follows the browser language. The Pala app and reader web settings can also change the language. The installer keeps existing reading progress, bookmarks, and uploaded books across re-flashes.
+
+## Reading-focused view
+
+Enable **Reading-focused menus** in the reader web settings or through the Pala
+app's `readingMenu` setting. Books and folders, bookmarks, connection and Device
+remain visible. Device groups statistics, updates and firmware information.
+Short presses move focus; double presses or holds open the selected item.
+Turning the view off restores the complete custom menu order and installed apps.
+Reader gesture mappings remain independent of menu navigation.
+
+The shared firmware captures intentional input during wake, avoids an extra
+V1.2 warm-start clear and prepares the next page while idle. Large books use a
+bounded page window rather than stopping at 10000 pages. Saved reading positions
+remain canonical byte offsets. Each release includes board-specific downloads,
+English installation instructions, source provenance and SHA-256 checksums.
+
+## Connect the Pala app
+
+In **Upload**, choose **Bluetooth / app** and pair using the six-digit PIN
+shown on the reader. Books, packed books, bookmarks and reader settings can
+then be managed through Pala. **Wi-Fi / browser** retains the existing web
+workflow, including app uploads and advanced settings. See
+[Companion connection](docs/COMPANION.md) for controls, protocol and build notes.
+The app-enabled firmware uses the PlatformIO targets; the existing Arduino IDE
+core build retains Wi-Fi without the optional Bluetooth flag.
+
+## Storage recovery
+
+If storage cannot be mounted, boot stops at a recovery screen instead of
+formatting automatically. **Try again** retries the mount without erasing;
+**Help** explains the alternatives. A blank, never-initialized device also uses
+this screen for its first storage initialization.
+
+To initialize storage, select **Erase storage**, switch from the default
+**Cancel** to **Continue**, then on the final warning switch from **Cancel** to
+**Erase storage** and hold the button. A double click cannot perform the final
+erase; a triple click returns to the safe menu. Release the button between
+steps. If locked, hold to unlock before using recovery.
+
+Erasing deletes all books and files in storage, while device settings in NVS
+are kept. If files matter, try again or reflash compatible firmware before
+choosing erase. Recovery rechecks the mount immediately before formatting and
+keeps the files if the volume has become readable. Normal menus and wireless
+services start only once storage mounts successfully.
 
 ## Board Versions
 
@@ -40,11 +84,53 @@ The board version is usually printed on the back of the PCB.
 
 Pick your board's revision in the build step below — either by uncommenting the matching `#define` at the top of `Pala_One_2_1/Pala_One_2_1.ino` (Arduino IDE), or by selecting the matching env (PlatformIO).
 
-## Wi-Fi provisioning (Improv)
+## Wi-Fi Setup
 
-Besides the SoftAP captive portal, the firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
+Out of the box, the device supports a SoftAP captive portal that can be used to upload books and adjust settings. The device can also be configured to connect to a single WiFi network via one of
+two methods: Improv WiFi provisioning via USB; or, the Web UI.
+
+### Configuring using Improv
+
+The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using a [vendored serial subset](Pala_One_2_1/src/third_party/improv/README.md) of [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). The same bounded parser is compiled by Arduino IDE and PlatformIO; no separate Improv library installation is required. When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
 
 Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
+
+### Configuring using Web UI
+
+On the `/settings` page of the device's Web UI, you can also find a "WiFi" section at the bottom. This will let you enter an SSID and password for the device to connect to. The next time you select "Upload"
+from the main menu, the device will try to connect to the configured WiFi network before falling back to the Soft AP mode (you can also force the fallback by pressing the button).
+
+Note: The `/settings` page will never show your actual WiFi password, it will simply indicate if one is saved or not.
+
+## Customization
+
+### Click behaviours
+
+Version 3.2 introduces a fully customizable action system. You can now bind *any* **action** (e.g. go-home, bookmark, sleep, ...) to any **gesture** (e.g. single click, double click, ...).
+
+This option is disabled by default and can be enabled in the WebUI unchecking the "Legacy mode" in the settings page.
+
+The following table summarizes the different **actions** with their effect in the various screens and menus, as well as the default **gesture** binding, which can be changed by the user.
+
+
+|**Action**| Main menu effect   | Submenu effect (e.g. "connect") | Reading            | Locked | Default **gesture** binding |
+|----------|--------------------|---------------------------------|--------------------|--------|-----------------------------|
+| NEXT     | Next item          | Next page (if multi-page)       | Next page          | /      | Short click                 |
+| PREV     | Previous item      | Previous page (if multi-page)   | Previous page      | /      | Double click                |
+| OK       | Select item        | Interact/Cycle options          | Book menu          | /      | Long click                  |
+| LOCK     | Lock               | Lock                            | Lock               | Unlock | Extra long click            |
+| HOME     | Go to first item   | Go to previous menu             | Go to main menu    | /      | Triple click                |
+| BOOKMARK | /                  | /                               | Bookmark page      | /      | Click + Hold                |
+| ROTATE   | Flip screen 180deg |  Flip screen 180deg             | Flip screen 180deg | /      | /                           |
+
+If "Legacy mode" is enabled, mapping single, double and triple click will have no effect and the behaviour will remain the same of versions <= 3.1.
+
+### Main menu
+
+Starting from version 3.2 you can use the web UI to hide and rearrange the entries of the main menu. The book and folder items will remain at the top of the main menu while all the others can be customized. 
+
+Note that the "Upload" item cannot be hidden as this would make it impossible to further interact with the Pala One from an external device.
+
 
 ## OTA firmware updates
 
@@ -68,19 +154,38 @@ Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-pr
 - Wi-Fi credentials must be provisioned first (see below). If none are stored the screen shows *"No Wi-Fi credentials — setup via web installer"*.
 - The device must be able to reach `paullagier.github.io` over HTTPS. A local network without internet access will be reported as *"Cannot reach update server"*.
 
+## Notes
+
+> [!WARNING]
+> Charging status and battery level are estimated using an unreliable method due to hardware limitations. The battery icon and related indicators are only a guideline and may be inaccurate.
+
 
 ## Language
 
-The firmware ships with two built-in languages, selected at build time:
+Every firmware image includes German, English, French, Spanish, Polish,
+Italian, Czech, Russian, Ukrainian, Dutch and Portuguese. Change the reader
+language in the Pala app, its web settings, or the installer's USB language
+setup. The selection persists across sleep and firmware updates; it does not
+change book content, reading preferences or the selected font family.
 
-- `LANG_EN` — English (default)
-- `LANG_ES_LA` — Spanish (Latin America)
+The six PlatformIO leaf environments retain their EN/ES/FR asset names for
+compatibility. `LANG_EN`, `LANG_ES_LA` and `LANG_FR` now choose only the initial
+fallback on a device without a saved language. Arduino IDE users choose the
+fallback in `src/lang/default_language.h`, shared by every translation unit.
+Board selection remains separate; V1.1 and V1.2 keep their existing display drivers.
 
-One language per binary. PlatformIO users pick a leaf env that already encodes both the board and the language (`wireless-paper-v1_2-en`, `wireless-paper-v1_2-es`, `wireless-paper-v1_1-en`, `wireless-paper-v1_1-es`). Arduino IDE users uncomment one of `LANG_EN` / `LANG_ES_LA` near the top of `Pala_One_2_1/Pala_One_2_1.ino`, alongside the board `#define`. If nothing is set, the firmware compiles with `LANG_EN` and a `#pragma message` warning.
+Canonical strings live in `src/lang/catalogs/*.json`. The generator validates
+all eleven catalogs, native/JavaScript placeholders and quoting before emitting
+the firmware tables. New translations use the catalogs, not another firmware
+environment. See [Runtime languages](docs/RUNTIME-LANGUAGES.md) for generation,
+UTF-8 font coverage, memory behavior and protocol details. French retains the
+original contribution history from #164.
 
-Strings live in `Pala_One_2_1/src/lang/` — `en.h` is the canonical key set; `es_la.h` mirrors it. Adding a new language is additive: clone one of the headers, add the include arm in `src/lang/lang.h`, and add two leaf envs in `platformio.ini` (one per board). See `src/lang/lang.h` for the authoring rules (key set, placeholders, JS-confirm quoting constraint).
+Body, bold, toast and app-large fonts cover the native Latin/Cyrillic interface.
+Small fixed fonts remain for ASCII status/build information. Compact reader
+line metrics grow only for glyphs present on the current page; geometry changes
+invalidate the old page-offset cache while retaining canonical byte positions.
 
-Glyph coverage: Latin Extended (`á é í ó ú ñ Ñ ¿ ¡ ü Ü`) is provided by `u8g2_font_helv*_te` for body, bold, app-large and toast roles. The small bitmap fonts used for the battery percentage and page-number indicator stay on ASCII-only `_tf` tables — they only render digits / `%`, and any translation routed through them would render missing-glyph boxes. Web responses declare `charset=utf-8`.
 
 ## Web UI theme
 
@@ -158,8 +263,10 @@ The same sources build under either toolchain.
    ```
    pio run -e wireless-paper-v1_2-en -t upload    # V1.2 panel, English
    pio run -e wireless-paper-v1_2-es -t upload    # V1.2 panel, Spanish-LA
+   pio run -e wireless-paper-v1_2-fr -t upload    # V1.2 panel, French
    pio run -e wireless-paper-v1_1-en -t upload    # V1.1 panel, English
    pio run -e wireless-paper-v1_1-es -t upload    # V1.1 panel, Spanish-LA
+   pio run -e wireless-paper-v1_1-fr -t upload    # V1.1 panel, French
    ```
 3. Serial monitor:
    ```
@@ -178,7 +285,7 @@ Both envs share libraries and partition table via `platformio.ini`. The PIO buil
    - [`heltec-eink-modules`](https://github.com/todd-herbert/heltec-eink-modules) (todd-herbert fork)
    - **Adafruit GFX Library** (Adafruit)
    - **U8g2_for_Adafruit_GFX** (olikraus)
-   - [`Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library) (jnthas) — serial Wi-Fi provisioning; PlatformIO installs it automatically, Arduino IDE users add it by URL
+   - Improv Serial — [bundled source and attribution](Pala_One_2_1/src/third_party/improv/README.md); no external Improv library installation is needed
 3. Open `Pala_One_2_1/Pala_One_2_1.ino`. Uncomment exactly one of `BOARD_V1_1` / `BOARD_V1_2` at the top.
 4. Tools → Partition Scheme → **Custom** (the sketch ships its own `partitions.csv`).
 5. Verify / Upload.
@@ -207,12 +314,14 @@ Source HTML/manifests live in `install/` on the normal branches. The `gh-pages` 
 
 To iterate on the installer page (HTML, Improv Serial provisioning flow, manifest tweaks) without CI:
 
-1. Build all four leaf envs at least once so the firmware bins exist:
+1. Build all six leaf envs at least once so the firmware bins exist:
    ```
    pio run -e wireless-paper-v1_1-en
    pio run -e wireless-paper-v1_1-es
+   pio run -e wireless-paper-v1_1-fr
    pio run -e wireless-paper-v1_2-en
    pio run -e wireless-paper-v1_2-es
+   pio run -e wireless-paper-v1_2-fr
    ```
 2. Assemble the bundle. Two layouts are supported:
    ```

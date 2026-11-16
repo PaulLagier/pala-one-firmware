@@ -1,13 +1,14 @@
+#include "src/storage/navigation_profile.h"
 // Implementation of the Improv Serial Wi-Fi provisioning wrapper.
 //
 // The on-device protocol work is done by jnthas/Improv-WiFi-Library
-// (<ImprovWiFiLibrary.h>, pinned in platformio.ini) — this file owns the
+// (serial subset vendored under src/third_party/improv) — this file owns the
 // ImprovWiFi instance, wires its callbacks, drives it from loop(), and
 // coordinates Wi-Fi ownership with the upload session. See the header for the
 // "what / why" of Improv and the listening model.
 #include "src/hal/wifi_provisioning.h"
 
-#include <ImprovWiFiLibrary.h>
+#include "src/third_party/improv/ImprovWiFiLibrary.h"
 #include <WiFi.h>
 
 #include "src/config.h"
@@ -18,15 +19,15 @@ namespace WifiProvisioning {
 namespace {
 struct State {
   ImprovWiFi lib{&Serial};
-  bool       uploadSession   = false;
-  bool       credsReceived   = false;
-  uint32_t   credsReceivedMs = 0;
-  bool       ownsWifi        = false;  // true iff we brought Wi-Fi up to verify creds
-  uint32_t   lastHostByteMs  = 0;      // 0 = no byte ever received this boot
+  bool uploadSession = false;
+  bool credsReceived = false;
+  uint32_t credsReceivedMs = 0;
+  bool ownsWifi = false;       // true iff we brought Wi-Fi up to verify creds
+  uint32_t lastHostByteMs = 0; // 0 = no byte ever received this boot
 };
 
 State s_state;
-}  // namespace
+} // namespace
 
 // After the credentials callback fires we give the library this much time to
 // flush its "Provisioned" reply over USB-CDC before tearing Wi-Fi down. The
@@ -54,30 +55,32 @@ static constexpr uint32_t kHostActivityMs = 5 * 60 * 1000;
 //
 // Trusting either signal individually catches the failure mode of the other.
 static bool hostPresent() {
-  if (HWCDC::isPlugged()) return true;
-  return s_state.lastHostByteMs != 0
-      && (uint32_t)(millis() - s_state.lastHostByteMs) < kHostActivityMs;
+  if (HWCDC::isPlugged())
+    return true;
+  return s_state.lastHostByteMs != 0 &&
+         (uint32_t)(millis() - s_state.lastHostByteMs) < kHostActivityMs;
 }
 
 static void releaseWifi() {
-  if (!s_state.ownsWifi) return;
+  if (!s_state.ownsWifi)
+    return;
   WiFi.disconnect(true, true);
   WiFi.mode(WIFI_OFF);
   s_state.ownsWifi = false;
 }
 
 static void clearGraceTimer() {
-  s_state.credsReceived   = false;
+  s_state.credsReceived = false;
   s_state.credsReceivedMs = 0;
 }
 
 void begin() {
-  s_state.lib.setDeviceInfo(
-      ImprovTypes::ChipFamily::CF_ESP32_S3,
-      "Pala One",
-      FW_VERSION,
-      "Pala One",
-      "https://paullagier.github.io/pala-one-firmware/connected.html");
+  s_state.lib.onSetReadingMenu(
+      [](bool enabled) { return NavigationProfile::setReadingFocused(enabled); });
+  s_state.lib.onSetLanguage([](const char *code) { return Language::setLanguage(code); });
+  s_state.lib.setDeviceInfo(ImprovTypes::ChipFamily::CF_ESP32_S3, "Pala One", FW_VERSION,
+                            "Pala One",
+                            "https://paullagier.github.io/pala-one-firmware/connected.html");
 
   // The library handles WiFi.begin() itself; we only persist creds once the
   // association succeeds. If the association fails the library reports the
@@ -89,13 +92,13 @@ void begin() {
   // session's SoftAP and disconnects any phone mid-upload. Considered narrow
   // enough to defer; fix would be `setCustomConnectWiFi(...)` to bypass the
   // lib's connect while a session is up and just save creds.
-  s_state.lib.onImprovConnected([](const char* ssid, const char* password) {
+  s_state.lib.onImprovConnected([](const char *ssid, const char *password) {
     WifiCreds::save(ssid, password);
     if (!s_state.uploadSession) {
       // We brought Wi-Fi up just to verify creds — schedule teardown after
       // the library finishes sending its "Provisioned" reply.
-      s_state.ownsWifi        = true;
-      s_state.credsReceived   = true;
+      s_state.ownsWifi = true;
+      s_state.credsReceived = true;
       s_state.credsReceivedMs = millis();
     }
     // Upload session: leave Wi-Fi alone — upload screen owns it.
@@ -135,8 +138,7 @@ void loop() {
     return;
   }
 
-  if (s_state.credsReceived
-      && (uint32_t)(millis() - s_state.credsReceivedMs) > kShutdownGraceMs) {
+  if (s_state.credsReceived && (uint32_t)(millis() - s_state.credsReceivedMs) > kShutdownGraceMs) {
     releaseWifi();
     clearGraceTimer();
     // Keep listening — host might want to re-provision a different network.
@@ -145,4 +147,4 @@ void loop() {
   s_state.lib.handleSerial();
 }
 
-}  // namespace WifiProvisioning
+} // namespace WifiProvisioning

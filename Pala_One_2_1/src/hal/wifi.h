@@ -64,4 +64,14 @@ WifiSession   wifiBeginAccessPoint();
 // Tears down whichever mode is active and drops CPU back to 80 MHz.
 void          wifiEnd();
 
+// True while the radio has been brought up by one of the begin functions
+// above and not yet torn down. This is a UI-facing indicator for the header
+// status tray, not a link-state query — in Station mode it goes true at
+// wifiStaBegin(), i.e. while still associating, not at WL_CONNECTED.
+//
+// Caveat: Sleep::enter() releases the radio directly rather than through
+// wifiEnd(), so the flag stays true across that call. Harmless, because deep
+// sleep is a reboot and statics re-initialize on wake.
+bool          wifiActive();
+
 #endif  // PALA_HAL_WIFI_H

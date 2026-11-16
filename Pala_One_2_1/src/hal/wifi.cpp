@@ -14,6 +14,12 @@ static constexpr const char* kMdnsHost = "pala-one";
 // back to NVS. Cleared by wifiStaAbort() / wifiEnd().
 static String s_staSsid;
 
+// True between any successful begin and the matching teardown. Drives the
+// header status icon; see wifiActive() in the header for the caveats.
+static bool s_wifiActive = false;
+
+bool wifiActive() { return s_wifiActive; }
+
 bool wifiStaBegin() {
   if (!WifiCreds::has()) return false;
 
@@ -24,6 +30,7 @@ bool wifiStaBegin() {
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(s_staSsid.c_str(), pass.c_str());
+  s_wifiActive = true;
   return true;
 }
 
@@ -53,6 +60,10 @@ void wifiStaAbort() {
   WiFi.disconnect(true, true);
   WiFi.mode(WIFI_OFF);
   s_staSsid = "";
+  // Cleared here too: a caller that aborts without falling through to
+  // wifiBeginAccessPoint() would otherwise leave the flag stuck on. The
+  // normal fallback path re-sets it a moment later.
+  s_wifiActive = false;
   // CPU clock stays at 240 MHz — the typical next call is
   // wifiBeginAccessPoint() which needs it anyway. wifiEnd() drops it.
 }
@@ -62,6 +73,7 @@ WifiSession wifiBeginAccessPoint() {
 
   WiFi.mode(WIFI_AP);
   WiFi.softAP(AP_SSID, AP_PASS);
+  s_wifiActive = true;
   IPAddress ip = WiFi.softAPIP();
 
   WifiSession s;
@@ -81,5 +93,6 @@ void wifiEnd() {
   esp_wifi_stop();
   btStop();
   s_staSsid = "";
+  s_wifiActive = false;
   setCpuFrequencyMhz(80);  // back to low-power idle
 }

@@ -15,22 +15,37 @@ extern "C" uint64_t esp_rtc_get_time_us(void);
 //  NVS:
 //    cfg_stats   blob — { uint32_t version; uint32_t firstRtcSec;
 //                         uint64_t pagesRead; uint64_t buttonPresses; }
-//    cfg_streak  blob — ReadingStreakFile (8 x uint32_t)
+//    cfg_streak2 blob — ReadingStreakFile (9 x uint32_t, schema v2).
+//    cfg_streak  blob — ReadingStreakFileV1 (32 bytes), left by firmware 3.0
+//                       and earlier. Migrated into cfg_streak2 on first read
+//                       and never written again, so a downgrade still finds it.
 //
 //  RTC RAM: working lifetime counters (survive deep sleep, zero flash writes
 //  during normal use). Re-seeded from cfg_stats on cold boot.
 //
-//  Plain RAM: streak threshold-gate cache (pagesToday + cachedLastDay) —
-//  reset on every cold boot, which restarts the 5-page threshold for the
-//  next session. Acceptable: page-turn count within one reading session is
-//  a small fraction of any realistic streak rule.
+//  Plain RAM: streak gate cache (pagesSinceCheck + lastTouchSec) — reset on
+//  every cold boot, which restarts the 5-page threshold for the next session.
+//  Acceptable: page-turn count within one reading session is a small fraction
+//  of any realistic streak rule.
+//
+//  Streak v2 tracks `lastReadSec` as well as `lastLogSec`, so unlike v1 it has
+//  something to persist on sessions that don't advance the streak. Two gates
+//  keep that off the flash: STREAK_PAGES_THRESHOLD page turns before we look
+//  at NVS at all, then STREAK_REFRESH_SECS before a bare lastReadSec refresh
+//  is worth a write. A logged day always writes through immediately.
 // ============================================================================
 
-static constexpr const char* kKeyStats  = "cfg_stats";
-static constexpr const char* kKeyStreak = "cfg_streak";
+static constexpr const char* kKeyStats    = "cfg_stats";
+static constexpr const char* kKeyStreak   = "cfg_streak2";
+static constexpr const char* kKeyStreakV1 = "cfg_streak";   // read-only from here on
 
-static const uint32_t STATS_SCHEMA            = 1;
+static const uint32_t STATS_SCHEMA             = 1;
 static const uint32_t STATS_FLUSH_EVERY_EVENTS = 100;
+
+// Don't spend a flash write refreshing `lastReadSec` more often than this.
+// The value only matters within a single sitting — it is well under the 18 h
+// same-day floor, so it can never change which day a session lands on.
+static const uint32_t STREAK_REFRESH_SECS      = 900;  // 15 min
 
 struct StatsBlob {
   uint32_t version;
@@ -46,12 +61,12 @@ RTC_DATA_ATTR static uint32_t s_firstStatsRtcSec   = 0;
 RTC_DATA_ATTR static uint32_t s_eventsSinceFlush   = 0;
 RTC_DATA_ATTR static bool     s_rtcInitialised     = false;
 
-// Plain RAM streak threshold-gate cache. Reset on cold boot.
+// Plain RAM streak gate cache. Reset on cold boot.
 static struct {
-  int      pagesToday        = 0;
-  uint32_t cachedFirstRtcSec = 0;
-  uint32_t cachedLastDay     = STREAK_DAY_UNSET;
-  bool     bootstrapped      = false;
+  int      pagesSinceCheck = 0;
+  uint32_t lastTouchSec    = 0;      // RTC secs when we last consulted NVS
+  bool     touched         = false;  // lastTouchSec is meaningful
+  bool     bootstrapped    = false;
 } g_streakAuto;
 
 static uint32_t rtcSecondsNow() {
@@ -98,60 +113,97 @@ static inline void bumpEventsAndMaybeFlush() {
 //  Streak half
 // ---------------------------------------------------------------------------
 
-static bool readStreakBlob(ReadingStreakFile& out) {
-  size_t got = prefs.getBytes(kKeyStreak, &out, sizeof(out));
-  return got == sizeof(out) && out.version == STREAK_SCHEMA;
-}
-
 static void writeStreakBlob(const ReadingStreakFile& s) {
   prefs.putBytes(kKeyStreak, &s, sizeof(s));
+}
+
+// Read the streak blob, upgrading a schema-v1 one on the way through.
+//
+// v2 lives under its own key and the v1 blob is never overwritten. A v1
+// firmware reads its blob with a 32-byte buffer, and Preferences::getBytes
+// returns 0 for a stored blob larger than that, which v1 treats as "no
+// streak" and replaces with an empty one. Keeping the keys apart means a
+// downgrade finds the record as it stood at the upgrade instead.
+//
+// The migration stamps lastReadSec with the current time, so it is only
+// written back (`landMigration`) on the reading path. Elsewhere the upgrade
+// is computed for this read alone and lands on the next page turn.
+static bool readStreakBlob(ReadingStreakFile& out, bool landMigration) {
+  if (prefs.getBytes(kKeyStreak, &out, sizeof(out)) == sizeof(out)) {
+    return out.version == STREAK_SCHEMA;
+  }
+
+  ReadingStreakFileV1 v1{};
+  size_t got = prefs.getBytes(kKeyStreakV1, &v1, sizeof(v1));
+  if (got != sizeof(v1) || v1.version != 1u) return false;
+  out = migrateStreakV1(v1, rtcSecondsNow());
+  if (landMigration) writeStreakBlob(out);   // land the upgrade once, not on every read
+  return true;
 }
 
 // One-time initialise the streak NVS key + RAM cache. Called on first
 // page-turn after boot (lazy — keeps cold-start fast for non-readers).
 static void bootstrapStreak() {
   ReadingStreakFile s{};
-  if (!readStreakBlob(s)) {
+  if (!readStreakBlob(s, true)) {
     s.version       = STREAK_SCHEMA;
     s.firstRtcSec   = rtcSecondsNow();
-    s.lastLoggedDay = STREAK_DAY_UNSET;
+    s.lastLogSec    = STREAK_SEC_UNSET;
+    s.lastReadSec   = 0;
+    s.dayIndex      = 0;
     s.currentStreak = 0;
     s.longestStreak = 0;
     s.totalSessions = 0;
-    s.bitmapHead    = 0;
     s.bitmap        = 0;
     writeStreakBlob(s);
   }
-  g_streakAuto.cachedFirstRtcSec = s.firstRtcSec;
-  g_streakAuto.cachedLastDay     = s.lastLoggedDay;
-  g_streakAuto.bootstrapped      = true;
+  g_streakAuto.bootstrapped = true;
 }
 
-// Try to advance the streak based on today's RTC. Mirrors the threshold
-// gate from the original reading-streak feature: STREAK_PAGES_THRESHOLD
-// page turns on a new day before we commit. The actual continuation +
-// bitmap-shift rules are in src/pure/streak_log.cpp (host-tested).
+// Try to advance the streak from the current RTC reading. Keeps the threshold
+// gate from the original feature — STREAK_PAGES_THRESHOLD page turns before a
+// session counts as reading — and adds a time gate so a long sitting doesn't
+// re-read NVS every fifth page. The window rules themselves are in
+// src/pure/streak_log.cpp (host-tested).
 static void streakAutoLogOnPageTurn() {
   if (!g_streakAuto.bootstrapped) bootstrapStreak();
 
-  uint32_t now = rtcSecondsNow();
-  if (now < g_streakAuto.cachedFirstRtcSec) return;           // RTC ran backwards
-  uint32_t today = (now - g_streakAuto.cachedFirstRtcSec) / STREAK_DAY_SECS;
+  if (++g_streakAuto.pagesSinceCheck < STREAK_PAGES_THRESHOLD) return;
+  g_streakAuto.pagesSinceCheck = 0;
 
-  if (g_streakAuto.cachedLastDay == today) return;            // already logged today
-  if (++g_streakAuto.pagesToday < STREAK_PAGES_THRESHOLD) return;
+  uint32_t now = rtcSecondsNow();
+
+  // Nothing the pure logic decides can change faster than the refresh
+  // interval, so don't go back to NVS sooner than that. `now >= lastTouchSec`
+  // guards a backwards RTC: if the counter reset, fall through and let
+  // applyStreakLog re-anchor.
+  if (g_streakAuto.touched && now >= g_streakAuto.lastTouchSec &&
+      (now - g_streakAuto.lastTouchSec) < STREAK_REFRESH_SECS) {
+    return;
+  }
 
   ReadingStreakFile s;
-  if (!readStreakBlob(s)) return;
+  if (!readStreakBlob(s, true)) return;
 
-  StreakLogResult r = applyStreakLog(s, today);
+  g_streakAuto.lastTouchSec = now;
+  g_streakAuto.touched      = true;
+
+  StreakLogResult r = applyStreakLog(s, now);
   if (!r.changed) return;
 
-  writeStreakBlob(r.next);
-  g_streakAuto.cachedLastDay = today;
-  g_streakAuto.pagesToday    = 0;
+  // A bare lastReadSec refresh is worth a flash write only once per interval;
+  // a logged day, or a backwards-RTC re-anchor, always writes through.
+  const bool refreshDue = (r.next.lastReadSec < s.lastReadSec) ||
+                          (r.next.lastReadSec - s.lastReadSec) >= STREAK_REFRESH_SECS;
+  if (!r.logged && !refreshDue) return;
 
-  Toast::show(String("Reading streak: day ") + String(r.next.currentStreak));
+  writeStreakBlob(r.next);
+  if (!r.logged) return;
+
+  char msg[48];
+  snprintf(msg, sizeof(msg), D_TOAST_STREAK_DAY_FMT,
+           (unsigned)r.next.currentStreak);
+  Toast::show(msg);
 }
 
 // ---------------------------------------------------------------------------
@@ -193,22 +245,25 @@ StatisticsSnapshot snapshot() {
   s.buttonPresses     = s_buttonPresses;
   s.firstStatsRtcSec  = s_firstStatsRtcSec;
 
+  // Opening the dashboard isn't reading: don't land a migration from here,
+  // and show the streak as it stands now rather than as last stored.
   ReadingStreakFile str{};
-  if (readStreakBlob(str)) {
+  if (readStreakBlob(str, false)) {
+    str = streakAsOf(str, rtcSecondsNow());
     s.firstStreakRtcSec = str.firstRtcSec;
     s.currentStreak     = str.currentStreak;
     s.longestStreak     = str.longestStreak;
     s.totalSessions     = str.totalSessions;
-    s.lastLoggedDay     = str.lastLoggedDay;
-    s.bitmapHead        = str.bitmapHead;
+    s.lastLogSec        = str.lastLogSec;
+    s.dayIndex          = str.dayIndex;
     s.bitmap            = str.bitmap;
   } else {
     s.firstStreakRtcSec = 0;
     s.currentStreak     = 0;
     s.longestStreak     = 0;
     s.totalSessions     = 0;
-    s.lastLoggedDay     = STREAK_DAY_UNSET;
-    s.bitmapHead        = 0;
+    s.lastLogSec        = STREAK_SEC_UNSET;
+    s.dayIndex          = 0;
     s.bitmap            = 0;
   }
   return s;

@@ -1,7 +1,8 @@
 #include "test_framework.h"
 #include "pure/paths.h"
+#include "config.h"
 
-TEST_CASE("stripTxtExt removes only .txt") {
+TEST_CASE("stripTxtExt removes supported book extensions") {
   CHECK(stripTxtExt("book.txt") == "book");
   CHECK(stripTxtExt("book") == "book");
   CHECK(stripTxtExt("book.TXT") == "book.TXT");  // case-sensitive
@@ -76,6 +77,15 @@ TEST_CASE("sanitizeUploadedFilename") {
   CHECK(sanitizeUploadedFilename("weird!@#chars.txt") == "weird___chars.txt");
   // Numeric, punctuation in middle stays as filename
   CHECK(sanitizeUploadedFilename("a1-b2.txt") == "a1-b2.txt");
+  // Clamps to MAX_UPLOAD_FILE_NAME - 1 (88) so "/books/" + name fits BookInfo::path[96]
+  // Empty input falls back to book.txt
+  CHECK(sanitizeUploadedFilename("") == "book.txt");
+  // Clamp does not split a multi-byte UTF-8 character (é straddles byte 84)
+  CHECK(sanitizeUploadedFilename("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\xC3\xA9" "xxxxx.txt") == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.txt");
+  CHECK(sanitizeUploadedFilename("88_chars__________________________________________________________________________88.txt") == "88_chars__________________________________________________________________________88.txt");
+  CHECK(sanitizeUploadedFilename("89_chars___________________________________________________________________________89.txt") == "89_chars___________________________________________________________________________8.txt");
+  CHECK(sanitizeUploadedFilename("90_chars____________________________________________________________________________90.txt") == "90_chars____________________________________________________________________________.txt");
+  CHECK(sanitizeUploadedFilename("93_chars_______________________________________________________________________________93.txt") == "93_chars____________________________________________________________________________.txt");
 }
 
 TEST_CASE("sanitizeUploadedAppFilename") {
@@ -96,4 +106,16 @@ TEST_CASE("sanitizeUploadedAppFilename") {
   CHECK(sanitizeUploadedAppFilename(".hidden.bin") == "_hidden.bin");
   // Mixed legal punctuation survives.
   CHECK(sanitizeUploadedAppFilename("a1-b2.bin") == "a1-b2.bin");
+}
+
+TEST_CASE("Packed book filenames preserve extension and fit catalog paths") {
+  CHECK(stripTxtExt("book.pbt") == "book");
+  CHECK(bookLeafLabel("/books/a_book.pbt") == "a book");
+  CHECK(prettyRelativeLabel("folder/a_book.pbt") == "folder / a book");
+  CHECK(sanitizeUploadedFilename("../book.pbt") == "book.pbt");
+  String longName;
+  for (int i = 0; i < 200; ++i) longName += 'a';
+  auto clean = sanitizeUploadedFilename(longName + ".pbt");
+  CHECK(clean.endsWith(".pbt"));
+  CHECK(clean.length() < MAX_UPLOAD_FILE_NAME);
 }

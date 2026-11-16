@@ -16,11 +16,26 @@
 //  About screen (src/ui/screens/about_screen.cpp)
 // ----------------------------------------------------------------------------
 #define D_ABOUT_HEADER              "Device"
-#define D_ABOUT_FIRMWARE_PREFIX     "Firmware "
-#define D_ABOUT_GESTURE_NEXT        "1x next / down"
-#define D_ABOUT_GESTURE_OPEN        "2x open / select"
-#define D_ABOUT_GESTURE_HOME        "3x home"
-#define D_ABOUT_GESTURE_BOOKMARK    "Hold bookmark"
+#define D_ABOUT_FIRMWARE_PREFIX     "Firmware"
+#define D_ABOUT_GESTURE_CLICK       "click"
+#define D_ABOUT_GESTURE_CLICK_2     "click x 2"
+#define D_ABOUT_GESTURE_CLICK_3     "click x 3"
+#define D_ABOUT_GESTURE_CLICK_HOLD  "click + hold"
+#define D_ABOUT_GESTURE_HOLD        "hold"
+#define D_ABOUT_GESTURE_LONG_HOLD   "long hold"
+#define D_ABOUT_GESTURE_SEPARATOR   ": "
+
+// ----------------------------------------------------------------------------
+// Action names  (src/ui/reader_actions.cpp)
+// ----------------------------------------------------------------------------
+#define D_ACTION_NONE_LABEL     "None"
+#define D_ACTION_NEXT_LABEL     "Next"
+#define D_ACTION_OPEN_LABEL     "Open/Select"
+#define D_ACTION_BOOKMARK_LABEL "Bookmark"
+#define D_ACTION_HOME_LABEL     "Home"
+#define D_ACTION_LOCK_LABEL     "Lock"
+#define D_ACTION_MENU_LABEL     "Menu"
+#define D_ACTION_ROTATE_LABEL   "Flip screen"
 
 // ----------------------------------------------------------------------------
 //  Library screen — section title + system menu entries
@@ -29,6 +44,7 @@
 // ----------------------------------------------------------------------------
 #define D_MENU_BOOKMARKS            "Bookmarks"
 #define D_MENU_LIST                 "List"
+#define D_MENU_SETTINGS             "Layout Settings"
 #define D_MENU_APPS                 "Apps"
 #define D_MENU_STATISTICS           "Statistics"
 #define D_MENU_DEVICE               "Device"
@@ -52,6 +68,23 @@
 // ----------------------------------------------------------------------------
 #define D_LIST_HEADER               "List"
 #define D_LIST_NONE                 "No items"
+
+// ----------------------------------------------------------------------------
+//  Settings screen (src/ui/screens/settings_screen.cpp). For the most part we
+//  reuse the same labels as the Web UI, but a few we need to redefine due to
+//  embedded html elements.
+// ----------------------------------------------------------------------------
+#define D_SETTINGS_HEADER           "Layout Settings"
+
+#define D_SETTINGS_GAP_0            "0 - compact"
+#define D_SETTINGS_GAP_1            "1 - normal"
+#define D_SETTINGS_GAP_2            "2 - relaxed"
+#define D_SETTINGS_GAP_3            "3 - loose"
+
+#define D_SETTINGS_SIZE_8           "8 - tiny"
+#define D_SETTINGS_SIZE_10          "10 - small"
+#define D_SETTINGS_SIZE_12          "12 - medium"
+#define D_SETTINGS_SIZE_14          "14 - large"
 
 // ----------------------------------------------------------------------------
 //  Upload screen (src/ui/screens/upload_screen.cpp)
@@ -109,6 +142,30 @@
 // ----------------------------------------------------------------------------
 #define D_READER_BOOK_EMPTY         "Book empty"
 #define D_READER_BACK_LIBRARY       "Back to library"
+#define D_READER_INDEXING_TITLE     "Preparing book..."
+#define D_READER_INDEXING_DETAIL    "Rebuilding page index"
+
+// ----------------------------------------------------------------------------
+//  Reader menu overlay (src/ui/reader_menu.cpp). Both *_FMT strings are
+//  snprintf templates rendered into a char[64]; keep the argument order —
+//  PAGE_OF_FMT takes (page, total, percent), PAGE_PCT_FMT takes (page,
+//  percent). STATUSBAR_FMT's %s is one of the D_STATUSBAR_MODE_* labels.
+// ----------------------------------------------------------------------------
+#define D_READER_MENU_HEADING       "Reading"
+#define D_READER_MENU_PAGE_OF_FMT   "Page %d of %d  (%d%%)"
+#define D_READER_MENU_PAGE_PCT_FMT  "Page %d  (%d%% of book)"
+#define D_READER_MENU_STATUSBAR_FMT "Statusbar: %s"
+#define D_READER_MENU_HINT          "click: cycle  2x: close"
+#define D_STATUSBAR_MODE_FULL       "Full"
+#define D_STATUSBAR_MODE_MINIMAL    "Minimal"
+#define D_STATUSBAR_MODE_HIDDEN     "Hidden"
+
+// ----------------------------------------------------------------------------
+//  Toasts (src/ui/screen_settings.cpp, src/storage/statistics.cpp)
+// ----------------------------------------------------------------------------
+#define D_TOAST_SCREEN_FLIPPED      "Flipped"
+#define D_TOAST_STREAK_DAY_FMT      "Reading streak: day %u"
+
 
 // ----------------------------------------------------------------------------
 //  App loader error overlay (src/ui/pala_api_impl.cpp paintLoadError)
@@ -174,6 +231,15 @@
 #define D_WEB_NAV_BACK              "Back"
 
 // ----------------------------------------------------------------------------
+//  Theme toggle in the page header (src/web/chrome.cpp webPageStart). The
+//  title is emitted inside a single-quoted HTML attribute, so it follows the
+//  no-apostrophe rule from lang.h.
+// ----------------------------------------------------------------------------
+#define D_WEB_THEME_TOGGLE_TITLE    "Light or dark appearance"
+#define D_WEB_THEME_DARK_MODE       "Dark mode"
+#define D_WEB_THEME_LIGHT_MODE      "Light mode"
+
+// ----------------------------------------------------------------------------
 //  Home page (src/web/files.cpp handleRoot)
 // ----------------------------------------------------------------------------
 #define D_WEB_HOME_TITLE            "Pala One"
@@ -228,8 +294,11 @@
 
 // ----------------------------------------------------------------------------
 //  Plain-text 4xx/5xx error bodies (src/web/files.cpp, bookmarks.cpp,
-//  apps_upload.cpp). These reach the browser on misformed requests; they
-//  surface as page content if the user navigates a bad URL.
+//  apps_upload.cpp, find.cpp, screensavers.cpp). These reach the browser on
+//  misformed requests; they surface as page content if the user navigates a
+//  bad URL. The lowercase ones are argument-validation failures, the
+//  capitalized ones are operation failures — keep that split in translation.
+//  FILE_NAME_TOO_LONG's %d is MAX_FILE_NAME; %s is file name.
 // ----------------------------------------------------------------------------
 #define D_WEB_ERR_MISSING_ID            "missing id"
 #define D_WEB_ERR_BAD_ID                "bad id"
@@ -243,6 +312,7 @@
 #define D_WEB_ERR_FOLDER_CREATE_FAILED  "folder create failed"
 #define D_WEB_ERR_DEST_EXISTS           "destination exists"
 #define D_WEB_ERR_MOVE_FAILED           "move failed"
+#define D_WEB_ERR_FILE_NAME_TOO_LONG    "move failed: new path exceeds %d characters: %s"
 #define D_WEB_ERR_MISSING_ID_PAGE       "missing id/page"
 #define D_WEB_ERR_MISSING_BOOK_IDX      "missing book/idx"
 #define D_WEB_ERR_BAD_BOOK              "bad book"
@@ -250,6 +320,10 @@
 #define D_WEB_ERR_MISSING_BOOK          "missing book"
 #define D_WEB_ERR_MISSING_NAME          "missing name"
 #define D_WEB_ERR_INVALID_NAME          "invalid name"
+#define D_WEB_ERR_MISSING_OFFSET        "missing offset"
+#define D_WEB_ERR_OPEN_FAILED           "Open failed"
+#define D_WEB_ERR_NOT_FOUND             "Not found"
+#define D_WEB_ERR_APP_NOT_FOUND         "App not found"
 
 // ----------------------------------------------------------------------------
 //  List page (src/web/list.cpp)
@@ -313,6 +387,13 @@
 #define D_WEB_LOCK_ON_SLEEP_LABEL   "Lock on sleep"
 #define D_WEB_LOCK_ON_SLEEP_HINT    "Automatically lock the device every time it goes to sleep. You will need to perform a long press to unlock on the next wake."
 #define D_WEB_SAVE_SETTINGS_BUTTON  "Save settings"
+#define D_WEB_LIBRARY_ORDER_HEADING  "Library menu"
+#define D_WEB_LIBRARY_ORDER_INTRO    "Choose which items appear in the library and drag their order into the sequence you want. Hidden items do not appear at all."
+#define D_WEB_LIBRARY_ORDER_REQUIRED  D_MENU_UPLOAD " is required and will always stay in the library."
+#define D_WEB_LIBRARY_ORDER_SLOT_LABEL "Position"
+#define D_WEB_LIBRARY_ORDER_HIDDEN   "Hidden"
+#define D_WEB_LIBRARY_ORDER_RESET    "Restore default order"
+#define D_WEB_LIBRARY_ORDER_HINT     "The screen uses this order immediately and keeps it after reboot."
 #define D_WEB_SETTINGS_NO_EXTRAS    "No extra files, scripts, or fonts."
 #define D_WEB_SCREENSAVER_HEADING   "Screensaver"
 #define D_WEB_SCREENSAVER_SPECS     "Upload raw XBM bytes: <b>3904 bytes</b>, 250&times;122 px, 1-bit, LSB-first, 32 bytes per row."
@@ -322,11 +403,15 @@
 #define D_WEB_SCREENSAVER_DEFAULT   "Using built-in screensaver."
 #define D_WEB_SLEEP_IMAGE_LABEL     "Sleep image file"
 #define D_WEB_SCREENSAVER_UPLOAD_BUTTON "Upload image"
+#define D_WEB_MISSING_REQUIRED_BUTTON_MSG "The following actions must always be present: " D_WEB_BUTTONS_ACTION_HOME ", " D_WEB_BUTTONS_ACTION_NEXT ", " D_WEB_BUTTONS_ACTION_MENU
 
 // Buttons / remappable hold-gestures section.
 #define D_WEB_BUTTONS_HEADING       "Buttons"
-#define D_WEB_BUTTONS_HINT          "1 click = next, 2 = previous, 3 = home. The three holds below are remappable."
+#define D_WEB_BUTTONS_HINT          "You can remap click patterns to different actions"
 #define D_WEB_BUTTONS_LONG          "Long press"
+#define D_WEB_BUTTONS_SHORT         "Single click"
+#define D_WEB_BUTTONS_DOUBLE        "Double click"
+#define D_WEB_BUTTONS_TRIPLE        "Triple click"
 #define D_WEB_BUTTONS_EXTRA_LONG    "Extra-long press"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
 #define D_WEB_BUTTONS_SAVE          "Save buttons"
@@ -334,14 +419,57 @@
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
-#define D_WEB_BUTTONS_ACTION_MENU     "Open menu"
+#define D_WEB_BUTTONS_ACTION_MENU     "OK/Open menu(Context dependent)"
+#define D_WEB_BUTTONS_ACTION_ROTATE   "Flip screen orientation"
+#define D_WEB_BUTTONS_ACTION_NEXT "Next item/page"
+#define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"
+#define D_WEB_BUTTONS_ACTION_HOME "Go to main menu"
+#define D_WEB_BUTTONS_LEGACY_HINT "If enabled, mapping single, double and triple clicks has no effect."
 
+// Click timing section.
+#define D_WEB_TIMINGS_HEADING        "Click timing"
+#define D_WEB_TIMINGS_INTRO          "Tune the behavior for clicks and hold gestures."
+#define D_WEB_TIMINGS_GAP_LABEL      "Click gap"
+#define D_WEB_TIMINGS_GAP_HINT       "How long a pause between releases may last before the current click burst is committed."
+#define D_WEB_TIMINGS_SEQUENCE_LABEL "Click sequence"
+#define D_WEB_TIMINGS_SEQUENCE_HINT  "Maximum total time allowed for a multi-click burst, measured from the first release."
+#define D_WEB_TIMINGS_LONG_LABEL     D_WEB_BUTTONS_LONG " threshold"
+#define D_WEB_TIMINGS_LONG_HINT      "Press duration that turns a hold into a " D_WEB_BUTTONS_LONG " instead of another " D_WEB_BUTTONS_SHORT "."
+#define D_WEB_TIMINGS_VLONG_LABEL    D_WEB_BUTTONS_EXTRA_LONG " threshold"
+#define D_WEB_TIMINGS_VLONG_HINT     "Press duration that upgrades a solo hold from " D_WEB_BUTTONS_LONG " to " D_WEB_BUTTONS_EXTRA_LONG "."
+#define D_WEB_TIMINGS_DEBOUNCE_LABEL "Debounce"
+#define D_WEB_TIMINGS_DEBOUNCE_HINT  "Events closer together than this are treated as switch bounce and ignored."
+#define D_WEB_TIMINGS_RESET          "Reset"
+#define D_WEB_TIMINGS_SAVE           "Save timings"
+#define D_WEB_TIMINGS_DEFAULT_PREFIX "Default: "
 // Device personalization card (src/web/settings.cpp).
 #define D_WEB_DEVICE_HEADING        "Device"
 #define D_WEB_DEVICE_INTRO          "Personalize the device name shown on the library screen header."
 #define D_WEB_HEADER_TITLE_LABEL    "Header title"
 #define D_WEB_HEADER_TITLE_HINT     "Shown at the top of the library screen. Leave empty for no title."
 #define D_WEB_HEADER_TITLE_RESET    "Reset to default"
+#define D_WEB_FLIP_SCREEN           "Flip screen orientation"
+#define D_WEB_BATTERY_INDICATORS_LABEL "Hide battery indicators"
+#define D_WEB_BATTERY_INDICATORS_HINT "When checked, battery status is visible on the " D_ABOUT_HEADER " screen only."
+
+// Header status icons card (src/web/settings.cpp) — see src/ui/icons.h.
+#define D_WEB_ICONS_HEADING         "Status icons"
+#define D_WEB_ICONS_INTRO           "Small indicators shown in the menu header for states that use extra battery."
+#define D_WEB_ICON_SLEEP_LABEL      "Show sleep-blocked icon"
+#define D_WEB_ICON_SLEEP_HINT       "A crossed-out moon, shown while something is keeping the device awake - a connected computer, or an upload in progress."
+
+// Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
+// joins.
+#define D_WEB_WIFI_HEADING            "Wi-Fi"
+#define D_WEB_WIFI_INTRO              "The network the device joins for file upload. For security reasons, saved passwords will never be shown."
+#define D_WEB_WIFI_SSID_LABEL         "SSID"
+#define D_WEB_WIFI_PASSWORD_LABEL     "Password"
+#define D_WEB_WIFI_SSID_PLACEHOLDER   "Network name"
+#define D_WEB_WIFI_PASSWORD_PLACEHOLDER "Password"
+#define D_WEB_WIFI_PASSWORD_SAVED_PLACEHOLDER "<saved>"
+#define D_WEB_WIFI_SHOW_PASSWORD      "Show password"
+#define D_WEB_WIFI_SAVE_BUTTON        "Save network"
+#define D_WEB_WIFI_HINT               "Stored on device. Leave the SSID blank to forget it."
 
 // ----------------------------------------------------------------------------
 //  Upload (book + sleep image) routes (src/web/upload.cpp)
@@ -442,6 +570,23 @@
 #define D_WEB_READ_JUMP_HINT        "Saves the next-open page directly."
 #define D_WEB_READ_AND_FIND_LINK    "Read &amp; find"
 
+// Status strings emitted by the find/jump JS. These are substituted into
+// single-quoted JS string literals inside a PROGMEM <script> block, so the
+// no-apostrophe / no-backslash rule from lang.h applies here too. The *_FMT
+// values are expanded by window.palaFmt (src/web/chrome.cpp): %1, %2, %3 are
+// positional and MAY be reordered by a translation.
+#define D_WEB_READ_JS_NO_MATCHES    "No matches"
+#define D_WEB_READ_JS_MATCH_FMT     "Match %1 of %2  (byte %3)"
+#define D_WEB_READ_JS_ENTER_PHRASE  "Enter a phrase to find."
+#define D_WEB_READ_JS_FIND_FIRST    "Find something first."
+#define D_WEB_READ_JS_SAVING        "Saving..."
+#define D_WEB_READ_JS_SAVED_FMT     "Saved. Open the book on the device to jump to byte %1."
+#define D_WEB_READ_JS_SAVE_HTTP_FMT "Save failed: HTTP %1"
+#define D_WEB_READ_JS_SAVE_FAIL_FMT "Save failed: %1"
+#define D_WEB_READ_JS_ERROR         "error"
+#define D_WEB_READ_JS_LOADED_FMT    "Loaded %1 bytes. Enter a phrase to find."
+#define D_WEB_READ_JS_LOAD_FAILED   "Could not load book text."
+
 // ----------------------------------------------------------------------------
 //  Font family + bionic reading + reading-position retention
 //  (src/web/settings.cpp). Layout-affecting settings; changes trigger the
@@ -454,15 +599,17 @@
 #define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic uses heavier letter shapes designed for easier scanning."
 #define D_WEB_BIONIC_LABEL          "Bionic reading"
 #define D_WEB_BIONIC_HINT           "Bolds the leading characters of each word to help your eyes anchor."
+#define D_WEB_PARA_GAP_LABEL        "Compact paragraph gaps"
+#define D_WEB_PARA_GAP_HINT         "If enabled, paragraph breaks will be reduced to half normal height allowing more lines of text to fit on a single page."
 #define D_WEB_SETTINGS_APPLY_HINT   "Changes apply to the next page render."
+#define D_WEB_SETTINGS_LEGACY_CONTROLS   "Enable legacy controls"
 
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
 //  Screensaver editor + multi-slot manager (src/web/screensavers.cpp).
-//  JS-internal status / error strings emitted by the editor are NOT yet i18n'd;
-//  they live inside the PROGMEM script block. Add D_WEB_SS_JS_* macros and a
-//  data-attribute pass-through if/when that's wanted.
+//  The editor's JS status strings are the D_WEB_SS_JS_* block at the end of
+//  this section; they are concatenated straight into the PROGMEM script.
 // ----------------------------------------------------------------------------
 #define D_WEB_SS_TITLE              "Screensavers"
 #define D_WEB_SS_SUBTITLE           "Custom sleep images, multi-slot rotation, and in-firmware bitmap editor."
@@ -507,4 +654,128 @@
 #define D_WEB_SS_DST_OVERWRITE      " (overwrite)"
 #define D_WEB_SS_UPLOAD_EDITED      "Upload edited image"
 
+// Screensaver upload failures. These are set on the upload handler's error
+// slot and returned as the 400 body by handleScreensaverUploadDone.
+// EXACT_BYTES_FMT's %d is Screensavers::SCREENSAVER_BYTES.
+#define D_WEB_SS_ERR_THUMB_NOT_FOUND "Thumbnail not found"
+#define D_WEB_SS_ERR_NOT_FOUND       "Screensaver not found"
+#define D_WEB_SS_ERR_UPLOAD_FAILED   "Upload failed"
+#define D_WEB_SS_ERR_SLOTS_FULL      "All rotation slots are full"
+#define D_WEB_SS_ERR_CANT_CREATE_TMP "Cannot create temp file"
+#define D_WEB_SS_ERR_IMAGE_TOO_LARGE "Image file is too large"
+#define D_WEB_SS_ERR_CHOOSE_IMAGE    "Please choose an image first."
+#define D_WEB_SS_ERR_EXACT_BYTES_FMT "Image must be exactly %d bytes"
+#define D_WEB_SS_ERR_SAVE_SLEEP      "Failed to save sleep image"
+#define D_WEB_SS_ERR_SAVE_SLOT       "Failed to save rotation slot"
+
+// Editor JS status strings. Same single-quote / backslash restriction and
+// same window.palaFmt positional %N expansion as the D_WEB_READ_JS_* block.
+// The "no image" reset reuses D_WEB_SS_NO_IMAGE, which is also the initial
+// server-rendered value of the same element.
+#define D_WEB_SS_JS_PX_SUFFIX        " px"
+#define D_WEB_SS_JS_PREVIEW_FMT      "Preview: %1x%2  threshold %3  bytes %4"
+#define D_WEB_SS_JS_DECODE_FAILED    "Could not decode image."
+#define D_WEB_SS_JS_READ_FAILED      "Could not read image."
+#define D_WEB_SS_JS_PREVIEW_NOT_READY "Preview is not ready yet."
+#define D_WEB_SS_JS_UPLOADING        "Uploading..."
+#define D_WEB_SS_JS_HTTP_FMT         "HTTP %1"
+#define D_WEB_SS_JS_UPLOAD_COMPLETE  "Upload complete. Refreshing..."
+#define D_WEB_SS_JS_UPLOAD_FAIL_FMT  "Upload failed: %1"
+#define D_WEB_SS_JS_ERROR            "error"
+
+
+// Explicit boot storage recovery.
+#define D_RECOVERY_RETRY "Try again"
+#define D_RECOVERY_HELP "Help"
+#define D_RECOVERY_ERASE "Erase storage"
+#define D_RECOVERY_LOCKED "Reader is locked."
+#define D_RECOVERY_UNLOCK "Hold to unlock."
+#define D_RECOVERY_KEYS "Click: next; double: select"
+#define D_RECOVERY_PRESERVED "Mount errors do not erase files."
+#define D_RECOVERY_REFLASH "Try again or reflash firmware."
+#define D_RECOVERY_BACKUP "Back up files before erasing."
+#define D_RECOVERY_BACK "Double click: back"
+#define D_RECOVERY_DELETE_FILES "Erase ALL books and files?"
+#define D_RECOVERY_KEEP_SETTINGS "Device settings will be kept."
+#define D_RECOVERY_HOLD "Select erase, then hold."
+#define D_RECOVERY_CANCEL "Cancel"
+#define D_RECOVERY_CONTINUE "Continue"
+#define D_RECOVERY_RETRY_FAILED "Storage is still unreadable."
+#define D_RECOVERY_FORMAT_FAILED "Storage initialization failed."
+#define D_RECOVERY_MOUNT_FAILED "Storage still cannot mount."
+#define D_RECOVERY_DIRECTORY_FAILED "Cannot create books folder."
+#define D_RECOVERY_CHECKING "Checking storage..."
+#define D_RECOVERY_WORKING "Initializing storage..."
+
+
+// Companion connection (existing Wi-Fi upload remains available).
+#define D_BLE_CHOICE_WIFI "Wi-Fi / browser"
+#define D_BLE_CHOICE_APP "Bluetooth / app"
+#define D_BLE_BACK "Back"
+#define D_BLE_STARTING "Starting Bluetooth..."
+#define D_BLE_ERROR "Bluetooth failed."
+#define D_BLE_OPEN_APP "Open Pala and select Pala One."
+#define D_BLE_PIN "Pairing code:"
+#define D_BLE_CONNECTED "Connected."
+#define D_BLE_WAITING "Waiting for the app..."
+
+#define D_BLE_EXIT_LEGACY "Click to leave."
+#define D_BLE_EXIT_STANDARD "Home action: leave."
+
 #endif  // PALA_LANG_EN_H
+
+// Additional literals for host adapters; firmware uses the runtime catalogs.
+#define D_ABOUT_ACTION_BOOKMARK "Bookmark"
+#define D_ABOUT_ACTION_LOCK "Lock"
+#define D_ABOUT_ACTION_MENU "Menu"
+#define D_ABOUT_ACTION_NONE "None"
+#define D_ABOUT_CLICK_HOLD_PREFIX "Click + hold: "
+#define D_ABOUT_CONTROLS "Controls"
+#define D_ABOUT_FIRMWARE "Firmware"
+#define D_ABOUT_GESTURE_HOME "3x home"
+#define D_ABOUT_HOLD_PREFIX "Hold: "
+#define D_ABOUT_LONG_HOLD_PREFIX "Long hold: "
+#define D_ABOUT_MENU_NEXT "1x: next item"
+#define D_ABOUT_MENU_OPEN "Hold: select"
+#define D_ABOUT_READER_NEXT "1x: next page"
+#define D_ABOUT_READER_PREVIOUS "2x: previous page"
+#define D_READER_MENU_BOOKMARK "Add bookmark"
+#define D_READER_MENU_CONTINUE "Continue reading · 2x"
+
+#define D_STATS_DAY "day"
+
+#define D_STATS_DAYS "days"
+
+#define D_STATS_DAYS_FEW "days"
+
+#define D_STATS_IN_ROW "in a row"
+
+#define D_STATS_PAGE_LABEL "Pages"
+
+#define D_STATS_PRESSES "Button presses"
+
+#define D_STATS_RECORD_LABEL "Best"
+
+#define D_STATS_SESSIONS_LABEL "Sessions"
+
+#define D_WEB_HOME_BOOKS_FEW " books"
+
+#define D_WEB_HOME_BOOKS_ONE " book"
+
+#define D_SETTINGS_READING_MENU "Reading-focused menus"
+
+#define D_READER_INDEX_CANCEL "Press to cancel"
+
+#define D_ABOUT_BACK "Back"
+
+#define D_BOOKMARKS_PREVIEW "Preview"
+
+#define D_BOOKMARKS_READ "Read"
+
+#define D_WEB_RESET_FAILED "Reset failed"
+
+#define D_WEB_RESET_FAILURE_DESC "The reset did not finish. Please try again."
+
+#define D_WEB_RESET_RESTARTING "Pala One is restarting. Open its connection mode again afterwards."
+
+#define D_MENU_CONNECT "Connect"

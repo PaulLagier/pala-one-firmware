@@ -31,17 +31,25 @@ struct Catalog {
   int  folderCount = 0;
 };
 
+// Numeric values are persisted to NVS by LibraryMenuOrder (cfg_lib_order) and
+// cast back on load, so they are a wire format. Declaration order below is
+// cosmetic; the values are not. New entries take the next unused number.
 enum LibraryEntryType {
-  LIB_ENTRY_FOLDER,
-  LIB_ENTRY_BOOK,
-  LIB_ENTRY_BOOKMARKS,
-  LIB_ENTRY_LIST,
-  LIB_ENTRY_APPS,
-  LIB_ENTRY_STATISTICS,
-  LIB_ENTRY_ABOUT,
-  LIB_ENTRY_UPDATE,
-  LIB_ENTRY_UPLOAD
+  LIB_ENTRY_ABOUT      = 6,
+  LIB_ENTRY_APPS       = 4,
+  LIB_ENTRY_BOOK       = 1,
+  LIB_ENTRY_BOOKMARKS  = 2,
+  LIB_ENTRY_FOLDER     = 0,
+  LIB_ENTRY_LIST       = 3,
+  LIB_ENTRY_SETTINGS   = 9,
+  LIB_ENTRY_STATISTICS = 5,
+  LIB_ENTRY_UPDATE     = 7,
+  LIB_ENTRY_UPLOAD     = 8
 };
+
+// Checks whether `type` is a valid library entry. 
+// Set `includeSystemEntries` to `true` if the check should also include the LIBRARY and BOOK entries.
+bool isValidLibEntry(LibraryEntryType type, bool includeSystemEntries = false);
 
 // One row in the assembled menu. `ref` is a catalog book/folder index for
 // BOOK/FOLDER, and -1 (unused) for system entries. `depth` indents nested

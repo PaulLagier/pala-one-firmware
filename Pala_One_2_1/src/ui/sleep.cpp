@@ -10,6 +10,7 @@
 #include "src/state.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"          // injectButtonEdgeNow, markUserActivity
+#include "src/hal/wifi_provisioning.h" // WifiProvisioning::isActive — sleep inhibitor
 #include "src/storage/statistics.h" // Statistics::flushToNvs
 #include "src/ui/font.h"            // Font::useToast / Font::useBody
 #include "src/ui/lock.h"            // Lock::isLocked — gates the lock badge
@@ -91,6 +92,11 @@ static void drawLockBadge() {
   gfx.drawPixel(iconX + 2, iconY, 0);
   gfx.drawPixel(iconX + 3, iconY, 0);
   gfx.drawPixel(iconX + 4, iconY, 0);
+}
+
+bool inhibited() {
+  return g_currentScreen
+      && (!g_currentScreen->allowSleep() || WifiProvisioning::isActive());
 }
 
 // Render the screensaver onto the e-ink before powering down. Falls back to

@@ -12,13 +12,13 @@ struct BookmarkSession {
   int bookIndex = 0;
   int selectedIndex = 0;
 
-  uint16_t pages[MAX_BOOKMARKS];
+  uint32_t pages[MAX_BOOKMARKS];
   uint32_t offsets[MAX_BOOKMARKS];
-  uint8_t  count = 0;
+  uint8_t count = 0;
 };
 
 extern BookmarkSession g_bookmarkSession;
 
 void resetBookmarkSession();
 
-#endif  // PALA_UI_SCREENS_BOOKMARKS_SESSION_H
+#endif // PALA_UI_SCREENS_BOOKMARKS_SESSION_H

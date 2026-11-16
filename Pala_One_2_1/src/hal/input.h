@@ -39,7 +39,7 @@ struct ButtonState {
   bool tripleClick_ = false;
   bool quadClick_ = false;
   bool longClick_ = false;
-  bool veryLongClick_ = false;   // hold >= VERY_LONG_MS with no preceding click
+  bool veryLongClick_ = false;   // hold >= kDefaultVeryLongMs with no preceding click
   bool clickHoldClick_ = false;  // chord: short click immediately followed by a long hold
 
   // Count of accepted short press-release pairs since the last
@@ -154,6 +154,8 @@ void btnISR();  // IRAM_ATTR is on the definition only — repeating it here
                 // .iram1.* sections, triggering an attribute-conflict warning.
 void clearButtonQueue();
 void resetInputFrontend();
+// Suppress only the already-held boot press, retaining later queued gestures.
+void discardWakePress(bool heldOnAttach, uint32_t attachedAt);
 
 // Synthesize an edge into the ISR queue from a normal (non-IRQ) context.
 // Used after light-sleep GPIO wake: the ext0 wakeup path detects the level

@@ -1,23 +1,31 @@
 #include "src/ui/reader_menu.h"
 
-#include "src/config.h"           // MARGIN_X, SCREEN_W, SCREEN_H
-#include "src/hal/display.h"      // u8g2, display
-#include "src/pure/paths.h"       // lastPathComponent, stripTxtExt
+#include "src/config.h"      // MARGIN_X, SCREEN_W, SCREEN_H
+#include "src/hal/display.h" // u8g2, display
+#include "src/pure/paths.h"  // lastPathComponent, stripTxtExt
 #include "src/ui/font.h"
-#include "src/ui/reader.h"        // g_bookview
+#include "src/ui/reader.h" // g_bookview
 #include "src/ui/statusbar.h"
-#include "src/ui/widgets.h"       // prepareMenuFrame, drawSectionHeader
+#include "src/ui/widgets.h" // prepareMenuFrame, drawSectionHeader
+#include "src/ui/reader_actions.h"
+#include "src/storage/navigation_profile.h"
+#include "src/ui/screens/library_screen.h"
+#include "src/ui/toast.h"
 
 namespace ReaderMenu {
 
 static bool s_active = false;
+static int s_selection = 0;
 
-static const char* statusbarLabel() {
+static const char *statusbarLabel() {
   switch (Statusbar::mode()) {
-    case Statusbar::Minimal: return "Minimal";
-    case Statusbar::Hidden:  return "Hidden";
-    case Statusbar::Full:
-    default:                 return "Full";
+  case Statusbar::Minimal:
+    return D_STATUSBAR_MODE_MINIMAL;
+  case Statusbar::Hidden:
+    return D_STATUSBAR_MODE_HIDDEN;
+  case Statusbar::Full:
+  default:
+    return D_STATUSBAR_MODE_FULL;
   }
 }
 
@@ -25,6 +33,7 @@ bool isActive() { return s_active; }
 
 void open() {
   s_active = true;
+  s_selection = 0;
   // First paint of the menu sits over whatever the reader last drew. Use a
   // full refresh so reader text doesn't ghost through the partial-refresh
   // overlay; subsequent in-menu redraws (statusbar cycles) go through
@@ -33,16 +42,24 @@ void open() {
   draw();
 }
 
-void close() {
-  s_active = false;
-}
+void close() { s_active = false; }
 
 void draw() {
+  if (NavigationProfile::readingFocused()) {
+    prepareMenuFrame();
+    drawPalaList(D_READER_MENU_HEADING, 3, s_selection, [](int index) -> String {
+      return index == 0   ? D_READER_MENU_CONTINUE
+             : index == 1 ? D_READER_MENU_BOOKMARK
+                          : D_READER_BACK_LIBRARY;
+    });
+    display.update();
+    return;
+  }
   prepareMenuFrame();
   Font::useBody();
   int ascent = u8g2.getFontAscent();
   int lineH = (ascent - u8g2.getFontDescent()) + Font::currentLineGap() + 1;
-  int y = drawSectionHeader("Reading");
+  int y = drawSectionHeader(D_READER_MENU_HEADING);
 
   // Book title (truncated by font; the screen clip handles overflow).
   String title = stripTxtExt(lastPathComponent(g_bookview.book.path()));
@@ -53,8 +70,9 @@ void draw() {
   Font::useBody();
 
   size_t total = g_bookview.book.size();
-  if (total == 0) total = 1;
-  uint32_t pos = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+  if (total == 0)
+    total = 1;
+  uint32_t pos = g_bookview.pages.offsetAt(g_bookview.cursor.pageIndex);
   int pct = (int)((pos * 100UL) / (uint32_t)total);
 
   // pages.count grows lazily as the reader walks the book; only show it as
@@ -62,11 +80,10 @@ void draw() {
   // reads as a hard cap rather than "this is how many pages exist."
   char buf[64];
   if (g_bookview.pages.eofReached && g_bookview.pages.count > 0) {
-    snprintf(buf, sizeof(buf), "Page %d of %d  (%d%%)",
-             g_bookview.cursor.pageIndex + 1, g_bookview.pages.count, pct);
+    snprintf(buf, sizeof(buf), D_READER_MENU_PAGE_OF_FMT, g_bookview.cursor.pageIndex + 1,
+             g_bookview.pages.endPage(), pct);
   } else {
-    snprintf(buf, sizeof(buf), "Page %d  (%d%% of book)",
-             g_bookview.cursor.pageIndex + 1, pct);
+    snprintf(buf, sizeof(buf), D_READER_MENU_PAGE_PCT_FMT, g_bookview.cursor.pageIndex + 1, pct);
   }
   u8g2.setCursor(MARGIN_X, y);
   u8g2.print(buf);
@@ -76,22 +93,43 @@ void draw() {
   y += lineH;
 
   // Statusbar mode row — short-click cycles through the three modes.
-  snprintf(buf, sizeof(buf), "Statusbar: %s", statusbarLabel());
+  snprintf(buf, sizeof(buf), D_READER_MENU_STATUSBAR_FMT, statusbarLabel());
   u8g2.setCursor(MARGIN_X, y);
   u8g2.print(buf);
 
   // Footer hint at the very bottom.
   u8g2.setCursor(MARGIN_X, SCREEN_H - 2);
-  u8g2.print("click: cycle  2x: close");
+  u8g2.print(D_READER_MENU_HINT);
 
   display.update();
 }
 
-bool onButton(const ButtonEvent& ev) {
-  if (!s_active) return false;
-  if (!ev.any()) return false;
+bool onButton(const ButtonEvent &ev) {
+  if (!s_active)
+    return false;
+  if (!ev.any())
+    return false;
+  if (NavigationProfile::readingFocused()) {
+    if (ev.kind == ButtonEvent::Short) {
+      s_selection = (s_selection + 1) % 3;
+      draw();
+      return true;
+    }
+    if (ev.kind == ButtonEvent::Long || ev.kind == ButtonEvent::Double) {
+      if (s_selection == 1) {
+        const char *message = addBookmarkForCurrentBook();
+        if (message)
+          Toast::show(message);
+      } else if (s_selection == 2) {
+        persistReaderState();
+        navigateToLibraryRoot();
+      }
+    }
+    close();
+    return true;
+  }
 
-  if (ev.kind == ButtonEvent::Short) {
+  if (Gestures::resolveLegacyAction(ev, ButtonEvent::Short, ACTION_NEXT)) {
     Statusbar::cycleMode();
     draw();
     return true;
@@ -102,4 +140,4 @@ bool onButton(const ButtonEvent& ev) {
   return true;
 }
 
-}  // namespace ReaderMenu
+} // namespace ReaderMenu

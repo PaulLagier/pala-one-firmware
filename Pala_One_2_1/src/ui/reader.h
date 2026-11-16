@@ -2,8 +2,9 @@
 #define PALA_UI_READER_H
 
 #include "src/config.h"
-#include "src/state.h"  // File, FS macro
+#include "src/state.h" // File, FS macro
 #include "src/pure/page_offset_table.h"
+#include "src/hal/packed_file_stream.h"
 
 // ============================================================================
 //  The currently open book and where the user is looking at it. Shared
@@ -27,22 +28,30 @@
 // observe the file-closed-with-path-still-set intermediate state.
 class OpenBook {
 public:
+  OpenBook() = default;
+  // The stream refers to file_: its owner's address must stay fixed.
+  OpenBook(const OpenBook &) = delete;
+  OpenBook &operator=(const OpenBook &) = delete;
+  OpenBook(OpenBook &&) = delete;
+  OpenBook &operator=(OpenBook &&) = delete;
   // Open `path` for reading. Sets path + key + opens file as one atomic
   // step. Returns false (and leaves the object closed/empty) if the file
   // can't be opened or is a directory.
-  bool open(const String& path);
+  bool open(const String &path);
 
   // Close the file and clear path + key. No-op if already closed.
   void close();
 
-  bool          isOpen() const { return (bool)file_; }
-  const String& path() const   { return path_; }
-  const String& key() const    { return key_; }
-  File&         file()         { return file_; }
-  size_t        size()         { return file_ ? file_.size() : 0; }
+  bool isOpen() const { return (bool)file_; }
+  const String &path() const { return path_; }
+  const String &key() const { return key_; }
+  File &file() { return file_; }
+  IReadStream &stream() { return *stream_; }
+  size_t size() { return stream_ ? stream_->size() : 0; }
 
 private:
-  File   file_;
+  File file_;
+  std::unique_ptr<BookReadStream> stream_;
   String path_;
   String key_;
 };
@@ -54,16 +63,19 @@ struct ReaderCursor {
 };
 
 struct BookView {
-  OpenBook        book;
+  OpenBook book;
   PageOffsetTable pages;
-  ReaderCursor    cursor;
+  ReaderCursor cursor;
 };
 
 extern BookView g_bookview;
 
 bool openBookByIndex(int idx);
 void renderCurrentPage();
-void forceNextRenderFull();  // one-shot: next renderCurrentPage() does a full refresh
+bool renderBookmarkPreview(bool readSelected);
+void prefetchNextReaderPage();
+bool readerIndexWasCancelled();
+void forceNextRenderFull(); // one-shot: next renderCurrentPage() does a full refresh
 
 // Cursor navigation. Both move the cursor and bump `pageTurnsSinceFull` on
 // a real page change; `advancePage` lazily paginates one ahead and clamps
@@ -78,7 +90,10 @@ bool retreatPage();
 // active book forward as needed (so the page table grows up to the answer).
 // Used to resume from a saved byte offset and to navigate to a bookmark
 // whose offset is invariant under font/layout changes.
-int findPageForOffset(uint32_t targetOffset);
+// Setting showProgress to true will cause the device to show a fullscreen
+// progress interstitial if the index rebuild happens to take a long time
+// so that the user knows something is happening.
+int findPageForOffset(uint32_t targetOffset, bool showProgress = false);
 
 // Boot-time wake-resume. Checks if wake state asks us to resume reading and
 // if the book still exists. On success the reader is fully set up for an
@@ -91,22 +106,11 @@ bool tryRestoreReadingSession();
 // reader: armed by `ReaderScreen::onSleep` (via `armResumeOnWake`),
 // consumed and cleared at boot by `tryRestoreReadingSession`. The clear
 // side is private to reader.cpp; nothing else needs to disarm.
-void armResumeOnWake();    // arm: persist currently-open book for resume
+void armResumeOnWake(); // arm: persist currently-open book for resume
 
-// Layout changed mid-session — the byte offsets in `g_bookview.pages` were
-// computed under the old layout and no longer map to page boundaries under
-// the new one. The byte offset of the *current* page is layout-invariant,
-// though, so this keeps the existing offsets as back-history, truncates the
-// table at the current page, and lets pages ahead re-paginate lazily under
-// the new layout on the next advance. O(1) — no file I/O, no full re-walk.
-// No-op if no book is open. Caller is responsible for the redraw.
-//
-// Mid-session callers should still route through
-// `markPagesDirtyForLayoutChange` so multiple rapid changes (cycling the
-// Statusbar mode) collapse into a single rebase on the next render. Font
-// size / line gap go through the web /settings form — the user can't be in
-// the reader at that moment, and the next `openBookByIndex` rebuilds the
-// table from scratch anyway.
+// Rebuild a consistent page table under the new layout while preserving the
+// current canonical text offset. Foreground scans can be cancelled; a cancelled
+// operation must not overwrite saved progress or persist an old-layout cache.
 void repaginateForLayoutChange();
 
 // Mark the in-memory page offset table as stale because a layout-affecting
@@ -149,6 +153,6 @@ void persistReaderState();
 
 // Add a bookmark at the currently-open view's page. Returns a UI message
 // (e.g. "Bookmark saved" / "Bookmark exists") or nullptr if no book is open.
-const char* addBookmarkForCurrentBook();
+const char *addBookmarkForCurrentBook();
 
-#endif  // PALA_UI_READER_H
+#endif // PALA_UI_READER_H

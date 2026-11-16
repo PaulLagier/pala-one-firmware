@@ -8,18 +8,25 @@ on:
   push:
   pull_request:
 
+# Cancel superseded runs — including the redundant push-triggered run that
+# fires alongside pull_request for commits on a branch with an open PR
+# (same commit, same key, so whichever run starts second cancels the other).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   cppcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
       - name: Cache PlatformIO
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.platformio/.cache
@@ -31,7 +38,7 @@ jobs:
       - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      # One environment is enough — all 4 leaf envs share the same source
+      # One environment is enough — all 6 leaf envs share the same source
       # tree; only preprocessor defines differ (board revision, language).
       - name: Run cppcheck via pio check
         run: pio check -e wireless-paper-v1_2-en --fail-on-defect low

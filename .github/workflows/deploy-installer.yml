@@ -42,20 +42,22 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    # Prerelease tags must never replace the stable installer.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') || !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Full history + tags so scripts/build_info.py can derive FW_VERSION
           # via `git describe --tags`. Shallow (default depth=1) breaks that.
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
 
       - name: Cache PlatformIO
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.platformio/.cache
@@ -84,8 +86,9 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             VERSION="${GITHUB_REF_NAME}"
           elif [[ "$CHANNEL" == "stable" ]]; then
-            # workflow_dispatch republish without a tag — label by sha.
-            VERSION="manual-${GITHUB_SHA::7}"
+            # A stable republish must use an exact existing release tag.
+            VERSION=$(git describe --tags --exact-match)
+            [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]
           else
             # Match build_info.py: both the manifest and the firmware derive
             # their version from `git describe` so the OTA equality check works.
@@ -96,7 +99,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Publishing channel=$CHANNEL version=$VERSION"
 
-      # Four leaf envs: (V1.1, V1.2) x (English, Spanish-LA). One language
+      # Six leaf envs: (V1.1, V1.2) x (English, Spanish-LA, French). One language
       # per binary by design — see README "Language".
       #
       # Stable channel always builds clean (no git-hash UI). Dev keeps
@@ -111,6 +114,11 @@ jobs:
           PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
         run: pio run -e wireless-paper-v1_2-es
 
+      - name: Build firmware (V1.2 FR)
+        env:
+          PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
+        run: pio run -e wireless-paper-v1_2-fr
+
       - name: Build firmware (V1.1 EN)
         env:
           PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
@@ -120,6 +128,11 @@ jobs:
         env:
           PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
         run: pio run -e wireless-paper-v1_1-es
+
+      - name: Build firmware (V1.1 FR)
+        env:
+          PLATFORMIO_BUILD_FLAGS: ${{ steps.meta.outputs.channel == 'stable' && '-DDEBUG_BUILD=0' || '' }}
+        run: pio run -e wireless-paper-v1_1-fr
 
       - name: Assemble site
         run: |
@@ -142,13 +155,13 @@ jobs:
       # manual build's firmware bins from the Actions tab without needing
       # to clone + build locally. Auto-expires (default 30 days here).
       - name: Upload firmware bins as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: firmware-${{ steps.meta.outputs.version }}
           path: site/${{ steps.meta.outputs.channel }}/firmware-*.bin
           retention-days: 30
 
-      # Tag pushes also get a GitHub Release with four self-contained zips
+      # Tag pushes also get a GitHub Release with six self-contained zips
       # — one per (board x language) variant. Each zip has everything
       # esptool needs to flash a board from scratch (bootloader +
       # partitions + boot_app0 + firmware), so users can roll back to an
@@ -157,19 +170,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           set -euo pipefail
-          mkdir -p release
-          cd site/stable
-          for board in v1_1 v1_2; do
-            for lang in en es; do
-              name="pala-one-${{ steps.meta.outputs.version }}-${board}-${lang}"
-              mkdir -p "../../release/${name}"
-              cp bootloader.bin partitions.bin boot_app0.bin \
-                 "firmware-${board}-${lang}.bin" \
-                 "../../release/${name}/"
-              (cd ../../release && zip -r "${name}.zip" "${name}" >/dev/null && rm -rf "${name}")
-            done
-          done
-          ls -lh ../../release/
+          python3 scripts/package_release.py \
+            --site "site/${{ steps.meta.outputs.channel }}" \
+            --out release --version "${{ steps.meta.outputs.version }}" \
+            --commit "$GITHUB_SHA"
 
       # Two ways a release can come into being:
       #   1. Someone uses the GitHub UI "Draft a new release" flow — that
@@ -179,7 +183,7 @@ jobs:
       #   2. Someone pushes a bare tag from the CLI — no release exists
       #      yet, so we create one with auto-generated notes.
       #
-      # Either way we want the four zips attached. --clobber lets a
+      # Either way we want the six zips attached. --clobber lets a
       # workflow re-run overwrite previously uploaded assets cleanly.
       - name: Create or update GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -190,11 +194,11 @@ jobs:
           TAG="${{ steps.meta.outputs.version }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists — uploading assets to it"
-            gh release upload "$TAG" --clobber release/*.zip
+            gh release upload "$TAG" --clobber release/*.zip release/release.json release/SHA256SUMS
           else
             echo "Creating new release $TAG"
             gh release create "$TAG" \
-              --generate-notes \
+              --notes-file "docs/releases/$TAG.md" \
               --title "$TAG" \
-              release/*.zip
+              release/*.zip release/release.json release/SHA256SUMS
           fi

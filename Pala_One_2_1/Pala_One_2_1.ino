@@ -28,12 +28,10 @@
 // #define BOARD_V1_2
 // ────────────────────────────────────────────────────────────────────────────
 
-// ── Language selection: uncomment exactly one (Arduino IDE) ─────────────────
-//   PlatformIO users pick the env in platformio.ini (-en / -es leaf envs)
-//   and can leave these defines commented out. Default if nothing is set:
-//   English (with a #pragma message warning from src/config.h).
-#define LANG_EN
-// #define LANG_ES_LA
+// ── Initial language ────────────────────────────────────────────────────────
+// PlatformIO selects an EN/ES/FR flash default in the environment name.
+// Arduino IDE: choose the fallback in src/lang/default_language.h so every
+// translation unit agrees. All eleven languages remain selectable at runtime.
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Web UI default theme: uncomment exactly one ─────────────────────────────
@@ -83,14 +81,19 @@
 #include "src/storage/app_catalog.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
+#include "src/storage/library_menu_order.h"
+#include "src/storage/navigation_profile.h"
 #include "src/storage/list_items.h"
 #include "src/storage/page_cache.h"
 #include "src/storage/statistics.h"
 #include "src/ui/font.h"
+#include "src/ui/icons.h"
 #include "src/ui/pala_api_impl.h"
 #include "src/ui/reader.h"
+#include "src/ui/reader_menu.h"
 #include "src/ui/reader_actions.h"  // Gestures::loadSettings
 #include "src/ui/screen.h"
+#include "src/storage/click_timings.h"
 #include "src/ui/widgets.h"  // drawCenter
 #include "src/ui/screens/about_screen.h"
 #include "src/ui/screens/apps_screen.h"
@@ -100,6 +103,8 @@
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
+#include "src/ui/screens/settings_screen.h"
+#include "src/ui/screens/storage_recovery_screen.h"
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/update_screen.h"
 #include "src/ui/screens/upload_screen.h"
@@ -111,44 +116,64 @@
 #include "src/ui/text.h"
 #include "src/ui/toast.h"
 #include "src/web/web.h"
+#include "src/ui/screen_settings.h"
 
 // ============================================================================
 //  Screen instances + current-screen pointer
 // ============================================================================
-LibraryScreen              g_libraryScreen;
-ReaderScreen               g_readerScreen;
-UploadScreen               g_uploadScreen;
 AboutScreen                g_aboutScreen;
-UpdateScreen               g_updateScreen;
 AppsScreen                 g_appsScreen;
-ListScreen                 g_listScreen;
-StatisticsScreen           g_statsScreen;
 BookmarkBookSelectScreen   g_bmBookSelectScreen;
 BookmarkListScreen         g_bmListScreen;
 BookmarkPreviewScreen      g_bmPreviewScreen;
+LibraryScreen              g_libraryScreen;
+ListScreen                 g_listScreen;
+ReaderScreen               g_readerScreen;
+SettingsScreen             g_settingsScreen;
+StatisticsScreen           g_statsScreen;
+UpdateScreen               g_updateScreen;
+UploadScreen               g_uploadScreen;
 
 Screen* g_currentScreen = &g_libraryScreen;
+
+// Screens whose header carries an indicator (battery and/or the status icon
+// tray). Used to decide whether a state change that nobody pressed a button
+// for still warrants a repaint. Not guarded by HAS_BATTERY — the icon tray
+// exists regardless.
+static bool headerIndicatorVisible() {
+  if (g_currentScreen == &g_aboutScreen) return true;
+  if (!ScreenSettings::batteryIndicatorsEnabled()) return false;
+  return g_currentScreen == &g_appsScreen
+      || g_currentScreen == &g_bmBookSelectScreen
+      || g_currentScreen == &g_bmListScreen
+      || g_currentScreen == &g_libraryScreen
+      || g_currentScreen == &g_listScreen
+      || (g_currentScreen == &g_readerScreen && ReaderMenu::isActive())
+      || g_currentScreen == &g_settingsScreen
+      || g_currentScreen == &g_statsScreen
+      || g_currentScreen == &g_updateScreen
+      || g_currentScreen == &g_uploadScreen;
+}
 
 // ============================================================================
 //  Setup
 // ============================================================================
 // cppcheck-suppress unusedFunction
 void setup() {
-  Serial.begin(115200);
-  delay(200);
-  Serial.printf("[boot] wake cause: %d\n", esp_sleep_get_wakeup_cause());
-  setCpuFrequencyMhz(240); // full speed for init; lowered to 80 MHz at end of setup
-
+  const bool wokeFromSleep = esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0;
+  setCpuFrequencyMhz(240);
+  // Capture intentional input before UART, battery, storage and display work.
   pinMode(BTN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN), btnISR, CHANGE);
-
-  // Button held through ext0 wake: its down-edge predates the ISR, so seed
-  // the press state manually. Pass 0 (not millis()) to credit the full boot
-  // time; millis() ≈ 200 here (after delay(200)) would shorten the hold and
-  // misclassify a Long press as Short.
-  if (digitalRead(BTN) == LOW) {
-    g_btns.seedPressOnWake(0);
-  }
+  const uint32_t inputAttachedAt = millis();
+  const bool wakeButtonHeld = digitalRead(BTN) == LOW;
+  if (wakeButtonHeld) g_btns.seedPressOnWake(0);
+#if !ARDUINO_USB_CDC_ON_BOOT && SOC_UART_SUPPORT_XTAL_CLK
+  Serial0.setClockSource(UART_CLK_SRC_XTAL);
+#endif
+  Serial.begin(115200);
+  if (!wokeFromSleep) delay(200);
+  Serial.printf("[boot] wake cause: %d\n", esp_sleep_get_wakeup_cause());
 
   u8g2.begin(gfx);
 
@@ -161,30 +186,32 @@ void setup() {
   // Load Sleep and Lock settings early — before display.clear() — so both
   // flags are available to gate the full-refresh boot clear below.
   prefs.begin("ereader", false);
+  Language::loadSettings();
   Sleep::loadSettings();
   Lock::loadSettings();
 
-  // Skip the full-refresh boot clear when waking from deep sleep AND either:
-  //   (a) the device is locked — the screensaver (with its lock badge) is
-  //       already on the e-ink; clearing to white and then drawing nothing
-  //       leaves a blank screen until the idle timeout fires, OR
-  //   (b) no-screensaver mode is on and we were reading — the last reader
-  //       page sits cleanly on the panel; a clear would briefly flash white
-  //       before the page redraws.
-  // On a fresh boot (not ext0 wake) always clear, regardless of lock state.
-  bool wokeFromSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0);
-  bool wereReading   = (prefs.getString("wake_path", "").length() > 0);
-  display.fastmodeOff();
-  bool skipClear = wokeFromSleep &&
-                   (Lock::isLocked() ||
-                    (Sleep::noScreensaver() && wereReading));
-  if (!skipClear) {
-    display.clear();
+  const bool keptReaderImage = wokeFromSleep && Sleep::noScreensaver() &&
+      prefs.getString("wake_path", "").length() > 0;
+  if (wokeFromSleep) {
+#if defined(DISPLAY_V1_2)
+    // Replace the sleep image directly, without a preceding white refresh.
+    if (!keptReaderImage) forceNextRenderFull();
+#endif
+    forceNextMenuFrameFull();
+    if (!Lock::isLocked()) discardWakePress(wakeButtonHeld, inputAttachedAt);
   }
+  display.fastmodeOff();
+#if defined(DISPLAY_V1_2)
+  const bool skipClear = wokeFromSleep;
+#else
+  // Retain V1.1's existing panel initialization sequence.
+  const bool skipClear = wokeFromSleep && (Lock::isLocked() || keptReaderImage);
+#endif
+  if (!skipClear) display.clear();
 
   if (!fsBegin()) {
-    drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
-    return;
+    // Keep all ordinary storage/radio users stopped until recovery mounts FS.
+    runStorageRecovery();
   }
   ensureBooksDir();
 
@@ -196,8 +223,14 @@ void setup() {
   Font::loadSettings();
   Screensavers::loadSettings();
   Statusbar::loadSettings();
+  ClickTimings::loadSettings();
+  Icons::loadSettings();
   Gestures::loadSettings();
   HeaderTitle::loadSettings();
+  ScreenSettings::loadSettings();
+  LibraryMenuOrder::loadSettings();
+  NavigationProfile::loadSettings();
+
   // Sleep::loadSettings() and Lock::loadSettings() already ran earlier in
   // setup() so both flags were available for the boot-clear gate above —
   // don't reload them here.
@@ -227,7 +260,7 @@ void setup() {
       markUserActivity();
     } else {
       renderCurrentPage();      // ~300ms draw — wake-press releases during this
-      resetInputFrontend();     // discard the wake-press only
+      if (!wokeFromSleep) resetInputFrontend();
     }
   } else {
     g_currentScreen = &g_libraryScreen;
@@ -235,7 +268,7 @@ void setup() {
       markUserActivity();
     } else {
       g_libraryScreen.onEnter();
-      resetInputFrontend();
+      if (!wokeFromSleep) resetInputFrontend();
     }
   }
 
@@ -257,6 +290,10 @@ void setup() {
 void loop() {
   g_btns.poll();
   maybeRecoverFromIsrOverflow();
+
+#if HAS_BATTERY
+  updateBatteryCached();
+#endif
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
 
@@ -317,6 +354,10 @@ void loop() {
       // Short locked-idle: re-sleep after 1500ms with no input.
       // Don't sleep while the button is held — a Long-press unlock gesture
       // fires on release, so sleeping mid-hold would swallow the gesture.
+      //
+      // Deliberately `allowSleep()` and not `Sleep::inhibited()`, unlike the
+      // two gates further down: a locked device must still return to its
+      // screensaver while a USB host is attached.
       if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
           && userIdleMs() > 1500 && !g_btns.isPressed()) {
         Sleep::enter();
@@ -329,7 +370,16 @@ void loop() {
 
   if (ev.any()) markUserActivity();
 
-  if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep() && !WifiProvisioning::isActive()) {
+  bool indicatorChanged = Icons::trayStateChanged();
+#if HAS_BATTERY
+  if (batteryChargingChanged()) indicatorChanged = true;
+#endif
+  if (indicatorChanged && headerIndicatorVisible()) {
+    if (ReaderMenu::isActive()) ReaderMenu::draw();
+    else g_currentScreen->draw();
+  }
+
+  if (ENABLE_DEEP_SLEEP && !Sleep::inhibited()) {
     if (userIdleMs() > Sleep::idleTimeoutMs()) {
       Sleep::enter();
       return;
@@ -357,7 +407,7 @@ void loop() {
   // mid-click-sequence — the classifier's trailing-silence wait runs against
   // millis(), and sleeping through it would add up to one tick interval of
   // latency per emit. Cost of staying awake during a click sequence is at
-  // most ~550ms (MAX_CLICK_SEQUENCE_MS); the long quiet gaps between page
+  // most ~550ms (kDefaultSequenceMs); the long quiet gaps between page
   // turns are where the battery savings actually come from.
   //
   // The `buttonQueueNonEmpty()` check closes a race: the ISR can queue a
@@ -367,10 +417,9 @@ void loop() {
   // sleep through it; ext0 (level-low) doesn't fire on a release, so we'd
   // only re-process the edge on the next timer wake (~150ms later in the
   // worst case under the bound below).
-  if (g_currentScreen->allowSleep()
+  if (!Sleep::inhibited()
       && !g_btns.hasPendingClicks()
-      && !buttonQueueNonEmpty()
-      && !WifiProvisioning::isActive()) {
+      && !buttonQueueNonEmpty()) {
     Sleep::idleLightSleep(Toast::isActive());
   }
 }

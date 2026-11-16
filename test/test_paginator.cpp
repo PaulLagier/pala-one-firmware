@@ -104,3 +104,68 @@ TEST_CASE("paginator handles UTF-8 multibyte characters without splitting them")
   REQUIRE(lines.size() == 1u);
   CHECK_EQ(lines[0], String("café"));
 }
+
+TEST_CASE("height based line budgeting works as expected") {
+  auto lines = linesOf("One\nTwo\nThree\nFour\nFive\nSix\nSeven\nEight\n", m(50, 5));
+  CHECK_EQ(lines.size(), 5u);
+  CHECK_EQ(lines[0], String("One"));
+  CHECK_EQ(lines[1], String("Two"));
+  CHECK_EQ(lines[2], String("Three"));
+  CHECK_EQ(lines[3], String("Four"));
+  CHECK_EQ(lines[4], String("Five"));
+}
+
+TEST_CASE("changing paragraph height allows more lines") {
+  auto lm = m(50, 10);
+  auto lines = linesOf("One\n\nTwo\n\nThree\n\nFour\n\nFive\n\nSix\n\nSeven\n\nEight\n", lm);
+  CHECK_EQ(lines.size(), 10u);
+  CHECK_EQ(lines[0], String("One"));
+  CHECK_EQ(lines[2], String("Two"));
+  CHECK_EQ(lines[4], String("Three"));
+  CHECK_EQ(lines[6], String("Four"));
+  CHECK_EQ(lines[8], String("Five"));
+  
+  lm.paragraphGapH = lm.lineH / 2;
+  lines = linesOf("One\n\nTwo\n\nThree\n\nFour\n\nFive\n\nSix\n\nSeven\n\nEight\n", lm);
+  CHECK_EQ(lines.size(), 13u);
+  CHECK_EQ(lines[0], String("One"));
+  CHECK_EQ(lines[2], String("Two"));
+  CHECK_EQ(lines[4], String("Three"));
+  CHECK_EQ(lines[6], String("Four"));
+  CHECK_EQ(lines[8], String("Five"));
+  CHECK_EQ(lines[10], String("Six"));
+  CHECK_EQ(lines[12], String("Seven"));
+}
+
+TEST_CASE("skip empty lines at start of page") {
+  auto lines = linesOf("\n\nOne\nTwo\nThree\nFour\nFive\nSix\nSeven\nEight\n", m(50, 3));
+  CHECK_EQ(lines.size(), 3u);
+  CHECK_EQ(lines[0], String("One"));
+  CHECK_EQ(lines[1], String("Two"));
+  CHECK_EQ(lines[2], String("Three"));
+}
+TEST_CASE("paginator bounds lines even when glyphs have zero measured width") {
+  std::string text(1600, 'x');
+  StringReadStream in(text.c_str());
+  LayoutMetrics metrics=m(250,32);
+  size_t bytes=0;
+  auto next=paginatePage(in,0,metrics,[](const char*){return 0;},
+    [&](const char* line,size_t len){CHECK(len<256);CHECK_EQ(strlen(line),len);bytes+=len;});
+  CHECK_EQ(next,(uint32_t)text.size());CHECK_EQ(bytes,text.size());
+}
+TEST_CASE("paginator keeps UTF-8 intact at token buffer capacity") {
+  std::string text;for(int i=0;i<600;++i)text+="é";
+  StringReadStream in(text.c_str());uint32_t pos=0;std::string result;
+  while(pos<text.size()){
+    auto next=paginatePage(in,pos,m(5000,2),[](const char*){return 0;},
+      [&](const char* line,size_t len){CHECK(len%2==0);result.append(line,len);});
+    REQUIRE(next>pos);pos=next;
+  }
+  CHECK(result==text);
+}
+
+TEST_CASE("paginator does not read another position when seek fails") {
+  StringReadStream in("abcdef");in.seek(2);
+  auto next=paginatePage(in,100,m(10,2),byteWidth,nullptr);
+  CHECK_EQ(next,100u);CHECK_EQ(in.position(),2u);
+}

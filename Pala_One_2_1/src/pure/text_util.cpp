@@ -36,6 +36,45 @@ String utf8CharAt(const String& s, int index) {
   return s.substring(index, index + len);
 }
 
+static const char kEllipsis[] = "...";
+
+static void rtrimSpaces(String& s) {
+  while (s.length() > 0) {
+    char last = s[s.length() - 1];
+    if (last != ' ' && last != '\t') break;
+    s.remove(s.length() - 1);
+  }
+}
+
+String truncateWithEllipsis(const String& in, int maxWidth, int (*measure)(const char*)) {
+  if (measure == nullptr) return in;
+  if (measure(in.c_str()) <= maxWidth) return in;
+  if (measure(kEllipsis) > maxWidth) return String("");
+
+  // Grow one codepoint at a time, keeping the longest prefix whose
+  // trimmed form still fits once the ellipsis is appended.
+  int bestEnd = 0;
+  int i = 0;
+  while (i < (int)in.length()) {
+    int charLen = utf8SafeCharLenAt(in, i);
+    if (charLen <= 0) break;
+    int end = i + charLen;
+
+    String candidate = in.substring(0, end);
+    rtrimSpaces(candidate);
+    candidate += kEllipsis;
+    if (measure(candidate.c_str()) > maxWidth) break;
+
+    bestEnd = end;
+    i = end;
+  }
+
+  String out = in.substring(0, bestEnd);
+  rtrimSpaces(out);
+  out += kEllipsis;
+  return out;
+}
+
 bool isBreakableWhitespaceByte(char b) {
   return b == ' ' || b == '\n' || b == '\t';
 }
