@@ -140,6 +140,16 @@ jobs:
             --channel "${{ steps.meta.outputs.channel }}" \
             --version "${{ steps.meta.outputs.version }}"
 
+      - name: Package release zips
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          set -euo pipefail
+          python3 scripts/package_release.py \
+            --site "site/${{ steps.meta.outputs.channel }}" \
+            --out release --version "${{ steps.meta.outputs.version }}" \
+            --commit "$GITHUB_SHA"
+
+
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -166,15 +176,6 @@ jobs:
       # esptool needs to flash a board from scratch (bootloader +
       # partitions + boot_app0 + firmware), so users can roll back to an
       # older release without going through the web installer.
-      - name: Package release zips
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          set -euo pipefail
-          python3 scripts/package_release.py \
-            --site "site/${{ steps.meta.outputs.channel }}" \
-            --out release --version "${{ steps.meta.outputs.version }}" \
-            --commit "$GITHUB_SHA"
-
       # Two ways a release can come into being:
       #   1. Someone uses the GitHub UI "Draft a new release" flow — that
       #      creates the tag AND the release (with hand-written notes).

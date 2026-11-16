@@ -1,6 +1,14 @@
 # Changelog
 
-## v3.1.1
+## v3.1.2
+
+- Compact browser-script local names without changing reader/search/editor behavior
+  so all six variants fit the existing OTA partition.
+- Check all six board/default-language builds and final padded image sizes before
+  merging. v3.1.1 is retained as a source preview after its final variant exceeded
+  the application slot; no firmware packages were published for it.
+
+## v3.1.1 (source preview)
 
 - Allow USB language and menu setup while a new device is waiting for storage
   initialization. The recovery allow-list permits only device information and
