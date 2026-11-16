@@ -438,19 +438,19 @@ void drawMarkdownLine(int x, int y, const char* line, PrintState state) {
     };
     for (int i = 0; i < segLen; i++) {
       isBold ? useBold() : useBody();
-      if (i == DIRECTIVE_BOLD) {
+      if (seg[i] == DIRECTIVE_BOLD) {
         useBold();
         continue;
-      } else if (i == DIRECTIVE_HEADING) {
+      } else if (seg[i] == DIRECTIVE_HEADING) {
         // useHeading();
         useBold();
         continue;
-      } else if (i == DIRECTIVE_NORMAL) {
+      } else if (seg[i] == DIRECTIVE_NORMAL) {
         useBody();
         continue;
       }
-      printSlice(cursorX, y, seg, 1);
-      cursorX += 1;
+      printSlice(cursorX, y, seg + i, 1);
+      cursorX += measureSlice(seg + i, 1);
     }
   });
   state.isBold = isBold;
