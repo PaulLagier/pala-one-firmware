@@ -76,7 +76,6 @@ void setBodySize(int sz);
 void setLineGap(int gap);
 void setFamily(Family fam);
 void setBionic(bool on);
-void setBold(bool on);
 void setHalfParagraphGaps(bool on);
 void setMarkdown(bool on);
 
