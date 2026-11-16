@@ -19,7 +19,7 @@ publishes a two-channel layout suitable for the gh-pages branch:
     ├── connected.html          # Improv post-provisioning landing (channel-agnostic)
     └── <channel>/
         ├── index.html          # the ESP Web Tools installer page
-        ├── manifest-v1_{1,2}-{en,es}.json   # 4 manifests (board x language)
+        ├── manifest-v1_{1,2}-{en,es,fr}.json   # 6 manifests (board x language)
         ├── firmware-v1_{1,2}-{en,es}.bin    # 4 firmware images
         └── bootloader.bin / partitions.bin / boot_app0.bin
 
@@ -46,11 +46,13 @@ from typing import Optional
 
 def require_file(p: Path) -> Path:
     if not p.is_file():
-        sys.exit(f"missing: {p}\nRun `pio run` for all four leaf envs first:\n"
+        sys.exit(f"missing: {p}\nRun `pio run` for all six leaf envs first:\n"
                  f"  pio run -e wireless-paper-v1_1-en\n"
                  f"  pio run -e wireless-paper-v1_1-es\n"
+                 f"  pio run -e wireless-paper-v1_1-fr\n"
                  f"  pio run -e wireless-paper-v1_2-en\n"
-                 f"  pio run -e wireless-paper-v1_2-es")
+                 f"  pio run -e wireless-paper-v1_2-es\n"
+                 f"  pio run -e wireless-paper-v1_2-fr")
     return p
 
 
@@ -67,20 +69,22 @@ def find_boot_app0() -> Path:
 def write_installer_bundle(out: Path, repo: Path, version: str,
                            channel: Optional[str]) -> None:
     """Populate `out` with the installer page + firmware artefacts."""
-    # Four leaf envs: (board) x (language). One language per binary by
+    # Six leaf envs: (board) x (language). One language per binary by
     # design — see README "Language".
     leaves = [
         ("wireless-paper-v1_1-en", "firmware-v1_1-en.bin"),
         ("wireless-paper-v1_1-es", "firmware-v1_1-es.bin"),
+        ("wireless-paper-v1_1-fr", "firmware-v1_1-fr.bin"),
         ("wireless-paper-v1_2-en", "firmware-v1_2-en.bin"),
         ("wireless-paper-v1_2-es", "firmware-v1_2-es.bin"),
+        ("wireless-paper-v1_2-fr", "firmware-v1_2-fr.bin"),
     ]
     pio  = repo / ".pio" / "build"
     inst = repo / "install"
 
     out.mkdir(parents=True, exist_ok=True)
 
-    # bootloader / partitions / boot_app0 are byte-identical across all four
+    # bootloader / partitions / boot_app0 are byte-identical across all six
     # envs (same chip + partition table). Take them once from the first leaf.
     first_env = pio / leaves[0][0]
     shutil.copy(require_file(first_env / "bootloader.bin"), out / "bootloader.bin")
@@ -103,7 +107,9 @@ def write_installer_bundle(out: Path, repo: Path, version: str,
     (out / "index.html").write_text(index_html)
 
     for name in ("manifest-v1_1-en.json", "manifest-v1_1-es.json",
-                 "manifest-v1_2-en.json", "manifest-v1_2-es.json"):
+                 "manifest-v1_1-fr.json",
+                 "manifest-v1_2-en.json", "manifest-v1_2-es.json",
+                 "manifest-v1_2-fr.json"):
         data = json.loads(require_file(inst / name).read_text())
         data["version"] = version
         (out / name).write_text(json.dumps(data, indent=2) + "\n")

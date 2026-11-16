@@ -29,11 +29,12 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Language selection: uncomment exactly one (Arduino IDE) ─────────────────
-//   PlatformIO users pick the env in platformio.ini (-en / -es leaf envs)
+//   PlatformIO users pick the env in platformio.ini (-en / -es / -fr leaf envs)
 //   and can leave these defines commented out. Default if nothing is set:
 //   English (with a #pragma message warning from src/config.h).
 #define LANG_EN
 // #define LANG_ES_LA
+// #define LANG_FR
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Web UI default theme: uncomment exactly one ─────────────────────────────

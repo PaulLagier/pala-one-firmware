@@ -48,7 +48,7 @@
   #define LIB_HEADER_TITLE "Pala One"
 #endif
 
-// Language selection (LANG_EN / LANG_ES_LA) and the LANG_EN fallback live in
+// Language selection (LANG_EN / LANG_ES_LA / LANG_FR) and the LANG_EN fallback live in
 // src/lang/lang.h itself — included at the end of this header so every TU
 // that pulls in config.h transitively sees the D_* macros.
 
