@@ -372,6 +372,7 @@ void drawLine(int x, int y, const char* line, PrintState state) {
     if (segLen <= 0) return;
     if (!isWord) {
       useBody(); // isBold ? useBold() : useBody();
+      state.isBold = false;
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
       return;
@@ -380,6 +381,7 @@ void drawLine(int x, int y, const char* line, PrintState state) {
     // while delineator char exists
     // print current segment at current weight
     useBody(); // idBold ? useBold() : useBody();
+    state.isBold = false;
     printSlice(cursorX, y, seg, segLen);
     cursorX += measureSlice(seg, segLen);
     // set isBold to new value, ensuring it exists for next line to be printed
@@ -398,6 +400,7 @@ void drawBionicLine(int x, int y, const char* line, PrintState state) {
       return;
     if (!isWord) {
       useBody(); // isBold ? useBold() : useBody();
+      state.isBold = false;
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
       // set isBold to new value, ensuring it exists for next line to be printed
@@ -410,11 +413,13 @@ void drawBionicLine(int x, int y, const char* line, PrintState state) {
       // while delineator char exists
       // print current segment at current weight
       useBody(); // idBold ? useBold() : useBody();
+      state.isBold = false;
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
       return;
     }
     useBold();
+    state.isBold = true;
     printSlice(cursorX, y, seg, strong);
     cursorX += measureSlice(seg, strong);
     cursorX += kBionicRestGapPx;
@@ -428,8 +433,8 @@ void drawBionicLine(int x, int y, const char* line, PrintState state) {
 
 void drawMarkdownLine(int x, int y, const char* line, PrintState state) {
   int cursorX = x;
-  bool isBold = false;
   forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
+    state.isBold ? useBold() : useBody();
     if (segLen <= 0) return;
     if (!isWord) {
       printSlice(cursorX, y, seg, segLen);
@@ -437,23 +442,24 @@ void drawMarkdownLine(int x, int y, const char* line, PrintState state) {
       return;
     };
     for (int i = 0; i < segLen; i++) {
-      isBold ? useBold() : useBody();
       if (seg[i] == DIRECTIVE_BOLD) {
         useBold();
-        continue;
+        state.isBold = true;
+        i++;
       } else if (seg[i] == DIRECTIVE_HEADING) {
         // useHeading();
         useBold();
-        continue;
+        state.isBold = true;
+        i++;
       } else if (seg[i] == DIRECTIVE_NORMAL) {
         useBody();
-        continue;
+        state.isBold = false;
+        i++;
       }
       printSlice(cursorX, y, seg + i, 1);
       cursorX += measureSlice(seg + i, 1);
     }
   });
-  state.isBold = isBold;
 }
 
 void invalidateLayoutCache() { s_layoutValid = false; }
