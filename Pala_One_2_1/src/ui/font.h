@@ -111,10 +111,12 @@ constexpr int kBionicRestGapPx = 1;
 // matches the draw width exactly so the paginator's wrap budget stays
 // correct.
 //
-// `line` is NUL-terminated. drawBionicLine sets u8g2's cursor to (x, y)
-// and leaves the active u8g2 font on Body afterwards.
-int measureBionicLine(const char *line);
-void drawBionicLine(int x, int y, const char *line);
+// `line` is NUL-terminated. drawLine sets u8g2's cursor to (x, y) and leaves
+// the active u8g2 font on Body afterwards.
+int measureLine(const char* line);
+int measureBionicLine(const char* line);
+void drawLine(int x, int y, const char* line);
+void drawBionicLine(int x, int y, const char* line);
 
 // Byte length of the leading "strong" (bold) prefix of `word` when rendered
 // in bionic mode. Returns 0 if the word doesn't qualify (punctuation-only,

@@ -22,7 +22,7 @@ static PageCacheLayout s_preparedLayout{};
 static bool sameLayout(const PageCacheLayout &a, const PageCacheLayout &b) {
   return a.bodySize == b.bodySize && a.lineGap == b.lineGap && a.family == b.family &&
          a.bionic == b.bionic && a.halfGaps == b.halfGaps &&
-         a.statusbarReserve == b.statusbarReserve;
+         a.statusbarReserve == b.statusbarReserve && a.markdown == b.markdown;
 }
 void clearPagePrefetch() { s_preparedStream = nullptr; }
 void prefetchPage(IReadStream &stream, uint32_t start) {
@@ -47,7 +47,7 @@ void prefetchPage(IReadStream &stream, uint32_t start) {
     s_preparedStream = &stream;
 }
 
-static int bodyMeasure(const char *s) { return Font::measureBionicLine(s); }
+static int bodyMeasure(const char *s) { return Font::measureLine(s); }
 
 // ============================================================================
 //  Page primitives — one page at `startPos`, three flavors.
@@ -77,9 +77,9 @@ uint32_t drawPageAt(IReadStream &stream, uint32_t startPos) {
       cursorY += m.paragraphGapH;
       return;
     }
-    // drawBionicLine sets the active u8g2 font back to Body before returning,
+    // drawLine sets the active u8g2 font back to Body before returning,
     // so the next line measurement (via bodyMeasure) is consistent.
-    Font::drawBionicLine(MARGIN_X, cursorY, buf);
+    Font::drawLine(MARGIN_X, cursorY, buf);
     cursorY += m.lineH;
   };
 

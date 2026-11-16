@@ -334,13 +334,15 @@ static int measureBionicWord(const char *word, int len) {
   return wStrong + kBionicRestGapPx + wTail;
 }
 
-int measureBionicLine(const char *line) {
+int measureLine(const char* line) {
   if (!line)
     return 0;
-  if (!s_bionic) {
-    useBody();
-    return renderText(u8g2, line, strlen(line));
-  }
+  if (s_bionic) return measureBionicLine(line);
+  useBody();
+  return u8g2.getUTF8Width(line);
+}
+
+int measureBionicLine(const char *line) {
   int total = 0;
   forEachLineSegment(line, [&](const char *seg, int segLen, bool isWord) {
     if (!isWord) {
@@ -354,14 +356,18 @@ int measureBionicLine(const char *line) {
   return total;
 }
 
-void drawBionicLine(int x, int y, const char *line) {
-  if (!line)
-    return;
-  if (!s_bionic) {
-    useBody();
-    renderText(u8g2, line, strlen(line), x, y, true);
+void drawLine(int x, int y, const char* line) {
+  if (!line) return;
+  if (s_bionic) {
+    drawBionicLine(x, y, line);
     return;
   }
+  useBody();
+  renderText(u8g2, line, strlen(line), x, y, true);
+  return;
+}
+
+void drawBionicLine(int x, int y, const char* line) {
   int cursorX = x;
   forEachLineSegment(line, [&](const char *seg, int segLen, bool isWord) {
     if (segLen <= 0)

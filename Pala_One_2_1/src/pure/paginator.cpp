@@ -8,7 +8,7 @@
 // Fixed scratch buffers for the paginator's working state. Sized for
 // "any line that could possibly fit on the display" + "any reasonable
 // word/URL length" with margin. Stays on the call stack — no heap.
-static constexpr size_t kLineMax = 256;
+static constexpr size_t kLineMax = K_LINE_MAX;
 static constexpr size_t kTokenMax = 512;
 static constexpr size_t kScratchMax = kLineMax + kTokenMax + 1;
 

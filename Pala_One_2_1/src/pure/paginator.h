@@ -6,6 +6,8 @@
 #include "arduino_compat.h"
 #include "stream.h"
 
+#define K_LINE_MAX 256;
+
 // Layout dimensions for the paginator. All values are in pixels.
 struct LayoutMetrics {
   int ascent = 0;
