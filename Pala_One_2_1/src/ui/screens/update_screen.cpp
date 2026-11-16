@@ -128,7 +128,7 @@ void UpdateScreen::draw() {
       PalaChrome::progress(gfx, progress_);
     }
     if (phase_ == Phase::NoCreds || phase_ == Phase::ConnFailed)
-      PalaChrome::card(gfx, u8g2, 89, D_READER_BACK_LIBRARY, true);
+      PalaChrome::card(gfx, u8g2, 89, D_WEB_NAV_BACK, true);
     Font::useBody();
     display.update();
     return;
@@ -154,7 +154,7 @@ void UpdateScreen::draw() {
     const int index = first + row;
     String label;
     if (index == backIndex)
-      label = D_READER_BACK_LIBRARY;
+      label = D_WEB_NAV_BACK;
     else if (index == 0)
       label = D_UPDATE_CHAN_STABLE;
     else if (index == 1)
