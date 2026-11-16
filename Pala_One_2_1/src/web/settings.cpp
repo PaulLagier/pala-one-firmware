@@ -232,6 +232,8 @@ static void handleSettings() {
   String bChecked = curBionic ? " checked" : "";
   bool curHalfGaps = Font::halfParagraphGapsEnabled();
   String hgChecked = curHalfGaps ? " checked" : "";
+  bool curMarkdown = Font::markdownEnabled();
+  String mChecked = curMarkdown ? " checked" : "";
 
   String alertText;
   if (server.hasArg("alert")) {
@@ -383,6 +385,13 @@ static void handleSettings() {
   out += bChecked;
   out += Language::join({"><span>", D_WEB_BIONIC_LABEL, "</span></label>", "<div class='hint'>",
                          D_WEB_BIONIC_HINT, "</div></div>",
+                         "<div class='full' style='grid-column:1/-1'><label "
+                         "style='display:flex;gap:10px;align-items:center;font-weight:600'>",
+                         "<input type='checkbox' name='hgap' value='1'"})
+             .c_str();
+  out += mChecked;
+  out += Language::join({"><span>", D_WEB_MARKDOWN_LABEL, "</span></label>", "<div class='hint'>",
+                         D_WEB_MARKDOWN_HINT, "</div></div>",
                          "<div class='full' style='grid-column:1/-1'><label "
                          "style='display:flex;gap:10px;align-items:center;font-weight:600'>",
                          "<input type='checkbox' name='hgap' value='1'"})

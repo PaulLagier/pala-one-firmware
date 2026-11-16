@@ -429,7 +429,7 @@
 #define D_WEB_TIMINGS_RESET          "Restablecer"
 #define D_WEB_TIMINGS_SAVE           "Guardar tiempos"
 #define D_WEB_TIMINGS_DEFAULT_PREFIX "Predeterminado: "
- 
+
 // Wi-Fi card (src/web/settings.cpp) — the saved network the upload screen
 // joins.
 #define D_WEB_WIFI_HEADING            "Wi-Fi"
@@ -583,6 +583,8 @@
 #define D_WEB_BIONIC_HINT           "Resalta en negrita las primeras letras de cada palabra para anclar la mirada."
 #define D_WEB_PARA_GAP_LABEL        "Espacios de párrafo compactos"
 #define D_WEB_PARA_GAP_HINT         "Si está activado, los saltos de párrafo se reducirán a la mitad de su altura normal, permitiendo que quepan más líneas de texto en una sola página."
+#define D_WEB_MARKDOWN_LABEL        "Formato de Markdown"
+#define D_WEB_MARKDOWN_HINT         "Aplica formato de negrita y de encabezado. No funciona cuando la lectura biónica está activada."
 #define D_WEB_SETTINGS_APPLY_HINT   "Los cambios se aplican en la próxima página renderizada."
 #define D_WEB_SETTINGS_LEGACY_CONTROLS   "Habilitar los controles heredados" // AI translated
 
