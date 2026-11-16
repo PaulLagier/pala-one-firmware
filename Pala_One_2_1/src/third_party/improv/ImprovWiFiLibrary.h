@@ -73,7 +73,14 @@ private:
                                           const std::vector<std::string> &datum, bool add_checksum);
 
 public:
-  void setLocalSetupOnly(bool enabled) { localSetupOnly = enabled; }
+  void setLocalSetupOnly(bool enabled) {
+    localSetupOnly = enabled;
+    if (enabled) {
+      connecting = false;
+      pendingSsid.clear();
+      pendingPassword.clear();
+    }
+  }
   // Optional vendor RPC; absent/rejected handlers report INVALID_RPC.
   void onSetReadingMenu(bool (*callback)(bool)) { readingMenuCallback = callback; }
   void onSetLanguage(bool (*callback)(const char *)) { languageCallback = callback; }
@@ -120,6 +127,10 @@ public:
    *
    */
   void handleSerial();
+  // Optional cooperative association; handleSerial also advances its deadline.
+  void setCooperativeConnections(bool enabled) { cooperativeConnections = enabled; }
+  bool connectionPending() const { return connecting; }
+  void cancelConnection();
 
   // Discard an incomplete frame; the next complete request starts fresh.
   void resetSerialParser() { _position = 0; }
@@ -182,6 +193,12 @@ public:
   bool isConnected();
 
 private:
+  void pollConnection();
+  bool cooperativeConnections = false;
+  bool connecting = false;
+  uint32_t connectStartedMs = 0;
+  static constexpr uint32_t kConnectionTimeoutMs = 30000;
+  std::string pendingSsid, pendingPassword;
   bool localSetupOnly = false;
   bool (*readingMenuCallback)(bool) = nullptr;
   bool (*languageCallback)(const char *) = nullptr;

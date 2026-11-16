@@ -21,6 +21,10 @@ Changes from that commit:
 - Use portable C++17 aggregate initialization and bounded IPv4 formatting.
 - Keep setup authorized after a failed Wi-Fi association and report
   ERROR_UNABLE_TO_CONNECT instead of claiming the radio is stopped.
+- Offer cooperative association polling with a wrap-safe 30-second timeout,
+  replacement/cancellation of pending credentials and no blocking retry loop.
+  The Pala wrapper enables it; the legacy blocking API remains available.
+- Enforce the SDK SSID/password byte limits before starting the radio.
 
 Pala vendor extension: RPC `0x81` has exactly two payload bytes containing a
 lowercase ISO language code (for example `de`). Standard framing and checksums
@@ -36,3 +40,5 @@ They test the existing Improv wire protocol, without accessing real networks.
 Vendor RPC `0x82` selects reading-focused menus. Its payload is exactly one ASCII byte (`0` or `1`). A successful reply echoes that value as one RPC string, only after the preference was saved. Other lengths and values are rejected without changing settings or starting Wi-Fi.
 
 During storage recovery the explicit USB allow-list contains only device info (`0x03`), language (`0x81`) and reading menus (`0x82`). These paths use metadata/NVS only. Network state, scans, credentials and unknown commands are rejected before any Wi-Fi API call. Normal provisioning resumes after storage becomes ready.
+
+While a cooperative connection is pending, state queries report PROVISIONING, device metadata remains available and network scans are rejected. A new credentials request replaces the pending attempt. Entering local-only recovery clears pending callback context without any radio call. Success clears the error and saves credentials through the existing callback; timeout returns AUTHORIZED and reports UNABLE_TO_CONNECT.

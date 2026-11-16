@@ -171,6 +171,8 @@ void injectButtonEdgeNow(bool pressed);
 // `clickCount_` until poll runs) and we'd sleep, missing the release until
 // the timer wake fires. Atomic single-byte read; no lock needed.
 bool buttonQueueNonEmpty();
+// Include queued edges and an unpolled physical press before either sleep gate.
+bool buttonInputPending();
 
 // Inspect the ISR-overflow counter; if it's climbed past the recovery
 // threshold, atomically reset it and resync the button state machine.

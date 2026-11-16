@@ -96,6 +96,8 @@ two methods: Improv WiFi provisioning via USB; or, the Web UI.
 
 ### Configuring using Improv
 
+USB provisioning keeps the reader awake for up to five minutes after the latest host traffic. An idle USB connection or charging cable does not disable automatic sleep indefinitely. Wake the reader before starting setup if it has already slept. Wi-Fi association is advanced between normal input-loop iterations, with a 30-second timeout; failed or cancelled attempts do not replace saved credentials.
+
 The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using a [vendored serial subset](Pala_One_2_1/src/third_party/improv/README.md) of [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). The same bounded parser is compiled by Arduino IDE and PlatformIO; no separate Improv library installation is required. When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
 
 Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
@@ -111,7 +113,7 @@ Note: The `/settings` page will never show your actual WiFi password, it will si
 
 ### Click behaviours
 
-Version 3.2 introduces a fully customizable action system. You can now bind *any* **action** (e.g. go-home, bookmark, sleep, ...) to any **gesture** (e.g. single click, double click, ...).
+The firmware supports a fully customizable action system. You can now bind *any* **action** (e.g. go-home, bookmark, sleep, ...) to any **gesture** (e.g. single click, double click, ...).
 
 This option is disabled by default and can be enabled in the WebUI unchecking the "Legacy mode" in the settings page.
 

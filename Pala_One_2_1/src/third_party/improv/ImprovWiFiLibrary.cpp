@@ -10,6 +10,7 @@
 #endif
 
 void ImprovWiFi::handleSerial() {
+  pollConnection();
   const uint32_t now = millis();
   if (_position && static_cast<uint32_t>(now - _lastByteMs) > kFrameTimeoutMs)
     resetSerialParser();
@@ -56,7 +57,9 @@ bool ImprovWiFi::onCommandCallback(ImprovTypes::ImprovCommand cmd) {
 
   switch (cmd.command) {
   case ImprovTypes::Command::GET_CURRENT_STATE: {
-    if (isConnected()) {
+    if (connecting) {
+      setState(ImprovTypes::STATE_PROVISIONING);
+    } else if (isConnected()) {
       setState(ImprovTypes::State::STATE_PROVISIONED);
       sendDeviceUrl(cmd.command);
     } else {
@@ -68,12 +71,26 @@ bool ImprovWiFi::onCommandCallback(ImprovTypes::ImprovCommand cmd) {
 
   case ImprovTypes::Command::WIFI_SETTINGS: {
 
-    if (cmd.ssid.empty()) {
+    if (cmd.ssid.empty() || cmd.ssid.size() > 32 || cmd.password.size() > 64) {
       setError(ImprovTypes::Error::ERROR_INVALID_RPC);
       break;
     }
 
+    setError(ImprovTypes::ERROR_NONE);
     setState(ImprovTypes::STATE_PROVISIONING);
+
+    if (cooperativeConnections && !customConnectWiFiCallback) {
+      cancelConnection();
+      if (isConnected())
+        WiFi.disconnect();
+      pendingSsid = cmd.ssid;
+      pendingPassword = cmd.password;
+      connectStartedMs = millis();
+      connecting = true;
+      WiFi.begin(pendingSsid.c_str(), pendingPassword.c_str());
+      pollConnection();
+      break;
+    }
 
     bool success = false;
 
@@ -139,7 +156,10 @@ bool ImprovWiFi::onCommandCallback(ImprovTypes::ImprovCommand cmd) {
   }
 
   case ImprovTypes::Command::GET_WIFI_NETWORKS: {
-    getAvailableWifiNetworks();
+    if (connecting)
+      setError(ImprovTypes::ERROR_INVALID_RPC);
+    else
+      getAvailableWifiNetworks();
     break;
   }
 
@@ -150,6 +170,37 @@ bool ImprovWiFi::onCommandCallback(ImprovTypes::ImprovCommand cmd) {
   }
 
   return true;
+}
+
+void ImprovWiFi::cancelConnection() {
+  if (connecting)
+    WiFi.disconnect();
+  connecting = false;
+  pendingSsid.clear();
+  pendingPassword.clear();
+}
+
+void ImprovWiFi::pollConnection() {
+  if (!connecting)
+    return;
+  const bool success = isConnected();
+  if (!success && static_cast<uint32_t>(millis() - connectStartedMs) < kConnectionTimeoutMs)
+    return;
+  connecting = false;
+  if (success) {
+    setError(ImprovTypes::ERROR_NONE);
+    setState(ImprovTypes::STATE_PROVISIONED);
+    sendDeviceUrl(ImprovTypes::WIFI_SETTINGS);
+    if (onImprovConnectedCallback)
+      onImprovConnectedCallback(pendingSsid.c_str(), pendingPassword.c_str());
+  } else {
+    WiFi.disconnect();
+    setState(ImprovTypes::STATE_AUTHORIZED);
+    setError(ImprovTypes::ERROR_UNABLE_TO_CONNECT);
+    onErrorCallback(ImprovTypes::ERROR_UNABLE_TO_CONNECT);
+  }
+  pendingSsid.clear();
+  pendingPassword.clear();
 }
 void ImprovWiFi::setDeviceInfo(ImprovTypes::ChipFamily chipFamily, const char *firmwareName,
                                const char *firmwareVersion, const char *deviceName) {

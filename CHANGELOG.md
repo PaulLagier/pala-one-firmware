@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.1.4
+
+- Bound USB provisioning sleep inhibition to actual recent traffic rather than
+  keeping a reader awake indefinitely for an idle attached host.
+- Preserve held, pending and queued button input at both idle-sleep gates,
+  including custom unlock sequences that cross the locked idle deadline.
+- Advance USB Wi-Fi association cooperatively, with a wrap-safe 30-second
+  timeout, responsive metadata/state requests, safe retry/cancellation and
+  ownership-aware radio cleanup. Retain saved credentials on failure.
+- Validate SSID/password byte lengths before starting a connection.
+
 ## v3.1.3
 
 - Reject browser book uploads that would replace an existing destination,

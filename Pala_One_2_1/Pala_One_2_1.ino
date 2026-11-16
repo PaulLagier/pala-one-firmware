@@ -312,7 +312,7 @@ void loop() {
     }
   }
 
-  // Locked: swallow all input except unlock gestures (Long/VeryLong/ClickHold).
+  // Locked: swallow all input except the configured unlock gesture or hold fallback.
   // Does NOT call markUserActivity for non-unlock events so the idle deadline
   // keeps ticking. cfg_locked persists in NVS so a re-sleep stays locked.
   //
@@ -352,14 +352,14 @@ void loop() {
         }
       }
       // Short locked-idle: re-sleep after 1500ms with no input.
-      // Don't sleep while the button is held — a Long-press unlock gesture
-      // fires on release, so sleeping mid-hold would swallow the gesture.
+      // Preserve held presses, pending click sequences and unpolled ISR edges.
+      // Sleeping at the idle deadline must not consume an unlock gesture.
       //
       // Deliberately `allowSleep()` and not `Sleep::inhibited()`, unlike the
       // two gates further down: a locked device must still return to its
       // screensaver while a USB host is attached.
       if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
-          && userIdleMs() > 1500 && !g_btns.isPressed()) {
+          && userIdleMs() > 1500 && !buttonInputPending()) {
         Sleep::enter();
         return;
       }
@@ -379,7 +379,7 @@ void loop() {
     else g_currentScreen->draw();
   }
 
-  if (ENABLE_DEEP_SLEEP && !Sleep::inhibited()) {
+  if (ENABLE_DEEP_SLEEP && !Sleep::inhibited() && !buttonInputPending()) {
     if (userIdleMs() > Sleep::idleTimeoutMs()) {
       Sleep::enter();
       return;
@@ -418,8 +418,7 @@ void loop() {
   // only re-process the edge on the next timer wake (~150ms later in the
   // worst case under the bound below).
   if (!Sleep::inhibited()
-      && !g_btns.hasPendingClicks()
-      && !buttonQueueNonEmpty()) {
+      && !buttonInputPending()) {
     Sleep::idleLightSleep(Toast::isActive());
   }
 }

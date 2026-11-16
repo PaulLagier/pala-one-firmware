@@ -315,3 +315,24 @@ add_test(NAME lock_gesture_tests COMMAND lock_gesture_tests)
 
 add_test(NAME browser_image_editor COMMAND ${NODE_EXECUTABLE}
   ${CMAKE_CURRENT_SOURCE_DIR}/test_editor.mjs $<TARGET_FILE:web_script_probe>)
+
+# Real wrapper + framed parser: finite USB activity and radio-ownership cleanup.
+add_executable(provisioning_lifecycle_tests main.cpp native/provisioning/main.cpp
+  ${FW_SRC}/hal/wifi_provisioning.cpp ${FW_SRC}/third_party/improv/ImprovWiFiLibrary.cpp)
+target_compile_definitions(provisioning_lifecycle_tests PRIVATE ARDUINO ARDUINO_ARCH_ESP32)
+target_include_directories(provisioning_lifecycle_tests PRIVATE native/provisioning/stubs
+  native/improv_serial/stubs ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME provisioning_lifecycle_tests COMMAND provisioning_lifecycle_tests)
+
+set(IDLE_LOOP_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/idle-loop.inc)
+add_custom_command(OUTPUT ${IDLE_LOOP_INCLUDE}
+  COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/../scripts/extract_idle_loop.py
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/Pala_One_2_1.ino ${IDLE_LOOP_INCLUDE}
+  DEPENDS ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/Pala_One_2_1.ino
+    ${CMAKE_SOURCE_DIR}/../scripts/extract_idle_loop.py VERBATIM)
+add_executable(idle_loop_tests native/idle_loop/main.cpp ${IDLE_LOOP_INCLUDE}
+  ${FW_SRC}/hal/input.cpp ${FW_SRC}/pure/hold_gesture.cpp ${FW_SRC}/storage/click_timings.cpp)
+target_compile_definitions(idle_loop_tests PRIVATE LANG_EN)
+target_include_directories(idle_loop_tests PRIVATE native/input_frontend/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_BINARY_DIR})
+add_test(NAME idle_loop_tests COMMAND idle_loop_tests)

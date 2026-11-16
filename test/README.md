@@ -174,3 +174,23 @@ and Spanish. They verify Wi-Fi remains the default, selecting/backing out does
 not start radios, Bluetooth initialization runs on the idle tick at 240 MHz,
 startup failure allows normal sleep, PIN/status rendering stays on-screen,
 legacy/standard exit gestures, no redundant first redraw and deadline wraparound.
+
+## Idle-loop and provisioning lifecycle regressions
+
+`idle_loop_tests` compiles the actual sketch loop extracted by
+`scripts/extract_idle_loop.py`, using the production ISR queue and click classifier.
+It checks held presses, pending clicks, edges arriving after polling, raw pin
+changes, custom unlock sequences, idle deadlines and timer rollover. Screen and
+sleep-entry adapters record decisions; these checks do not emulate e-paper hardware.
+
+`provisioning_lifecycle_tests` compiles the production USB wrapper and framed
+Improv parser together. Its deterministic clock, UART and radio adapters verify
+that idle USB attachment cannot inhibit sleep forever, activity expiry works at
+millis zero and rollover, association yields to the loop, retries/cancellation
+cannot save stale credentials, and radio teardown respects upload ownership.
+The parser target also checks delayed success, the 30-second timeout, recovery
+isolation and SDK credential lengths. Tests access no real networks or credentials.
+
+Physical reader checks are recorded separately from host tests. A native pass
+or a board build does not establish the cause of an individual hardware freeze,
+charging fault or router compatibility report.
