@@ -1,10 +1,8 @@
 name: Build firmware
 
-# Compile-only smoke test on every push and pull request. Builds both
-# board revisions (V1.1, V1.2) using the English language variant only —
-# the two languages share the same source tree and only differ in string
-# tables, so a single language is enough to catch build breakage on both
-# boards. This is a build check, not a release: no artifacts are saved.
+# Check all six board/default-language images before merging. Every image
+# contains all runtime catalogs, but linker layout varies by initial default.
+# Check the final padded binary as well as PlatformIO's ELF size estimate.
 
 on:
   push:
@@ -23,9 +21,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [wireless-paper-v1_1-en, wireless-paper-v1_2-en]
+        env: [wireless-paper-v1_1-en, wireless-paper-v1_1-es, wireless-paper-v1_1-fr, wireless-paper-v1_2-en, wireless-paper-v1_2-es, wireless-paper-v1_2-fr]
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v7
         with:
@@ -46,3 +46,6 @@ jobs:
 
       - name: Build firmware
         run: pio run -e ${{ matrix.env }}
+
+      - name: Check final OTA image size
+        run: test "$(wc -c < .pio/build/${{ matrix.env }}/firmware.bin)" -le 1900544
