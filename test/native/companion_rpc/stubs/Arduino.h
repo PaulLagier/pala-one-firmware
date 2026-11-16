@@ -1,0 +1,19 @@
+#pragma once
+#include <algorithm>
+#include <array>
+#include <functional>
+#include <fstream>
+#include <map>
+#include <memory>
+#include <limits>
+#include <type_traits>
+#include <vector>
+#include <unordered_map>
+#include <iterator>
+#include <cstring>
+#include "src/pure/arduino_compat.h"
+#undef min
+#undef max
+using std::min;
+using std::max;
+inline void yield() {}

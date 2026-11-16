@@ -2,17 +2,18 @@
 
 #include "src/config.h"
 #include "src/hal/display.h"
-#include "src/hal/input.h"        // resetInputFrontend() — used on exit only
+#include "src/hal/input.h" // resetInputFrontend() — used on exit only
 #include "src/hal/wifi.h"
+#include "src/hal/companion_ble.h"
 #include "src/hal/wifi_provisioning.h"
-#include "src/state.h"            // server
+#include "src/state.h" // server
 #include "src/storage/library.h"
 #include "src/storage/wifi_creds.h"
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
-#include "src/web/apps_upload.h"  // resetAppUpload()
-#include "src/web/upload.h"       // resetBookUpload() / resetSleepUpload()
+#include "src/web/apps_upload.h" // resetAppUpload()
+#include "src/web/upload.h"      // resetBookUpload() / resetSleepUpload()
 #include "src/ui/reader_actions.h"
 
 // How long to wait for an STA association before falling back to AP. Long
@@ -21,7 +22,7 @@
 static constexpr uint32_t kStaTimeoutMs = 5000;
 
 // ---- Drawing --------------------------------------------------------------
-static void drawConnecting(const String& ssid) {
+static void drawConnecting(const String &ssid) {
   prepareMenuFrame();
   int y = drawSectionHeader(D_UPLOAD_HEADER);
 
@@ -49,6 +50,45 @@ void UploadScreen::draw() {
   prepareMenuFrame();
 
   int y = drawSectionHeader(D_UPLOAD_HEADER);
+#ifdef PALA_COMPANION
+  if (phase_ == Phase::Choose) {
+    const char *labels[] = {D_BLE_CHOICE_WIFI, D_BLE_CHOICE_APP, D_BLE_BACK};
+    for (uint8_t i = 0; i < 3; ++i) {
+      drawMenuRow(y, labels[i], choice_ == i);
+      y += menuLineH();
+    }
+    display.update();
+    return;
+  }
+  if (phase_ == Phase::StartingBluetooth || phase_ == Phase::BluetoothError) {
+    Font::useToast();
+    u8g2.setCursor(MARGIN_X, y);
+    u8g2.print(phase_ == Phase::StartingBluetooth ? D_BLE_STARTING : D_BLE_ERROR);
+    if (phase_ == Phase::BluetoothError) {
+      u8g2.setCursor(MARGIN_X, y + 14);
+      u8g2.print(Gestures::legacyControlsOn() ? D_BLE_EXIT_LEGACY : D_BLE_EXIT_STANDARD);
+    }
+    display.update();
+    return;
+  }
+  if (phase_ == Phase::Bluetooth) {
+    Font::useToast();
+    u8g2.setCursor(MARGIN_X, y);
+    u8g2.print(D_BLE_OPEN_APP);
+    u8g2.setCursor(MARGIN_X, y + 14);
+    u8g2.print(D_BLE_PIN);
+    Font::useAppLarge();
+    u8g2.setCursor(MARGIN_X, y + 38);
+    u8g2.print(companionPairingPin());
+    Font::useToast();
+    u8g2.setCursor(MARGIN_X, y + 54);
+    u8g2.print(companionBleConnected() ? D_BLE_CONNECTED : D_BLE_WAITING);
+    u8g2.setCursor(MARGIN_X, y + 68);
+    u8g2.print(Gestures::legacyControlsOn() ? D_BLE_EXIT_LEGACY : D_BLE_EXIT_STANDARD);
+    display.update();
+    return;
+  }
+#endif
 
   if (net_.mode == WifiMode::Station) {
     Font::useBold();
@@ -111,7 +151,31 @@ void UploadScreen::draw() {
 
 // ---- Lifecycle ------------------------------------------------------------
 void UploadScreen::onEnter() {
+#ifdef PALA_COMPANION
+  phase_ = Phase::Choose;
+  choice_ = 0; // Keep the existing Wi-Fi workflow first.
+  draw();
+#else
   beginSession();
+#endif
+}
+
+void UploadScreen::beginBluetooth() {
+  resetBookUpload();
+  resetSleepUpload();
+  resetAppUpload();
+  WifiProvisioning::notifyUploadSession(true);
+  wifiEnd();
+  setCpuFrequencyMhz(240);
+  companionBleBegin();
+  startedMs_ = millis();
+  phase_ = companionBleRunning() ? Phase::Bluetooth : Phase::BluetoothError;
+  if (phase_ == Phase::BluetoothError)
+    setCpuFrequencyMhz(80);
+  (void)companionBleNeedsRedraw();
+  // The opening gesture was already consumed by onButton. Retain any new
+  // button edges received while the radio was initializing.
+  draw();
 }
 
 void UploadScreen::beginSession() {
@@ -125,7 +189,7 @@ void UploadScreen::beginSession() {
   WifiProvisioning::notifyUploadSession(true);
 
   if (wifiStaBegin()) {
-    phase_        = Phase::ConnectingSta;
+    phase_ = Phase::ConnectingSta;
     staStartedMs_ = millis();
     drawConnecting(WifiCreds::ssid());
   } else {
@@ -137,7 +201,7 @@ void UploadScreen::beginSession() {
 }
 
 void UploadScreen::enterReady() {
-  phase_     = Phase::Ready;
+  phase_ = Phase::Ready;
   startedMs_ = millis();
   server.begin();
   draw();
@@ -150,6 +214,13 @@ void UploadScreen::fallbackToAp() {
 }
 
 void UploadScreen::stopSessionToLibrary() {
+  if (phase_ == Phase::Choose || phase_ == Phase::StartingBluetooth) {
+    resetInputFrontend();
+    nextScreen = &g_libraryScreen;
+    return;
+  }
+  if (phase_ == Phase::Bluetooth || phase_ == Phase::BluetoothError)
+    companionBleEnd();
   server.stop();
   wifiEnd();
   WifiProvisioning::notifyUploadSession(false);
@@ -166,8 +237,32 @@ void UploadScreen::stopSessionToLibrary() {
 }
 
 // ---- Per-iteration input + tick -------------------------------------------
-void UploadScreen::onButton(const ButtonEvent& e) {
-  if (!e.any()) return;
+void UploadScreen::onButton(const ButtonEvent &e) {
+  if (!e.any())
+    return;
+
+#ifdef PALA_COMPANION
+  if (phase_ == Phase::Choose) {
+    if (Gestures::resolveLegacyAction(e, ButtonEvent::Triple, ACTION_HOME)) {
+      stopSessionToLibrary();
+    } else if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
+      choice_ = (choice_ + 1) % 3;
+      draw();
+    } else if (Gestures::isNonLegacyAction(e, ACTION_PREV)) {
+      choice_ = (choice_ + 2) % 3;
+      draw();
+    } else if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_MENU)) {
+      if (choice_ == 0)
+        beginSession();
+      else if (choice_ == 1) {
+        phase_ = Phase::StartingBluetooth;
+        draw();
+      } else
+        stopSessionToLibrary();
+    }
+    return;
+  }
+#endif
 
   // Any tap during the connecting splash means "use the hotspot instead".
   if (phase_ == Phase::ConnectingSta) {
@@ -175,7 +270,8 @@ void UploadScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (Gestures::legacyControlsOn() && (e.kind == ButtonEvent::Short || e.kind == ButtonEvent::Triple)) {
+  if (Gestures::legacyControlsOn() &&
+      (e.kind == ButtonEvent::Short || e.kind == ButtonEvent::Triple)) {
     stopSessionToLibrary();
   }
 
@@ -187,18 +283,37 @@ void UploadScreen::onButton(const ButtonEvent& e) {
 }
 
 void UploadScreen::onIdleTick() {
+  // The main loop ticks once after onButton and before applying nextScreen.
+  // Do not start a radio after an exit/cancel requested in that same tick.
+  if (nextScreen)
+    return;
+#ifdef PALA_COMPANION
+  if (phase_ == Phase::Choose)
+    return;
+  if (phase_ == Phase::StartingBluetooth) {
+    beginBluetooth();
+    return;
+  }
+  if (phase_ == Phase::Bluetooth || phase_ == Phase::BluetoothError) {
+    companionBleTick();
+    if (companionBleNeedsRedraw())
+      draw();
+    if ((uint32_t)(millis() - startedMs_) > UPLOAD_AUTO_EXIT_MS)
+      stopSessionToLibrary();
+    return;
+  }
+#endif
   if (phase_ == Phase::ConnectingSta) {
     WifiStaResult r = wifiStaPoll(net_);
     if (r == WifiStaResult::Connected) {
       enterReady();
       return;
     }
-    if (r == WifiStaResult::Failed ||
-        (uint32_t)(millis() - staStartedMs_) > kStaTimeoutMs) {
+    if (r == WifiStaResult::Failed || (uint32_t)(millis() - staStartedMs_) > kStaTimeoutMs) {
       fallbackToAp();
       return;
     }
-    return;   // still associating — server isn't up yet
+    return; // still associating — server isn't up yet
   }
 
   server.handleClient();

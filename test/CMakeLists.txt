@@ -141,3 +141,67 @@ target_include_directories(book_upload_tests PRIVATE
 target_link_libraries(book_upload_tests PRIVATE ZLIB::ZLIB)
 add_dependencies(book_upload_tests packed_fixtures)
 add_test(NAME book_upload_tests COMMAND book_upload_tests)
+
+add_executable(companion_queue_tests main.cpp test_companion_queue.cpp)
+target_include_directories(companion_queue_tests PRIVATE
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME companion_queue_tests COMMAND companion_queue_tests)
+
+# Use the exact firmware JSON release, checksum-verified. Set the standard
+# FETCHCONTENT_SOURCE_DIR_ARDUINOJSON option for an offline source checkout.
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
+include(FetchContent)
+# We only need headers, not the dependency's own project/toolchain options.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.18")
+  set(arduinojson_header_only SOURCE_SUBDIR pala-header-only-host-tests)
+endif()
+FetchContent_Declare(ArduinoJson
+  URL https://github.com/bblanchon/ArduinoJson/archive/refs/tags/v7.2.1.tar.gz
+  URL_HASH SHA256=2780504927533d64cf4256c57de51412b835b327ef4018c38d862b0664d36d4f
+  ${arduinojson_header_only})
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.18")
+  FetchContent_MakeAvailable(ArduinoJson)
+else()
+  FetchContent_GetProperties(ArduinoJson)
+  if(NOT arduinojson_POPULATED)
+    FetchContent_Populate(ArduinoJson)
+  endif()
+endif()
+find_package(OpenSSL REQUIRED)
+add_executable(companion_rpc_tests main.cpp native/companion_rpc/rpc.cpp
+  ${FW_SRC}/hal/companion_rpc.cpp ${FW_SRC}/hal/companion_bookmarks.cpp
+  ${FW_SRC}/pure/paths.cpp ${FW_SRC}/pure/hashing.cpp ${FW_SRC}/pure/bookmarks_codec.cpp
+  ${FW_SRC}/storage/book_metadata.cpp ${FW_SRC}/storage/click_timings.cpp)
+target_compile_definitions(companion_rpc_tests PRIVATE LANG_EN PALA_COMPANION
+  ARDUINOJSON_ENABLE_ARDUINO_STRING=1 PACKED_FIXTURES="${PACKED_FIXTURES}")
+target_include_directories(companion_rpc_tests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/companion_rpc/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR}
+  ${arduinojson_SOURCE_DIR}/src ${FW_SRC})
+target_link_libraries(companion_rpc_tests PRIVATE ZLIB::ZLIB OpenSSL::Crypto)
+add_dependencies(companion_rpc_tests packed_fixtures)
+add_test(NAME companion_rpc_tests COMMAND companion_rpc_tests)
+
+add_executable(companion_ble_tests main.cpp native/companion_ble/ble.cpp
+  ${FW_SRC}/hal/companion_ble.cpp)
+target_compile_definitions(companion_ble_tests PRIVATE LANG_EN PALA_COMPANION
+  ARDUINOJSON_ENABLE_ARDUINO_STRING=1)
+target_include_directories(companion_ble_tests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/companion_ble/stubs
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/companion_rpc/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR}
+  ${arduinojson_SOURCE_DIR}/src ${FW_SRC})
+add_test(NAME companion_ble_tests COMMAND companion_ble_tests)
+
+foreach(locale IN ITEMS EN ES_LA)
+  set(connection_target companion_ui_${locale})
+  add_executable(${connection_target} main.cpp native/companion_ui/ui.cpp
+    ${FW_SRC}/ui/screens/upload_screen.cpp)
+  target_compile_definitions(${connection_target} PRIVATE LANG_${locale} PALA_COMPANION)
+  target_include_directories(${connection_target} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/companion_ui/stubs
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+  add_test(NAME ${connection_target} COMMAND ${connection_target})
+endforeach()

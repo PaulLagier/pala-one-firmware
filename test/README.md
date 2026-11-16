@@ -15,14 +15,14 @@ ESP32 toolchain.
 ## Requirements
 
 - **CMake 3.13+**
-- **Python 3.8+** and the **zlib development library** for packed-book tests.
+- **Python 3.8+** and the **zlib and OpenSSL development libraries** for packed-book tests.
 - A **C++17 compiler** — MSVC, GCC, or Clang. CMake picks one automatically.
 
 ### Installing the prerequisites
 
 **Windows**
 
-Install Python 3 and zlib (for example `vcpkg install zlib`, then supply the vcpkg CMake toolchain).
+Install Python 3, zlib and OpenSSL (for example `vcpkg install zlib openssl`, then supply the vcpkg CMake toolchain).
 
 - Install [Visual Studio 2019 or newer](https://visualstudio.microsoft.com/downloads/) with the *"Desktop development with C++"* workload (this gets you MSVC + the Windows SDK), **or** install [Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) if you don't want the full IDE.
 - Install CMake from [cmake.org/download](https://cmake.org/download/), or via `winget install Kitware.CMake` / `choco install cmake`. Make sure it's on `PATH`.
@@ -32,13 +32,13 @@ Install Python 3 and zlib (for example `vcpkg install zlib`, then supply the vcp
 
 ```bash
 # Debian / Ubuntu
-sudo apt install build-essential cmake python3 zlib1g-dev
+sudo apt install build-essential cmake python3 zlib1g-dev libssl-dev
 
 # Fedora
-sudo dnf install gcc-c++ cmake make python3 zlib-devel
+sudo dnf install gcc-c++ cmake make python3 zlib-devel openssl-devel
 
 # Arch
-sudo pacman -S base-devel cmake python zlib
+sudo pacman -S base-devel cmake python zlib openssl
 ```
 
 **macOS**
@@ -146,3 +146,31 @@ HAL against an in-memory filesystem/server and a host zlib adapter. It checks
 binary chunk boundaries, replacement only after full validation, cleanup on
 abort/reset, failed writes/rename, low space, cache invalidation and logical
 size/seek behavior. The adapter is not a power-loss test of LittleFS.
+
+## Companion app connection
+
+The host suite downloads the same ArduinoJson 7.2.1 release used by firmware,
+with a fixed SHA-256 checksum. For offline builds, provide its source directory
+using `-DFETCHCONTENT_SOURCE_DIR_ARDUINOJSON=/path/to/ArduinoJson`. Install OpenSSL
+(for example `brew install openssl@3` on macOS, then configure with
+`-DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` if CMake does not find it).
+OpenSSL supplies the host SHA-256 adapter; firmware uses SDK mbedTLS.
+
+`companion_queue_tests` exercises actual owner/session/generation gating,
+packet bounds, FIFO/window overflow and the SDK IPC stack-selection policy.
+`companion_rpc_tests` compiles the actual JSON/binary RPC and bookmark code with
+the real JSON library, production timing settings and metadata codecs. It tests
+binary transfers and SHA-256, staging cleanup/failure/overwrite refusal,
+settings type/range and cross-field checks, explicit wire-to-public action
+mapping, uint16 bookmark compatibility and UTF-8 text cursors.
+`companion_ble_tests` compiles the actual transport against a NimBLE contract
+adapter: callback security/ownership checks, deferred main-loop execution,
+reused handles, disconnect races, overflow, four-operation tick limits,
+response sizing and teardown. These host adapters do not claim physical radio,
+phone pairing or ESP32 ROM decoder coverage.
+
+The two `companion_ui_*` targets compile the actual connection screen in English
+and Spanish. They verify Wi-Fi remains the default, selecting/backing out does
+not start radios, Bluetooth initialization runs on the idle tick at 240 MHz,
+startup failure allows normal sleep, PIN/status rendering stays on-screen,
+legacy/standard exit gestures, no redundant first redraw and deadline wraparound.

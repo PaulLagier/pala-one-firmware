@@ -707,4 +707,19 @@
 #define D_RECOVERY_CHECKING "Checking storage..."
 #define D_RECOVERY_WORKING "Initializing storage..."
 
+
+// Companion connection (existing Wi-Fi upload remains available).
+#define D_BLE_CHOICE_WIFI "Wi-Fi / browser"
+#define D_BLE_CHOICE_APP "Bluetooth / app"
+#define D_BLE_BACK "Back"
+#define D_BLE_STARTING "Starting Bluetooth..."
+#define D_BLE_ERROR "Bluetooth failed."
+#define D_BLE_OPEN_APP "Open Pala and select Pala One."
+#define D_BLE_PIN "Pairing code:"
+#define D_BLE_CONNECTED "Connected."
+#define D_BLE_WAITING "Waiting for the app..."
+
+#define D_BLE_EXIT_LEGACY "Click to leave."
+#define D_BLE_EXIT_STANDARD "Home action: leave."
+
 #endif  // PALA_LANG_EN_H
