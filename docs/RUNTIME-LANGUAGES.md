@@ -52,6 +52,10 @@ existing partition (1,839,764 bytes before adding multilingual fonts). All 18
 host targets pass after rebuilding, including all three default dictionaries.
 This is not a release or a hardware-language validation claim.
 
-Remaining integration: browser/USB language selection, multilingual glyphs and
+USB RPC `0x81` now accepts and persists a supported two-byte language code;
+see the vendored Improv README for framing and failure behavior. Parser tests
+cover malformed/unsupported codes and ordinary query recovery.
+
+Remaining integration: browser selection and flasher wiring, multilingual glyphs and
 license/glyph checks, independent web escaping/script checks, remaining cached
 pointer audit, all board/default builds and final combined validation.

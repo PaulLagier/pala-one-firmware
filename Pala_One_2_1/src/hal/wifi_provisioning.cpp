@@ -72,6 +72,7 @@ static void clearGraceTimer() {
 }
 
 void begin() {
+  s_state.lib.onSetLanguage([](const char* code) { return Language::setLanguage(code); });
   s_state.lib.setDeviceInfo(
       ImprovTypes::ChipFamily::CF_ESP32_S3,
       "Pala One",

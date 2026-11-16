@@ -115,3 +115,35 @@ TEST_CASE("explicit parser reset discards an incomplete frame") {
   sendRaw(parser,wire,{'I','M','P','R','O'});parser.resetSerialParser();
   send(parser,wire,{3,0});CHECK(validReply(wire.output));
 }
+
+static unsigned languageCalls = 0;
+static std::string selectedLanguage;
+static bool acceptLanguage(const char* code) {
+  ++languageCalls;
+  if (std::string(code) != "de" && std::string(code) != "fr") return false;
+  selectedLanguage = code;
+  return true;
+}
+TEST_CASE("vendor language RPC accepts exact codes and keeps ordinary device queries usable") {
+  Wire wire; ImprovWiFi parser(&wire); setup(parser); WiFi = {};
+  languageCalls = 0; selectedLanguage.clear(); parser.onSetLanguage(acceptLanguage);
+  for (const std::string code : {"de", "fr"}) {
+    wire.output.clear(); send(parser, wire, {0x81, 2, uint8_t(code[0]), uint8_t(code[1])});
+    CHECK_EQ(selectedLanguage, code); CHECK(validFrames(wire.output));
+    CHECK(std::find(wire.output.begin(), wire.output.end(), uint8_t(0x81)) != wire.output.end());
+  }
+  CHECK_EQ(languageCalls, 2u); CHECK_EQ(WiFi.beginCalls, 0u);
+  wire.output.clear(); send(parser, wire, {3, 0}); CHECK(validReply(wire.output));
+}
+TEST_CASE("malformed or unsupported vendor languages cannot change the selection") {
+  Wire wire; ImprovWiFi parser(&wire); setup(parser); WiFi = {};
+  languageCalls = 0; selectedLanguage = "fr"; parser.onSetLanguage(acceptLanguage);
+  for (const Bytes payload : {Bytes{0x81,0}, Bytes{0x81,1,'d'}, Bytes{0x81,3,'d','e',0},
+                              Bytes{0x81,2,'D','E'}, Bytes{0x81,2,0,'e'}}) {
+    send(parser, wire, payload); CHECK_EQ(languageCalls, 0u); CHECK_EQ(selectedLanguage, "fr");
+    wire.output.clear(); send(parser, wire, {3,0}); CHECK(validReply(wire.output));
+  }
+  send(parser, wire, {0x81,2,'z','z'}); CHECK_EQ(languageCalls, 1u); CHECK_EQ(selectedLanguage,"fr");
+  parser.onSetLanguage(nullptr); send(parser, wire, {0x81,2,'d','e'});
+  CHECK_EQ(languageCalls, 1u); CHECK_EQ(selectedLanguage,"fr"); CHECK_EQ(WiFi.beginCalls, 0u);
+}
