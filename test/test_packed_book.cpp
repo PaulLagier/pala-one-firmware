@@ -1,3 +1,5 @@
+#include <fstream>
+#include <iterator>
 #include "test_framework.h"
 #include "src/pure/packed_book.h"
 #include "src/pure/paginator.h"
@@ -5,8 +7,6 @@
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
-#include <fstream>
-#include <iterator>
 
 namespace {
 struct Source {
