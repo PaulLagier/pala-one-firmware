@@ -159,21 +159,20 @@ static bool headerIndicatorVisible() {
 // ============================================================================
 // cppcheck-suppress unusedFunction
 void setup() {
-  Serial.begin(115200);
-  delay(200);
-  Serial.printf("[boot] wake cause: %d\n", esp_sleep_get_wakeup_cause());
-  setCpuFrequencyMhz(240); // full speed for init; lowered to 80 MHz at end of setup
-
+  const bool wokeFromSleep = esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0;
+  setCpuFrequencyMhz(240);
+  // Capture intentional input before UART, battery, storage and display work.
   pinMode(BTN, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN), btnISR, CHANGE);
-
-  // Button held through ext0 wake: its down-edge predates the ISR, so seed
-  // the press state manually. Pass 0 (not millis()) to credit the full boot
-  // time; millis() ≈ 200 here (after delay(200)) would shorten the hold and
-  // misclassify a Long press as Short.
-  if (digitalRead(BTN) == LOW) {
-    g_btns.seedPressOnWake(0);
-  }
+  const uint32_t inputAttachedAt = millis();
+  const bool wakeButtonHeld = digitalRead(BTN) == LOW;
+  if (wakeButtonHeld) g_btns.seedPressOnWake(0);
+#if !ARDUINO_USB_CDC_ON_BOOT && SOC_UART_SUPPORT_XTAL_CLK
+  Serial0.setClockSource(UART_CLK_SRC_XTAL);
+#endif
+  Serial.begin(115200);
+  if (!wokeFromSleep) delay(200);
+  Serial.printf("[boot] wake cause: %d\n", esp_sleep_get_wakeup_cause());
 
   u8g2.begin(gfx);
 
@@ -190,23 +189,24 @@ void setup() {
   Sleep::loadSettings();
   Lock::loadSettings();
 
-  // Skip the full-refresh boot clear when waking from deep sleep AND either:
-  //   (a) the device is locked — the screensaver (with its lock badge) is
-  //       already on the e-ink; clearing to white and then drawing nothing
-  //       leaves a blank screen until the idle timeout fires, OR
-  //   (b) no-screensaver mode is on and we were reading — the last reader
-  //       page sits cleanly on the panel; a clear would briefly flash white
-  //       before the page redraws.
-  // On a fresh boot (not ext0 wake) always clear, regardless of lock state.
-  bool wokeFromSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0);
-  bool wereReading   = (prefs.getString("wake_path", "").length() > 0);
-  display.fastmodeOff();
-  bool skipClear = wokeFromSleep &&
-                   (Lock::isLocked() ||
-                    (Sleep::noScreensaver() && wereReading));
-  if (!skipClear) {
-    display.clear();
+  const bool keptReaderImage = wokeFromSleep && Sleep::noScreensaver() &&
+      prefs.getString("wake_path", "").length() > 0;
+  if (wokeFromSleep) {
+#if defined(DISPLAY_V1_2)
+    // Replace the sleep image directly, without a preceding white refresh.
+    if (!keptReaderImage) forceNextRenderFull();
+#endif
+    forceNextMenuFrameFull();
+    if (!Lock::isLocked()) discardWakePress(wakeButtonHeld, inputAttachedAt);
   }
+  display.fastmodeOff();
+#if defined(DISPLAY_V1_2)
+  const bool skipClear = wokeFromSleep;
+#else
+  // Retain V1.1's existing panel initialization sequence.
+  const bool skipClear = wokeFromSleep && (Lock::isLocked() || keptReaderImage);
+#endif
+  if (!skipClear) display.clear();
 
   if (!fsBegin()) {
     // Keep all ordinary storage/radio users stopped until recovery mounts FS.
@@ -258,7 +258,7 @@ void setup() {
       markUserActivity();
     } else {
       renderCurrentPage();      // ~300ms draw — wake-press releases during this
-      resetInputFrontend();     // discard the wake-press only
+      if (!wokeFromSleep) resetInputFrontend();
     }
   } else {
     g_currentScreen = &g_libraryScreen;
@@ -266,7 +266,7 @@ void setup() {
       markUserActivity();
     } else {
       g_libraryScreen.onEnter();
-      resetInputFrontend();
+      if (!wokeFromSleep) resetInputFrontend();
     }
   }
 

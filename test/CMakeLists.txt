@@ -251,3 +251,28 @@ target_compile_definitions(font_layout_tests PRIVATE LANG_EN)
 target_include_directories(font_layout_tests PRIVATE native/font_catalog/stubs
   native/font_catalog/decoder ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME font_layout_tests COMMAND font_layout_tests)
+
+# Exercise the actual ISR queue/classifier while a display delays polling.
+add_executable(input_frontend_tests native/input_frontend/main.cpp
+  ${FW_SRC}/hal/input.cpp ${FW_SRC}/pure/hold_gesture.cpp ${FW_SRC}/storage/click_timings.cpp)
+target_compile_definitions(input_frontend_tests PRIVATE LANG_EN)
+target_include_directories(input_frontend_tests PRIVATE native/input_frontend/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1)
+add_test(NAME input_frontend_tests COMMAND input_frontend_tests)
+
+set(WAKE_SETUP_INCLUDE ${CMAKE_CURRENT_BINARY_DIR}/wake-setup.inc)
+add_custom_command(OUTPUT ${WAKE_SETUP_INCLUDE}
+  COMMAND ${Python3_EXECUTABLE} -B ${CMAKE_SOURCE_DIR}/../scripts/extract_wake_setup.py
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/Pala_One_2_1.ino ${WAKE_SETUP_INCLUDE}
+  DEPENDS ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/Pala_One_2_1.ino
+    ${CMAKE_SOURCE_DIR}/../scripts/extract_wake_setup.py VERBATIM)
+add_custom_target(wake_setup_include DEPENDS ${WAKE_SETUP_INCLUDE})
+foreach(board IN ITEMS V1_1 V1_2)
+  add_executable(wake_setup_${board} native/wake/setup.cpp
+    ${FW_SRC}/hal/input.cpp ${FW_SRC}/pure/hold_gesture.cpp ${FW_SRC}/storage/click_timings.cpp)
+  add_dependencies(wake_setup_${board} wake_setup_include)
+  target_compile_definitions(wake_setup_${board} PRIVATE LANG_EN DISPLAY_${board})
+  target_include_directories(wake_setup_${board} PRIVATE native/input_frontend/stubs
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME wake_setup_${board} COMMAND wake_setup_${board})
+endforeach()

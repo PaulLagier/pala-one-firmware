@@ -19,7 +19,16 @@ static bool applyHoldKindTo(ButtonState& s, HoldGestureKind k) {
   }
 }
 
+static void commitPendingClicks(ButtonState& state) {
+  if (state.clickCount_ == 1) state.shortClick_ = true;
+  else if (state.clickCount_ == 2) state.doubleClick_ = true;
+  else if (state.clickCount_ == 3) state.tripleClick_ = true;
+  else state.quadClick_ = true;
+  state.clickCount_ = 0;
+}
+
 ButtonState g_btns;
+static bool s_discardWakeRelease = false;
 
 // Time of the last accepted user input. Used by the loop to decide when
 // to drop the device into deep sleep. main.cpp reads via the `userIdleMs()`
@@ -160,6 +169,7 @@ static inline uint32_t isrNowMs() {
 }
 
 void clearButtonQueue() {
+  s_discardWakeRelease = false;
   noInterrupts();
   s_btnQ.head = 0;
   s_btnQ.tail = 0;
@@ -289,9 +299,26 @@ void ButtonState::poll() {
     noInterrupts();
     bool edgePressed = s_btnQ.state[s_btnQ.tail];
     uint32_t edgeTime = s_btnQ.timeMs[s_btnQ.tail];
+    // A slow redraw must not merge gestures separated by a complete silence window.
+    if (clickCount_ > 0 && !stablePressed_ && edgePressed &&
+        ((uint32_t)(edgeTime - lastRelease_) > ClickTimings::maxClickGapMs() ||
+         (uint32_t)(edgeTime - firstClickRelease_) > ClickTimings::maxClickSequenceMs())) {
+      interrupts();
+      commitPendingClicks(*this);
+      return; // Leave the next gesture queued.
+    }
     s_btnQ.tail = (uint8_t)((s_btnQ.tail + 1) % BTN_Q);
     interrupts();
 
+    if (s_discardWakeRelease) {
+      if (!edgePressed) {
+        s_discardWakeRelease = false;
+        stablePressed_ = false;
+        lastStableChange_ = edgeTime;
+        pressArmed_ = false;
+      }
+      continue;
+    }
     if ((uint32_t)(edgeTime - lastStableChange_) <= ClickTimings::debounceMs()) continue;
     if (edgePressed == stablePressed_) continue;
 
@@ -333,6 +360,8 @@ void ButtonState::poll() {
       pressArmed_ = false;
       pressStart_ = 0;
     }
+    if (clickCount_ >= 4) commitPendingClicks(*this);
+    if (anyClick()) return; // Dispatch one gesture per poll, preserving later input.
   }
 
   // In-progress hold detection. ClickHold and VeryLong emit at the
@@ -380,11 +409,7 @@ void ButtonState::poll() {
     bool readyByTime     = (gapElapsed || sequenceTimeout) && !stablePressed_;
 
     if (readyByTime || quadReady) {
-      if      (clickCount_ == 1) shortClick_  = true;
-      else if (clickCount_ == 2) doubleClick_ = true;
-      else if (clickCount_ == 3) tripleClick_ = true;
-      else                        quadClick_   = true;
-      clickCount_ = 0;
+      commitPendingClicks(*this);
     }
   }
 }
@@ -409,7 +434,16 @@ ButtonEvent waitForNextEvent() {
   }
 }
 
+void discardWakePress(bool heldOnAttach, uint32_t attachedAt) {
+  g_btns.resetState();
+  g_btns.stablePressed_ = heldOnAttach;
+  g_btns.lastStableChange_ = attachedAt;
+  s_discardWakeRelease = heldOnAttach;
+  markUserActivity();
+}
+
 void resetInputFrontend() {
+  s_discardWakeRelease = false;
   // Wait for the button that triggered this transition (wake or triple-click)
   // to be physically released, then debounce. This prevents that single press
   // from leaking into the new mode as an accidental action.
