@@ -66,7 +66,7 @@ two methods: Improv WiFi provisioning via USB; or, the Web UI.
 
 ### Configuring using Improv
 
-The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
+The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using a [vendored serial subset](Pala_One_2_1/src/third_party/improv/README.md) of [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). The same bounded parser is compiled by Arduino IDE and PlatformIO; no separate Improv library installation is required. When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
 
 Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
 
@@ -244,7 +244,7 @@ Both envs share libraries and partition table via `platformio.ini`. The PIO buil
    - [`heltec-eink-modules`](https://github.com/todd-herbert/heltec-eink-modules) (todd-herbert fork)
    - **Adafruit GFX Library** (Adafruit)
    - **U8g2_for_Adafruit_GFX** (olikraus)
-   - [`Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library) (jnthas) — serial Wi-Fi provisioning; PlatformIO installs it automatically, Arduino IDE users add it by URL
+   - Improv Serial — [bundled source and attribution](Pala_One_2_1/src/third_party/improv/README.md); no external Improv library installation is needed
 3. Open `Pala_One_2_1/Pala_One_2_1.ino`. Uncomment exactly one of `BOARD_V1_1` / `BOARD_V1_2` at the top.
 4. Tools → Partition Scheme → **Custom** (the sketch ships its own `partitions.csv`).
 5. Verify / Upload.
