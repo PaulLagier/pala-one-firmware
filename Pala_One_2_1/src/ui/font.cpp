@@ -372,21 +372,16 @@ void drawLine(int x, int y, const char* line, Text::PrintState state) {
   forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
     if (segLen <= 0) return;
     if (!isWord) {
-      useBody(); // isBold ? useBold() : useBody();
+      useBody();
       state.isBold = false;
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
       return;
     }
-    // find next delineator char in segment
-    // while delineator char exists
-    // print current segment at current weight
-    useBody(); // idBold ? useBold() : useBody();
+    useBody();
     state.isBold = false;
     printSlice(cursorX, y, seg, segLen);
     cursorX += measureSlice(seg, segLen);
-    // set isBold to new value, ensuring it exists for next line to be printed
-    // end while
     return;
   });
   useBody();
@@ -400,20 +395,15 @@ void drawBionicLine(int x, int y, const char* line, Text::PrintState state) {
     if (segLen <= 0)
       return;
     if (!isWord) {
-      useBody(); // isBold ? useBold() : useBody();
+      useBody();
       state.isBold = false;
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
-      // set isBold to new value, ensuring it exists for next line to be printed
-      // end while
       return;
     }
     int strong = bionicPrefixBytes(seg, segLen);
     if (strong <= 0) {
-      // find next delineator char in segment
-      // while delineator char exists
-      // print current segment at current weight
-      useBody(); // idBold ? useBold() : useBody();
+      useBody();
       state.isBold = false;
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
