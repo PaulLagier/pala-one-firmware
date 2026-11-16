@@ -105,6 +105,7 @@
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
 #include "src/ui/screens/settings_screen.h"
+#include "src/ui/screens/storage_recovery_screen.h"
 #include "src/ui/screens/statistics_screen.h"
 #include "src/ui/screens/update_screen.h"
 #include "src/ui/screens/upload_screen.h"
@@ -209,8 +210,8 @@ void setup() {
   }
 
   if (!fsBegin()) {
-    drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
-    return;
+    // Keep all ordinary storage/radio users stopped until recovery mounts FS.
+    runStorageRecovery();
   }
   ensureBooksDir();
 

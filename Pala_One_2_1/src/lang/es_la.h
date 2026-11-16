@@ -659,4 +659,28 @@
 #define D_WEB_SS_JS_UPLOAD_FAIL_FMT  "Fallo en la subida: %1"
 #define D_WEB_SS_JS_ERROR            "error"
 
+
+// Explicit boot storage recovery.
+#define D_RECOVERY_RETRY "Reintentar"
+#define D_RECOVERY_HELP "Ayuda"
+#define D_RECOVERY_ERASE "Borrar almacenamiento"
+#define D_RECOVERY_LOCKED "Lector bloqueado."
+#define D_RECOVERY_UNLOCK "Mantén para desbloquear."
+#define D_RECOVERY_KEYS "Clic: siguiente; doble: elegir"
+#define D_RECOVERY_PRESERVED "El error no borra tus archivos."
+#define D_RECOVERY_REFLASH "Reintenta o reinstala firmware."
+#define D_RECOVERY_BACKUP "Respalda antes de borrar."
+#define D_RECOVERY_BACK "Doble clic: volver"
+#define D_RECOVERY_DELETE_FILES "¿Borrar TODOS los archivos?"
+#define D_RECOVERY_KEEP_SETTINGS "Se conservan los ajustes."
+#define D_RECOVERY_HOLD "Elige borrar y mantén pulsado."
+#define D_RECOVERY_CANCEL "Cancelar"
+#define D_RECOVERY_CONTINUE "Continuar"
+#define D_RECOVERY_RETRY_FAILED "Almacenamiento aún ilegible."
+#define D_RECOVERY_FORMAT_FAILED "Fallo al inicializar."
+#define D_RECOVERY_MOUNT_FAILED "No se puede montar."
+#define D_RECOVERY_DIRECTORY_FAILED "No se crea carpeta de libros."
+#define D_RECOVERY_CHECKING "Revisando almacenamiento..."
+#define D_RECOVERY_WORKING "Inicializando..."
+
 #endif  // PALA_LANG_ES_LA_H

@@ -70,3 +70,25 @@ endif()
 
 enable_testing()
 add_test(NAME host_tests COMMAND host_tests)
+
+# Compile the production storage service and boot screen against deterministic
+# filesystem/graphics adapters. No user volume or hardware is needed.
+add_executable(storage_recovery_tests
+  main.cpp native/storage_recovery/storage.cpp
+  ${FW_SRC}/storage/fs_util.cpp ${FW_SRC}/storage/fs_recovery.cpp)
+target_include_directories(storage_recovery_tests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/storage_recovery/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME storage_recovery_tests COMMAND storage_recovery_tests)
+
+foreach(locale IN ITEMS EN ES_LA)
+  set(recovery_target storage_recovery_ui_${locale})
+  add_executable(${recovery_target}
+    main.cpp native/storage_recovery_ui/ui.cpp
+    ${FW_SRC}/ui/screens/storage_recovery_screen.cpp)
+  target_compile_definitions(${recovery_target} PRIVATE LANG_${locale})
+  target_include_directories(${recovery_target} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/storage_recovery_ui/stubs
+    ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+  add_test(NAME ${recovery_target} COMMAND ${recovery_target})
+endforeach()
