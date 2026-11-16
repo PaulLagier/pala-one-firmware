@@ -23,6 +23,8 @@ static BatteryState s_battery;
 void adcSetupOnce() {
   pinMode(BAT_ADC_IN, INPUT);
   analogReadResolution(12);
+  // Arduino-ESP32 3.x requires the channel to exist before per-pin setup.
+  (void)analogRead(BAT_ADC_IN);
   analogSetPinAttenuation(BAT_ADC_IN, ADC_11db);
 }
 

@@ -28,3 +28,8 @@ Thumbs.db
 
 # Claude
 .claude/
+# Cloud conflict copies of the temporary Arduino sketch conversion
+Pala_One_2_1/*.ino *.cpp
+
+# Local source safety snapshots, never published
+update-backups/

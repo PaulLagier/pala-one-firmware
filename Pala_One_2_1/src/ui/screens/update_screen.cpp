@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/ui/screens/update_screen.h"
 
 #include <esp_system.h>
@@ -12,6 +13,7 @@
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
+#include "src/ui/pala_chrome.h"
 
 static constexpr uint32_t    kStaTimeoutMs  = 15000;
 static constexpr const char* kKeyOtaChannel = "cfg_ota_channel";
@@ -100,134 +102,45 @@ void UpdateScreen::onIdleTick() {
 // ----------------------------------------------------------------------------
 void UpdateScreen::draw() {
   prepareMenuFrame();
-  Font::useBody();
-  int y = drawSectionHeader(D_UPDATE_HEADER);
-
-  // ---- Transient / single-message states -----------------------------------
-
-  if (phase_ == Phase::NoCreds) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_NO_CREDS_L1);
-    y += 14;
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_NO_CREDS_L2);
-    display.update();
-    return;
-  }
-  if (phase_ == Phase::Connecting) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_CONNECTING);
-    display.update();
-    return;
-  }
-  if (phase_ == Phase::ConnFailed) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_CONN_FAILED);
-    display.update();
-    return;
-  }
-  if (phase_ == Phase::Checking) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_CHECKING);
-    display.update();
-    return;
-  }
-  if (phase_ == Phase::Downloading) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_INSTALLING);
-    y += 16;
-    char pctBuf[8];
-    snprintf(pctBuf, sizeof(pctBuf), "%d%%", progress_);
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(pctBuf);
-    display.update();
-    return;
-  }
-  if (phase_ == Phase::RebootPrompt) {
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_REBOOT_MSG);
-    y += 18;
-    Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_REBOOT_HINT);
-    display.update();
-    return;
+  Font::useMenu();
+  if(phase_==Phase::NoCreds||phase_==Phase::Connecting||phase_==Phase::ConnFailed||phase_==Phase::Checking||phase_==Phase::Downloading||phase_==Phase::RebootPrompt) {
+    drawSectionHeader(D_UPDATE_HEADER);
+    if(phase_==Phase::NoCreds)PalaChrome::message(gfx,u8g2,D_UPDATE_NO_CREDS_L1,D_UPDATE_NO_CREDS_L2);
+    else if(phase_==Phase::Connecting)PalaChrome::message(gfx,u8g2,D_UPDATE_CONNECTING);
+    else if(phase_==Phase::ConnFailed)PalaChrome::message(gfx,u8g2,D_UPDATE_CONN_FAILED);
+    else if(phase_==Phase::Checking)PalaChrome::message(gfx,u8g2,D_UPDATE_CHECKING);
+    else if(phase_==Phase::RebootPrompt)PalaChrome::message(gfx,u8g2,D_UPDATE_REBOOT_MSG,D_UPDATE_REBOOT_HINT);
+    else {
+      PalaChrome::panel(gfx);PalaChrome::infoLine(u8g2,D_UPDATE_INSTALLING,49,true);
+      char percent[8];snprintf(percent,sizeof(percent),"%d%%",progress_);
+      PalaChrome::infoLine(u8g2,percent,66);PalaChrome::progress(gfx,progress_);
+    }
+    if(phase_==Phase::NoCreds||phase_==Phase::ConnFailed)
+      PalaChrome::card(gfx,u8g2,89,D_READER_BACK_LIBRARY,true);
+    Font::useBody();display.update();return;
   }
 
-  // ---- Full UI (Idle, ServerFail, UpToDate, UpdateAvailable, DownloadFailed)
-
-  bool hasInstall = (phase_ == Phase::UpdateAvailable ||
-                     phase_ == Phase::DownloadFailed);
-  int maxItems = hasInstall ? 4 : 3;
-  if (focusItem_ >= maxItems) focusItem_ = 0;
-
-  // Version line
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPDATE_VERSION_PREFIX FW_VERSION);
-  y += 16;
-
-  // Channel label on its own line
-  Font::useBody();
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPDATE_CHANNEL_LABEL);
-  y += 14;
-
-  // Channel checkboxes
-  int cx = MARGIN_X;
-
-  Font::useBody();
-  u8g2.setCursor(cx, y);
-  u8g2.print(stableChan_ ? "[x] " : "[ ] ");
-  cx += u8g2.getUTF8Width("[x] ");
-  if (focusItem_ == 0) Font::useBold(); else Font::useBody();
-  u8g2.setCursor(cx, y);
-  u8g2.print(D_UPDATE_CHAN_STABLE);
-  cx += u8g2.getUTF8Width(D_UPDATE_CHAN_STABLE);
-  Font::useBody();
-  cx += u8g2.getUTF8Width("   ");
-
-  u8g2.setCursor(cx, y);
-  u8g2.print(!stableChan_ ? "[x] " : "[ ] ");
-  cx += u8g2.getUTF8Width("[x] ");
-  if (focusItem_ == 1) Font::useBold(); else Font::useBody();
-  u8g2.setCursor(cx, y);
-  u8g2.print(D_UPDATE_CHAN_DEV);
-  y += 14;
-
-
-  // Check button
-  if (focusItem_ == 2) Font::useBold(); else Font::useBody();
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPDATE_BTN_CHECK);
-  y += 20;
-
-  // Status line — shown below the check button
-  Font::useBody();
-  if (phase_ == Phase::ServerFail) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_SERVER_FAIL);
-    y += 14;
-  } else if (phase_ == Phase::UpToDate) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_UP_TO_DATE);
-    y += 14;
-  } else if (phase_ == Phase::UpdateAvailable) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_AVAILABLE_PREFIX);
-    u8g2.print(remoteVersion_.c_str());
-    y += 14;
-  } else if (phase_ == Phase::DownloadFailed) {
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_DOWNLOAD_FAILED);
-    y += 14;
-  }
-
-  // Install button — shown when update is available or after failed download
-  if (hasInstall) {
-    if (focusItem_ == 3) Font::useBold(); else Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPDATE_BTN_INSTALL);
+  // Status occupies the common heading; every menu uses three shared rows.
+  const bool hasInstall = phase_ == Phase::UpdateAvailable || phase_ == Phase::DownloadFailed;
+  const int backIndex = hasInstall ? 4 : 3;
+  if (focusItem_ < 0 || focusItem_ > backIndex) focusItem_ = 0;
+  String status = Language::join({D_UPDATE_VERSION_PREFIX,  FW_VERSION});
+  if (phase_ == Phase::ServerFail) status = D_UPDATE_SERVER_FAIL;
+  else if (phase_ == Phase::UpToDate) status = D_UPDATE_UP_TO_DATE;
+  else if (phase_ == Phase::UpdateAvailable) status = String(D_UPDATE_AVAILABLE_PREFIX) + remoteVersion_;
+  else if (phase_ == Phase::DownloadFailed) status = D_UPDATE_DOWNLOAD_FAILED;
+  drawSectionHeader(status.c_str());
+  const int first=PalaChrome::firstVisible(focusItem_,backIndex+1);
+  for(int row=0;row<PalaChrome::visibleCards&&first+row<=backIndex;++row){
+    const int index = first + row;
+    String label;
+    if (index == backIndex) label = D_READER_BACK_LIBRARY;
+    else if (index == 0) label = D_UPDATE_CHAN_STABLE;
+    else if (index == 1) label = D_UPDATE_CHAN_DEV;
+    else if (index == 2) label = D_UPDATE_BTN_CHECK;
+    else label = D_UPDATE_BTN_INSTALL;
+    if(index<2)PalaChrome::menuChoice(gfx,u8g2,PalaChrome::firstCardTop+row*PalaChrome::cardStep,label.c_str(),index==focusItem_,index==0?stableChan_:!stableChan_);
+    else PalaChrome::menuCard(gfx,u8g2,PalaChrome::firstCardTop+row*PalaChrome::cardStep,label.c_str(),index==focusItem_);
   }
 
   display.update();
@@ -241,7 +154,7 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
 
   // Reboot prompt — only 2x is accepted; device has no manual reboot option.
   if (phase_ == Phase::RebootPrompt) {
-    if (e.kind == ButtonEvent::Double) {
+    if (e.kind == ButtonEvent::Double || e.kind == ButtonEvent::Long) {
       esp_restart();
     }
     return;
@@ -258,17 +171,23 @@ void UpdateScreen::onButton(const ButtonEvent& e) {
                       phase_ == Phase::UpToDate     ||
                       phase_ == Phase::UpdateAvailable ||
                       phase_ == Phase::DownloadFailed;
-  if (!fullUi) return;
+  if (!fullUi) {
+    if ((phase_ == Phase::NoCreds || phase_ == Phase::ConnFailed || phase_ == Phase::Connecting)
+        && (e.kind == ButtonEvent::Long || e.kind == ButtonEvent::Double)) exitToLibrary();
+    return;
+  }
 
   if (e.kind == ButtonEvent::Short) {
     bool hasInstall = (phase_ == Phase::UpdateAvailable ||
                        phase_ == Phase::DownloadFailed);
-    focusItem_ = (focusItem_ + 1) % (hasInstall ? 4 : 3);
+    focusItem_ = (focusItem_ + 1) % (hasInstall ? 5 : 4);
     draw();
     return;
   }
 
-  if (e.kind == ButtonEvent::Double) {
+  if (e.kind == ButtonEvent::Double || e.kind == ButtonEvent::Long) {
+    const bool hasInstall = phase_ == Phase::UpdateAvailable || phase_ == Phase::DownloadFailed;
+    if (focusItem_ == (hasInstall ? 4 : 3)) { exitToLibrary(); return; }
     if (focusItem_ == 0) {
       stableChan_ = true;
       saveChannel();

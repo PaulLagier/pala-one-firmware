@@ -52,7 +52,7 @@ void ReaderScreen::onButton(const ButtonEvent& e) {
   // Reader menu overlay swallows all input while open. On close, force a
   // full refresh because the overlay redraw replaced the page.
   if (ReaderMenu::isActive()) {
-    if (ReaderMenu::onButton(e) && !ReaderMenu::isActive()) {
+    if (ReaderMenu::onButton(e) && !ReaderMenu::isActive() && !nextScreen) {
       g_bookview.cursor.pageTurnsSinceFull = FULL_REFRESH_EVERY_N_PAGES;
       renderCurrentPage();
     }
@@ -99,4 +99,10 @@ void ReaderScreen::onSleep() {
   persistReaderState();
   armResumeOnWake();        // captures path before resetBookView() drops it
   resetBookView();
+}
+
+void ReaderScreen::onIdleTick() {
+  if (ReaderMenu::isActive() || Toast::isActive() || g_btns.isPressed()
+      || g_btns.hasPendingClicks() || buttonQueueNonEmpty() || userIdleMs() < 50) return;
+  prefetchNextReaderPage();
 }

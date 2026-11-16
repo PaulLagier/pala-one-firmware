@@ -1,6 +1,10 @@
 #ifndef PALA_CONFIG_H
 #define PALA_CONFIG_H
 
+#ifndef PALA_DIAGNOSTICS
+#define PALA_DIAGNOSTICS 0
+#endif
+
 // ============================================================================
 //  Project-wide compile-time configuration.
 //

@@ -11,27 +11,25 @@
 //
 //  Roles:
 //    Body / Bold   Regular/bold body face at the user-chosen body size
-//                  (8/10/12/14) AND family (Helvetica or OpenDyslexic).
+//                  (8/10/12/14) AND family (Pala Sans or Pala Dys).
 //                  Reader text, menu rows, section headers.
-//    Toast         Helvetica regular 8 — Latin Extended (accent-capable);
-//                  used for toast text where translated strings may carry
-//                  á é í ó ú ñ ¿ ¡ ü.
-//    UiSmall       Fixed 6x10 (ASCII only). Battery percentage — digits/% only.
-//    UiTiny        Fixed 5x8  (ASCII only). Page number in the status bar.
+//    Toast         Pala Sans regular 8 — extended Latin and Cyrillic;
+//                  used for translated toast text.
+//    UiSmall       Fixed 6x10 subset. Battery percentage — digits/%/dash only.
+//    UiTiny        Fixed 5x8 subset. Page number — digits only.
 //
 //  Roles, not tables: nothing outside font.cpp references u8g2 font
 //  identifiers directly. Adding/changing a font is a one-file change.
 //
-//  Glyph coverage: UiSmall / UiTiny tables are _tf (ASCII printable only).
+//  Glyph coverage: UiSmall / UiTiny contain their number-role glyphs only.
 //  Do NOT route translated user-visible strings through them — they will
-//  render missing-glyph boxes for any accent. Use Toast (or Body/Bold) for
+//  omit text outside their number roles. Use Toast (or Body/Bold) for
 //  anything that could contain a translation.
 // ============================================================================
 namespace Font {
 
-// Body face family. OpenDyslexic is the alternative face for users with
-// dyslexia; tables come from opendyslexic_u8g2_fonts.h (already vendored
-// at the sketch root).
+// Stable persisted family IDs; visible faces are Pala Sans and Pala Dys.
+// Extended tables and source licenses live alongside language_fonts.cpp.
 enum class Family : uint8_t { Helvetica = 0, OpenDyslexic = 1 };
 
 // Switch the active u8g2 font to the named role. After one of these, raw
@@ -41,6 +39,8 @@ void useBold();
 void useToast();
 void useUiSmall();
 void useUiTiny();
+void useMenu();
+void useMenuBold();
 
 // Big-display bold (Helvetica B14). Exposed for the Pala apps API's
 // `drawCenteredLarge` — firmware screens use Body/Bold under the
@@ -51,6 +51,9 @@ void useAppLarge();
 // dimensions. Cached; invalidated automatically by the mutators below.
 // Calling this leaves the active u8g2 font set to Body.
 const LayoutMetrics& bodyLayout();
+// Start compact; enlarge only for glyphs actually present in this page.
+void includeTextBounds(LayoutMetrics& metrics,const char* text,size_t length);
+void completePageLayout(LayoutMetrics& metrics);
 
 // Drop the cached layout. External owners of layout-affecting state call
 // this after they mutate (e.g. `Statusbar::setMode` changes the bottom
@@ -65,6 +68,9 @@ void invalidateLayoutCache();
 // them. Defaults: bodySize=10 (with input validation falling back to 10),
 // lineGap=0 (clamped to [0, 4]). Call once from setup() after `prefs.begin`.
 void loadSettings();
+#if PALA_DIAGNOSTICS
+void setDiagnosticLayout(int size, Family family, int gap, bool bionic);
+#endif
 
 // Apply + persist. Out-of-set body sizes fall back to 10; line gap is
 // clamped to [0, 4]. All invalidate the layout cache as needed.
@@ -72,6 +78,8 @@ void setBodySize(int sz);
 void setLineGap(int gap);
 void setFamily(Family fam);
 void setBionic(bool on);
+void setHalfParagraphGaps(bool on);
+bool halfParagraphGaps();
 
 // Current applied values. Page-cache stamping passes everything through
 // `layoutForCache()`; these direct accessors exist for places that need
@@ -111,7 +119,7 @@ void drawBionicLine(int x, int y, const char* line);
 
 // Byte length of the leading "strong" (bold) prefix of `word` when rendered
 // in bionic mode. Returns 0 if the word doesn't qualify (punctuation-only,
-// or short enough that splitting would look wrong). UTF-8-aware.
+// or short enough that splitting would look wrong). UTF-8 cluster-aware; combining accents stay attached.
 int bionicPrefixBytes(const char* word, int byteLen);
 
 }  // namespace Font

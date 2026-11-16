@@ -41,12 +41,13 @@ struct PageCacheLayout {
   uint8_t family;            // matches Font::Family numeric value (0 = Helv, 1 = Dys)
   uint8_t bionic;            // 0 / 1
   uint8_t statusbarReserve;  // pixels reserved at the bottom; from Statusbar::reserveH()
+  uint8_t halfGaps = 0;
 };
 
 // Bulk-load the persisted offset table for `path` into `out`. Layout-stamped
 // at save time; load rejects any file whose stamp doesn't match `layout`.
-// Returns true on success; on false, `out` is left untouched (callers
-// typically seed `offsets[0]=0, count=1` themselves).
+// Page indices stay absolute when a late-book window is loaded. On failure,
+// `out` is seeded at page 0; user books and saved progress are untouched.
 bool loadPageOffsetCacheForBook(const String& path, size_t expectedSize,
                                 const PageCacheLayout& layout,
                                 PageOffsetTable& out);
@@ -60,13 +61,15 @@ void savePageOffsetCacheForBook(const String& path, size_t fileSize,
 // Single-entry on-disk lookup: read header, validate magic + layout +
 // expected file size, and return the offset of the largest cached page
 // `<= maxPage` along with that page's index. Constant-RAM (no PageOffsetTable
-// scratch); two short reads (header + one offset). Returns -1 (and leaves
+// scratch); validates the bounded cache before reading. Returns -1 (and leaves
 // `*out` untouched) if the cache file is absent, stamped for a different
 // layout, sized for a different file, or has zero entries.
 int loadOffsetForPageFromDisk(const String& path, size_t expectedSize,
                               const PageCacheLayout& layout,
                               int maxPage, uint32_t* out);
 
+// New files use magic 0x50434F4B, absolute firstPage and CRC32 over header
+// and offsets. Legacy 0x50434F4A prefix caches remain readable only with matching font revision.
 // Remove the on-disk page-cache file for `path` (no-op if absent).
 void deletePageCacheForBook(const String& path);
 

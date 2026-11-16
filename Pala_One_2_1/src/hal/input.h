@@ -4,6 +4,9 @@
 #include <Arduino.h>
 
 #include "src/config.h"
+#include "src/pure/input_timing.h"
+InputTiming inputTiming();
+bool setInputTiming(const InputTiming& timing);
 
 // ============================================================================
 //  Button-input subsystem
@@ -154,6 +157,9 @@ void btnISR();  // IRAM_ATTR is on the definition only — repeating it here
                 // .iram1.* sections, triggering an attribute-conflict warning.
 void clearButtonQueue();
 void resetInputFrontend();
+// Ignore only the boot wake press; retain later ISR edges across the first draw.
+// Never waits for release or empties the queue. Locked wakes keep normal holds.
+void discardWakePress(bool heldOnAttach,uint32_t attachedAt);
 
 // Synthesize an edge into the ISR queue from a normal (non-IRQ) context.
 // Used after light-sleep GPIO wake: the ext0 wakeup path detects the level
@@ -180,6 +186,9 @@ bool maybeRecoverFromIsrOverflow();
 //  User-activity timer (drives the deep-sleep deadline)
 // ----------------------------------------------------------------------------
 void markUserActivity();
+void loadInputSettings();
+uint32_t inputClickGapMs();
+void setInputClickGapMs(uint32_t value);
 
 // Milliseconds since the most recent accepted user input. The sleep
 // deadline check in main.cpp compares this against Sleep::idleTimeoutMs().

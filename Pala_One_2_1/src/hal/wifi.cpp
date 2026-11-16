@@ -31,9 +31,11 @@ WifiStaResult wifiStaPoll(WifiSession& out) {
   switch (WiFi.status()) {
     case WL_CONNECTED: {
       IPAddress ip = WiFi.localIP();
+      if(ip==IPAddress(0,0,0,0))return WifiStaResult::Connecting;
       MDNS.begin(kMdnsHost);
       MDNS.addService("http", "tcp", 80);
 
+      out.ready       = ip != IPAddress(0,0,0,0);
       out.mode        = WifiMode::Station;
       out.staSsid     = s_staSsid;
       out.primaryUrl  = String("http://") + kMdnsHost + ".local";
@@ -60,15 +62,15 @@ void wifiStaAbort() {
 WifiSession wifiBeginAccessPoint() {
   setCpuFrequencyMhz(240);
 
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(AP_SSID, AP_PASS);
+  const bool started = WiFi.mode(WIFI_AP) && WiFi.softAP(AP_SSID, AP_PASS);
   IPAddress ip = WiFi.softAPIP();
 
   WifiSession s;
+  s.ready      = started && ip != IPAddress(0,0,0,0);
   s.mode       = WifiMode::AccessPoint;
   s.apSsid     = AP_SSID;
   s.apPass     = AP_PASS;
-  s.primaryUrl = String("http://") + ip.toString();
+  if(s.ready)s.primaryUrl = String("http://") + ip.toString();
   return s;
 }
 

@@ -134,3 +134,9 @@ TEST_CASE("compactText streaming: no word merging across boundary") {
   String b = compactText("o bar", &lastWasSpace, &newlineCount, /*trimTail=*/true);
   CHECK_EQ(a + b, String("foo bar"));
 }
+
+TEST_CASE("host Arduino min max helpers return values rather than dangling references") {
+  static_assert(!std::is_reference<decltype(min(1,2))>::value,"min must return a value");
+  static_assert(!std::is_reference<decltype(max(1,2))>::value,"max must return a value");
+  CHECK_EQ(min(3,7),3);CHECK_EQ(max(3,7),7);
+}

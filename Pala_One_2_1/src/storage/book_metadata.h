@@ -50,10 +50,10 @@ void renameBookMetadata(KeyValueStore& kv, const String& oldKey, const String& n
 #include "src/state.h"
 
 uint8_t loadBookmarksForKey(const String& bookKey,
-                            uint16_t outPages[MAX_BOOKMARKS],
+                            uint32_t outPages[MAX_BOOKMARKS],
                             uint32_t outOffsets[MAX_BOOKMARKS]);
 void saveBookmarksForKey(const String& bookKey,
-                         const uint16_t pages[MAX_BOOKMARKS],
+                         const uint32_t pages[MAX_BOOKMARKS],
                          const uint32_t offsets[MAX_BOOKMARKS],
                          uint8_t count);
 int  savedPageForBookPath(const String& path);

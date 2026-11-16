@@ -1,3 +1,5 @@
+#include "src/ui/bookmark_chrome.h"
+#include "src/ui/pala_chrome.h"
 #include "src/ui/screens/bookmarks/book_select_screen.h"
 
 #include "src/hal/display.h"
@@ -14,20 +16,13 @@ void BookmarkBookSelectScreen::onEnter() {
 
 void BookmarkBookSelectScreen::draw() {
   prepareMenuFrame();
-  Font::useBody();
-  int y = drawSectionHeader(D_BOOKMARKS_HEADER);
-
-  if (g_library.bookCount == 0) {
-    drawMenuRow(y, D_BOOKMARKS_NO_BOOKS, false);
-    display.update();
-    return;
-  }
-
-  drawScrollableList(y, g_library.bookCount, g_bookmarkSession.bookIndex,
-    [&](int idx, int rowY, bool selected, int /*budget*/) {
-      drawMenuRow(rowY, String(g_library.books[idx].name), selected);
-      return 1;
-    });
+  if (g_bookmarkSession.bookIndex < 0 || g_bookmarkSession.bookIndex > g_library.bookCount)
+    g_bookmarkSession.bookIndex = 0;
+  if(g_library.bookCount==0){drawSectionHeader("");BookmarkChrome::header(u8g2,D_BOOKMARKS_HEADER);BookmarkChrome::message(gfx,u8g2,D_BOOKMARKS_NO_BOOKS);BookmarkChrome::card(gfx,u8g2,89,D_READER_BACK_LIBRARY,true);display.update();return;}
+  drawSectionHeader("");
+  BookmarkChrome::list(gfx,u8g2,D_BOOKMARKS_HEADER, g_library.bookCount + 1, g_bookmarkSession.bookIndex,
+    [](int idx) { return idx == g_library.bookCount ? String(D_READER_BACK_LIBRARY)
+      : String(g_library.books[idx].name); });
 
   display.update();
 }
@@ -38,28 +33,16 @@ void BookmarkBookSelectScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (g_library.bookCount == 0) {
-    if (e.any()) nextScreen = &g_libraryScreen;
-    return;
-  }
-
   if (e.kind == ButtonEvent::Short) {
-    g_bookmarkSession.bookIndex++;
-    if (g_bookmarkSession.bookIndex >= g_library.bookCount) g_bookmarkSession.bookIndex = 0;
-    draw();
-    return;
+    g_bookmarkSession.bookIndex = (g_bookmarkSession.bookIndex + 1) % (g_library.bookCount + 1);
+    draw(); return;
   }
-
-  if (e.kind == ButtonEvent::Long) {
-    g_bookmarkSession.bookIndex--;
-    if (g_bookmarkSession.bookIndex < 0) g_bookmarkSession.bookIndex = g_library.bookCount - 1;
-    draw();
-    return;
-  }
-
-  if (e.kind == ButtonEvent::Double) {
+  if (e.kind == ButtonEvent::Double || e.kind == ButtonEvent::Long) {
+    if (g_bookmarkSession.bookIndex == g_library.bookCount) {
+      nextScreen = &g_libraryScreen; return;
+    }
+    if (g_bookmarkSession.bookIndex < 0 || g_bookmarkSession.bookIndex >= g_library.bookCount) return;
     g_bookmarkSession.selectedIndex = 0;
     nextScreen = &g_bmListScreen;
-    return;
   }
 }

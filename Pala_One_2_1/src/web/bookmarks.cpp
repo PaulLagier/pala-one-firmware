@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/web/bookmarks.h"
 
 #include "src/config.h"
@@ -31,16 +32,16 @@ static void handleBookmarksWeb() {
   String out = webPageStart(
     D_WEB_BOOKMARKS_HEADING,
     D_WEB_BOOKMARKS_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    Language::join({"<a href='/'>",  D_WEB_NAV_HOME,  "</a><a href='/files'>",  D_WEB_NAV_FILES,  "</a><a href='/settings'>",  D_WEB_NAV_SETTINGS,  "</a>"}),
     true
   );
 
-  if (g_library.bookCount == 0) out += "<div class='card'><p class='muted'>" D_WEB_NO_BOOKS_YET "</p></div>";
+  if (g_library.bookCount == 0) out += Language::join({"<div class='card'><p class='muted'>",  D_WEB_NO_BOOKS_YET,  "</p></div>"});
 
   for (int i = 0; i < g_library.bookCount; i++) {
     String filePath = String(g_library.books[i].path);
     String key = prefKeyForBook(filePath);
-    uint16_t pages[MAX_BOOKMARKS];
+    uint32_t pages[MAX_BOOKMARKS];
     uint32_t offsets[MAX_BOOKMARKS];
     uint8_t count = loadBookmarksForKey(key, pages, offsets);
 
@@ -49,13 +50,13 @@ static void handleBookmarksWeb() {
     out += "</h2>";
 
     if (count == 0) {
-      out += "<p class='muted'>" D_WEB_NO_BOOKMARKS_CARD "</p></div>";
+      out += Language::join({"<p class='muted'>",  D_WEB_NO_BOOKMARKS_CARD,  "</p></div>"});
       continue;
     }
 
     File f = FS.open(filePath, "r");
     if (!f) {
-      out += "<p class='muted'>" D_WEB_BOOKMARKS_OPEN_FAILED_CARD "</p></div>";
+      out += Language::join({"<p class='muted'>",  D_WEB_BOOKMARKS_OPEN_FAILED_CARD,  "</p></div>"});
       continue;
     }
 
@@ -63,22 +64,22 @@ static void handleBookmarksWeb() {
 
     for (int j = 0; j < count; j++) {
       int targetPage = (int)pages[j];
-      uint32_t pageOff = resolveBookmarkOffset(filePath, (uint16_t)targetPage, offsets[j]);
+      uint32_t pageOff = resolveBookmarkOffset(filePath, (uint32_t)targetPage, offsets[j]);
       FileReadStream fs(f);
       String sn = readBookmarkLabelAtOffset(fs, pageOff, targetPage);
-      out += "<li><div class='row'><div><div class='pill'>" D_WEB_BOOKMARK_PILL_PREFIX;
+      out += Language::join({"<li><div class='row'><div><div class='pill'>",  D_WEB_BOOKMARK_PILL_PREFIX});
       out += String(j + 1);
       out += "</div><p class='meta' style='margin-top:8px'>";
       out += htmlEscape(sn);
-      out += "</p></div><div><a class='link' href='/viewbm?book=" + String(i) + "&idx=" + String(j) + "'>" D_WEB_BOOKMARK_VIEW "</a> | ";
+      out += "</p></div><div><a class='link' href='/viewbm?book=" + String(i) + "&idx=" + String(j) + Language::join({"'>",  D_WEB_BOOKMARK_VIEW,  "</a> | "});
       out += "<form method='POST' action='/delbm' style='display:inline'>";
       out += "<input type='hidden' name='book' value='" + String(i) + "'>";
       out += "<input type='hidden' name='idx' value='" + String(j) + "'>";
-      out += "<button type='submit' class='btn secondary' style='padding:4px 8px;font-size:13px' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_BOOKMARK "')\">" D_WEB_DELETE_BUTTON "</button>";
+      out += Language::join({"<button type='submit' class='btn secondary' style='padding:4px 8px;font-size:13px' onclick=\"return confirm('",  D_WEB_CONFIRM_DELETE_BOOKMARK,  "')\">",  D_WEB_DELETE_BUTTON,  "</button>"});
       out += "</form></div></div></li>";
     }
 
-    out += "</ul><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(i) + "'>" D_WEB_BOOKMARK_DOWNLOAD_ALL "</a></div></div>";
+    out += "</ul><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(i) + Language::join({"'>",  D_WEB_BOOKMARK_DOWNLOAD_ALL,  "</a></div></div>"});
     f.close();
   }
 
@@ -100,7 +101,7 @@ static void handleDeleteBookmarkWeb() {
   }
 
   String key = prefKeyForBook(String(g_library.books[b].path));
-  uint16_t pages[MAX_BOOKMARKS];
+  uint32_t pages[MAX_BOOKMARKS];
   uint32_t offsets[MAX_BOOKMARKS];
   uint8_t count = loadBookmarksForKey(key, pages, offsets);
   if (idx < 0 || idx >= count) {
@@ -133,7 +134,7 @@ static void handleViewBookmarkWeb() {
   }
 
   String key = prefKeyForBook(String(g_library.books[b].path));
-  uint16_t pages[MAX_BOOKMARKS];
+  uint32_t pages[MAX_BOOKMARKS];
   uint32_t offsets[MAX_BOOKMARKS];
   uint8_t count = loadBookmarksForKey(key, pages, offsets);
   if (idx < 0 || idx >= count) {
@@ -148,7 +149,7 @@ static void handleViewBookmarkWeb() {
   if (!vf) {
     txt = D_WEB_BOOKMARK_OPEN_FAILED_DOT;
   } else {
-    uint32_t off = resolveBookmarkOffset(filePath, (uint16_t)page, offsets[idx]);
+    uint32_t off = resolveBookmarkOffset(filePath, (uint32_t)page, offsets[idx]);
     txt.reserve(900);
     (void)extractPageText(vf, off, txt);
     vf.close();
@@ -158,17 +159,17 @@ static void handleViewBookmarkWeb() {
   String out = webPageStart(
     D_WEB_BOOKMARK_VIEW_HEADING,
     D_WEB_BOOKMARK_VIEW_SUBTITLE,
-    "<a href='/bookmarks'>" D_WEB_BOOKMARK_VIEW_BACK_NAV "</a><a href='/files'>" D_WEB_NAV_FILES "</a><a href='/'>" D_WEB_NAV_HOME "</a>",
+    Language::join({"<a href='/bookmarks'>",  D_WEB_BOOKMARK_VIEW_BACK_NAV,  "</a><a href='/files'>",  D_WEB_NAV_FILES,  "</a><a href='/'>",  D_WEB_NAV_HOME,  "</a>"}),
     true
   );
 
   out += "<div class='card'><h2>";
   out += htmlEscape(String(g_library.books[b].name));
-  out += "</h2><p class='muted'>" D_WEB_BOOKMARK_PILL_PREFIX;
+  out += Language::join({"</h2><p class='muted'>",  D_WEB_BOOKMARK_PILL_PREFIX});
   out += String(idx + 1);
   out += "</p><pre class='pre'>";
   out += htmlEscape(txt);
-  out += "</pre><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(b) + "'>" D_WEB_BOOKMARK_DOWNLOAD_ALL "</a></div></div>";
+  out += "</pre><div class='actions'><a class='btn secondary' href='/exportbm?book=" + String(b) + Language::join({"'>",  D_WEB_BOOKMARK_DOWNLOAD_ALL,  "</a></div></div>"});
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }
@@ -187,7 +188,7 @@ static void handleExportBookmarksWeb() {
 
   String filePath = String(g_library.books[b].path);
   String key = prefKeyForBook(filePath);
-  uint16_t pages[MAX_BOOKMARKS];
+  uint32_t pages[MAX_BOOKMARKS];
   uint32_t offsets[MAX_BOOKMARKS];
   uint8_t count = loadBookmarksForKey(key, pages, offsets);
 
@@ -219,7 +220,7 @@ static void handleExportBookmarksWeb() {
 
   for (int i = 0; i < count; i++) {
     int targetPage = (int)pages[i];
-    uint32_t pageOff = resolveBookmarkOffset(filePath, (uint16_t)targetPage, offsets[i]);
+    uint32_t pageOff = resolveBookmarkOffset(filePath, (uint32_t)targetPage, offsets[i]);
     FileReadStream fs(f);
     String label = readBookmarkLabelAtOffset(fs, pageOff, targetPage);
     String txt = readPageTextForWeb(filePath, targetPage);

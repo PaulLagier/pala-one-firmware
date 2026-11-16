@@ -40,7 +40,8 @@ enum LibraryEntryType {
   LIB_ENTRY_STATISTICS,
   LIB_ENTRY_ABOUT,
   LIB_ENTRY_UPDATE,
-  LIB_ENTRY_UPLOAD
+  LIB_ENTRY_UPLOAD,
+  LIB_ENTRY_SETTINGS
 };
 
 // One row in the assembled menu. `ref` is a catalog book/folder index for

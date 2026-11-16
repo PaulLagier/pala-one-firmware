@@ -1,6 +1,9 @@
+#include "src/ui/centered_chrome.h"
 #include "src/ui/screens/upload_screen.h"
 
 #include "src/config.h"
+#include "src/hal/companion_ble.h"
+#include <WiFi.h>
 #include "src/hal/display.h"
 #include "src/hal/input.h"        // resetInputFrontend() — used on exit only
 #include "src/hal/wifi.h"
@@ -11,6 +14,7 @@
 #include "src/ui/font.h"
 #include "src/ui/screens/library_screen.h"
 #include "src/ui/widgets.h"
+#include "src/ui/pala_chrome.h"
 #include "src/web/apps_upload.h"  // resetAppUpload()
 #include "src/web/upload.h"       // resetBookUpload() / resetSleepUpload()
 
@@ -22,98 +26,92 @@ static constexpr uint32_t kStaTimeoutMs = 5000;
 // ---- Drawing --------------------------------------------------------------
 static void drawConnecting(const String& ssid) {
   prepareMenuFrame();
-  int y = drawSectionHeader(D_UPLOAD_HEADER);
-
-  Font::useBold();
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPLOAD_CONNECTING);
-  y += 14;
-
-  Font::useBody();
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(ssid.c_str());
-  y += 18;
-
-  Font::useBody();
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPLOAD_HOTSPOT_HINT_L1);
-  y += 14;
-  u8g2.setCursor(MARGIN_X, y);
-  u8g2.print(D_UPLOAD_HOTSPOT_HINT_L2);
-
+  drawSectionHeader("");CenteredChrome::header(u8g2,D_UPLOAD_HEADER);
+  CenteredChrome::message(gfx,u8g2,D_UPLOAD_CONNECTING,ssid.c_str());
   display.update();
 }
 
 void UploadScreen::draw() {
-  prepareMenuFrame();
-
-  int y = drawSectionHeader(D_UPLOAD_HEADER);
-
-  if (net_.mode == WifiMode::Station) {
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPLOAD_CONNECTED);
-    y += 14;
-
-    Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(net_.staSsid.c_str());
-    y += 18;
-
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPLOAD_OPEN);
-    y += 14;
-
-    Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(net_.primaryUrl.c_str());
-    y += 14;
-
-    if (net_.fallbackUrl.length() > 0) {
-      u8g2.setCursor(MARGIN_X, y);
-      u8g2.print(net_.fallbackUrl.c_str());
-    }
-  } else {
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPLOAD_WIFI);
-    y += 14;
-
-    Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(net_.apSsid);
-    y += 16;
-
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPLOAD_PASSWORD);
-    y += 14;
-
-    Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(net_.apPass);
-    y += 16;
-
-    Font::useBold();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(D_UPLOAD_OPEN);
-    y += 14;
-
-    Font::useBody();
-    u8g2.setCursor(MARGIN_X, y);
-    u8g2.print(net_.primaryUrl.c_str());
+  if(phase_==Phase::Error){
+    prepareMenuFrame();drawSectionHeader("");CenteredChrome::header(u8g2,D_UPLOAD_HEADER);Font::useMenu();
+    CenteredChrome::message(gfx,u8g2,failure_==Failure::Bluetooth?D_CONNECT_BLE_UNAVAILABLE:D_CONNECT_WIFI_UNAVAILABLE);
+    CenteredChrome::card(gfx,u8g2,89,D_READER_BACK_LIBRARY,true);display.update();return;
   }
-
+#ifdef PALA_COMPANION_TEST
+  if(phase_==Phase::Choose){
+    prepareMenuFrame();drawSectionHeader("");CenteredChrome::header(u8g2,D_MENU_CONNECT);
+    PalaChrome::menuList(gfx,u8g2,D_MENU_CONNECT,3,view_,[](int index)->String{return index==0?D_CONNECT_APP:index==1?D_CONNECT_BROWSER:D_READER_BACK_LIBRARY;});
+    display.update();return;
+  }
+  if(phase_==Phase::StartingBluetooth || phase_==Phase::StartingWifi){
+    prepareMenuFrame();drawSectionHeader("");CenteredChrome::header(u8g2,D_MENU_CONNECT);Font::useMenu();
+    const char* message=phase_==Phase::StartingBluetooth?D_CONNECT_START_BLE:D_CONNECT_START_WIFI;
+    CenteredChrome::message(gfx,u8g2,message);
+    display.update();return;
+  }
+  if(phase_==Phase::Bluetooth){
+    prepareMenuFrame();drawSectionHeader("");CenteredChrome::header(u8g2,"Pala App");Font::useMenu();
+    PalaChrome::panel(gfx);
+    Font::useToast();CenteredChrome::line(u8g2,companionBleConnected()?D_CONNECT_BLE_CONNECTED:D_CONNECT_PAIR_READY,47);
+    PalaChrome::pairingCode(u8g2,companionPairingPin().c_str());
+    CenteredChrome::card(gfx,u8g2,89,D_READER_BACK_LIBRARY,true);display.update();return;
+  }
+#endif
+  prepareMenuFrame();
+  drawSectionHeader("");CenteredChrome::header(u8g2,D_UPLOAD_HEADER);
+  const int exitView = net_.fallbackUrl.length() ? 3 : 2;
+  if (view_ < 0 || view_ > exitView) view_ = 0;
+  Font::useToast();
+  
+  if (view_ == 0) {
+    PalaChrome::panel(gfx);
+    if (net_.mode == WifiMode::Station) {
+      CenteredChrome::line(u8g2,D_UPLOAD_CONNECTED,45);
+      CenteredChrome::line(u8g2,net_.staSsid.c_str(),65);
+    } else {
+      String network = String(D_UPLOAD_WIFI) + ": " + net_.apSsid;
+      CenteredChrome::line(u8g2,network.c_str(),45);
+      CenteredChrome::line(u8g2,D_UPLOAD_PASSWORD,59);
+      Font::useMenuBold();
+      CenteredChrome::line(u8g2,net_.apPass,79);
+    }
+    CenteredChrome::card(gfx, u8g2, 89, D_UPLOAD_OPEN, true);
+  } else if (view_ < exitView) {
+    PalaChrome::panel(gfx);
+    CenteredChrome::line(u8g2,D_UPLOAD_OPEN,45);
+    const String& url = view_ == 1 ? net_.primaryUrl : net_.fallbackUrl;
+    Font::useMenuBold();
+    CenteredChrome::line(u8g2,url.c_str(),69);
+    CenteredChrome::card(gfx, u8g2, 89, D_WEB_READ_FIND_NEXT, true);
+  } else {
+    CenteredChrome::card(gfx, u8g2, 58, D_READER_BACK_LIBRARY, true);
+  }
   display.update();
 }
 
 // ---- Lifecycle ------------------------------------------------------------
 void UploadScreen::onEnter() {
+#ifdef PALA_COMPANION_TEST
+  phase_=Phase::Choose;view_=0;startedMs_=millis();draw();
+#else
   beginSession();
+#endif
+}
+
+void UploadScreen::beginBluetooth() {
+#ifdef PALA_COMPANION_TEST
+  resetBookUpload();resetSleepUpload();resetAppUpload();
+  WifiProvisioning::notifyUploadSession(true);WiFi.mode(WIFI_OFF);
+  setCpuFrequencyMhz(240);
+  companionBleBegin();startedMs_=millis();
+  if(companionBleRunning())phase_=Phase::Bluetooth;
+  else {phase_=Phase::Error;failure_=Failure::Bluetooth;}
+  draw();
+#endif
 }
 
 void UploadScreen::beginSession() {
+
   resetBookUpload();
   resetSleepUpload();
   resetAppUpload();
@@ -136,7 +134,9 @@ void UploadScreen::beginSession() {
 }
 
 void UploadScreen::enterReady() {
+  if(!net_.ready){phase_=Phase::Error;failure_=Failure::Wifi;startedMs_=millis();draw();return;}
   phase_     = Phase::Ready;
+  view_      = 0;
   startedMs_ = millis();
   server.begin();
   draw();
@@ -149,6 +149,9 @@ void UploadScreen::fallbackToAp() {
 }
 
 void UploadScreen::stopSessionToLibrary() {
+#ifdef PALA_COMPANION_TEST
+  companionBleEnd();
+#endif
   server.stop();
   wifiEnd();
   WifiProvisioning::notifyUploadSession(false);
@@ -167,6 +170,25 @@ void UploadScreen::stopSessionToLibrary() {
 // ---- Per-iteration input + tick -------------------------------------------
 void UploadScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
+  if(phase_==Phase::Error){
+    if(e.kind==ButtonEvent::Long || e.kind==ButtonEvent::Double || e.kind==ButtonEvent::Triple)stopSessionToLibrary();
+    return;
+  }
+#ifdef PALA_COMPANION_TEST
+  if(phase_==Phase::Choose){
+    if(e.kind==ButtonEvent::Short){view_=(view_+1)%3;draw();}
+    else if(e.kind==ButtonEvent::Triple)stopSessionToLibrary();
+    else if(e.kind==ButtonEvent::Long || e.kind==ButtonEvent::Double){
+      if(view_==2)stopSessionToLibrary();
+      else {phase_=view_==0?Phase::StartingBluetooth:Phase::StartingWifi;startedMs_=millis();draw();}
+    }
+    return;
+  }
+  if(phase_==Phase::Bluetooth){
+    if(e.kind==ButtonEvent::Long || e.kind==ButtonEvent::Double || e.kind==ButtonEvent::Triple)stopSessionToLibrary();
+    return;
+  }
+#endif
 
   // Any tap during the connecting splash means "use the hotspot instead".
   if (phase_ == Phase::ConnectingSta) {
@@ -174,12 +196,31 @@ void UploadScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind == ButtonEvent::Short || e.kind == ButtonEvent::Triple) {
-    stopSessionToLibrary();
+  const int exitView = net_.fallbackUrl.length() ? 3 : 2;
+  if (e.kind == ButtonEvent::Triple) { stopSessionToLibrary(); return; }
+  if (e.kind == ButtonEvent::Short) {
+    view_ = (view_ + 1) % (exitView + 1); draw(); return;
+  }
+  if (e.kind == ButtonEvent::Long || e.kind == ButtonEvent::Double) {
+    if (view_ == exitView) stopSessionToLibrary();
+    else { ++view_; draw(); }
   }
 }
 
 void UploadScreen::onIdleTick() {
+  if(phase_==Phase::Error){if(uint32_t(millis()-startedMs_)>UPLOAD_AUTO_EXIT_MS)stopSessionToLibrary();return;}
+#ifdef PALA_COMPANION_TEST
+  if(phase_==Phase::StartingBluetooth){beginBluetooth();return;}
+  if(phase_==Phase::StartingWifi){beginSession();return;}
+  if(phase_==Phase::Choose){
+    if(uint32_t(millis()-startedMs_)>UPLOAD_AUTO_EXIT_MS)stopSessionToLibrary();return;
+  }
+  if(phase_==Phase::Bluetooth){
+    companionBleTick();if(companionBleNeedsRedraw())draw();
+    if(companionBleConnected())startedMs_=millis();
+    if(uint32_t(millis()-startedMs_)>UPLOAD_AUTO_EXIT_MS)stopSessionToLibrary();return;
+  }
+#endif
   if (phase_ == Phase::ConnectingSta) {
     WifiStaResult r = wifiStaPoll(net_);
     if (r == WifiStaResult::Connected) {

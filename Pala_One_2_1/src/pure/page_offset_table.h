@@ -1,24 +1,32 @@
 #ifndef PALA_PURE_PAGE_OFFSET_TABLE_H
 #define PALA_PURE_PAGE_OFFSET_TABLE_H
-
 #include "arduino_compat.h"
 #include "../config.h"
+#include <assert.h>
+#include <string.h>
 
-// A book's "page index" — the in-memory map from page number to absolute
-// byte offset in the source file. Filled incrementally by the paginator as
-// the reader walks forward; persisted to flash as a `pc_<hash>.bin` file so
-// reopening a book doesn't have to re-paginate from scratch.
-//
-// `offsets[i]` is the start byte of page `i`. Valid entries are `[0, count)`.
-// `count == 0` means "empty / no entries yet" (caller will typically seed
-// `offsets[0] = 0` and set `count = 1` before reading).
-//
-// `eofReached` distinguishes "we haven't paginated this far yet" from
-// "there are no more pages." Without it, `pageIndex >= count` is ambiguous.
+// Bounded window of consecutive page starts. Page numbers stay absolute;
+// offsets[] is local to firstPage. The oldest half rolls out when full.
+// 10000 is a RAM capacity, never a limit on the length of a book.
 struct PageOffsetTable {
   uint32_t offsets[MAX_PAGES];
-  int  count = 0;
+  int count = 0;
+  int firstPage = 0;
   bool eofReached = false;
-};
 
-#endif  // PALA_PURE_PAGE_OFFSET_TABLE_H
+  int endPage() const { return firstPage + count; } // exclusive
+  bool contains(int page) const { return page >= firstPage && page < endPage(); }
+  uint32_t offsetAt(int page) const { assert(contains(page));return offsets[page-firstPage]; }
+  void reset() { firstPage=0;count=1;offsets[0]=0;eofReached=false; }
+  bool append(uint32_t next, size_t fileSize) {
+    if(count<1 || eofReached)return false;
+    if(next<=offsets[count-1] || next>=fileSize){eofReached=true;return false;}
+    if(count==MAX_PAGES){
+      constexpr int drop=MAX_PAGES/2;
+      memmove(offsets,offsets+drop,(count-drop)*sizeof(uint32_t));
+      firstPage+=drop;count-=drop;
+    }
+    offsets[count++]=next;return true;
+  }
+};
+#endif

@@ -1,21 +1,18 @@
 #include "src/ui/screens/library_screen.h"
 
 #include "src/hal/display.h"
+#include "src/hal/battery.h"
+#include "src/ui/pala_chrome.h"
 #include "src/ui/header_title.h"
 #include "src/pure/library_nav.h"         // buildLibraryEntries
 #include "src/pure/paths.h"               // folderLeafLabel, bookLeafLabel
 #include "src/storage/library.h"
-#include "src/storage/list_items.h"       // listHasVisibleItems
 #include "src/ui/font.h"
 #include "src/ui/reader.h"
-#include "src/ui/screens/about_screen.h"
-#include "src/ui/screens/apps_screen.h"
-#include "src/ui/screens/update_screen.h"
 #include "src/ui/screens/bookmarks/book_select_screen.h"
 #include "src/ui/screens/bookmarks/session.h"
-#include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
-#include "src/ui/screens/statistics_screen.h"
+#include "src/ui/screens/settings_screen.h"
 #include "src/ui/screens/upload_screen.h"
 #include "src/ui/widgets.h"
 
@@ -32,7 +29,7 @@
 // and a distinguishing nudge for "system" entries (Bookmarks/List/Device/
 // Upload).
 static const int LIBRARY_DEPTH_INDENT = 10;
-static const int LIBRARY_SYSTEM_NUDGE = 2;
+static const int LIBRARY_SYSTEM_NUDGE = 0;
 
 // Nav state — cursor + folder expansion. Persists across library visits
 // (entering library doesn't collapse open folders).
@@ -42,6 +39,9 @@ static const int LIBRARY_SYSTEM_NUDGE = 2;
 // `g_library.folders[]` and shifts indices arbitrarily. Storing names
 // means we don't have to chase those reshuffles to stay in sync.
 static int  s_cursor = 0;
+static bool s_emptyLanding = false;
+static int s_emptyCursor = 0;
+constexpr int kEmptyEntryCount = 3;
 static char s_expandedNames[MAX_FOLDERS][MAX_FOLDER_PATH + 1];
 static int  s_expandedCount = 0;
 
@@ -105,10 +105,7 @@ static void toggleExpanded(const char* name) {
 //  Per-entry helpers
 // ----------------------------------------------------------------------------
 static bool isSystemEntryType(LibraryEntryType t) {
-  return t == LIB_ENTRY_BOOKMARKS || t == LIB_ENTRY_LIST
-      || t == LIB_ENTRY_APPS || t == LIB_ENTRY_STATISTICS
-      || t == LIB_ENTRY_ABOUT || t == LIB_ENTRY_UPDATE
-      || t == LIB_ENTRY_UPLOAD;
+  return t == LIB_ENTRY_BOOKMARKS || t == LIB_ENTRY_UPLOAD || t == LIB_ENTRY_SETTINGS;
 }
 
 static int rowIndent(const LibEntry& e) {
@@ -125,12 +122,9 @@ static String entryLabel(const LibEntry& e) {
     }
     case LIB_ENTRY_BOOK:      return bookLeafLabel(String(g_library.books[e.ref].path));
     case LIB_ENTRY_BOOKMARKS: return D_MENU_BOOKMARKS;
-    case LIB_ENTRY_LIST:      return D_MENU_LIST;
-    case LIB_ENTRY_APPS:       return D_MENU_APPS;
-    case LIB_ENTRY_STATISTICS: return D_MENU_STATISTICS;
-    case LIB_ENTRY_ABOUT:      return D_MENU_DEVICE;
-    case LIB_ENTRY_UPDATE:     return D_MENU_UPDATE;
-    case LIB_ENTRY_UPLOAD:     return D_MENU_UPLOAD;
+    case LIB_ENTRY_UPLOAD:     return D_MENU_CONNECT;
+    case LIB_ENTRY_SETTINGS:   return D_MENU_DEVICE;
+    default: break;
   }
   return "";
 }
@@ -139,6 +133,9 @@ static String entryLabel(const LibEntry& e) {
 //  Screen lifecycle
 // ----------------------------------------------------------------------------
 void LibraryScreen::onEnter() {
+  // A deep-sleep wake can preserve the panel image while losing controller
+  // reference RAM. Rebuild that reference before replacing a book with cards.
+  forceNextMenuFrameFull();
   // Full reset of reader/bookmark scratch state on every library entry —
   // downstream code never has to reason about stale reader state. Wake
   // state doesn't need clearing — it's consumed at boot, so it's already
@@ -149,6 +146,8 @@ void LibraryScreen::onEnter() {
   // Reset the cursor but preserve folder expansion across visits — user
   // returning from a sub-screen expects their open folders still open.
   s_cursor = 0;
+  s_emptyLanding = g_library.bookCount == 0;
+  s_emptyCursor = 0;
 
   draw();
 }
@@ -156,18 +155,24 @@ void LibraryScreen::onEnter() {
 void LibraryScreen::draw() {
   prepareMenuFrame();
   Font::useBody();
+  if(s_emptyLanding&&g_library.bookCount>0){s_emptyLanding=false;s_cursor=0;}
+  if(s_emptyLanding){
+    PalaChrome::menuList(gfx,u8g2,D_BOOKMARKS_NO_BOOKS,kEmptyEntryCount,s_emptyCursor,[](int index)->String{
+      return index==0?D_LIBRARY_ADD_BOOK:index==1?D_MENU_DEVICE:D_MENU_BOOKMARKS;
+    });
+#if HAS_BATTERY
+    drawBatteryTopRight();
+#endif
+    Font::useBody();display.update();return;
+  }
 
   // Decide which system entries to show. "List" only appears when the
   // todo list has visible items; the rest are always present.
-  LibraryEntryType systemEntries[7];
+  LibraryEntryType systemEntries[8];
   int systemCount = 0;
   systemEntries[systemCount++] = LIB_ENTRY_BOOKMARKS;
-  if (listHasVisibleItems()) systemEntries[systemCount++] = LIB_ENTRY_LIST;
-  systemEntries[systemCount++] = LIB_ENTRY_APPS;
-  systemEntries[systemCount++] = LIB_ENTRY_STATISTICS;
-  systemEntries[systemCount++] = LIB_ENTRY_ABOUT;
   systemEntries[systemCount++] = LIB_ENTRY_UPLOAD;
-  systemEntries[systemCount++] = LIB_ENTRY_UPDATE;
+  systemEntries[systemCount++] = LIB_ENTRY_SETTINGS;
 
   // Build the bool[] view that the assembler wants from our name-keyed
   // expansion set, against the current folder ordering.
@@ -183,19 +188,37 @@ void LibraryScreen::draw() {
   if (s_cursor < 0) s_cursor = 0;
   if (s_cursor >= s_entryCount) s_cursor = max(0, s_entryCount - 1);
 
-  int y = drawSectionHeader(HeaderTitle::current());
-
-  drawScrollableList(y, s_entryCount, s_cursor,
-    [&](int idx, int rowY, bool selected, int /*budget*/) {
-      drawMenuRow(rowY, entryLabel(s_entries[idx]), selected, rowIndent(s_entries[idx]));
-      return 1;
-    });
+  PalaChrome::header(u8g2, HeaderTitle::current());
+#if HAS_BATTERY
+  drawBatteryTopRight();
+#endif
+  // Stable three-card windows; backfill the last window with existing entries.
+  int first = PalaChrome::firstVisible(s_cursor,s_entryCount);
+  for (int row = 0; row < PalaChrome::visibleCards; ++row) {
+    int idx = first + row;
+    if (idx >= s_entryCount) break;
+    String label = entryLabel(s_entries[idx]);
+    PalaChrome::menuCard(gfx, u8g2,
+                     PalaChrome::firstCardTop + row * PalaChrome::cardStep,
+                     label.c_str(), idx == s_cursor, rowIndent(s_entries[idx]));
+  }
+  Font::useBody();
 
   display.update();
 }
 
 void LibraryScreen::onButton(const ButtonEvent& e) {
   if (!e.any()) return;
+  if(!s_emptyLanding&&g_library.bookCount==0&&e.kind==ButtonEvent::Triple){s_emptyLanding=true;s_emptyCursor=0;forceNextMenuFrameFull();draw();return;}
+  if(s_emptyLanding){
+    if(g_library.bookCount>0){s_emptyLanding=false;s_cursor=0;draw();return;}
+    if(e.kind==ButtonEvent::Short){s_emptyCursor=(s_emptyCursor+1)%kEmptyEntryCount;draw();return;}
+    if(e.kind!=ButtonEvent::Double&&e.kind!=ButtonEvent::Long)return;
+    if(s_emptyCursor==0)nextScreen=&g_uploadScreen;
+    else if(s_emptyCursor==1)nextScreen=&g_settingsScreen;
+    else nextScreen=&g_bmBookSelectScreen;
+    return;
+  }
 
   if (e.kind == ButtonEvent::Short) {
     if (s_entryCount > 0) {
@@ -205,7 +228,7 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (e.kind != ButtonEvent::Double) return;
+  if (e.kind != ButtonEvent::Double && e.kind != ButtonEvent::Long) return;
 
   if (s_cursor < 0 || s_cursor >= s_entryCount) {
     draw();
@@ -224,7 +247,7 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     if (openBookByIndex(sel.ref)) {
       nextScreen = &g_readerScreen;
     } else {
-      drawCenter(D_LIBRARY_OPEN_FAILED, D_LIBRARY_TRY_UPLOAD);
+      if (!readerIndexWasCancelled()) drawCenter(D_LIBRARY_OPEN_FAILED, D_LIBRARY_TRY_UPLOAD);
       draw();
     }
     return;
@@ -235,31 +258,15 @@ void LibraryScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  if (sel.type == LIB_ENTRY_LIST) {
-    g_list.selectedIndex = 0;
-    nextScreen = &g_listScreen;
+
+
+
+  if (sel.type == LIB_ENTRY_SETTINGS) {
+    nextScreen = &g_settingsScreen;
     return;
   }
 
-  if (sel.type == LIB_ENTRY_APPS) {
-    nextScreen = &g_appsScreen;
-    return;
-  }
 
-  if (sel.type == LIB_ENTRY_STATISTICS) {
-    nextScreen = &g_statsScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_ABOUT) {
-    nextScreen = &g_aboutScreen;
-    return;
-  }
-
-  if (sel.type == LIB_ENTRY_UPDATE) {
-    nextScreen = &g_updateScreen;
-    return;
-  }
 
   if (sel.type == LIB_ENTRY_UPLOAD) {
     nextScreen = &g_uploadScreen;
@@ -279,4 +286,6 @@ void navigateToLibraryRoot() {
 void resetLibraryNav() {
   s_cursor = 0;
   s_expandedCount = 0;
+  s_emptyCursor = 0;
+  s_emptyLanding = false;
 }

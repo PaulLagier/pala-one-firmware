@@ -3,9 +3,8 @@
 #include "src/hal/battery.h"
 #include "src/hal/display.h"
 #include "src/ui/font.h"
+#include "src/ui/pala_chrome.h"
 
-static const int UI_HEADER_TOP = 6;
-static const int UI_HEADER_GAP = 6;
 
 // Counter that drives the periodic full refresh of menu screens (clears
 // e-ink ghosting). File-private; nothing outside `prepareMenuFrame` reads it.
@@ -24,17 +23,17 @@ void prepareMenuFrame() {
              || (s_menuDrawsSinceFull >= MENU_FULL_REFRESH_EVERY);
   s_forceMenuFrameFull = false;
   if (doFull) {
-    display.fastmodeOff();
+    setDisplayRefreshMode(true);
     s_menuDrawsSinceFull = 0;
   } else {
-    display.fastmodeOn();
+    setDisplayRefreshMode(false);
   }
   beginPageCanvas();
   s_menuDrawsSinceFull++;
 }
 
 void drawCenter(const char* a, const char* b) {
-  display.fastmodeOff();
+  setDisplayRefreshMode(true);
   beginPageCanvas();
   Font::useBody();
 
@@ -56,39 +55,36 @@ void drawCenter(const char* a, const char* b) {
 }
 
 int drawSectionHeader(const char* title) {
-  Font::useBold();
-  int ascent = u8g2.getFontAscent();
-  int yTitle = UI_HEADER_TOP + ascent - 2;
-
-  u8g2.setCursor(MARGIN_X, yTitle);
-  u8g2.print(title);
-
+  PalaChrome::header(u8g2, title);
 #if HAS_BATTERY
   drawBatteryTopRight();
 #endif
+  Font::useMenu();
+  return 42;
+}
 
-  int lineY = yTitle + 4;
-  gfx.drawFastHLine(MARGIN_X, lineY, SCREEN_W - (MARGIN_X * 2), 1);
-
-  int contentTop = lineY + UI_HEADER_GAP + 11;
-
-  Font::useBody();
-  return contentTop;
+int drawBackSectionHeader(const char* title, bool focused) {
+  PalaChrome::backHeader(gfx,u8g2,title,focused);
+#if HAS_BATTERY
+  drawBatteryTopRight();
+#endif
+  Font::useMenu();
+  return 32;
 }
 
 void drawMenuRow(int yBaseline, const String& label, bool selected, int extraIndent) {
   u8g2.setForegroundColor(1);
-  if (selected) Font::useBold();
-  else          Font::useBody();
+  if (selected) Font::useMenuBold();
+  else          Font::useMenu();
   u8g2.setCursor(UI_LIST_LEFT + extraIndent, yBaseline);
   u8g2.print(label.c_str());
-  Font::useBody();
+  Font::useMenu();
 }
 
 int menuLineH() {
   int ascent = u8g2.getFontAscent();
   int descent = u8g2.getFontDescent();
-  return (ascent - descent) + Font::currentLineGap() + 1;
+  return (ascent - descent) + 1;
 }
 
 void drawScrollableList(int contentTopY, int itemCount, int selectedIndex,
@@ -143,10 +139,12 @@ void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, Str
   }
 
   if (bestBreak < 0) {
-    for (int i = 1; i < (int)in.length(); i++) {
+    for (int i = 1; i <= (int)in.length(); i++) {
+      if (i < (int)in.length() && (static_cast<unsigned char>(in[i]) & 0xC0) == 0x80) continue;
       String left = in.substring(0, i);
       if (u8g2.getUTF8Width(left.c_str()) > maxWidth) {
-        bestBreak = max(1, i - 1);
+        bestBreak = i;
+        do { --bestBreak; } while (bestBreak > 0 && (static_cast<unsigned char>(in[bestBreak]) & 0xC0) == 0x80);
         break;
       }
     }
@@ -160,6 +158,17 @@ void splitListLabelForDisplay(const String& in, int maxWidth, String& line1, Str
   line2.trim();
 
   while (line2.length() > 0 && u8g2.getUTF8Width(line2.c_str()) > maxWidth) {
-    line2.remove(line2.length() - 1);
+    int end=line2.length()-1;
+    while(end>0&&(static_cast<unsigned char>(line2[end])&0xC0)==0x80)--end;
+    line2.remove(end);
   }
+}
+
+void drawPalaList(const char* title, int itemCount, int selectedIndex,
+                  const std::function<String(int)>& label) {
+  PalaChrome::menuList(gfx,u8g2,title,itemCount,selectedIndex,label);
+#if HAS_BATTERY
+  drawBatteryTopRight();
+#endif
+  Font::useBody();
 }

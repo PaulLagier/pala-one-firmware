@@ -14,6 +14,10 @@ public:
   // The Wi-Fi session (AP or STA) can't keep running while the device
   // deep-sleeps.
   bool allowSleep() const override { return false; }
+#if PALA_DIAGNOSTICS
+  bool diagnosticChoosing() const { return phase_ == Phase::Choose; }
+  bool diagnosticBrowserReady() const { return phase_ == Phase::Ready; }
+#endif
 
 private:
   // Two phases:
@@ -21,14 +25,19 @@ private:
   //                   treats any tap as "fall back to AP".
   //   Ready         — session is live (STA or AP); onIdleTick services the
   //                   HTTP server, onButton exits to the library.
-  enum class Phase { ConnectingSta, Ready };
+  enum class Phase { Choose, StartingBluetooth, Bluetooth, StartingWifi, ConnectingSta, Ready, Error };
 
   Phase       phase_         = Phase::Ready;
   uint32_t    startedMs_     = 0;    // for the auto-exit timer (set on entry to Ready)
   uint32_t    staStartedMs_  = 0;    // when wifiStaBegin() was called (for the 5s timeout)
+  int view_ = 0;                    // network, primary URL, optional fallback, exit
   WifiSession net_;                  // cached session info shown by draw()
 
+  // Store the error kind, never a pointer into a replaceable locale pool.
+  enum class Failure : uint8_t { None, Bluetooth, Wifi };
+  Failure failure_ = Failure::None;
   void beginSession();
+  void beginBluetooth();
   void enterReady();           // server.begin + draw — used after STA success or AP setup
   void fallbackToAp();         // abort STA in flight, bring up AP, enter Ready
   void stopSessionToLibrary();

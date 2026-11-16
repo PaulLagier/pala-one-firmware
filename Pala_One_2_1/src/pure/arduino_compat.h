@@ -28,6 +28,7 @@ class String {
 public:
   String() = default;
   String(const char* s) : s_(s ? s : "") {}
+  String(const char* s, size_t count) : s_(s ? std::string(s,count) : std::string()) {}
   String(const std::string& s) : s_(s) {}
   String(const String&) = default;
   String(String&&) noexcept = default;
@@ -48,6 +49,8 @@ public:
   const char* c_str() const { return s_.c_str(); }
   unsigned    length() const { return (unsigned)s_.size(); }
   void        reserve(size_t n) { s_.reserve(n); }
+  bool concat(const char* bytes,size_t n) { if(!bytes)return false;s_.append(bytes,n);return true; }
+  bool concat(char c) { s_+=c;return true; }
 
   char operator[](unsigned i) const { return i < s_.size() ? s_[i] : 0; }
   char& operator[](unsigned i)      { return s_[i]; }
@@ -156,9 +159,9 @@ inline bool operator!=(const char* a, const String& b) { return b != a; }
 
 // Arduino min/max are macros; provide template versions in host build.
 template <typename A, typename B>
-inline auto _arduino_min(A a, B b) -> decltype(a < b ? a : b) { return a < b ? a : b; }
+inline auto _arduino_min(A a, B b) { return a < b ? a : b; }
 template <typename A, typename B>
-inline auto _arduino_max(A a, B b) -> decltype(a > b ? a : b) { return a > b ? a : b; }
+inline auto _arduino_max(A a, B b) { return a > b ? a : b; }
 #define min(a, b) _arduino_min((a), (b))
 #define max(a, b) _arduino_max((a), (b))
 

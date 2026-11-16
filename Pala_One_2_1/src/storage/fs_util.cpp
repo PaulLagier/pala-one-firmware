@@ -4,17 +4,10 @@ bool fsBegin() {
   // First try to mount without formatting — protects existing data.
   if (FS.begin(false)) return true;
 
-  // Mount failed. This happens on a brand-new device where the LittleFS
-  // partition has never been formatted. Format once, then mount.
-  // If the partition already had data but is now corrupt, this wipes it —
-  // which is the correct recovery action (same as factory reset).
-  Serial.println("[FS] Mount failed — formatting LittleFS...");
-  if (!FS.format()) {
-    Serial.println("[FS] Format failed.");
-    return false;
-  }
-  Serial.println("[FS] Format OK, mounting...");
-  return FS.begin(false);
+  // A failed mount does not prove the partition is empty. Preserve user
+  // data; formatting belongs to an explicitly requested factory reset.
+  Serial.println("[FS] Mount failed; storage preserved. Explicit recovery required.");
+  return false;
 }
 
 size_t fsTotalBytesSafe() { return FS.totalBytes(); }

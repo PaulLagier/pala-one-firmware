@@ -28,8 +28,12 @@
 // self-explanatory name for callers in the rest of the firmware.
 namespace WifiProvisioning {
 
+void beginLocalSetup(); // Device info and language only; no Wi-Fi or filesystem.
+void loopLocalSetup();
 void begin();                                // setup() — register lib callbacks
+void notifySerialWake();                     // UART woke from light sleep; keep retries awake
 void loop();                                 // main loop — gated internally by Serial
+bool serialFrameInProgress();
 bool isActive();                             // true while listening (for lightsleep gate)
 
 // upload_screen marks the session boundaries so we know to keep our hands

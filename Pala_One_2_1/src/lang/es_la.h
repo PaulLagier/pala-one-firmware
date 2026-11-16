@@ -1,3 +1,4 @@
+// Legacy migration snapshot. Runtime translations come from catalogs/*.json.
 #ifndef PALA_LANG_ES_LA_H
 #define PALA_LANG_ES_LA_H
 
@@ -21,6 +22,20 @@
 //  About screen
 // ----------------------------------------------------------------------------
 #define D_ABOUT_HEADER              "Dispositivo"
+#define D_ABOUT_FIRMWARE                   "Firmware"
+#define D_ABOUT_CONTROLS                   "Controles"
+#define D_ABOUT_BACK                       "Volver"
+#define D_ABOUT_ACTION_NONE                "Ninguna"
+#define D_ABOUT_ACTION_BOOKMARK            "Marcapáginas"
+#define D_ABOUT_ACTION_LOCK                "Bloquear"
+#define D_ABOUT_ACTION_MENU                "Menú"
+#define D_ABOUT_MENU_NEXT                  "1x: siguiente opción"
+#define D_ABOUT_MENU_OPEN "Mantén: abrir"
+#define D_ABOUT_READER_NEXT                "1x: siguiente página"
+#define D_ABOUT_READER_PREVIOUS            "2x: página anterior"
+#define D_ABOUT_HOLD_PREFIX                "Mantener: "
+#define D_ABOUT_LONG_HOLD_PREFIX           "Pulsación larga: "
+#define D_ABOUT_CLICK_HOLD_PREFIX          "Pulsar + mantener: "
 #define D_ABOUT_FIRMWARE_PREFIX     "Firmware "
 #define D_ABOUT_GESTURE_NEXT        "1x siguiente / abajo"
 #define D_ABOUT_GESTURE_OPEN        "2x abrir / elegir"
@@ -441,9 +456,9 @@
 // ----------------------------------------------------------------------------
 #define D_WEB_READING_INTRO         "Cambiar la fuente, familia, espaciado de línea o modo biónico mantiene tu lugar en el libro actual &mdash; el dispositivo reorganiza las páginas alrededor del byte que estás leyendo y aterriza en la página que lo contiene."
 #define D_WEB_FONT_FAMILY_LABEL     "Familia de fuente"
-#define D_WEB_FONT_FAMILY_HELVETICA "Helvetica"
-#define D_WEB_FONT_FAMILY_DYSLEXIC  "OpenDyslexic"
-#define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic usa formas de letra más gruesas diseñadas para una lectura más fácil."
+#define D_WEB_FONT_FAMILY_HELVETICA "Pala Sans"
+#define D_WEB_FONT_FAMILY_DYSLEXIC  "Pala Dys"
+#define D_WEB_FONT_FAMILY_HINT      "Pala Dys se basa en OpenDyslexic."
 #define D_WEB_BIONIC_LABEL          "Lectura biónica"
 #define D_WEB_BIONIC_HINT           "Resalta en negrita las primeras letras de cada palabra para anclar la mirada."
 #define D_WEB_SETTINGS_APPLY_HINT   "Los cambios se aplican en la próxima página renderizada."
@@ -497,4 +512,49 @@
 #define D_WEB_SS_DST_OVERWRITE      " (sobrescribir)"
 #define D_WEB_SS_UPLOAD_EDITED      "Subir imagen editada"
 
+#define D_WEB_RESPONSE_LABEL "Respuesta del botón"
+#define D_WEB_RESPONSE_FAST "Rápida (120 ms)"
+#define D_WEB_RESPONSE_BALANCED "Equilibrada (175 ms)"
+#define D_WEB_RESPONSE_RELAXED "Pausada (250 ms)"
+#define D_WEB_RESPONSE_HINT "Rápida responde antes; los dobles y triples clics necesitan un ritmo más rápido."
+
 #endif  // PALA_LANG_ES_LA_H
+
+#ifdef PALA_COMPANION_TEST
+#undef D_MENU_UPLOAD
+#define D_MENU_UPLOAD "Conectar"
+#endif
+
+#define D_READER_INDEXING "Buscando página"
+#define D_READER_INDEX_CANCEL "Pulsa para cancelar"
+
+// Compact read-only statistics dashboard.
+#define D_STATS_STREAK "Racha"
+#define D_STATS_TOTALS "Totales"
+#define D_STATS_CURRENT_FMT "Actual: %u %s"
+#define D_STATS_RECORD_FMT "Mejor: %u %s"
+#define D_STATS_SESSIONS_FMT "Sesiones: %u"
+#define D_STATS_DAY "día"
+#define D_STATS_DAYS "días"
+#define D_STATS_PAGES "Cambios de página"
+#define D_STATS_PRESSES "Pulsaciones"
+
+// Reader menu and on-device typography controls.
+#define D_READER_MENU_TITLE "Menú de lectura"
+#define D_READER_MENU_BOOKMARK "Añadir marcador"
+#define D_READER_MENU_FONT "Letra y espacios"
+#define D_READER_MENU_STATUS "Barra de estado"
+#define D_READER_MENU_CLOSE "Cerrar libro"
+#define D_READER_MENU_LOCK "Bloquear"
+#define D_READER_MENU_CONTINUE "Seguir leyendo · 2x"
+#define D_READER_MENU_FAMILY "Letra"
+#define D_READER_MENU_SIZE "Tamaño"
+#define D_READER_MENU_GAP "Interlineado"
+#define D_READER_MENU_BIONIC "Biónica"
+#define D_READER_MENU_ON "Sí"
+#define D_READER_MENU_OFF "No"
+#define D_READER_MENU_FULL "Completa"
+#define D_READER_MENU_MINIMAL "Mínima"
+#define D_READER_MENU_HIDDEN "Oculta"
+#define D_READER_MENU_PAGE "Página %d (%u%%)"
+#define D_READER_MENU_PAGE_TOTAL "Página %d de %d (%u%%)"

@@ -1,0 +1,12 @@
+Private local copy of todd-herbert/heltec-eink-modules v4.6.0
+Upstream commit: 9207eb6ab2b96f66298e0488740218c17b006af7
+Source: https://github.com/todd-herbert/heltec-eink-modules/tree/v4.6.0
+Original source notices and bundled license files are retained unchanged.
+
+Local patch: contiguous image bytes are sent in a single SPI transaction on
+ESP32 + DISPLAY_V1_2. SPI frequency stays at the original 2 MHz. Controller
+commands, waveform configuration, image bytes, windows and differential
+second-pass updates are unchanged. Other targets keep byte-wise writes.
+A development-only external toggle allows a direct legacy/new comparison.
+Reference for contiguous RAM transfers: original GxEPD2 implementation,
+https://github.com/ZinggJM/GxEPD2/blob/master/src/GxEPD2_EPD.cpp (_writeData).

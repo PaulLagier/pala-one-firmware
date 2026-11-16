@@ -73,7 +73,7 @@ void renameBookMetadata(KeyValueStore& kv, const String& oldKey, const String& n
 #include "src/storage/preferences_store.h"
 
 uint8_t loadBookmarksForKey(const String& bookKey,
-                            uint16_t outPages[MAX_BOOKMARKS],
+                            uint32_t outPages[MAX_BOOKMARKS],
                             uint32_t outOffsets[MAX_BOOKMARKS]) {
   PreferencesStore kv(prefs);
   Bookmarks bm = loadBookmarks(kv, bookKey);
@@ -85,7 +85,7 @@ uint8_t loadBookmarksForKey(const String& bookKey,
 }
 
 void saveBookmarksForKey(const String& bookKey,
-                         const uint16_t pages[MAX_BOOKMARKS],
+                         const uint32_t pages[MAX_BOOKMARKS],
                          const uint32_t offsets[MAX_BOOKMARKS],
                          uint8_t count) {
   Bookmarks bm;

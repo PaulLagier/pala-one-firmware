@@ -13,6 +13,7 @@ struct LayoutMetrics {
   int lineH = 0;
   int maxWidth = 0;
   int maxLines = 1;
+  int paragraphGapH = 0; // 0 uses a full line; blank callbacks consume this height.
 };
 
 // Measure the rendered width (in pixels) of a UTF-8 string under the layout's

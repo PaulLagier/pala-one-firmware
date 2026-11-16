@@ -1,4 +1,5 @@
 #include <cstring>
+#include <vector>
 
 #include "test_framework.h"
 #include "pure/bookmarks_codec.h"
@@ -17,9 +18,9 @@ TEST_CASE("bookmarks codec round-trip preserves pages and offsets") {
   Bookmarks back;
   uint8_t got = decodeBookmarks(buf, n, back);
   CHECK_EQ(got, 3);
-  CHECK_EQ(back.pages[0], 1);
+  CHECK_EQ(back.pages[0], 1u);
   CHECK_EQ(back.offsets[0], 100u);
-  CHECK_EQ(back.pages[2], 999);
+  CHECK_EQ(back.pages[2], 999u);
   CHECK_EQ(back.offsets[2], 0xDEADBEEFu);
 }
 
@@ -34,9 +35,9 @@ TEST_CASE("bookmarks codec decodes legacy v1 (page-only) entries") {
   uint8_t buf[1 + 3 * 2] = {3, 5, 0, 10, 0, 200, 0};
   Bookmarks bm;
   CHECK_EQ(decodeBookmarks(buf, sizeof(buf), bm), 3);
-  CHECK_EQ(bm.pages[0], 5);
-  CHECK_EQ(bm.pages[1], 10);
-  CHECK_EQ(bm.pages[2], 200);
+  CHECK_EQ(bm.pages[0], 5u);
+  CHECK_EQ(bm.pages[1], 10u);
+  CHECK_EQ(bm.pages[2], 200u);
   // Legacy entries get the "recompute" placeholder.
   CHECK_EQ(bm.offsets[0], kOffsetUnset);
   CHECK_EQ(bm.offsets[1], kOffsetUnset);
@@ -56,9 +57,9 @@ TEST_CASE("addBookmark adds a new bookmark and keeps sorted by page") {
   CHECK(addBookmark(bm, 3,  300).added);
   CHECK(addBookmark(bm, 7,  700).added);
   CHECK_EQ(bm.count, 3);
-  CHECK_EQ(bm.pages[0], 3);
-  CHECK_EQ(bm.pages[1], 7);
-  CHECK_EQ(bm.pages[2], 10);
+  CHECK_EQ(bm.pages[0], 3u);
+  CHECK_EQ(bm.pages[1], 7u);
+  CHECK_EQ(bm.pages[2], 10u);
   CHECK_EQ(bm.offsets[1], 700u);
 }
 
@@ -98,4 +99,33 @@ TEST_CASE("addBookmark evicts oldest when full") {
   }
   CHECK(!foundOld);
   CHECK(foundNew);
+}
+
+TEST_CASE("large bookmark page numbers never wrap or collide") {
+  Bookmarks bm;
+  CHECK(addBookmark(bm,0,0).added);CHECK(addBookmark(bm,65536,900000).added);
+  CHECK(addBookmark(bm,1000000,2000000).added);CHECK(addBookmark(bm,65535,899990).added);
+  uint8_t bytes[BOOKMARKS_ENCODED_MAX_SIZE];const auto size=encodeBookmarks(bm,bytes);
+  CHECK_EQ(size,1U+4U*8U);CHECK((bytes[0]&0x80)!=0);
+  Bookmarks restored;CHECK_EQ(decodeBookmarks(bytes,size,restored),4);
+  for(int i=0;i<4;++i){CHECK_EQ(restored.pages[i],bm.pages[i]);CHECK_EQ(restored.offsets[i],bm.offsets[i]);}
+  CHECK_EQ(restored.pages[2],65536U);CHECK_EQ(restored.pages[3],1000000U);
+  CHECK(!addBookmark(restored,65536,900000).added);
+}
+TEST_CASE("ordinary bookmarks retain the exact v2 encoding") {
+  Bookmarks bm;addBookmark(bm,65535,0x12345678);
+  uint8_t bytes[BOOKMARKS_ENCODED_MAX_SIZE];CHECK_EQ(encodeBookmarks(bm,bytes),7U);
+  const uint8_t expected[]={1,255,255,0x78,0x56,0x34,0x12};
+  CHECK(std::memcmp(bytes,expected,sizeof(expected))==0);
+}
+TEST_CASE("bookmark decoder rejects partial wide records and bounded legacy input") {
+  const uint8_t wide[]={0x81,0,0,1,0,0x78,0x56,0x34,0x12};
+  for(size_t size=0;size<sizeof(wide);++size){Bookmarks bm;CHECK_EQ(decodeBookmarks(wide,size,bm),0);}
+  const uint8_t legacy[]={3,0,0};Bookmarks bm;CHECK_EQ(decodeBookmarks(legacy,sizeof(legacy),bm),0);
+  for(size_t size=1;size<=BOOKMARKS_ENCODED_MAX_SIZE;++size){
+    std::vector<uint8_t> bytes(size,0xa5);
+    for(unsigned count:{1U,12U,13U,127U,128U,129U,140U,200U,255U}){
+      bytes[0]=uint8_t(count);decodeBookmarks(bytes.data(),bytes.size(),bm);CHECK(bm.count<=MAX_BOOKMARKS);
+    }
+  }
 }

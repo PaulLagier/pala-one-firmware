@@ -1,3 +1,5 @@
+#include "src/pure/utf8_clusters.h"
+#include <string.h>
 #include "src/ui/header_title.h"
 
 #include "src/config.h"
@@ -10,17 +12,28 @@ static constexpr const char* kNvsKey = "cfg_hdr_title";
 
 static char s_title[kMaxLen + 1] = "";
 static bool s_custom = false;
+static void copyTitle(const char* title) {
+  size_t length=strlen(title), end=0;
+  while(end<length) {
+    uint32_t cp=0;size_t bytes=PalaUtf8::decode(title,length,end,cp);
+    if(!bytes||(static_cast<unsigned char>(title[end])>=0x80&&bytes==1))break;
+    size_t cluster=PalaUtf8::clusterBytes(title,length,end);
+    if(end+cluster>kMaxLen)break;
+    // Reject malformed bytes inside the cluster too.
+    end+=cluster;
+  }
+  memcpy(s_title,title,end);s_title[end]='\0';
+}
+
 
 void loadSettings() {
   if (prefs.isKey(kNvsKey)) {
     s_custom = true;
     String val = prefs.getString(kNvsKey, "");
-    strncpy(s_title, val.c_str(), kMaxLen);
-    s_title[kMaxLen] = '\0';
+    copyTitle(val.c_str());
   } else {
     s_custom = false;
-    strncpy(s_title, LIB_HEADER_TITLE, kMaxLen);
-    s_title[kMaxLen] = '\0';
+    copyTitle(LIB_HEADER_TITLE);
   }
 }
 
@@ -34,16 +47,14 @@ void set(const char* title) {
     return;
   }
   s_custom = true;
-  strncpy(s_title, title, kMaxLen);
-  s_title[kMaxLen] = '\0';
+  copyTitle(title);
   prefs.putString(kNvsKey, s_title);
 }
 
 void resetToDefault() {
   s_custom = false;
   prefs.remove(kNvsKey);
-  strncpy(s_title, LIB_HEADER_TITLE, kMaxLen);
-  s_title[kMaxLen] = '\0';
+  copyTitle(LIB_HEADER_TITLE);
 }
 
 }  // namespace HeaderTitle

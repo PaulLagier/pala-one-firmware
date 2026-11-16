@@ -1,0 +1,51 @@
+{
+  "assets": [
+    {
+      "name": "CoreCss",
+      "file": "core.css",
+      "url": "/assets/core.0304f4e55fa3.css",
+      "rawBytes": 4793,
+      "gzipBytes": 1604,
+      "rawSHA256": "0304f4e55fa33d7d4e295022df75c5c32ffe767fccb639fc8af9bb714dd13e0f",
+      "gzipSHA256": "f606bffcfd9a924abd174f04a9633c57b01f4d0de5aa1973b1e385f7e2edf4c7"
+    },
+    {
+      "name": "ReadCss",
+      "file": "read.css",
+      "url": "/assets/read.6b841d481337.css",
+      "rawBytes": 696,
+      "gzipBytes": 385,
+      "rawSHA256": "6b841d48133794c883aca0521b8b8f8e50c72bcaccc6524e043e85d789b6de98",
+      "gzipSHA256": "d10468da0e8bc7d2d375e040776e7f2feb1a47f1447b55226ee0737127bdaac5"
+    },
+    {
+      "name": "ReadJs",
+      "file": "read.js",
+      "url": "/assets/read.0895930c3f22.js",
+      "rawBytes": 4410,
+      "gzipBytes": 1854,
+      "rawSHA256": "0895930c3f22fecfe055450c0e29e24ed973c570da2bcee6c46072809e34aa04",
+      "gzipSHA256": "d9b99b93a088bdb07b105c252e8755decad61bbe1551d89a06437ec899875cb3"
+    },
+    {
+      "name": "EditorCss",
+      "file": "editor.css",
+      "url": "/assets/editor.0ca689b4d0e4.css",
+      "rawBytes": 2414,
+      "gzipBytes": 840,
+      "rawSHA256": "0ca689b4d0e4147ddd4ea7b4af3aba357fff7c9e0331aadfb1dcbac42f1219a3",
+      "gzipSHA256": "e79c292014fed20c010bf2b59e0cf6d324425db1a398fa48e64020e4182f8aa9"
+    },
+    {
+      "name": "EditorJs",
+      "file": "editor.js",
+      "url": "/assets/editor.81c123271a35.js",
+      "rawBytes": 6810,
+      "gzipBytes": 2492,
+      "rawSHA256": "81c123271a35f85689e402ba639f4fba3b58536b75c43f173d44fc526f0cc7bc",
+      "gzipSHA256": "b2079db94628031b55a611a284150a843125773f191b5968fda94dbf39275669"
+    }
+  ],
+  "rawBytes": 19123,
+  "gzipBytes": 7175
+}

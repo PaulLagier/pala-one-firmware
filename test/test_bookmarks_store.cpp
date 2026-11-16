@@ -19,9 +19,9 @@ TEST_CASE("saveBookmarks + loadBookmarks round-trip") {
 
   Bookmarks back = loadBookmarks(kv, "b_test");
   CHECK_EQ(back.count, 2);
-  CHECK_EQ(back.pages[0], 5);
+  CHECK_EQ(back.pages[0], 5u);
   CHECK_EQ(back.offsets[0], 500u);
-  CHECK_EQ(back.pages[1], 42);
+  CHECK_EQ(back.pages[1], 42u);
   CHECK_EQ(back.offsets[1], 4200u);
 }
 
@@ -77,7 +77,7 @@ TEST_CASE("renameBookMetadata moves progress and bookmarks") {
   CHECK_EQ(loadSavedPage(kv, "b_new"), 50);
   Bookmarks moved = loadBookmarks(kv, "b_new");
   CHECK_EQ(moved.count, 1);
-  CHECK_EQ(moved.pages[0], 7);
+  CHECK_EQ(moved.pages[0], 7u);
 }
 
 TEST_CASE("renameBookMetadata is a no-op when neither key is set") {
@@ -105,5 +105,5 @@ TEST_CASE("saveBookmarks overwrites prior content cleanly") {
 
   Bookmarks back = loadBookmarks(kv, "b_x");
   CHECK_EQ(back.count, 1);
-  CHECK_EQ(back.pages[0], 99);
+  CHECK_EQ(back.pages[0], 99u);
 }

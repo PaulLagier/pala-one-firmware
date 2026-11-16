@@ -10,6 +10,10 @@
 //  Shared drawing helpers used by multiple screens
 // ============================================================================
 int drawSectionHeader(const char* title);
+int drawBackSectionHeader(const char* title, bool focused = true);
+// Fixed-size menu chrome, independent of reading typography.
+void drawPalaList(const char* title, int itemCount, int selectedIndex,
+                  const std::function<String(int)>& label);
 
 // Full-screen single- or two-line centered message. Always full-refreshes
 // (no fastmode), so use it sparingly — for hard errors or status notices

@@ -9,6 +9,9 @@ public:
   void onButton(const ButtonEvent& e) override;
   void draw() override;
   void onSleep() override;
+private:
+  bool readSelected_=true;
+  void cancel();
 };
 
 extern BookmarkPreviewScreen g_bmPreviewScreen;

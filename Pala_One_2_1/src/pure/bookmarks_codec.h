@@ -5,19 +5,20 @@
 #include "../config.h"
 
 // Pure encoder/decoder for the bookmark byte blob stored in Preferences under
-// "<bookKey>_bm". Two formats are supported:
+// "<bookKey>_bm". Three formats are supported:
 //   v1 (legacy): 1 byte count + N * 2-byte page (offsets unknown)
 //   v2 (current): 1 byte count + N * 6-byte (2-byte page + 4-byte offset)
-// Decoders accept both; encoders only emit v2.
+//   v3: high bit on count + N * 8-byte (4-byte page + 4-byte offset)
+// Ordinary bookmarks retain v2; v3 is emitted only beyond page 65535.
 
 struct Bookmarks {
-  uint16_t pages[MAX_BOOKMARKS];
+  uint32_t pages[MAX_BOOKMARKS];
   uint32_t offsets[MAX_BOOKMARKS];
   uint8_t  count = 0;
 };
 
-// Size of the largest possible encoded blob (v2: 1 + MAX_BOOKMARKS * 6 bytes).
-constexpr size_t BOOKMARKS_ENCODED_MAX_SIZE = 1u + (size_t)MAX_BOOKMARKS * 6u;
+// Size of the largest possible encoded blob (v3: 1 + MAX_BOOKMARKS * 8 bytes).
+constexpr size_t BOOKMARKS_ENCODED_MAX_SIZE = 1u + (size_t)MAX_BOOKMARKS * 8u;
 
 // Sentinel for "no byte offset known yet." Used for legacy v1 bookmark
 // entries (no offset recorded) and for `loadSavedOffset` when no offset
@@ -30,7 +31,7 @@ constexpr uint32_t kOffsetUnset = 0xFFFFFFFFu;
 uint8_t decodeBookmarks(const uint8_t* buf, size_t got, Bookmarks& out);
 
 // Encode `bm` into `outBuf` (must be at least BOOKMARKS_ENCODED_MAX_SIZE bytes).
-// Returns the number of bytes written (== 1 + bm.count * 6).
+// Returns the byte length; existing small-page bookmarks keep their v2 encoding.
 size_t encodeBookmarks(const Bookmarks& bm, uint8_t* outBuf);
 
 // Result of inserting one bookmark. `added` is the success signal; `message`
@@ -43,6 +44,6 @@ struct BookmarkAddResult {
 // Insert one bookmark at the current page/offset. If the bookmark list is
 // full, the oldest bookmark is evicted. Returns `{true,  "Bookmark saved"}`
 // on insertion or `{false, "Bookmark exists"}` if `page` is already bookmarked.
-BookmarkAddResult addBookmark(Bookmarks& bm, uint16_t page, uint32_t offset);
+BookmarkAddResult addBookmark(Bookmarks& bm, uint32_t page, uint32_t offset);
 
 #endif  // PALA_PURE_BOOKMARKS_CODEC_H

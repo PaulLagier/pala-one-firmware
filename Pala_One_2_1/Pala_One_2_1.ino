@@ -28,12 +28,10 @@
 // #define BOARD_V1_2
 // ────────────────────────────────────────────────────────────────────────────
 
-// ── Language selection: uncomment exactly one (Arduino IDE) ─────────────────
-//   PlatformIO users pick the env in platformio.ini (-en / -es leaf envs)
-//   and can leave these defines commented out. Default if nothing is set:
-//   English (with a #pragma message warning from src/config.h).
-#define LANG_EN
-// #define LANG_ES_LA
+// ── Initial language ────────────────────────────────────────────────────────
+// PlatformIO: select an -en / -es environment. Arduino IDE: choose the shared
+// fallback in src/lang/default_language.h, not in this sketch alone. All source
+// files must use the same flash default. Change it later from Pala or the web UI.
 // ────────────────────────────────────────────────────────────────────────────
 
 // ── Web UI default theme: uncomment exactly one ─────────────────────────────
@@ -74,8 +72,10 @@
 #include <esp_sleep.h>
 
 #include "src/config.h"
+#include "src/lang/locale_core.h"
 #include "src/state.h"
 #include "src/hal/battery.h"
+#include "src/hal/diagnostics.h"
 #include "src/hal/display.h"
 #include "src/hal/input.h"
 #include "src/hal/wifi_provisioning.h"
@@ -93,7 +93,6 @@
 #include "src/ui/screen.h"
 #include "src/ui/widgets.h"  // drawCenter
 #include "src/ui/screens/about_screen.h"
-#include "src/ui/screens/apps_screen.h"
 #include "src/ui/screens/bookmarks/book_select_screen.h"
 #include "src/ui/screens/bookmarks/bookmark_list_screen.h"
 #include "src/ui/screens/bookmarks/preview_screen.h"
@@ -101,6 +100,8 @@
 #include "src/ui/screens/list_screen.h"
 #include "src/ui/screens/reader_screen.h"
 #include "src/ui/screens/statistics_screen.h"
+#include "src/ui/screens/settings_screen.h"
+#include "src/ui/screens/storage_recovery_screen.h"
 #include "src/ui/screens/update_screen.h"
 #include "src/ui/screens/upload_screen.h"
 #include "src/ui/header_title.h"
@@ -120,35 +121,37 @@ ReaderScreen               g_readerScreen;
 UploadScreen               g_uploadScreen;
 AboutScreen                g_aboutScreen;
 UpdateScreen               g_updateScreen;
-AppsScreen                 g_appsScreen;
 ListScreen                 g_listScreen;
 StatisticsScreen           g_statsScreen;
+SettingsScreen             g_settingsScreen;
+StorageRecoveryScreen      g_storageRecoveryScreen;
 BookmarkBookSelectScreen   g_bmBookSelectScreen;
 BookmarkListScreen         g_bmListScreen;
 BookmarkPreviewScreen      g_bmPreviewScreen;
 
 Screen* g_currentScreen = &g_libraryScreen;
+static bool s_setupComplete = false;
+static bool s_storageRecoveryActive = false;
 
 // ============================================================================
 //  Setup
 // ============================================================================
 // cppcheck-suppress unusedFunction
 void setup() {
+  const bool wokeFromSleep=esp_sleep_get_wakeup_cause()==ESP_SLEEP_WAKEUP_EXT0;
+  setCpuFrequencyMhz(240);
+  // Capture input before UART/battery/filesystem/display work begins.
+  pinMode(BTN,INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN),btnISR,CHANGE);
+  const uint32_t inputAttachedAt=millis();
+  const bool wakeButtonHeld=digitalRead(BTN)==LOW;
+  if(wakeButtonHeld)g_btns.seedPressOnWake(0);
+#if !ARDUINO_USB_CDC_ON_BOOT && SOC_UART_SUPPORT_XTAL_CLK
+  Serial0.setClockSource(UART_CLK_SRC_XTAL);
+#endif
   Serial.begin(115200);
-  delay(200);
-  Serial.printf("[boot] wake cause: %d\n", esp_sleep_get_wakeup_cause());
-  setCpuFrequencyMhz(240); // full speed for init; lowered to 80 MHz at end of setup
-
-  pinMode(BTN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(BTN), btnISR, CHANGE);
-
-  // Button held through ext0 wake: its down-edge predates the ISR, so seed
-  // the press state manually. Pass 0 (not millis()) to credit the full boot
-  // time; millis() ≈ 200 here (after delay(200)) would shorten the hold and
-  // misclassify a Long press as Short.
-  if (digitalRead(BTN) == LOW) {
-    g_btns.seedPressOnWake(0);
-  }
+  if(!wokeFromSleep)delay(200); // retain cold-boot serial settling only
+  Serial.printf("[boot] wake cause: %d\n",esp_sleep_get_wakeup_cause());
 
   u8g2.begin(gfx);
 
@@ -161,29 +164,41 @@ void setup() {
   // Load Sleep and Lock settings early — before display.clear() — so both
   // flags are available to gate the full-refresh boot clear below.
   prefs.begin("ereader", false);
+  Language::loadSettings();
+  loadInputSettings();
+  loadDisplaySettings();
   Sleep::loadSettings();
   Lock::loadSettings();
 
-  // Skip the full-refresh boot clear when waking from deep sleep AND either:
-  //   (a) the device is locked — the screensaver (with its lock badge) is
-  //       already on the e-ink; clearing to white and then drawing nothing
-  //       leaves a blank screen until the idle timeout fires, OR
-  //   (b) no-screensaver mode is on and we were reading — the last reader
-  //       page sits cleanly on the panel; a clear would briefly flash white
-  //       before the page redraws.
-  // On a fresh boot (not ext0 wake) always clear, regardless of lock state.
-  bool wokeFromSleep = (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0);
-  bool wereReading   = (prefs.getString("wake_path", "").length() > 0);
-  display.fastmodeOff();
-  bool skipClear = wokeFromSleep &&
-                   (Lock::isLocked() ||
-                    (Sleep::noScreensaver() && wereReading));
-  if (!skipClear) {
-    display.clear();
+  // A complete image refresh rebuilds panel/controller reference RAM. On
+  // ext0 wake, draw that image directly instead of first refreshing white.
+  // Locked wakes retain the sleep image until the existing full unlock draw.
+  const bool keptReaderImage=wokeFromSleep&&Sleep::noScreensaver()
+    &&prefs.isKey("wake_path")&&prefs.getString("wake_path","").length()>0;
+  if(wokeFromSleep){
+    // Preserve the existing fast reader-resume path when its image is already
+    // on the panel. Replacing a screensaver requires a clean full image.
+#if defined(DISPLAY_V1_2)
+    if(!keptReaderImage)forceNextRenderFull();
+#endif
+    forceNextMenuFrameFull();
+    if(!Lock::isLocked())discardWakePress(wakeButtonHeld,inputAttachedAt);
   }
+  setDisplayRefreshMode(true);
+#if defined(DISPLAY_V1_2)
+  const bool skipClear=wokeFromSleep;
+#else
+  // Keep the previously validated V1.1 panel initialization sequence.
+  const bool skipClear=wokeFromSleep&&(Lock::isLocked()||keptReaderImage);
+#endif
+  if(!skipClear)display.clear();
 
   if (!fsBegin()) {
-    drawCenter(D_BOOT_STORAGE_ERROR, D_BOOT_TRY_FACTORY_RESET);
+    WifiProvisioning::beginLocalSetup();
+    s_storageRecoveryActive=true;g_currentScreen=&g_storageRecoveryScreen;
+    g_storageRecoveryScreen.onEnter();
+    if(!Lock::isLocked()&&!wokeFromSleep)resetInputFrontend();
+    setCpuFrequencyMhz(80);
     return;
   }
   ensureBooksDir();
@@ -203,7 +218,7 @@ void setup() {
   // don't reload them here.
   loadBooks();
   loadListItems();
-  loadApps();
+  // App binaries remain stored; the reading-focused UI does not scan/run them.
   initPalaAPI();
   registerWebRoutes();
   markUserActivity();
@@ -218,7 +233,14 @@ void setup() {
   // still swallowing input — the device looks alive but ignores presses
   // until an unlock gesture. The unlock branch in loop() calls
   // g_currentScreen->draw() to paint the real screen once unlocked.
-  if (tryRestoreReadingSession()) {
+#if defined(PALA_WAKE_TRACE) && PALA_WAKE_TRACE
+  Serial.printf("[wake-stage] restore_begin_ms=%lu locked=%d kept_image=%d\n", (unsigned long)millis(), Lock::isLocked(), keptReaderImage);
+#endif
+  const bool restoredReadingSession=tryRestoreReadingSession();
+#if defined(PALA_WAKE_TRACE) && PALA_WAKE_TRACE
+  Serial.printf("[wake-stage] restore_end_ms=%lu reader=%d\n", (unsigned long)millis(), restoredReadingSession);
+#endif
+  if (restoredReadingSession) {
     g_currentScreen = &g_readerScreen;
     if (Lock::isLocked()) {
       // Keep the wake-press edges so a click-then-hold can wake AND unlock
@@ -226,8 +248,8 @@ void setup() {
       // force the user to repeat the unlock gesture.
       markUserActivity();
     } else {
-      renderCurrentPage();      // ~300ms draw — wake-press releases during this
-      resetInputFrontend();     // discard the wake-press only
+      renderCurrentPage();
+      if(!wokeFromSleep)resetInputFrontend();
     }
   } else {
     g_currentScreen = &g_libraryScreen;
@@ -235,7 +257,7 @@ void setup() {
       markUserActivity();
     } else {
       g_libraryScreen.onEnter();
-      resetInputFrontend();
+      if(!wokeFromSleep)resetInputFrontend();
     }
   }
 
@@ -248,6 +270,11 @@ void setup() {
   // has the USB-CDC port open. No host = no listening = no battery cost. See
   // src/hal/wifi_provisioning.h for the contract.
   WifiProvisioning::begin();
+  s_setupComplete = true;
+#if PALA_DIAGNOSTICS || (defined(PALA_WAKE_TRACE) && PALA_WAKE_TRACE)
+  Serial.printf("[perf] boot_ready_ms=%lu wake=%d skip_clear=%d\n",
+      (unsigned long)millis(), esp_sleep_get_wakeup_cause(), skipClear);
+#endif
 }
 
 
@@ -255,10 +282,26 @@ void setup() {
 //  Main loop
 // ============================================================================
 void loop() {
+  if(!s_setupComplete){
+    if(s_storageRecoveryActive){
+      WifiProvisioning::loopLocalSetup();
+      g_btns.poll();maybeRecoverFromIsrOverflow();
+      const ButtonEvent event=ButtonEvent::fromButtonState(g_btns);
+      if(event.any()){markUserActivity();g_storageRecoveryScreen.onButton(event);}
+      else if(!WifiProvisioning::isActive() && Serial.available()==0)
+        Sleep::idleLightSleep(g_btns.isPressed()||g_btns.hasPendingClicks()||buttonQueueNonEmpty());
+      else delay(1);
+    }else delay(50);
+    return; // No FS-dependent service, diagnostics, screensaver or deep sleep.
+  }
+  const bool diagnosticInput = Diagnostics::poll();
   g_btns.poll();
   maybeRecoverFromIsrOverflow();
 
   ButtonEvent ev = ButtonEvent::fromButtonState(g_btns);
+#if defined(PALA_WAKE_TRACE) && PALA_WAKE_TRACE
+  if(ev.any()) Serial.printf("[wake-input] ms=%lu kind=%d release_age_ms=%lu locked=%d\n", (unsigned long)millis(), int(ev.kind), (unsigned long)(millis()-g_btns.lastRelease_), Lock::isLocked());
+#endif
 
   // Lifetime button-press counter. peekPressCount is monotonic-up except
   // when the apps API consumes-and-resets — guard by clamping lastSeen to
@@ -294,7 +337,9 @@ void loop() {
         s_lockedWakePressConsumed = false;
         Lock::disengage();
         markUserActivity();
-        Toast::show(D_TOAST_UNLOCKED);
+        // The full redraw itself confirms unlock. A timed toast can expire
+        // during this blocking refresh and immediately trigger a second draw.
+        Toast::reset();
         // Full refresh to clear screensaver ghosting on unlock.
         // forceNextRenderFull() overrides the reader's per-page fast-mode
         // decision so renderCurrentPage() uses fastmodeOff regardless of
@@ -302,7 +347,7 @@ void loop() {
         // screens whose prepareMenuFrame() would otherwise override fastmodeOff.
         forceNextRenderFull();
         forceNextMenuFrameFull();
-        display.fastmodeOff();
+        setDisplayRefreshMode(true);
         g_currentScreen->draw();
         return;
       }
@@ -318,7 +363,7 @@ void loop() {
       // Don't sleep while the button is held — a Long-press unlock gesture
       // fires on release, so sleeping mid-hold would swallow the gesture.
       if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep()
-          && userIdleMs() > 1500 && !g_btns.isPressed()) {
+          && userIdleMs() > 1500 && !g_btns.isPressed() && !Diagnostics::isActive()) {
         Sleep::enter();
         return;
       }
@@ -329,15 +374,18 @@ void loop() {
 
   if (ev.any()) markUserActivity();
 
-  if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep() && !WifiProvisioning::isActive()) {
+  if (ENABLE_DEEP_SLEEP && g_currentScreen->allowSleep() && !WifiProvisioning::isActive() && !Diagnostics::isActive()) {
     if (userIdleMs() > Sleep::idleTimeoutMs()) {
       Sleep::enter();
       return;
     }
   }
 
-  WifiProvisioning::loop();   // no-op unless a USB host is on the bus
+  if (!diagnosticInput) WifiProvisioning::loop();
 
+#if PALA_DIAGNOSTICS
+  const uint32_t eventStarted = micros();
+#endif
   g_currentScreen->onButton(ev);
   g_currentScreen->onIdleTick();
 
@@ -349,6 +397,11 @@ void loop() {
     g_currentScreen->nextScreen = nullptr;
     g_currentScreen->onEnter();
   }
+
+#if PALA_DIAGNOSTICS
+  if (ev.any()) Serial.printf("[perf] event=%d dispatch_us=%lu\n", ev.kind,
+      (unsigned long)(micros() - eventStarted));
+#endif
 
   // Light-sleep idle gating. The single biggest battery saver while reading:
   // between page turns the loop has nothing to do, so we drop the CPU until
@@ -370,7 +423,7 @@ void loop() {
   if (g_currentScreen->allowSleep()
       && !g_btns.hasPendingClicks()
       && !buttonQueueNonEmpty()
-      && !WifiProvisioning::isActive()) {
+      && !WifiProvisioning::isActive() && !Diagnostics::isActive()) {
     Sleep::idleLightSleep(Toast::isActive());
   }
 }

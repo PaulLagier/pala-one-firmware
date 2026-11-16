@@ -1,0 +1,27 @@
+name: Firmware builds and host tests
+on: [push, pull_request, workflow_dispatch]
+concurrency:
+  group: firmware-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [wireless-paper-v1_1-en, wireless-paper-v1_1-es, wireless-paper-v1_2-en, wireless-paper-v1_2-es, companion-v1_2-en, companion-v1_2-local, companion-v1_2-release]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ runner.os }}-${{ matrix.environment }}-${{ hashFiles('platformio.ini') }}
+      - run: pip install platformio==6.1.19
+      - run: pio run -e ${{ matrix.environment }}
+      - if: matrix.environment == 'wireless-paper-v1_2-en'
+        run: python3 scripts/test_local.py
+      - if: matrix.environment == 'wireless-paper-v1_2-en'
+        run: python3 scripts/test_major_update.py

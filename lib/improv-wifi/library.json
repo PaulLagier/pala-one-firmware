@@ -1,0 +1,49 @@
+{
+  "name": "Improv WiFi Library",
+  "version": "0.0.4+palalocal.1",
+  "description": "The library implements the Improv WiFi protocol allowing users to use this feature in their projects without effort.",
+  "keywords": "network,wifi,improv,ble,bluetooth",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jnthas/Improv-WiFi-Library"
+  },
+  "authors": [
+    {
+      "name": "Jonathas Barbosa",
+      "email": "jnthas@gmail.com",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "examples": [
+    {
+      "name": "SimpleWebServer",
+      "base": "examples/SimpleWebServer",
+      "files": [
+        "SimpleWebServer.ino"
+      ]
+    },
+    {
+      "name": "SimpleWebServerEsp8266",
+      "base": "examples/SimpleWebServerEsp8266",
+      "files": [
+        "SimpleWebServerEsp8266.ino"
+      ]
+    }
+  ],
+  "frameworks": "arduino",
+  "platforms": [
+    "espressif32",
+    "espressif8266"
+  ],
+  "export": {
+    "include": [
+      "examples/*",
+      "src",
+      "library.json",
+      "library.properties",
+      "LICENSE",
+      "README.md"
+    ]
+  }
+}

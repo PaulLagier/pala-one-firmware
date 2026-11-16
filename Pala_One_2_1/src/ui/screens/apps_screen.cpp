@@ -1,3 +1,5 @@
+#include "src/ui/centered_chrome.h"
+#include "src/ui/pala_chrome.h"
 #include "src/ui/screens/apps_screen.h"
 
 #include "src/hal/display.h"
@@ -16,26 +18,17 @@ void AppsScreen::onEnter() {
   // a reboot. Cheap (one /apps/ directory walk).
   loadApps();
   if (s_cursor < 0) s_cursor = 0;
-  if (s_cursor >= g_apps.count) s_cursor = max(0, g_apps.count - 1);
+  if (s_cursor > g_apps.count) s_cursor = g_apps.count;
   draw();
 }
 
 void AppsScreen::draw() {
   prepareMenuFrame();
-  Font::useBody();
-  int y = drawSectionHeader(D_APPS_HEADER);
-
-  if (g_apps.count == 0) {
-    drawMenuRow(y, D_APPS_NONE, false);
-    display.update();
-    return;
-  }
-
-  drawScrollableList(y, g_apps.count, s_cursor,
-    [&](int idx, int rowY, bool selected, int /*budget*/) {
-      drawMenuRow(rowY, String(g_apps.entries[idx].name), selected);
-      return 1;
-    });
+  if(g_apps.count==0){drawSectionHeader("");CenteredChrome::header(u8g2,D_APPS_HEADER);CenteredChrome::message(gfx,u8g2,D_APPS_NONE);CenteredChrome::card(gfx,u8g2,89,D_READER_BACK_LIBRARY,true);display.update();return;}
+  drawSectionHeader("");
+  CenteredChrome::list(gfx,u8g2,D_APPS_HEADER, g_apps.count + 1, s_cursor,
+    [](int idx) { return idx == g_apps.count ? String(D_READER_BACK_LIBRARY)
+      : String(g_apps.entries[idx].name); });
 
   display.update();
 }
@@ -49,15 +42,13 @@ void AppsScreen::onButton(const ButtonEvent& e) {
   }
 
   if (e.kind == ButtonEvent::Short) {
-    if (g_apps.count > 0) {
-      s_cursor = (s_cursor + 1) % g_apps.count;
-    }
+    s_cursor = (s_cursor + 1) % (g_apps.count + 1);
     draw();
     return;
   }
 
-  if (e.kind == ButtonEvent::Double) {
-    if (g_apps.count == 0) return;
+  if (e.kind == ButtonEvent::Double || e.kind == ButtonEvent::Long) {
+    if (s_cursor == g_apps.count) { nextScreen = &g_libraryScreen; return; }
     if (s_cursor < 0 || s_cursor >= g_apps.count) return;
 
     // runApp blocks for the entire app lifetime; when it returns the
@@ -69,5 +60,5 @@ void AppsScreen::onButton(const ButtonEvent& e) {
     return;
   }
 
-  // Long-press: reserved (future per-app uninstall, perhaps). No-op for now.
+
 }

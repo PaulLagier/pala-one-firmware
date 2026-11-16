@@ -14,6 +14,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # ---------------------------------------------------------------------------
 set(FW_SRC ${CMAKE_SOURCE_DIR}/../Pala_One_2_1/src)
 set(SUT_SRC
+  ${FW_SRC}/lang/locale_core.cpp
+  ${FW_SRC}/lang/locale_data.cpp
   ${FW_SRC}/pure/paths.cpp
   ${FW_SRC}/pure/text_util.cpp
   ${FW_SRC}/pure/hashing.cpp
@@ -30,6 +32,10 @@ set(SUT_SRC
 )
 
 set(TEST_SRC
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_improv_frame_guard.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_page_text_buffer.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_buffered_stream.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_page_offset_table.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_paths.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/test_text_util.cpp

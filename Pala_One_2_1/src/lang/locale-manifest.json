@@ -1,0 +1,103 @@
+{
+  "requestedLanguages": [
+    "de",
+    "en",
+    "fr",
+    "es",
+    "pl",
+    "it",
+    "cs",
+    "ru",
+    "uk",
+    "nl",
+    "pt"
+  ],
+  "implementedCatalogs": [
+    "de",
+    "en",
+    "fr",
+    "es",
+    "pl",
+    "it",
+    "cs",
+    "ru",
+    "uk",
+    "nl",
+    "pt"
+  ],
+  "keyCount": 490,
+  "complete": true,
+  "keysPerPool": 32,
+  "poolsPerCatalog": 17,
+  "interfacePoolCount": 5,
+  "interfaceKeyCount": 129,
+  "largestAllocation": 1977,
+  "catalogs": {
+    "cs": {
+      "defaultPoolBytes": 13240,
+      "rawStringsBytes": 12387,
+      "compressedBytes": 7422,
+      "preloadedInterfaceBytes": 2438
+    },
+    "de": {
+      "defaultPoolBytes": 13798,
+      "rawStringsBytes": 12945,
+      "compressedBytes": 7411,
+      "preloadedInterfaceBytes": 2340
+    },
+    "en": {
+      "defaultPoolBytes": 11835,
+      "rawStringsBytes": 10949,
+      "compressedBytes": 6399,
+      "preloadedInterfaceBytes": 1979
+    },
+    "es": {
+      "defaultPoolBytes": 14033,
+      "rawStringsBytes": 13166,
+      "compressedBytes": 7458,
+      "preloadedInterfaceBytes": 2348
+    },
+    "fr": {
+      "defaultPoolBytes": 14211,
+      "rawStringsBytes": 13358,
+      "compressedBytes": 7396,
+      "preloadedInterfaceBytes": 2455
+    },
+    "it": {
+      "defaultPoolBytes": 13504,
+      "rawStringsBytes": 12653,
+      "compressedBytes": 6939,
+      "preloadedInterfaceBytes": 2392
+    },
+    "nl": {
+      "defaultPoolBytes": 12721,
+      "rawStringsBytes": 11866,
+      "compressedBytes": 6653,
+      "preloadedInterfaceBytes": 2308
+    },
+    "pl": {
+      "defaultPoolBytes": 13793,
+      "rawStringsBytes": 12929,
+      "compressedBytes": 7633,
+      "preloadedInterfaceBytes": 2512
+    },
+    "pt": {
+      "defaultPoolBytes": 13637,
+      "rawStringsBytes": 12770,
+      "compressedBytes": 7149,
+      "preloadedInterfaceBytes": 2455
+    },
+    "ru": {
+      "defaultPoolBytes": 21590,
+      "rawStringsBytes": 20808,
+      "compressedBytes": 9082,
+      "preloadedInterfaceBytes": 3774
+    },
+    "uk": {
+      "defaultPoolBytes": 22039,
+      "rawStringsBytes": 21253,
+      "compressedBytes": 9169,
+      "preloadedInterfaceBytes": 3884
+    }
+  }
+}

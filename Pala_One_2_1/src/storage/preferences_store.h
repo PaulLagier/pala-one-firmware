@@ -14,20 +14,20 @@ public:
   void putInt(const char* key, int v) override { p_.putInt(key, v); }
 
   size_t getBytes(const char* key, void* buf, size_t maxLen) override {
-    return p_.getBytes(key, buf, maxLen);
+    return p_.isKey(key) ? p_.getBytes(key, buf, maxLen) : 0;
   }
   void putBytes(const char* key, const void* buf, size_t len) override {
     p_.putBytes(key, buf, len);
   }
 
   String getString(const char* key, const String& def) override {
-    return p_.getString(key, def);
+    return p_.isKey(key) ? p_.getString(key, def) : def;
   }
   void putString(const char* key, const String& v) override {
     p_.putString(key, v);
   }
 
-  void remove(const char* key) override { p_.remove(key); }
+  void remove(const char* key) override { if (p_.isKey(key)) p_.remove(key); }
   void clear() override { p_.clear(); }
 
 private:

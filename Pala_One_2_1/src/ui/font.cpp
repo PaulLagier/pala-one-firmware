@@ -1,4 +1,6 @@
 #include "src/ui/font.h"
+#include "src/ui/font_render.h"
+#include "src/pure/utf8_clusters.h"
 
 #include <string.h>             // memcpy
 #include <U8g2_for_Adafruit_GFX.h>
@@ -8,21 +10,20 @@
 #include "src/state.h"        // prefs
 #include "src/ui/statusbar.h" // Statusbar::reserveH
 
-// OpenDyslexic u8g2 font tables. Vendored alongside the sketch (see
-// Pala_One_2_1/opendyslexic_u8g2_fonts.h). Only referenced from this file.
-#include "opendyslexic_u8g2_fonts.h"
+// Extended Pala Sans / Pala Dys tables and conservative accent bounds.
+#include "src/ui/language_fonts.h"
 
 namespace Font {
 
 // File-private font tables. The rest of the codebase only ever sees the
 // role accessors (useBody, useBold, ...).
-static const uint8_t* s_body    = u8g2_font_helvR08_te;
-static const uint8_t* s_bold    = u8g2_font_helvB08_te;
-// _tf = ASCII only. Translated strings must NOT use these — see font.h.
-static const uint8_t* s_uiSmall = u8g2_font_6x10_tf;
-static const uint8_t* s_uiTiny  = u8g2_font_5x8_tf;
-// _te = Latin Extended. Used by toasts so translations with accents render.
-static const uint8_t* s_toast   = u8g2_font_helvR08_te;
+static const uint8_t* s_body    = pala_font_sans_r08;
+static const uint8_t* s_bold    = pala_font_sans_b08;
+// Fixed number-only roles; retain original pixels/advances for battery/page UI.
+static const uint8_t* s_uiSmall = pala_font_ui_small10;
+static const uint8_t* s_uiTiny  = pala_font_ui_tiny08;
+// Extended Latin/Cyrillic face for translated toast text.
+static const uint8_t* s_toast   = pala_font_sans_r08;
 
 // Owned settings.
 //   s_size    — body font size (8/10/12/14). Out-of-set values fall back to 10.
@@ -35,6 +36,7 @@ static int    s_size    = 10;
 static int    s_lineGap = 0;
 static Family s_family  = Family::Helvetica;
 static bool   s_bionic  = false;
+static bool s_halfGaps = false;
 
 // Layout-metrics cache. Invalid after the mutators below; recomputed on the
 // next bodyLayout() call.
@@ -54,19 +56,19 @@ static bool pickFaces(int sz, Family fam,
                       const uint8_t*& outBody, const uint8_t*& outBold) {
   if (fam == Family::OpenDyslexic) {
     switch (sz) {
-      case 8:  outBody = u8g2_font_open_dys_r08_te; outBold = u8g2_font_open_dys_b08_te; return true;
-      case 10: outBody = u8g2_font_open_dys_r10_te; outBold = u8g2_font_open_dys_b10_te; return true;
-      case 12: outBody = u8g2_font_open_dys_r12_te; outBold = u8g2_font_open_dys_b12_te; return true;
-      case 14: outBody = u8g2_font_open_dys_r14_te; outBold = u8g2_font_open_dys_b14_te; return true;
-      default: outBody = u8g2_font_open_dys_r10_te; outBold = u8g2_font_open_dys_b10_te; return false;
+      case 8:  outBody = pala_font_dys_r08; outBold = pala_font_dys_b08; return true;
+      case 10: outBody = pala_font_dys_r10; outBold = pala_font_dys_b10; return true;
+      case 12: outBody = pala_font_dys_r12; outBold = pala_font_dys_b12; return true;
+      case 14: outBody = pala_font_dys_r14; outBold = pala_font_dys_b14; return true;
+      default: outBody = pala_font_dys_r10; outBold = pala_font_dys_b10; return false;
     }
   }
   switch (sz) {
-    case 8:  outBody = u8g2_font_helvR08_te; outBold = u8g2_font_helvB08_te; return true;
-    case 10: outBody = u8g2_font_helvR10_te; outBold = u8g2_font_helvB10_te; return true;
-    case 12: outBody = u8g2_font_helvR12_te; outBold = u8g2_font_helvB12_te; return true;
-    case 14: outBody = u8g2_font_helvR14_te; outBold = u8g2_font_helvB14_te; return true;
-    default: outBody = u8g2_font_helvR10_te; outBold = u8g2_font_helvB10_te; return false;
+    case 8:  outBody = pala_font_sans_r08; outBold = pala_font_sans_b08; return true;
+    case 10: outBody = pala_font_sans_r10; outBold = pala_font_sans_b10; return true;
+    case 12: outBody = pala_font_sans_r12; outBold = pala_font_sans_b12; return true;
+    case 14: outBody = pala_font_sans_r14; outBold = pala_font_sans_b14; return true;
+    default: outBody = pala_font_sans_r10; outBold = pala_font_sans_b10; return false;
   }
 }
 
@@ -98,30 +100,54 @@ static void applyLineGap(int gap) {
   s_layoutValid = false;
 }
 
-void useBody()     { u8g2.setFont(s_body); }
-void useBold()     { u8g2.setFont(s_bold); }
+void useMenu()     { u8g2.setFont(pala_font_sans_r10); }
+void useMenuBold() { u8g2.setFont(pala_font_sans_b10); }
+void useBody()     { useTransparentFace(u8g2, s_body); }
+void useBold()     { useTransparentFace(u8g2, s_bold); }
 void useToast()    { u8g2.setFont(s_toast); }
 void useUiSmall()  { u8g2.setFont(s_uiSmall); }
 void useUiTiny()   { u8g2.setFont(s_uiTiny); }
-void useAppLarge() { u8g2.setFont(u8g2_font_helvB14_te); }
+void useAppLarge() { u8g2.setFont(pala_font_sans_b14); }
 
 const LayoutMetrics& bodyLayout() {
   if (!s_layoutValid) {
     useBody();
-    s_layout.ascent  = u8g2.getFontAscent();
-    s_layout.descent = u8g2.getFontDescent();
-    s_layout.lineH   = (s_layout.ascent - s_layout.descent) + s_lineGap;
-
-    s_layout.maxWidth = SCREEN_W - (MARGIN_X * 2);
-
-    int maxHeight = SCREEN_H - TOP_PAD - BOT_PAD;
-    maxHeight -= Statusbar::reserveH();
-
-    s_layout.maxLines = maxHeight / s_layout.lineH;
-    if (s_layout.maxLines < 1) s_layout.maxLines = 1;
+    // Tight ASCII bounds of both weights. Accents/extended glyphs enlarge
+    // individual pages below; unrelated rare glyphs no longer pad every line.
+    static constexpr PalaFonts::Bounds compact[2][4]={
+      {{9,-2},{12,-3},{13,-4},{14,-4}},
+      {{10,-3},{12,-4},{14,-5},{17,-5}}
+    };
+    const int index=s_size==8?0:s_size==12?2:s_size==14?3:1;
+    const auto bounds=compact[s_family==Family::OpenDyslexic?1:0][index];
+    s_layout.ascent  = bounds.ascent;
+    s_layout.descent = bounds.descent;
+    completePageLayout(s_layout);
     s_layoutValid = true;
   }
   return s_layout;
+}
+
+void completePageLayout(LayoutMetrics& m) {
+  // One clear pixel even between the deepest and highest neighboring glyphs.
+  m.lineH=m.ascent-m.descent+1+s_lineGap;
+  m.paragraphGapH=s_halfGaps?max(1,m.lineH/2):m.lineH;
+  m.maxWidth=SCREEN_W-MARGIN_X*2;
+  const int height=SCREEN_H-TOP_PAD-BOT_PAD-Statusbar::reserveH();
+  m.maxLines=max(1,height/m.lineH);
+}
+void includeTextBounds(LayoutMetrics& m,const char* text,size_t length) {
+  for(size_t index=0;index<length;){
+    uint32_t cp;index+=PalaUtf8::decode(text,length,index,cp);
+    if(!PalaUtf8::combining(cp))while(index<length){
+      uint32_t mark;const auto bytes=PalaUtf8::decode(text,length,index,mark);
+      const auto composed=PalaUtf8::compose(cp,mark);if(!composed)break;cp=composed;index+=bytes;
+    }
+    if(cp>=32&&cp<=126)continue; // covered by compact bounds; no glyph lookup
+    useBody();glyphVerticalBounds(u8g2,cp,m.ascent,m.descent);
+    if(s_bionic){useBold();glyphVerticalBounds(u8g2,cp,m.ascent,m.descent);}
+  }
+  useBody();
 }
 
 void loadSettings() {
@@ -130,7 +156,14 @@ void loadSettings() {
   applyBodySize(prefs.getInt(kKeyBodySize, 10));
   applyLineGap(prefs.getInt(kKeyLineGap, 0));
   s_bionic = (prefs.getInt(kKeyBionic, 0) != 0);
+  s_halfGaps = prefs.getBool("cfg_half_gaps", false);
 }
+
+#if PALA_DIAGNOSTICS
+void setDiagnosticLayout(int size, Family family, int gap, bool bionic) {
+  applyFamily(family); applyBodySize(size); applyLineGap(gap); s_bionic = bionic;
+}
+#endif
 
 void setBodySize(int sz) {
   applyBodySize(sz);
@@ -156,6 +189,13 @@ void setBionic(bool on) {
   prefs.putInt(kKeyBionic, on ? 1 : 0);
 }
 
+void setHalfParagraphGaps(bool on) {
+  if (on == s_halfGaps) return;
+  s_halfGaps = on; s_layoutValid = false;
+  prefs.putBool("cfg_half_gaps", on);
+}
+bool halfParagraphGaps() { return s_halfGaps; }
+
 int    currentBodySize() { return s_size; }
 int    currentLineGap()  { return s_lineGap; }
 Family currentFamily()   { return s_family; }
@@ -172,79 +212,20 @@ PageCacheLayout layoutForCache() {
     /*family          =*/(uint8_t)s_family,
     /*bionic          =*/(uint8_t)(s_bionic ? 1 : 0),
     /*statusbarReserve=*/(uint8_t)Statusbar::reserveH(),
+    /*halfGaps=*/(uint8_t)s_halfGaps,
   };
 }
 
 // ----------------------------------------------------------------------------
-//  Bionic helpers — UTF-8-aware. Same prefix policy as Kevin's fork:
+//  Bionic helpers — accent-cluster-aware. Prefix policy:
 //    chars ≤ 3 → 1 strong char; otherwise chars/2 clamped to [1, 4].
-//  Punctuation-only words (no ASCII alnum / non-ASCII lead byte) get 0 so
+//  Punctuation-only words get 0 so
 //  we don't bold things like "—" or "...".
 // ----------------------------------------------------------------------------
 
-static bool isBionicLeadByte(uint8_t b) {
-  return (b >= '0' && b <= '9') ||
-         (b >= 'A' && b <= 'Z') ||
-         (b >= 'a' && b <= 'z') ||
-         (b >= 128);   // any UTF-8 multibyte lead byte
-}
-
-// UTF-8 char length at byte `i` in `s` (assumes well-formed; degenerate
-// 0xF8+ falls through to 1). Local copy so this file doesn't pull in
-// text_util.h — the algorithm is trivial.
-static int utf8Len(uint8_t b) {
-  if (b < 0x80) return 1;
-  if ((b & 0xE0) == 0xC0) return 2;
-  if ((b & 0xF0) == 0xE0) return 3;
-  if ((b & 0xF8) == 0xF0) return 4;
-  return 1;
-}
-
-static int bionicStrongCharCount(int charCount) {
-  if (charCount <= 0) return 0;
-  if (charCount <= 3) return 1;
-  int n = charCount / 2;
-  if (n < 1) n = 1;
-  if (n > 4) n = 4;
-  return n;
-}
-
 int bionicPrefixBytes(const char* word, int byteLen) {
-  if (!word || byteLen <= 0) return 0;
-  if (!isBionicLeadByte((uint8_t)word[0])) return 0;
-
-  // Count UTF-8 chars, then convert "strong char count" back to a byte
-  // offset by walking again. Two passes keep the logic obvious; words are
-  // short so cost is negligible.
-  int chars = 0;
-  for (int i = 0; i < byteLen; ) {
-    int clen = utf8Len((uint8_t)word[i]);
-    if (i + clen > byteLen) break;
-    i += clen;
-    chars++;
-  }
-
-  int strong = bionicStrongCharCount(chars);
-  if (strong <= 0) return 0;
-
-  int byteOff = 0;
-  int seen = 0;
-  while (byteOff < byteLen && seen < strong) {
-    int clen = utf8Len((uint8_t)word[byteOff]);
-    if (byteOff + clen > byteLen) break;
-    byteOff += clen;
-    seen++;
-  }
-  // Reject if the split is degenerate: the whole word would be bolded
-  // (no tail) or nothing would be (no head). Both look worse than
-  // unstyled.
-  if (byteOff <= 0 || byteOff >= byteLen) return 0;
-  return byteOff;
+  return PalaUtf8::bionicPrefixBytes(word, byteLen);
 }
-
-// Largest line the paginator emits in one shot — see kLineMax in
-// paginator.cpp. Word-level slicing fits in the same envelope.
-static constexpr int kBionicScratchMax = 320;
 
 // Walk a body-text line and call `onPart` for each maximal stretch of
 // either non-space bytes (one word) or space bytes (one space run). For
@@ -263,27 +244,13 @@ static void forEachLineSegment(const char* line, Fn onPart) {
   }
 }
 
-// Measure helper — copies bytes [src, src+len) into a NUL-terminated stack
-// buffer and returns u8g2.getUTF8Width on it. Caller has already set the
-// active font.
+// Shared glyph traversal keeps width and ink identical, including canonical
+// accents, intermediate overhangs and uncomposed Cyrillic stress marks.
 static int measureSlice(const char* src, int len) {
-  if (len <= 0) return 0;
-  if (len >= kBionicScratchMax) len = kBionicScratchMax - 1;
-  char scratch[kBionicScratchMax];
-  memcpy(scratch, src, (size_t)len);
-  scratch[len] = 0;
-  return u8g2.getUTF8Width(scratch);
+  return len > 0 ? renderText(u8g2, src, size_t(len)) : 0;
 }
-
-// Print helper — same idea, but prints at (x, y).
 static void printSlice(int x, int y, const char* src, int len) {
-  if (len <= 0) return;
-  if (len >= kBionicScratchMax) len = kBionicScratchMax - 1;
-  char scratch[kBionicScratchMax];
-  memcpy(scratch, src, (size_t)len);
-  scratch[len] = 0;
-  u8g2.setCursor(x, y);
-  u8g2.print(scratch);
+  if (len > 0) renderText(u8g2, src, size_t(len), x, y, true);
 }
 
 // Width of one rendered word — measures the bold prefix in the Bold face
@@ -307,7 +274,7 @@ int measureBionicLine(const char* line) {
   if (!line) return 0;
   if (!s_bionic) {
     useBody();
-    return u8g2.getUTF8Width(line);
+    return renderText(u8g2, line, strlen(line));
   }
   int total = 0;
   forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
@@ -326,8 +293,7 @@ void drawBionicLine(int x, int y, const char* line) {
   if (!line) return;
   if (!s_bionic) {
     useBody();
-    u8g2.setCursor(x, y);
-    u8g2.print(line);
+    renderText(u8g2, line, strlen(line), x, y, true);
     return;
   }
   int cursorX = x;

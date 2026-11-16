@@ -11,6 +11,9 @@
 #include <WiFi.h>
 
 #include "src/config.h"
+#include "src/lang/locale_core.h"
+#include "src/hal/diagnostics.h"
+#include "src/pure/improv_frame_guard.h"
 #include "src/storage/wifi_creds.h"
 
 namespace WifiProvisioning {
@@ -26,6 +29,7 @@ struct State {
 };
 
 State s_state;
+ImprovFrameGuard s_serialFrame;
 }  // namespace
 
 // After the credentials callback fires we give the library this much time to
@@ -71,13 +75,26 @@ static void clearGraceTimer() {
   s_state.credsReceivedMs = 0;
 }
 
-void begin() {
+void beginLocalSetup() {
+  s_state.lib.setLocalSetupOnly(true);
+  s_state.lib.onSetLanguage([](const char* code) { return Language::setLanguage(code); });
   s_state.lib.setDeviceInfo(
       ImprovTypes::ChipFamily::CF_ESP32_S3,
       "Pala One",
       FW_VERSION,
       "Pala One",
       "https://paullagier.github.io/pala-one-firmware/connected.html");
+
+ }
+void loopLocalSetup() {
+  if (Serial.available() > 0) {
+    s_state.lastHostByteMs = millis();
+    s_state.lib.handleSerial();
+  }
+}
+void begin() {
+  beginLocalSetup();
+  s_state.lib.setLocalSetupOnly(false);
 
   // The library handles WiFi.begin() itself; we only persist creds once the
   // association succeeds. If the association fails the library reports the
@@ -112,6 +129,18 @@ void notifyUploadSession(bool active) {
   }
 }
 
+bool serialFrameInProgress() {
+  if(s_serialFrame.expire(millis()))s_state.lib.resetSerialParser();
+  return s_serialFrame.active();
+}
+
+void notifySerialWake(){
+  // The byte that caused UART wake may be lost. Discard its partial frame
+  // and allow the host's next complete retry without another light sleep.
+  s_serialFrame.reset();s_state.lib.resetSerialParser();
+  const uint32_t now=millis();s_state.lastHostByteMs=now?now:1;
+}
+
 bool isActive() {
   // Stay awake whenever a USB host is on the bus. Wall chargers and
   // unplugged cables register as not-plugged, so they don't pin us awake.
@@ -122,7 +151,12 @@ void loop() {
   // Track bytes from host for the activity-window fallback in hostPresent().
   // Do this *before* handleSerial drains the buffer so we don't miss the
   // moment the browser starts talking.
-  if (Serial.available() > 0) {
+  [[maybe_unused]] const bool frameActive=serialFrameInProgress();
+  bool diagnosticPrefix = false;
+#if PALA_DIAGNOSTICS
+  diagnosticPrefix = !frameActive && Serial.available() > 0 && Serial.peek() == '!';
+#endif
+  if (Serial.available() > 0 && !diagnosticPrefix) {
     s_state.lastHostByteMs = millis();
   }
 
@@ -142,6 +176,14 @@ void loop() {
     // Keep listening — host might want to re-provision a different network.
   }
 
+  // Recheck ownership immediately before consuming a byte. Input may have
+  // arrived since Diagnostics::poll() ran at the top of the main loop.
+  if (Serial.available() == 0) return;
+  [[maybe_unused]] const bool frameNow=serialFrameInProgress();
+#if PALA_DIAGNOSTICS
+  if (!frameNow && Serial.peek() == '!') return;
+#endif
+  s_serialFrame.observe((uint8_t)Serial.peek(),millis());
   s_state.lib.handleSerial();
 }
 

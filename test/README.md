@@ -96,3 +96,23 @@ The pure modules compile here because they include
 [`src/pure/arduino_compat.h`](../src/pure/arduino_compat.h) — which provides
 a minimal `String` shim when `ARDUINO` isn't defined. If you need a method
 on `String` that isn't there yet, add it to the shim.
+
+## Local reading-focused update
+
+After building `wireless-paper-v1_2-en` once (the host renderers use its pinned
+U8g2 dependency), run:
+
+```sh
+python3 scripts/test_local.py
+python3 scripts/test_major_update.py
+```
+
+The additional runner needs Clang, Node and zlib. It compiles the production
+multipart upload handlers, display adapter, ReaderMenu/ReaderScreen, Library,
+device hub and web settings against hardware adapters. It also checks the
+original and optimized paginator with real fonts, direct/prefetched pixels,
+large TXT/PBT books, caches, bookmarks and cancellation under ASan/UBSan.
+UI frames for all eleven languages are written beneath
+`test/build-local/major-preview/`. These are native layout previews, not
+physical-panel or radio acceptance. See `LOCAL-MAJOR-UPDATE.md` for the updated
+navigation, protocol additions and outstanding hardware checks.

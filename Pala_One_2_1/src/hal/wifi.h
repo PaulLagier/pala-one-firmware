@@ -28,6 +28,7 @@
 enum class WifiMode { Station, AccessPoint };
 
 struct WifiSession {
+  bool        ready = false; // interface and usable address successfully established
   WifiMode    mode = WifiMode::AccessPoint;
   String      primaryUrl;     // STA: http://pala-one.local  AP: http://192.168.4.1
   String      fallbackUrl;    // STA: http://<lan-ip>        AP: ""
@@ -58,7 +59,8 @@ WifiStaResult wifiStaPoll(WifiSession& out);
 // caller typically calls wifiBeginAccessPoint() next.
 void          wifiStaAbort();
 
-// Bring up SoftAP. Always succeeds. Bumps CPU to 240 MHz if not already.
+// Bring up SoftAP. Returns ready=false on startup failure; callers must not
+// advertise a working server in that case. Bumps CPU to 240 MHz.
 WifiSession   wifiBeginAccessPoint();
 
 // Tears down whichever mode is active and drops CPU back to 80 MHz.

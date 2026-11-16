@@ -1,7 +1,13 @@
+#include "src/lang/join.h"
 #include "src/web/settings.h"
+#include "src/lang/locale_core.h"
 
 #include "src/config.h"
 #include "src/state.h"
+#include "src/hal/input.h"
+#include "src/hal/display.h"
+#include "src/storage/wifi_creds.h"
+#include "src/ui/statusbar.h"
 #include "src/pure/hashing.h"             // prefKeyForBook
 #include "src/storage/book_metadata.h"
 #include "src/storage/page_cache.h"       // deletePageCacheForBook
@@ -85,6 +91,7 @@ static void handleSettings() {
   String lg1 = (curGap == 1) ? " selected" : "";
   String lg2 = (curGap == 2) ? " selected" : "";
   String lg3 = (curGap == 3) ? " selected" : "";
+  String lg4 = (curGap == 4) ? " selected" : "";
 
 
   Font::Family curFam = Font::currentFamily();
@@ -96,90 +103,140 @@ static void handleSettings() {
 
   String out = webPageStart(
     D_WEB_SETTINGS_TITLE,
-    D_WEB_SETTINGS_SUBTITLE_PREFIX FW_VERSION D_WEB_SETTINGS_SUBTITLE_SUFFIX,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a>"
+    Language::join({D_WEB_SETTINGS_SUBTITLE_PREFIX,  FW_VERSION,  D_WEB_SETTINGS_SUBTITLE_SUFFIX}),
+    Language::join({"<a href='/'>",  D_WEB_NAV_HOME,  "</a><a href='/screensavers'>",  D_WEB_NAV_SCREENSAVER,  "</a>"})
   );
   out.reserve(out.length() + 4500);
 
+  out += "<div class='card'><form method='POST' action='/settings' accept-charset='UTF-8'>";
+  out += "<label for='language'>" + htmlEscape(D_LANGUAGE_LABEL) + "</label><select id='language' name='language'>";
+  for(size_t i=0;i<Language::count();++i){
+    const char* code=Language::codeAt(i);
+    out += "<option value='";out += code;out += "'";
+    if(!strcmp(code,Language::currentCode()))out += " selected";
+    out += ">";out += htmlEscape(Language::nameAt(i));out += "</option>";
+  }
+  out += "</select><div class='actions'><button type='submit'>";
+  out += D_WEB_SAVE_SETTINGS_BUTTON;out += "</button></div></form></div>";
+
   // Device personalization card — separate form, no layout-remap interaction.
-  out += "<div class='card'><h2>" D_WEB_DEVICE_HEADING "</h2>";
-  out += "<p class='muted'>" D_WEB_DEVICE_INTRO "</p>";
+  out += Language::join({"<div class='card'><h2>",  D_WEB_DEVICE_HEADING,  "</h2>"});
+  out += Language::join({"<p class='muted'>",  D_WEB_DEVICE_INTRO,  "</p>"});
   out += "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>";
-  out += "<div><label for='hdr'>" D_WEB_HEADER_TITLE_LABEL "</label>";
+  out += Language::join({"<div><label for='hdr'>",  D_WEB_HEADER_TITLE_LABEL,  "</label>"});
   out += "<input type='text' id='hdr' name='hdr' maxlength='31' value='";
   out += htmlAttrEscape(HeaderTitle::current());
   out += "' placeholder='" LIB_HEADER_TITLE "'>";
-  out += "<div class='hint'>" D_WEB_HEADER_TITLE_HINT "</div></div>";
+  out += Language::join({"<div class='hint'>",  D_WEB_HEADER_TITLE_HINT,  "</div></div>"});
   out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
   out += "<input type='checkbox' name='hdr_rst' value='1' style='width:auto'>";
-  out += "<span>" D_WEB_HEADER_TITLE_RESET "</span></label>";
-  out += "<div class='actions' style='margin-top:14px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button></div>";
+  out += Language::join({"<span>",  D_WEB_HEADER_TITLE_RESET,  "</span></label>"});
+  out += Language::join({"<div class='actions' style='margin-top:14px'><button type='submit'>",  D_WEB_SAVE_SETTINGS_BUTTON,  "</button></div>"});
   out += "</form></div>";
 
   out +=
-    "<div class='card'><h2>" D_WEB_READING_HEADING "</h2>"
-    "<p class='muted'>" D_WEB_READING_INTRO "</p>"
-    "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>"
-    "<div class='grid cols-2'>"
-    "<div><label for='font'>" D_WEB_FONT_SIZE_LABEL "</label><select id='font' name='font'>"
-    "<option value='8'";  out += sel8;  out += ">" D_WEB_FONT_SIZE_8  "</option>"
-    "<option value='10'"; out += sel10; out += ">" D_WEB_FONT_SIZE_10 "</option>"
-    "<option value='12'"; out += sel12; out += ">" D_WEB_FONT_SIZE_12 "</option>"
-    "<option value='14'"; out += sel14; out += ">" D_WEB_FONT_SIZE_14 "</option>"
-    "</select><div class='hint'>" D_WEB_FONT_SIZE_HINT "</div></div>"
-    "<div><label for='family'>" D_WEB_FONT_FAMILY_LABEL "</label><select id='family' name='family'>"
-    "<option value='helv'"; out += famH; out += ">" D_WEB_FONT_FAMILY_HELVETICA "</option>"
-    "<option value='dys'";  out += famD; out += ">" D_WEB_FONT_FAMILY_DYSLEXIC  "</option>"
-    "</select><div class='hint'>" D_WEB_FONT_FAMILY_HINT "</div></div>"
-    "<div><label for='sleep'>" D_WEB_SLEEP_AFTER_LABEL "</label><select id='sleep' name='sleep'>"
-    "<option value='30'";   out += ss30;   out += ">" D_WEB_SLEEP_30S "</option>"
-    "<option value='60'";   out += ss60;   out += ">" D_WEB_SLEEP_1M  "</option>"
-    "<option value='120'";  out += ss120;  out += ">" D_WEB_SLEEP_2M  "</option>"
-    "<option value='300'";  out += ss300;  out += ">" D_WEB_SLEEP_5M  "</option>"
-    "<option value='600'";  out += ss600;  out += ">" D_WEB_SLEEP_10M "</option>"
-    "<option value='1800'"; out += ss1800; out += ">" D_WEB_SLEEP_30M "</option>"
-    "</select><div class='hint'>" D_WEB_SLEEP_HINT "</div></div>"
-    "<div><label for='lgap'>" D_WEB_LINE_SPACING_LABEL "</label><select id='lgap' name='lgap'>"
-    "<option value='0'"; out += lg0; out += ">" D_WEB_LINE_SPACING_0 "</option>"
-    "<option value='1'"; out += lg1; out += ">" D_WEB_LINE_SPACING_1 "</option>"
-    "<option value='2'"; out += lg2; out += ">" D_WEB_LINE_SPACING_2 "</option>"
-    "<option value='3'"; out += lg3; out += ">" D_WEB_LINE_SPACING_3 "</option>"
-    "</select><div class='hint'>" D_WEB_LINE_SPACING_HINT "</div></div>"
-    "<div class='full' style='grid-column:1/-1'><label style='display:flex;gap:10px;align-items:center;font-weight:600'>"
-    "<input type='checkbox' name='bionic' value='1'"; out += bChecked; out += "><span>" D_WEB_BIONIC_LABEL "</span></label>"
-    "<div class='hint'>" D_WEB_BIONIC_HINT "</div></div>"
-    "</div>"
-    "<div style='margin-top:14px'>"
-    "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
-    "<input type='checkbox' name='noscr' id='noscr' style='width:auto'";
+    Language::join({"<div class='card'><h2>",  D_WEB_READING_HEADING,  "</h2>", 
+    "<p class='muted'>",  D_WEB_READING_INTRO,  "</p>", 
+    "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>", 
+    "<div class='grid cols-2'>", 
+    "<div><label for='font'>",  D_WEB_FONT_SIZE_LABEL,  "</label><select id='font' name='font'>", 
+    "<option value='8'"});  out += sel8;  out += Language::join({">",  D_WEB_FONT_SIZE_8,   "</option>", 
+    "<option value='10'"}); out += sel10; out += Language::join({">",  D_WEB_FONT_SIZE_10,  "</option>", 
+    "<option value='12'"}); out += sel12; out += Language::join({">",  D_WEB_FONT_SIZE_12,  "</option>", 
+    "<option value='14'"}); out += sel14; out += Language::join({">",  D_WEB_FONT_SIZE_14,  "</option>", 
+    "</select><div class='hint'>",  D_WEB_FONT_SIZE_HINT,  "</div></div>", 
+    "<div><label for='family'>",  D_WEB_FONT_FAMILY_LABEL,  "</label><select id='family' name='family'>", 
+    "<option value='helv'"}); out += famH; out += Language::join({">",  D_WEB_FONT_FAMILY_HELVETICA,  "</option>", 
+    "<option value='dys'"});  out += famD; out += Language::join({">",  D_WEB_FONT_FAMILY_DYSLEXIC,   "</option>", 
+    "</select><div class='hint'>",  D_WEB_FONT_FAMILY_HINT,  "</div></div>", 
+    "<div><label for='sleep'>",  D_WEB_SLEEP_AFTER_LABEL,  "</label><select id='sleep' name='sleep'>", 
+    "<option value='30'"});   out += ss30;   out += Language::join({">",  D_WEB_SLEEP_30S,  "</option>", 
+    "<option value='60'"});   out += ss60;   out += Language::join({">",  D_WEB_SLEEP_1M,   "</option>", 
+    "<option value='120'"});  out += ss120;  out += Language::join({">",  D_WEB_SLEEP_2M,   "</option>", 
+    "<option value='300'"});  out += ss300;  out += Language::join({">",  D_WEB_SLEEP_5M,   "</option>", 
+    "<option value='600'"});  out += ss600;  out += Language::join({">",  D_WEB_SLEEP_10M,  "</option>", 
+    "<option value='1800'"}); out += ss1800; out += Language::join({">",  D_WEB_SLEEP_30M,  "</option>", 
+    "</select><div class='hint'>",  D_WEB_SLEEP_HINT,  "</div></div>", 
+    "<div><label for='lgap'>",  D_WEB_LINE_SPACING_LABEL,  "</label><select id='lgap' name='lgap'>", 
+    "<option value='0'"}); out += lg0; out += Language::join({">",  D_WEB_LINE_SPACING_0,  "</option>", 
+    "<option value='1'"}); out += lg1; out += Language::join({">",  D_WEB_LINE_SPACING_1,  "</option>", 
+    "<option value='2'"}); out += lg2; out += Language::join({">",  D_WEB_LINE_SPACING_2,  "</option>", 
+    "<option value='3'"}); out += lg3; out += Language::join({">",  D_WEB_LINE_SPACING_3,  "</option>", 
+    "<option value='4'"}); out += lg4; out += Language::join({">", D_WEB_LINE_SPACING_4, "</option>",
+    "</select><div class='hint'>",  D_WEB_LINE_SPACING_HINT,  "</div></div>", 
+    "<div class='full' style='grid-column:1/-1'><label style='display:flex;gap:10px;align-items:center;font-weight:600'>", 
+    "<input type='checkbox' name='bionic' value='1'"}); out += bChecked; out += Language::join({"><span>",  D_WEB_BIONIC_LABEL,  "</span></label>", 
+    "<div class='hint'>",  D_WEB_BIONIC_HINT,  "</div></div>", 
+    "</div>", 
+    "<div style='margin-top:14px'>", 
+    "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>", 
+    "<input type='checkbox' name='noscr' id='noscr' style='width:auto'"});
   if (Sleep::noScreensaver()) out += " checked";
   out +=
-    "><span>" D_WEB_NO_SCREENSAVER_LABEL "</span></label>"
-    "<div class='hint'>" D_WEB_NO_SCREENSAVER_HINT "</div></div>"
-    "<div style='margin-top:10px'>"
-    "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>"
-    "<input type='checkbox' name='lckslp' id='lckslp' style='width:auto'";
+    Language::join({"><span>",  D_WEB_NO_SCREENSAVER_LABEL,  "</span></label>", 
+    "<div class='hint'>",  D_WEB_NO_SCREENSAVER_HINT,  "</div></div>", 
+    "<div style='margin-top:10px'>", 
+    "<label style='display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer'>", 
+    "<input type='checkbox' name='lckslp' id='lckslp' style='width:auto'"});
   if (Sleep::lockOnSleep()) out += " checked";
   out +=
-    "><span>" D_WEB_LOCK_ON_SLEEP_LABEL "</span></label>"
-    "<div class='hint'>" D_WEB_LOCK_ON_SLEEP_HINT "</div></div>"
-    "<input type='hidden' name='noscr_form' value='1'>"
-    "<div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_SAVE_SETTINGS_BUTTON "</button>"
-    "<span class='muted'>" D_WEB_SETTINGS_APPLY_HINT "</span></div>"
-    "</form></div>";
+    Language::join({"><span>",  D_WEB_LOCK_ON_SLEEP_LABEL,  "</span></label>", 
+    "<div class='hint'>",  D_WEB_LOCK_ON_SLEEP_HINT,  "</div></div>", 
+    "<input type='hidden' name='noscr_form' value='1'>", 
+    "<div class='actions' style='margin-top:24px'><button type='submit'>",  D_WEB_SAVE_SETTINGS_BUTTON,  "</button>", 
+    "<span class='muted'>",  D_WEB_SETTINGS_APPLY_HINT,  "</span></div>", 
+    "</form></div>"});
 
   // Buttons card — submitted as a separate form so the gesture bindings
   // don't share POST state with the reading-form's reader-cursor remap.
-  out += "<div class='card'><h2>" D_WEB_BUTTONS_HEADING "</h2>";
-  out += "<p class='muted'>" D_WEB_BUTTONS_HINT "</p>";
+  out += Language::join({"<div class='card'><h2>",  D_WEB_BUTTONS_HEADING,  "</h2>"});
+  out += Language::join({"<p class='muted'>",  D_WEB_BUTTONS_HINT,  "</p>"});
   out += "<form method='POST' action='/settings' accept-charset='UTF-8'><div class='grid cols-2'>";
   appendActionSelect(out, "btnL",  D_WEB_BUTTONS_LONG,       (int)Gestures::actionLong());
   appendActionSelect(out, "btnXL", D_WEB_BUTTONS_EXTRA_LONG, (int)Gestures::actionExtraLong());
   appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
-  out += "</div><div class='actions' style='margin-top:24px'><button type='submit'>" D_WEB_BUTTONS_SAVE "</button>";
-  out += "<span class='muted'>" D_WEB_BUTTONS_LOCK_HINT "</span>";
+  out += Language::join({"<div><label for='response'>",  D_WEB_RESPONSE_LABEL,  "</label><select id='response' name='response'>"});
+  const uint32_t gaps[] = {120, 175, 250};
+  const char* labels[] = {D_WEB_RESPONSE_FAST, D_WEB_RESPONSE_BALANCED, D_WEB_RESPONSE_RELAXED};
+  for (int i = 0; i < 3; ++i) {
+    out += "<option value='" + String(gaps[i]) + "'";
+    if (inputClickGapMs() == gaps[i]) out += " selected";
+    out += ">" + String(labels[i]) + "</option>";
+  }
+  out += Language::join({"</select><div class='hint'>",  D_WEB_RESPONSE_HINT,  "</div></div>"});
+
+  out += Language::join({"</div><div class='actions' style='margin-top:24px'><button type='submit'>",  D_WEB_BUTTONS_SAVE,  "</button>"});
+  out += Language::join({"<span class='muted'>",  D_WEB_BUTTONS_LOCK_HINT,  "</span>"});
   out += "</div></form></div>";
 
+  out += "<div class='card'><form method='POST' action='/settings'><input type='hidden' name='reader_extra' value='1'>";
+  out += "<label><input type='checkbox' name='half_gaps'";
+  if (Font::halfParagraphGaps()) out += " checked";
+  out += ">" + htmlEscape(D_HALF_PARAGRAPHS) + "</label><label><input type='checkbox' name='flipped'";
+  if (displayFlipped()) out += " checked";
+  out += ">" + htmlEscape(D_SCREEN_FLIPPED) + "</label><label>" + htmlEscape(D_READER_MENU_STATUS) + "</label><select name='statusbar'>";
+  appendActionOption(out,0,D_READER_MENU_FULL,int(Statusbar::mode()));
+  appendActionOption(out,1,D_READER_MENU_MINIMAL,int(Statusbar::mode()));
+  appendActionOption(out,2,D_READER_MENU_HIDDEN,int(Statusbar::mode()));
+  out += "</select><button type='submit'>" + htmlEscape(D_WEB_BUTTONS_SAVE) + "</button></form></div>";
+  out += "<div class='card'><form method='POST' action='/settings'><input type='hidden' name='wifi_form' value='1'><h2>";
+  out += htmlEscape(D_WIFI_NETWORK) + "</h2><label>SSID</label><input name='wifi_ssid' maxlength='32' value='";
+  out += htmlAttrEscape(WifiCreds::ssid().c_str());
+  out += "'><label>" + htmlEscape(D_WIFI_PASSWORD) + "</label><input type='password' name='wifi_password' maxlength='63' autocomplete='new-password'><p>";
+  out += htmlEscape(D_WIFI_KEEP_PASSWORD) + "</p><button type='submit'>" + htmlEscape(D_WEB_BUTTONS_SAVE) + "</button>";
+  out += "<button type='submit' name='wifi_clear' value='1'>" + htmlEscape(D_WIFI_FORGET) + "</button></form></div>";
+  const auto timing=inputTiming();
+  out += "<div class='card'><form method='POST' action='/settings'><input type='hidden' name='timing_form' value='1'>";
+  auto timingInput=[&](const char* key,const char* label,uint32_t value,int minimum,int maximum){
+    out += "<label>" + htmlEscape(label) + " (ms)</label><input type='number' name='" + String(key);
+    out += "' min='" + String(minimum) + "' max='" + String(maximum) + "' value='" + String(value) + "' required>";
+  };
+  timingInput("gap",D_WEB_RESPONSE_LABEL,timing.gap,75,1000);
+  timingInput("sequence",D_CLICK_SEQUENCE,timing.sequence,75,5000);
+  timingInput("hold",D_WEB_BUTTONS_LONG,timing.hold,300,5000);
+  timingInput("veryLong",D_WEB_BUTTONS_EXTRA_LONG,timing.veryLong,301,10000);
+  timingInput("debounce",D_BUTTON_DEBOUNCE,timing.debounce,0,50);
+  out += "<button type='submit'>" + htmlEscape(D_WEB_BUTTONS_SAVE) + "</button></form></div>";
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }
@@ -209,16 +266,59 @@ static bool applySettingsForm() {
     int lg = server.arg("lgap").toInt();
     if (lg != Font::currentLineGap()) { Font::setLineGap(lg); layoutChanged = true; }
   }
-  // Checkbox is absent from the POST when unchecked.
-  bool wantBionic = server.hasArg("bionic");
-  if (wantBionic != Font::bionicEnabled()) {
-    Font::setBionic(wantBionic);
-    layoutChanged = true;
+  // Only the reading form owns this checkbox. Personalization/gesture
+  // forms omit it too; those submissions must not disable bionic reading.
+  if (server.hasArg("noscr_form") || server.hasArg("font")) {
+    bool wantBionic = server.hasArg("bionic");
+    if (wantBionic != Font::bionicEnabled()) {
+      Font::setBionic(wantBionic);
+      layoutChanged = true;
+    }
   }
   return layoutChanged;
 }
 
 static void handleSettingsPost() {
+  if(server.hasArg("timing_form")) {
+    InputTiming timing;
+    if(!parseTimingNumber(server.arg("gap").c_str(),timing.gap)
+       ||!parseTimingNumber(server.arg("sequence").c_str(),timing.sequence)
+       ||!parseTimingNumber(server.arg("hold").c_str(),timing.hold)
+       ||!parseTimingNumber(server.arg("veryLong").c_str(),timing.veryLong)
+       ||!parseTimingNumber(server.arg("debounce").c_str(),timing.debounce)
+       ||!setInputTiming(timing)) {server.send(400,"text/plain; charset=utf-8",D_TIMING_INVALID);return;}
+    server.sendHeader("Location","/settings");server.send(302,"text/plain","");return;
+  }
+  if (server.hasArg("wifi_form")) {
+    if (server.hasArg("wifi_clear")) WifiCreds::clear();
+    else {
+      String ssid = server.arg("wifi_ssid"), password = server.arg("wifi_password");
+      // Blank keeps an existing secret only for the same network. A new open
+      // network must not inherit the password of the old one.
+      if (password.length() == 0 && ssid == WifiCreds::ssid()) password = WifiCreds::pass();
+      if (!ssid.length() || ssid.length() > 32 || password.length() > 63
+          || (password.length() > 0 && password.length() < 8)) {
+        server.send(400,"text/plain; charset=utf-8",D_WIFI_INVALID); return;
+      }
+      WifiCreds::save(ssid,password);
+    }
+    server.sendHeader("Location","/settings"); server.send(302,"text/plain",""); return;
+  }
+  if (server.hasArg("reader_extra")) {
+    const String mode = server.arg("statusbar");
+    if (mode != "0" && mode != "1" && mode != "2") { server.send(400,"text/plain",D_LANGUAGE_INVALID); return; }
+    Font::setHalfParagraphGaps(server.hasArg("half_gaps"));
+    Statusbar::setMode(Statusbar::Mode(mode.toInt()));
+    setDisplayFlipped(server.hasArg("flipped"));
+    server.sendHeader("Location","/settings"); server.send(302,"text/plain",""); return;
+  }
+  // Language has its own form and does not change book layout or progress.
+  if(server.hasArg("language")){
+    if(!Language::setLanguage(server.arg("language").c_str())){
+      server.send(400,"text/plain; charset=utf-8",D_LANGUAGE_INVALID);return;
+    }
+    server.sendHeader("Location","/settings");server.send(302,"text/plain","");return;
+  }
   // Snapshot the reader's current byte offset before applying changes, so
   // we can re-land on the same byte under the new layout. The on-disk page
   // cache self-invalidates via its layout stamp (see page_cache.cpp), so the
@@ -229,10 +329,11 @@ static void handleSettingsPost() {
   uint32_t savedByte = 0;
   if (readerActive
       && g_bookview.cursor.pageIndex >= 0
-      && g_bookview.cursor.pageIndex < g_bookview.pages.count) {
-    savedByte = g_bookview.pages.offsets[g_bookview.cursor.pageIndex];
+      && g_bookview.pages.contains(g_bookview.cursor.pageIndex)) {
+    savedByte = g_bookview.pages.offsetAt(g_bookview.cursor.pageIndex);
   }
 
+  if (readerActive) saveProgress();
   bool layoutChanged = applySettingsForm();
 
   // Layout shifted under our feet — the in-memory page table no longer
@@ -242,19 +343,18 @@ static void handleSettingsPost() {
   // contains the saved byte offset. Then render so the user sees the new
   // layout immediately when they return to the device.
   if (readerActive && layoutChanged) {
-    g_bookview.pages.count = 1;
-    g_bookview.pages.offsets[0] = 0;
-    g_bookview.pages.eofReached = false;
+    g_bookview.pages.reset();
     int newPage = findPageForOffset(savedByte);
-    if (newPage < 0) newPage = 0;
-    g_bookview.cursor.pageIndex = newPage;
-    g_bookview.cursor.pageTurnsSinceFull = 0;
+    if (newPage >= 0) {
+      g_bookview.cursor.pageIndex = newPage;
+      g_bookview.cursor.pageTurnsSinceFull = 0;
 
-    PreferencesStore kv(prefs);
-    saveSavedPage(kv, g_bookview.book.key(), newPage);
-    // Offset is unchanged — no need to rewrite the canonical position.
+      PreferencesStore kv(prefs);
+      saveSavedPage(kv, g_bookview.book.key(), newPage);
+      // Offset is unchanged — no need to rewrite the canonical position.
 
-    renderCurrentPage();
+      renderCurrentPage();
+    }
   }
 
   // noscr_form is a hidden sentinel always present when the settings form is
@@ -277,6 +377,8 @@ static void handleSettingsPost() {
       HeaderTitle::set(hdr.c_str());
     }
   }
+
+  if (server.hasArg("response")) setInputClickGapMs((uint32_t)server.arg("response").toInt());
 
   // Gesture bindings — `setAction*` clamp internally, but we still check
   // `hasArg` because the page submits this section as a separate form

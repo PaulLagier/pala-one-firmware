@@ -9,6 +9,7 @@ public:
   void onButton(const ButtonEvent& e) override;
   void draw() override;
   void onSleep() override;
+  void onIdleTick() override;
 };
 
 extern ReaderScreen g_readerScreen;

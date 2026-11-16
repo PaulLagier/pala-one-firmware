@@ -36,7 +36,7 @@ int  reserveH();
 void setMode(Mode m);
 
 // Cycle to the next mode (Full -> Minimal -> Hidden -> Full). Used by the
-// short-click on the reader menu's statusbar row.
+// focused reader-menu statusbar action (Long activates it).
 void cycleMode();
 
 }  // namespace Statusbar

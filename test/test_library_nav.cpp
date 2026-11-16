@@ -176,3 +176,20 @@ TEST_CASE("buildLibraryEntries: books in catalog order under their folder") {
   CHECK_EQ(out[1].ref, 0);   // z added first
   CHECK_EQ(out[2].ref, 1);   // a added second
 }
+
+TEST_CASE("buildLibraryEntries: full catalog retains all eight device actions") {
+  Catalog cat;
+  for(int i=0;i<MAX_BOOKS;++i) {
+    char path[64];std::snprintf(path,sizeof(path),"/books/Test%d.txt",i);
+    addBook(cat,"Test",path,"");
+  }
+  bool expanded[MAX_FOLDERS]={false};
+  const LibraryEntryType system[]={LIB_ENTRY_BOOKMARKS,LIB_ENTRY_LIST,LIB_ENTRY_APPS,
+    LIB_ENTRY_STATISTICS,LIB_ENTRY_SETTINGS,LIB_ENTRY_ABOUT,LIB_ENTRY_UPLOAD,LIB_ENTRY_UPDATE};
+  LibEntry out[MAX_LIBRARY_ENTRIES+1];
+  out[MAX_LIBRARY_ENTRIES]={LIB_ENTRY_FOLDER,777,888};
+  const int count=buildLibraryEntries(cat,expanded,system,8,out,MAX_LIBRARY_ENTRIES);
+  REQUIRE(count==MAX_BOOKS+8);
+  for(int i=0;i<8;++i){CHECK(out[MAX_BOOKS+i].type==system[i]);CHECK(out[MAX_BOOKS+i].ref==-1);}
+  CHECK(out[MAX_LIBRARY_ENTRIES].ref==777);CHECK(out[MAX_LIBRARY_ENTRIES].depth==888);
+}

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "text_util.h"
+#include "utf8_clusters.h"
 
 // Fixed scratch buffers for the paginator's working state. Sized for
 // "any line that could possibly fit on the display" + "any reasonable
@@ -16,9 +17,15 @@ uint32_t paginatePage(IReadStream& in,
                       const LayoutMetrics& m,
                       const MeasureFn& measure,
                       const LineCallback& onLine) {
-  in.seek(startPos);
+  if (!in.seek(startPos)) return startPos;
 
-  int linesUsed = 0;
+  const int lineH = m.lineH > 0 ? m.lineH : 1;
+  const int budgetH = m.maxLines * lineH;
+  const int gapH = m.paragraphGapH > 0 ? m.paragraphGapH : lineH;
+  int usedH = 0;
+  auto pageFull = [&]() { return usedH + lineH > budgetH; };
+  int lineW = 0, tailW = 0, spaceW = -1;
+  size_t tailStart = 0;
   char line[kLineMax];      size_t lineLen = 0;
   char token[kTokenMax] = {}; size_t tokLen  = 0;
   char scratch[kScratchMax];
@@ -40,7 +47,7 @@ uint32_t paginatePage(IReadStream& in,
   };
 
   auto emit = [&](const char* buf, size_t len) {
-    linesUsed++;
+    usedH += len ? lineH : gapH;
     if (onLine) onLine(buf, len);
   };
 
@@ -49,6 +56,7 @@ uint32_t paginatePage(IReadStream& in,
     line[lineLen] = 0;
     emit(line, lineLen);
     lineLen = 0;
+    lineW = tailW = 0; tailStart = 0;
   };
 
   auto safeReturn = [&](uint32_t off) -> uint32_t {
@@ -70,9 +78,10 @@ uint32_t paginatePage(IReadStream& in,
     while (tokLen > 0) {
       size_t fitLen = 0;
       while (fitLen < tokLen) {
-        int clen = utf8SafeCharLenAt(token, tokLen, fitLen);
+        int clen = int(PalaUtf8::clusterBytes(token, tokLen, fitLen));
         if (clen <= 0) break;
-        if (fitLen + (size_t)clen > tokLen) break;
+        if (fitLen + (size_t)clen > tokLen
+            || fitLen + (size_t)clen >= kLineMax) break;
         char saved = token[fitLen + clen];
         token[fitLen + clen] = 0;
         bool fits = measure(token) <= m.maxWidth;
@@ -81,7 +90,7 @@ uint32_t paginatePage(IReadStream& in,
         fitLen += (size_t)clen;
       }
       if (fitLen == 0) {
-        int clen = utf8SafeCharLenAt(token, tokLen, 0);
+        int clen = int(PalaUtf8::clusterBytes(token, tokLen, 0));
         if (clen <= 0) clen = 1;
         if ((size_t)clen > tokLen) clen = (int)tokLen;
         fitLen = (size_t)clen;
@@ -92,7 +101,7 @@ uint32_t paginatePage(IReadStream& in,
       emit(token, fitLen);
       token[fitLen] = saved;
 
-      if (linesUsed >= m.maxLines)
+      if (pageFull())
         return safeReturn(tokenStartPos + (uint32_t)fitLen);
 
       memmove(token, token + fitLen, tokLen - fitLen);
@@ -112,11 +121,13 @@ uint32_t paginatePage(IReadStream& in,
       trimLeading(token, tokLen);
       if (tokLen == 0) return 0;
       token[tokLen] = 0;
-      if (measure(token) > m.maxWidth) {
+      const int tokenW = measure(token);
+      if (tokLen >= kLineMax || tokenW > m.maxWidth) {
         return hardBreakToken();
       }
       memcpy(line, token, tokLen);
       lineLen = tokLen;
+      lineW = tailW = tokenW; tailStart = 0;
       lineStartPos = tokenStartPos;
       tokLen = 0;
       return 0;
@@ -125,22 +136,30 @@ uint32_t paginatePage(IReadStream& in,
     trimLeading(token, tokLen);
     if (tokLen == 0) return 0;
 
-    memcpy(scratch, line, lineLen);
-    memcpy(scratch + lineLen, token, tokLen);
-    scratch[lineLen + tokLen] = 0;
+    // Only the tail after the latest space can interact with this token.
+    // Preserve punctuation/cluster shaping within that tail, including Bionic.
+    const size_t tailLen = lineLen - tailStart;
+    memcpy(scratch, line + tailStart, tailLen);
+    memcpy(scratch + tailLen, token, tokLen);
+    scratch[tailLen + tokLen] = 0;
+    const int combinedW = measure(scratch);
+    const int candidateW = lineW - tailW + combinedW;
 
-    if (measure(scratch) > m.maxWidth) {
+    if (lineLen + tokLen >= kLineMax || candidateW > m.maxWidth) {
       flushLine();
-      if (linesUsed >= m.maxLines) return safeReturn(tokenStartPos);
+      if (pageFull()) return safeReturn(tokenStartPos);
 
       token[tokLen] = 0;
-      if (measure(token) > m.maxWidth) {
+      const int tokenW = measure(token);
+      if (tokLen >= kLineMax || tokenW > m.maxWidth) {
         return hardBreakToken();
       }
       memcpy(line, token, tokLen);
       lineLen = tokLen;
+      lineW = tailW = tokenW; tailStart = 0;
       lineStartPos = tokenStartPos;
     } else {
+      lineW = candidateW; tailW = combinedW;
       memcpy(line + lineLen, token, tokLen);
       lineLen += tokLen;
     }
@@ -148,7 +167,7 @@ uint32_t paginatePage(IReadStream& in,
     return 0;
   };
 
-  while (in.available() && linesUsed < m.maxLines) {
+  while (in.available() && !pageFull()) {
     uint32_t charPos = in.position();
     int rb = in.read();
     if (rb < 0) break;
@@ -159,7 +178,7 @@ uint32_t paginatePage(IReadStream& in,
       uint32_t forcedNext = appendTokenToLine();
       if (forcedNext != 0) return forcedNext;
       flushLine();
-      if (linesUsed >= m.maxLines) return safeReturn(in.position());
+      if (pageFull()) return safeReturn(in.position());
       lineStartPos = in.position();
       continue;
     }
@@ -169,6 +188,9 @@ uint32_t paginatePage(IReadStream& in,
       if (forcedNext != 0) return forcedNext;
       if (lineLen > 0 && !lineEndsWithSpace() && lineLen < kLineMax - 1) {
         line[lineLen++] = ' ';
+        if (spaceW < 0) spaceW = measure(" ");
+        lineW += spaceW;
+        tailStart = lineLen; tailW = 0;
       }
       continue;
     }
@@ -176,9 +198,32 @@ uint32_t paginatePage(IReadStream& in,
     // Defensive: if the token buffer is full (degenerate input — a long
     // run of non-breakable bytes), force a flush before appending. Normal
     // text never reaches this branch.
-    if (tokLen >= kTokenMax - 1) {
-      uint32_t forcedNext = appendTokenToLine();
-      if (forcedNext != 0) return forcedNext;
+    if (tokLen >= kTokenMax - 1
+        || (tokLen >= kTokenMax - 4 && ((uint8_t)c & 0xC0) != 0x80)) {
+      // Keep the final complete cluster in place until the next codepoint
+      // arrives: it may be a combining accent attached to that base. The
+      // flush only writes below heldStart, so no extra scratch array is needed.
+      size_t heldStart = 0;
+      for (size_t i = 0; i < tokLen;) {
+        heldStart = i;
+        i += PalaUtf8::clusterBytes(token, tokLen, i);
+      }
+      if (heldStart > 0) {
+        const size_t heldLen = tokLen - heldStart;
+        const uint32_t heldPos = tokenStartPos + uint32_t(heldStart);
+        const char firstHeld = token[heldStart];
+        tokLen = heldStart;
+        uint32_t forcedNext = appendTokenToLine();
+        if (forcedNext != 0) return forcedNext;
+        token[heldStart] = firstHeld;
+        memmove(token, token + heldStart, heldLen);
+        tokLen = heldLen;
+        tokenStartPos = heldPos;
+      } else {
+        // Degenerate input consisting of one oversized combining cluster.
+        uint32_t forcedNext = appendTokenToLine();
+        if (forcedNext != 0) return forcedNext;
+      }
     }
     if (tokLen == 0) tokenStartPos = charPos;
     token[tokLen++] = c;
@@ -192,7 +237,7 @@ uint32_t paginatePage(IReadStream& in,
   uint32_t forcedNext = appendTokenToLine();
   if (forcedNext != 0) return forcedNext;
 
-  if (linesUsed < m.maxLines && lineLen > 0) {
+  if (!pageFull() && lineLen > 0) {
     flushLine();
   }
 

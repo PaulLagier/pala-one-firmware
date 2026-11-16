@@ -4,6 +4,8 @@
 #include <esp_wifi.h>
 #include <esp_bt.h>
 #include <esp_sleep.h>
+#include <driver/uart.h>
+#include "src/hal/wifi_provisioning.h"
 #include <driver/rtc_io.h>
 
 #include "src/config.h"
@@ -96,7 +98,7 @@ static void drawLockBadge() {
 // Render the screensaver onto the e-ink before powering down. Falls back to
 // the built-in icon if no user-uploaded screensavers are available.
 static void drawSleepScreen() {
-  display.fastmodeOff();
+  setDisplayRefreshMode(true);
   beginPageCanvas();
 
   if (!Screensavers::drawNext()) {
@@ -122,7 +124,7 @@ void enter() {
   // ReaderScreen::onSleep() has already called armResumeOnWake() above, which
   // writes wake_path to NVS — so checking it here tells us reliably whether
   // we were reading without coupling sleep.cpp to any screen type.
-  bool wasReading = (prefs.getString("wake_path", "").length() > 0);
+  bool wasReading = (prefs.isKey("wake_path") && prefs.getString("wake_path", "").length() > 0);
 
   // Engage the lock BEFORE drawing so the badge gates (Lock::isLocked()) in
   // both branches below see the new state. If we flipped it after the draw,
@@ -136,7 +138,7 @@ void enter() {
     // Draw the lock badge on top of that framebuffer when locked — the badge
     // is skipped by this branch (which bypasses drawSleepScreen entirely), so
     // we inject it here before the final display.update() flush.
-    display.fastmodeOff();
+    setDisplayRefreshMode(true);
     if (Lock::isLocked()) drawLockBadge();
     display.update();
     delay(600);
@@ -190,14 +192,28 @@ void idleLightSleep(bool tightTick) {
 
   esp_sleep_enable_ext0_wakeup((gpio_num_t)BTN, 0);   // wake on button-low
   esp_sleep_enable_timer_wakeup(timerUs);
-  esp_light_sleep_start();                            // BLOCKS until wake
+#if !ARDUINO_USB_CDC_ON_BOOT
+  // A CP2102 host is not visible to HWCDC::isPlugged(). Let incoming UART
+  // edges wake the chip; the protocol wrapper keeps complete retries awake.
+  if(uart_set_wakeup_threshold(UART_NUM_0,3)==ESP_OK)esp_sleep_enable_uart_wakeup(UART_NUM_0);
+#endif
+  const esp_err_t sleepResult=esp_light_sleep_start();
+  const auto cause=sleepResult==ESP_OK?esp_sleep_get_wakeup_cause():ESP_SLEEP_WAKEUP_UNDEFINED;
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+#if !ARDUINO_USB_CDC_ON_BOOT
+  if(cause==ESP_SLEEP_WAKEUP_UART){
+    WifiProvisioning::notifySerialWake();
+#if PALA_DIAGNOSTICS
+    Serial.println("[usb-wake] uart=0");
+#endif
+  }
+#endif
 
   // If GPIO woke us, the press edge wasn't seen by the normal CHANGE-edge
   // ISR (it was masked by the sleep gate). Inject a synthetic press so the
   // classifier counts it. The release edge will be picked up normally as
   // the user lifts off.
-  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0) {
+  if (cause == ESP_SLEEP_WAKEUP_EXT0) {
     if (digitalRead(BTN) == LOW) injectButtonEdgeNow(true);
     markUserActivity();
   }

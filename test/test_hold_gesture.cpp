@@ -91,3 +91,23 @@ TEST_CASE("classifyHoldInProgress — multi-click held is None") {
   CHECK_EQ(classifyHoldInProgress(VERY_LONG_MS,          2), HoldNone);
   CHECK_EQ(classifyHoldInProgress(VERY_LONG_MS,          3), HoldNone);
 }
+
+TEST_CASE("button response presets preserve the balanced default for invalid input") {
+  CHECK_EQ(validatedClickGap(120),120u);CHECK_EQ(validatedClickGap(175),175u);
+  CHECK_EQ(validatedClickGap(250),250u);CHECK_EQ(validatedClickGap(0),175u);
+  CHECK_EQ(validatedClickGap(0xffffffffu),175u);
+}
+
+#include "pure/input_timing.h"
+TEST_CASE("custom timings reject inconsistent and overflowed candidates") {
+  InputTiming t;CHECK(validInputTiming(t));
+  t.gap=1000;CHECK(!validInputTiming(t));t.sequence=1000;CHECK(validInputTiming(t));
+  t.hold=200;CHECK(!validInputTiming(t));t.hold=2000;CHECK(!validInputTiming(t));
+  t.veryLong=3000;CHECK(validInputTiming(t));t.debounce=51;CHECK(!validInputTiming(t));
+  uint32_t n=17;for(const char* bad:{"","-1","1.5","175x"," 175","4294967296"}){CHECK(!parseTimingNumber(bad,n));CHECK_EQ(n,17u);}
+  CHECK(parseTimingNumber("4294967295",n));CHECK_EQ(n,UINT32_MAX);
+  CHECK_EQ(classifyHoldRelease(599,0,600,1800),HoldNone);
+  CHECK_EQ(classifyHoldRelease(600,0,600,1800),HoldLong);
+  CHECK_EQ(classifyHoldRelease(1800,0,600,1800),HoldVeryLong);
+  CHECK_EQ(classifyHoldInProgress(600,1,600,1800),HoldClickHold);
+}

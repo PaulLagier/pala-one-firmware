@@ -97,3 +97,14 @@ TEST_CASE("sanitizeUploadedAppFilename") {
   // Mixed legal punctuation survives.
   CHECK(sanitizeUploadedAppFilename("a1-b2.bin") == "a1-b2.bin");
 }
+
+TEST_CASE("upload leaf names fit canonical paths and are never shortened") {
+  CHECK(validUploadedBookName("Story.txt"));CHECK(validUploadedBookName("Story.pbt"));
+  CHECK(!validUploadedBookName(".txt"));CHECK(!validUploadedBookName("../a.txt"));
+  CHECK(!validUploadedBookName("a/b.txt"));CHECK(!validUploadedBookName("a\\b.txt"));
+  String a=String(std::string(84,'x').c_str())+".txt";
+  CHECK(validUploadedBookName(a));
+  String b=String(std::string(85,'x').c_str())+".txt";
+  CHECK(!validUploadedBookName(b));CHECK_EQ(sanitizeUploadedFilename(b),b);
+  CHECK_EQ(sanitizeUploadedFilename("   "),String("book.txt"));
+}

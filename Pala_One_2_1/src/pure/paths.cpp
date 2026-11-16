@@ -1,7 +1,7 @@
 #include "paths.h"
 
 String stripTxtExt(const String& s) {
-  return s.endsWith(".txt") ? s.substring(0, s.length() - 4) : s;
+  return (s.endsWith(".txt") || s.endsWith(".pbt")) ? s.substring(0, s.length() - 4) : s;
 }
 
 String lastPathComponent(const String& path) {
@@ -99,10 +99,18 @@ String sanitizeUploadedFilename(String fname) {
   }
 
   clean.replace("..", "");
+  clean.trim();
   while (clean.startsWith(".")) clean.remove(0, 1);
+  if (clean.length() == 0) clean = "book";
   if (!clean.endsWith(".txt")) clean += ".txt";
   if (clean.length() == 0) clean = "book.txt";
   return clean;
+}
+
+bool validUploadedBookName(const String& name) {
+  if (name.length() <= 4 || name.length() > 88) return false;
+  if (name.startsWith(".") || name.indexOf('/') >= 0 || name.indexOf('\\') >= 0) return false;
+  return name.endsWith(".txt") || name.endsWith(".pbt");
 }
 
 String sanitizeUploadedAppFilename(String fname) {

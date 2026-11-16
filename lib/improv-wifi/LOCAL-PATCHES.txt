@@ -1,0 +1,14 @@
+Private local copy of jnthas/Improv-WiFi-Library, commit
+e37c244e0080349e191252acf4bce146eca118e0 (original version 0.0.4).
+Original MIT license retained.
+
+Patches:
+- Preserve parser reset after completed RPCs. Previously every second consecutive
+  query was lost; reproduced on the connected device and with the real parser.
+- Bound the serial frame before writing the 128-byte receive buffer.
+- Validate RPC minimum length and SSID/password boundaries before accessing data.
+- Initialize optional callback pointers for non-static instances.
+- Bound the IP formatting buffer.
+Tests compile this exact parser with deterministic Wi-Fi/Stream adapters and
+AddressSanitizer + UndefinedBehaviorSanitizer. Actual-device validation also
+checks repeated discovery without modifying Wi-Fi credentials.

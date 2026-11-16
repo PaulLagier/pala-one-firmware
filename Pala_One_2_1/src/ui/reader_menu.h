@@ -7,12 +7,9 @@
 //  Reader menu — overlay shown over the reader screen when the user binds
 //  ACTION_MENU to a hold gesture and triggers it.
 //
-//  Contents (one screen, no scrolling):
-//    - Book title
-//    - Page / progress line ("Page X of Y (Z%)" or "Page X (Z% of book)"
-//      depending on whether pagination has reached EOF)
-//    - Statusbar mode row — short-click cycles Full -> Minimal -> Hidden
-//    - Footer hint
+//  Two pages of visible actions plus font/spacing and status/progress panes.
+//  Short moves focus, Long activates, Double remains the close shortcut.
+//  Layout changes are rebased once when returning to the reader.
 //
 //  ReaderScreen owns the gesture dispatch; the menu module owns its own
 //  visible/hidden state and drawing. While the menu is active, the
@@ -32,8 +29,8 @@ void close();
 
 // Handle one button event while the menu is visible. Returns true iff the
 // event was consumed by the menu (caller should NOT pass it to the reader).
-// Short clicks cycle the statusbar mode and redraw in place; any other
-// click closes the menu (caller should re-render the reader page).
+// Short moves focus; Long activates. Other gestures close the overlay.
+// A requested navigation transition takes precedence over a reader redraw.
 bool onButton(const ButtonEvent& ev);
 
 // Re-render the menu — used after an in-menu state change (statusbar mode

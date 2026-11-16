@@ -30,6 +30,8 @@
 //  edge debounce, or millis() running.
 // ============================================================================
 
+uint32_t validatedClickGap(uint32_t value);
+
 enum HoldGestureKind {
   HoldNone     = 0,
   HoldLong     = 1,
@@ -52,7 +54,7 @@ enum HoldGestureKind {
 //                                                     clicks commit on their
 //                                                     own and the hold is
 //                                                     dropped)
-HoldGestureKind classifyHoldRelease(uint32_t dur_ms, uint8_t click_count);
+HoldGestureKind classifyHoldRelease(uint32_t dur_ms, uint8_t click_count, uint32_t longMs=LONG_MS, uint32_t veryLongMs=VERY_LONG_MS);
 
 // In-progress classification — called every poll while the button is still
 // down. Returns the gesture we can emit AT THIS INSTANT, given how long the
@@ -62,6 +64,6 @@ HoldGestureKind classifyHoldRelease(uint32_t dur_ms, uint8_t click_count);
 //   click_count == 1, held_ms >= LONG_MS → ClickHold  (chord crosses threshold)
 //   click_count == 0, held_ms >= VERY_LONG_MS → VeryLong
 //   otherwise                             → None        (keep waiting)
-HoldGestureKind classifyHoldInProgress(uint32_t held_ms, uint8_t click_count);
+HoldGestureKind classifyHoldInProgress(uint32_t held_ms, uint8_t click_count, uint32_t longMs=LONG_MS, uint32_t veryLongMs=VERY_LONG_MS);
 
 #endif  // PALA_PURE_HOLD_GESTURE_H

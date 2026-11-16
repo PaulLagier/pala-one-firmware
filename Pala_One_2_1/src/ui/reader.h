@@ -39,9 +39,10 @@ public:
   const String& path() const   { return path_; }
   const String& key() const    { return key_; }
   File&         file()         { return file_; }
-  size_t        size()         { return file_ ? file_.size() : 0; }
+  size_t        size()         { return file_ ? logicalSize_ : 0; }
 
 private:
+  size_t logicalSize_ = 0;
   File   file_;
   String path_;
   String key_;
@@ -63,6 +64,9 @@ extern BookView g_bookview;
 
 bool openBookByIndex(int idx);
 void renderCurrentPage();
+// Read-only bookmark excerpt; selection is committed only by the preview action.
+bool renderBookmarkPreview(bool readSelected);
+void prefetchNextReaderPage();
 void forceNextRenderFull();  // one-shot: next renderCurrentPage() does a full refresh
 
 // Cursor navigation. Both move the cursor and bump `pageTurnsSinceFull` on
@@ -78,7 +82,9 @@ bool retreatPage();
 // active book forward as needed (so the page table grows up to the answer).
 // Used to resume from a saved byte offset and to navigate to a bookmark
 // whose offset is invariant under font/layout changes.
+// Returns -1 only when the visible operation was cancelled.
 int findPageForOffset(uint32_t targetOffset);
+bool readerIndexWasCancelled();
 
 // Boot-time wake-resume. Checks if wake state asks us to resume reading and
 // if the book still exists. On success the reader is fully set up for an
@@ -93,20 +99,8 @@ bool tryRestoreReadingSession();
 // side is private to reader.cpp; nothing else needs to disarm.
 void armResumeOnWake();    // arm: persist currently-open book for resume
 
-// Layout changed mid-session — the byte offsets in `g_bookview.pages` were
-// computed under the old layout and no longer map to page boundaries under
-// the new one. The byte offset of the *current* page is layout-invariant,
-// though, so this keeps the existing offsets as back-history, truncates the
-// table at the current page, and lets pages ahead re-paginate lazily under
-// the new layout on the next advance. O(1) — no file I/O, no full re-walk.
-// No-op if no book is open. Caller is responsible for the redraw.
-//
-// Mid-session callers should still route through
-// `markPagesDirtyForLayoutChange` so multiple rapid changes (cycling the
-// Statusbar mode) collapse into a single rebase on the next render. Font
-// size / line gap go through the web /settings form — the user can't be in
-// the reader at that moment, and the next `openBookByIndex` rebuilds the
-// table from scratch anyway.
+// Rebuild a consistent page table under the new layout, preserving the
+// current byte position. This may paginate from the start of the book.
 void repaginateForLayoutChange();
 
 // Mark the in-memory page offset table as stale because a layout-affecting

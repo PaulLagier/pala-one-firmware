@@ -12,7 +12,7 @@ struct BookmarkSession {
   int bookIndex = 0;
   int selectedIndex = 0;
 
-  uint16_t pages[MAX_BOOKMARKS];
+  uint32_t pages[MAX_BOOKMARKS];
   uint32_t offsets[MAX_BOOKMARKS];
   uint8_t  count = 0;
 };

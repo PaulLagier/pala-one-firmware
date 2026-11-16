@@ -38,6 +38,8 @@ String sanitizeFolderInput(const String& raw);
 // safe byte set, kills repeated "..", ensures ".txt" suffix, falls back to
 // "book.txt" if empty.
 String sanitizeUploadedFilename(String fname);
+// Valid sanitized book leaf; byte limits match BookInfo and the LittleFS name.
+bool validUploadedBookName(const String& name);
 
 // Sibling of `sanitizeUploadedFilename` for app .bin uploads. Removes path
 // components, restricts to a safe byte set, kills repeated "..", strips

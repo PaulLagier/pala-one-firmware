@@ -30,17 +30,32 @@
 //    pageOffsetForPage     — locate page N in an arbitrary file (uses disk cache)
 //    resolveBookmarkOffset — return a stored bookmark offset, or look it up
 // ============================================================================
+void prefetchPage(File& f, uint32_t startPos);
+void clearPagePrefetch();
+#if PALA_DIAGNOSTICS
+bool lastDrawUsedPrefetch();
+#endif
+
 uint32_t drawPageAt(File& f, uint32_t startPos);
 uint32_t extractPageText(File& f, uint32_t startPos, String& out);
 uint32_t nextPageOffset(File& f, uint32_t startPos);
+// Reuse read-ahead / packed-block state across a continuous index scan.
+uint32_t nextPageOffset(IReadStream& stream, uint32_t startPos);
 
 // Find page N's byte offset in `f` (which must be opened to `path`). Reads
 // the on-disk page cache for an O(1) start, walks forward via
 // `nextPageOffset` if the requested page is past the cached portion.
-uint32_t pageOffsetForPage(File& f, const String& path, int page);
+// An explicit foreground/request owner may supply a cooperative cancel hook.
+// A null hook is background work: it never touches display or button state.
+// Returning false cancels the lookup; kOffsetUnset is returned, never a partial
+// offset. Callers must not persist/extract text from that sentinel.
+using PageLookupProgress = bool (*)(uint32_t currentPage, uint32_t targetPage, void* context);
+uint32_t pageOffsetForPage(File& f, const String& path, int page,
+                           PageLookupProgress progress = nullptr, void* context = nullptr);
 
 // Returns `storedOffset` if it's a usable cached value for this book; falls
 // back to `pageOffsetForPage` otherwise. Owns the file handle internally.
-uint32_t resolveBookmarkOffset(const String& path, uint16_t page, uint32_t storedOffset);
+uint32_t resolveBookmarkOffset(const String& path, uint32_t page, uint32_t storedOffset,
+                                 PageLookupProgress progress = nullptr, void* context = nullptr);
 
 #endif  // PALA_UI_TEXT_H

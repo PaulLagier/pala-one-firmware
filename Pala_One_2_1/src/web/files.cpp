@@ -1,3 +1,6 @@
+#include "src/lang/plural.h"
+#include "src/lang/join.h"
+#include "src/web/book_text_stream.h"
 #include "src/web/files.h"
 
 #include <WiFi.h>
@@ -44,17 +47,8 @@ static void handleDownloadBook() {
   }
 
   String filename = lastPathComponent(path);
-  server.setContentLength(f.size());
-  server.sendHeader("Content-Disposition",
-                    "attachment; filename=\"" + filename + "\"");
-  server.send(200, "text/plain; charset=utf-8", "");
-
-  WiFiClient client = server.client();
-  uint8_t buf[512];
-  while (f.available()) {
-    size_t n = f.read(buf, sizeof(buf));
-    if (n > 0) client.write(buf, n);
-  }
+  if(filename.endsWith(".pbt"))filename=filename.substring(0,filename.length()-4)+".txt";
+  streamBookText(f,filename);
   f.close();
 }
 
@@ -63,7 +57,7 @@ static void handleRoot() {
   subtitle += FW_VERSION;
   subtitle += D_WEB_HOME_MIDDOT_SEP;
   subtitle += String(g_library.bookCount);
-  subtitle += D_WEB_HOME_BOOKS_SUFFIX;
+  subtitle += Language::bookSuffix(g_library.bookCount);
   subtitle += D_WEB_HOME_MIDDOT_SEP;
   subtitle += D_WEB_HOME_FREE_LABEL;
   subtitle += humanBytes(fsFreeBytesSafe());
@@ -73,32 +67,32 @@ static void handleRoot() {
   String out = webPageStart(
     D_WEB_HOME_TITLE,
     subtitle,
-    "<a href='/files'>" D_WEB_NAV_FILES "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/list'>" D_WEB_NAV_LIST "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a><a href='/reset'>" D_WEB_NAV_FACTORY_RESET "</a>"
+    Language::join({"<a href='/files'>",  D_WEB_NAV_FILES,  "</a><a href='/bookmarks'>",  D_WEB_NAV_BOOKMARKS,  "</a><a href='/list'>",  D_WEB_NAV_LIST,  "</a><a href='/screensavers'>",  D_WEB_NAV_SCREENSAVER,  "</a><a href='/settings'>",  D_WEB_NAV_SETTINGS,  "</a><a href='/reset'>",  D_WEB_NAV_FACTORY_RESET,  "</a>"})
   );
 
   out += storageCardHtml();
 
   if (fsTotalBytesSafe() == 0 || fsFreeBytesSafe() < 8192) {
-    out += "<div class='banner-warn'>" D_WEB_HOME_STORAGE_WARN "</div>";
+    out += Language::join({"<div class='banner-warn'>",  D_WEB_HOME_STORAGE_WARN,  "</div>"});
   }
 
   out +=
-    "<div class='card'><h2>" D_WEB_UPLOAD_BOOK_HEADING "</h2>"
-    "<p class='muted'>" D_WEB_UPLOAD_BOOK_DESC "</p>"
-    "<form method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>"
-    "<input type='file' name='file' accept='.txt,text/plain' required>"
-    "<div class='actions'><button type='submit'>" D_WEB_UPLOAD_BOOK_BUTTON "</button><a class='btn secondary' href='/files'>" D_WEB_MANAGE_FILES_BUTTON "</a></div>"
-    "</form></div>";
+    Language::join({"<div class='card'><h2>",  D_WEB_UPLOAD_BOOK_HEADING,  "</h2>", 
+    "<p class='muted'>",  D_WEB_UPLOAD_BOOK_DESC,  "</p>", 
+    "<form method='POST' action='/upload' enctype='multipart/form-data' accept-charset='UTF-8' style='margin-top:14px'>", 
+    "<input type='file' name='file' accept='.txt,text/plain' required>", 
+    "<div class='actions'><button type='submit'>",  D_WEB_UPLOAD_BOOK_BUTTON,  "</button><a class='btn secondary' href='/files'>",  D_WEB_MANAGE_FILES_BUTTON,  "</a></div>", 
+    "</form></div>"});
 
   out +=
-    "<div class='card'><h2>" D_WEB_INSTALL_APP_HEADING "</h2>"
-    "<p class='muted'>" D_WEB_INSTALL_APP_DESC "</p>"
-    "<form method='POST' action='/upload-app' enctype='multipart/form-data' style='margin-top:14px'>"
-    "<input type='file' name='file' accept='.bin' required>"
-    "<div class='actions'><button type='submit'>" D_WEB_INSTALL_APP_BUTTON "</button></div>"
-    "</form></div>";
+    Language::join({"<div class='card'><h2>",  D_WEB_INSTALL_APP_HEADING,  "</h2>", 
+    "<p class='muted'>",  D_WEB_INSTALL_APP_DESC,  "</p>", 
+    "<form method='POST' action='/upload-app' enctype='multipart/form-data' style='margin-top:14px'>", 
+    "<input type='file' name='file' accept='.bin' required>", 
+    "<div class='actions'><button type='submit'>",  D_WEB_INSTALL_APP_BUTTON,  "</button></div>", 
+    "</form></div>"});
 
-  out += "<div class='card'><h2>" D_WEB_NOTES_HEADING "</h2><p class='muted'>" D_WEB_NOTES_DESC "</p></div>";
+  out += Language::join({"<div class='card'><h2>",  D_WEB_NOTES_HEADING,  "</h2><p class='muted'>",  D_WEB_NOTES_DESC,  "</p></div>"});
 
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
@@ -108,20 +102,20 @@ static void handleFiles() {
   String out = webPageStart(
     D_WEB_FILES_HEADING,
     D_WEB_FILES_SUBTITLE,
-    "<a href='/'>" D_WEB_NAV_HOME "</a><a href='/bookmarks'>" D_WEB_NAV_BOOKMARKS "</a><a href='/screensavers'>" D_WEB_NAV_SCREENSAVER "</a><a href='/settings'>" D_WEB_NAV_SETTINGS "</a>",
+    Language::join({"<a href='/'>",  D_WEB_NAV_HOME,  "</a><a href='/bookmarks'>",  D_WEB_NAV_BOOKMARKS,  "</a><a href='/screensavers'>",  D_WEB_NAV_SCREENSAVER,  "</a><a href='/settings'>",  D_WEB_NAV_SETTINGS,  "</a>"}),
     true
   );
 
   out +=
-    "<div class='card'><h2>" D_WEB_CREATE_FOLDER_HEADING "</h2>"
-    "<form method='POST' action='/mkdir' class='stack' accept-charset='UTF-8' style='margin-top:12px'>"
-    "<input type='text' name='folder' placeholder='" D_WEB_CREATE_FOLDER_PLACEHOLDER "' maxlength='64'>"
-    "<div class='actions'><button type='submit'>" D_WEB_CREATE_FOLDER_BUTTON "</button><span class='muted'>" D_WEB_CREATE_FOLDER_HINT "</span></div>"
-    "</form></div>";
+    Language::join({"<div class='card'><h2>",  D_WEB_CREATE_FOLDER_HEADING,  "</h2>", 
+    "<form method='POST' action='/mkdir' class='stack' accept-charset='UTF-8' style='margin-top:12px'>", 
+    "<input type='text' name='folder' placeholder='",  D_WEB_CREATE_FOLDER_PLACEHOLDER,  "' maxlength='64'>", 
+    "<div class='actions'><button type='submit'>",  D_WEB_CREATE_FOLDER_BUTTON,  "</button><span class='muted'>",  D_WEB_CREATE_FOLDER_HINT,  "</span></div>", 
+    "</form></div>"});
 
-  out += "<div class='card'><h2>" D_WEB_FOLDERS_HEADING "</h2>";
+  out += Language::join({"<div class='card'><h2>",  D_WEB_FOLDERS_HEADING,  "</h2>"});
   if (g_library.folderCount == 0) {
-    out += "<p class='muted'>" D_WEB_NO_FOLDERS "</p>";
+    out += Language::join({"<p class='muted'>",  D_WEB_NO_FOLDERS,  "</p>"});
   } else {
     out += "<ul class='list'>";
     for (int i = 0; i < g_library.folderCount; i++) {
@@ -130,18 +124,18 @@ static void handleFiles() {
       out += "</span></div><div><form method='POST' action='/rmdir' style='display:inline'>";
       out += "<input type='hidden' name='folder' value='";
       out += htmlEscape(g_library.folders[i]);
-      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FOLDER "')\">" D_WEB_DELETE_BUTTON "</button></form></div></div></li>";
+      out += Language::join({"'><button type='submit' class='btn secondary' onclick=\"return confirm('",  D_WEB_CONFIRM_DELETE_FOLDER,  "')\">",  D_WEB_DELETE_BUTTON,  "</button></form></div></div></li>"});
     }
     out += "</ul>";
   }
   out += "</div>";
 
-  out += "<div class='card'><h2>" D_WEB_LIBRARY_FILES_HEADING "</h2>";
-  if (g_library.bookCount   >= MAX_BOOKS)   out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_LIBRARY_FULL_WARN "</p>";
-  if (g_library.folderCount >= MAX_FOLDERS) out += "<p style='color:#b91c1c;font-weight:600'>" D_WEB_FOLDER_LIMIT_WARN "</p>";
+  out += Language::join({"<div class='card'><h2>",  D_WEB_LIBRARY_FILES_HEADING,  "</h2>"});
+  if (g_library.bookCount   >= MAX_BOOKS)   out += Language::join({"<p style='color:#b91c1c;font-weight:600'>",  D_WEB_LIBRARY_FULL_WARN,  "</p>"});
+  if (g_library.folderCount >= MAX_FOLDERS) out += Language::join({"<p style='color:#b91c1c;font-weight:600'>",  D_WEB_FOLDER_LIMIT_WARN,  "</p>"});
 
   if (g_library.bookCount == 0) {
-    out += "<p class='muted'>" D_WEB_NO_BOOKS_UPLOADED "</p>";
+    out += Language::join({"<p class='muted'>",  D_WEB_NO_BOOKS_UPLOADED,  "</p>"});
   } else {
     out += "<ul class='list'>";
     for (int i = 0; i < g_library.bookCount; i++) {
@@ -154,7 +148,7 @@ static void handleFiles() {
       out += htmlEscape(String(g_library.books[i].name));
       out += "</h3><div class='meta'>";
       out += String((int)g_library.books[i].size);
-      out += D_WEB_BOOK_BYTES_LABEL D_WEB_BOOK_FOLDER_LABEL;
+      out += Language::join({D_WEB_BOOK_BYTES_LABEL,  D_WEB_BOOK_FOLDER_LABEL});
       out += htmlEscape(folderLabel);
       out += D_WEB_BOOK_CURRENT_PAGE;
       out += String(savedPage);
@@ -162,19 +156,19 @@ static void handleFiles() {
 
       out += "<form method='POST' action='/jumppage' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<div class='row' style='align-items:end;gap:10px'><div style='flex:1'><input type='text' name='page' value='" + String(savedPage) + "' inputmode='numeric' placeholder='" D_WEB_PAGE_PLACEHOLDER "'></div><div><button type='submit'>" D_WEB_JUMP_BUTTON "</button></div></div>";
-      out += "<div class='muted'>" D_WEB_JUMP_HINT "<br><span class='muted'>" D_WEB_JUMP_HINT2 "</span></div></form>";
+      out += "<div class='row' style='align-items:end;gap:10px'><div style='flex:1'><input type='text' name='page' value='" + String(savedPage) + Language::join({"' inputmode='numeric' placeholder='",  D_WEB_PAGE_PLACEHOLDER,  "'></div><div><button type='submit'>",  D_WEB_JUMP_BUTTON,  "</button></div></div>"});
+      out += Language::join({"<div class='muted'>",  D_WEB_JUMP_HINT,  "<br><span class='muted'>",  D_WEB_JUMP_HINT2,  "</span></div></form>"});
 
-      out += "<div class='actions small' style='margin-top:8px'><a class='btn secondary small' href='/read?id=" + String(i) + "' style='padding:6px 10px;font-size:13px'>" D_WEB_READ_AND_FIND_LINK "</a></div>";
+      out += "<div class='actions small' style='margin-top:8px'><a class='btn secondary small' href='/read?id=" + String(i) + Language::join({"' style='padding:6px 10px;font-size:13px'>",  D_WEB_READ_AND_FIND_LINK,  "</a></div>"});
 
       out += "<form method='POST' action='/move' class='stack small' accept-charset='UTF-8' style='margin-top:10px'>";
       out += "<input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + "' placeholder='" D_WEB_MOVE_PLACEHOLDER "' maxlength='64'>";
-      out += "<div class='actions'><button type='submit'>" D_WEB_MOVE_BUTTON "</button><span class='muted'>" D_WEB_MOVE_HINT "</span></div></form></div>";
+      out += "<input type='text' name='folder' value='" + htmlEscape(String(g_library.books[i].folder)) + Language::join({"' placeholder='",  D_WEB_MOVE_PLACEHOLDER,  "' maxlength='64'>"});
+      out += Language::join({"<div class='actions'><button type='submit'>",  D_WEB_MOVE_BUTTON,  "</button><span class='muted'>",  D_WEB_MOVE_HINT,  "</span></div></form></div>"});
       out += "<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
-      out += "<a class='btn secondary' href='/download-book?id=" + String(i) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
+      out += "<a class='btn secondary' href='/download-book?id=" + String(i) + Language::join({"' download>",  D_WEB_DOWNLOAD_BUTTON,  "</a>"});
       out += "<form method='POST' action='/del' style='margin:0'><input type='hidden' name='id' value='" + String(i) + "'>";
-      out += "<button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_FILE "')\">" D_WEB_DELETE_BUTTON "</button></form>";
+      out += Language::join({"<button type='submit' class='btn secondary' onclick=\"return confirm('",  D_WEB_CONFIRM_DELETE_FILE,  "')\">",  D_WEB_DELETE_BUTTON,  "</button></form>"});
       out += "</div></div></li>";
     }
     out += "</ul>";
@@ -182,9 +176,9 @@ static void handleFiles() {
 
   out += "</div>";
 
-  out += "<div class='card'><h2>" D_WEB_APPS_PAGE_HEADING "</h2>";
+  out += Language::join({"<div class='card'><h2>",  D_WEB_APPS_PAGE_HEADING,  "</h2>"});
   if (g_apps.count == 0) {
-    out += "<p class='muted'>" D_WEB_NO_APPS_INSTALLED "</p>";
+    out += Language::join({"<p class='muted'>",  D_WEB_NO_APPS_INSTALLED,  "</p>"});
   } else {
     out += "<ul class='list'>";
     for (int i = 0; i < g_apps.count; i++) {
@@ -198,14 +192,14 @@ static void handleFiles() {
       out += htmlEscape(String(g_apps.entries[i].name));
       out += "</h3><div class='meta'>";
       out += String((int)sz);
-      out += D_WEB_BOOK_BYTES_LABEL " &middot; ";
+      out += Language::join({D_WEB_BOOK_BYTES_LABEL,  " &middot; "});
       out += htmlEscape(fileName);
       out += "</div></div><div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
-      out += "<a class='btn secondary' href='/download-app?name=" + htmlEscape(fileName) + "' download>" D_WEB_DOWNLOAD_BUTTON "</a>";
+      out += "<a class='btn secondary' href='/download-app?name=" + htmlEscape(fileName) + Language::join({"' download>",  D_WEB_DOWNLOAD_BUTTON,  "</a>"});
       out += "<form method='POST' action='/del-app' style='margin:0'>";
       out += "<input type='hidden' name='name' value='";
       out += htmlEscape(fileName);
-      out += "'><button type='submit' class='btn secondary' onclick=\"return confirm('" D_WEB_CONFIRM_DELETE_APP "')\">" D_WEB_DELETE_BUTTON "</button></form>";
+      out += Language::join({"'><button type='submit' class='btn secondary' onclick=\"return confirm('",  D_WEB_CONFIRM_DELETE_APP,  "')\">",  D_WEB_DELETE_BUTTON,  "</button></form>"});
       out += "</div></div></li>";
     }
     out += "</ul>";

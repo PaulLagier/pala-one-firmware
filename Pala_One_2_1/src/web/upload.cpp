@@ -1,3 +1,4 @@
+#include "src/lang/join.h"
 #include "src/web/upload.h"
 
 #include "src/config.h"
@@ -6,6 +7,7 @@
 #include "src/pure/text_util.h"
 #include "src/storage/fs_util.h"
 #include "src/storage/library.h"
+#include "src/storage/page_cache.h"
 #include "src/web/chrome.h"
 
 // ============================================================================
@@ -80,13 +82,13 @@ static void handleUploadDone() {
 
   String inner;
   inner.reserve(1200);
-  inner += "<div class='card'><h2>" D_WEB_UPLOAD_COMPLETE_HEADING "</h2><p class='muted'>" D_WEB_UPLOAD_COMPLETE_DESC "</p>";
+  inner += Language::join({"<div class='card'><h2>",  D_WEB_UPLOAD_COMPLETE_HEADING,  "</h2><p class='muted'>",  D_WEB_UPLOAD_COMPLETE_DESC,  "</p>"});
   inner += "<div class='stats'>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOK_LABEL  "</span><b>" + htmlEscape(s_book.finalName) + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_STORED_SIZE "</span><b>" + humanBytes(storedSize)         + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_BOOKS_NOW   "</span><b>" + String(g_library.bookCount)    + "</b></div>";
-  inner += "<div class='stat'><span class='muted'>" D_WEB_UPLOAD_FREE_SPACE  "</span><b>" + humanBytes(fsFreeBytesSafe())  + "</b></div>";
-  inner += "</div><div class='actions'><a class='btn' href='/'>" D_WEB_UPLOAD_ANOTHER "</a><a class='btn secondary' href='/files'>" D_WEB_OPEN_FILES_BUTTON "</a></div></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>",  D_WEB_UPLOAD_BOOK_LABEL,   "</span><b>"}) + htmlEscape(s_book.finalName) + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>",  D_WEB_UPLOAD_STORED_SIZE,  "</span><b>"}) + humanBytes(storedSize)         + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>",  D_WEB_UPLOAD_BOOKS_NOW,    "</span><b>"}) + String(g_library.bookCount)    + "</b></div>";
+  inner += Language::join({"<div class='stat'><span class='muted'>",  D_WEB_UPLOAD_FREE_SPACE,   "</span><b>"}) + humanBytes(fsFreeBytesSafe())  + "</b></div>";
+  inner += Language::join({"</div><div class='actions'><a class='btn' href='/'>",  D_WEB_UPLOAD_ANOTHER,  "</a><a class='btn secondary' href='/files'>",  D_WEB_OPEN_FILES_BUTTON,  "</a></div></div>"});
   inner += storageCardHtml();
 
   String page = successPage(
@@ -124,6 +126,8 @@ static void handleUploadBookStream() {
     s_book.maxBytes = freeBytes;
 
     String clean = sanitizeUploadedFilename(up.filename);
+    if (!validUploadedBookName(clean)) { s_book.error = D_UPLOAD_NAME_INVALID; return; }
+    if (FS.exists("/books/" + clean)) { s_book.error = D_UPLOAD_NAME_EXISTS; return; }
     s_book.finalName = clean;
     s_book.tmpPath   = "/books/" + clean + ".tmp";
 
@@ -200,7 +204,13 @@ static void handleUploadBookStream() {
         }
       } else if (s_book.tmpPath.length() > 0 && up.totalSize > 0) {
         String finalPath = s_book.tmpPath.substring(0, s_book.tmpPath.length() - 4);
-        if (FS.exists(finalPath)) FS.remove(finalPath);
+        // Invalidate before replacement so a reset cannot pair new content
+        // with an old cache of the same size. Failed replacement only loses
+        // this rebuildable cache, while preserving the original book.
+        if (FS.exists(finalPath)) {
+          FS.remove(s_book.tmpPath); s_book.error = D_UPLOAD_NAME_EXISTS; return;
+        }
+        deletePageCacheForBook(finalPath);
         if (FS.rename(s_book.tmpPath, finalPath)) {
           s_book.ok = true;
         } else {
@@ -243,7 +253,7 @@ static void handleUploadSleepDone() {
 
   String inner;
   inner.reserve(500);
-  inner += "<div class='card'><h2>" D_WEB_SLEEP_UPLOAD_HEADING "</h2><p class='muted'>" D_WEB_SLEEP_UPLOAD_DESC "</p><div class='actions'><a class='btn' href='/settings'>" D_WEB_BACK_TO_SETTINGS "</a><a class='btn secondary' href='/'>" D_WEB_NAV_HOME "</a></div></div>";
+  inner += Language::join({"<div class='card'><h2>",  D_WEB_SLEEP_UPLOAD_HEADING,  "</h2><p class='muted'>",  D_WEB_SLEEP_UPLOAD_DESC,  "</p><div class='actions'><a class='btn' href='/settings'>",  D_WEB_BACK_TO_SETTINGS,  "</a><a class='btn secondary' href='/'>",  D_WEB_NAV_HOME,  "</a></div></div>"});
 
   String page = successPage(
     D_WEB_UPLOAD_COMPLETE_HEADING,

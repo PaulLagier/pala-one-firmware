@@ -1,3 +1,4 @@
+// Legacy migration snapshot. Runtime translations come from catalogs/*.json.
 #ifndef PALA_LANG_EN_H
 #define PALA_LANG_EN_H
 
@@ -16,6 +17,20 @@
 //  About screen (src/ui/screens/about_screen.cpp)
 // ----------------------------------------------------------------------------
 #define D_ABOUT_HEADER              "Device"
+#define D_ABOUT_FIRMWARE                   "Firmware"
+#define D_ABOUT_CONTROLS                   "Controls"
+#define D_ABOUT_BACK                       "Back"
+#define D_ABOUT_ACTION_NONE                "None"
+#define D_ABOUT_ACTION_BOOKMARK            "Bookmark"
+#define D_ABOUT_ACTION_LOCK                "Lock"
+#define D_ABOUT_ACTION_MENU                "Menu"
+#define D_ABOUT_MENU_NEXT                  "1x: next item"
+#define D_ABOUT_MENU_OPEN "Hold: select"
+#define D_ABOUT_READER_NEXT                "1x: next page"
+#define D_ABOUT_READER_PREVIOUS            "2x: previous page"
+#define D_ABOUT_HOLD_PREFIX                "Hold: "
+#define D_ABOUT_LONG_HOLD_PREFIX           "Long hold: "
+#define D_ABOUT_CLICK_HOLD_PREFIX          "Click + hold: "
 #define D_ABOUT_FIRMWARE_PREFIX     "Firmware "
 #define D_ABOUT_GESTURE_NEXT        "1x next / down"
 #define D_ABOUT_GESTURE_OPEN        "2x open / select"
@@ -449,9 +464,9 @@
 // ----------------------------------------------------------------------------
 #define D_WEB_READING_INTRO         "Changing the font, family, line spacing, or bionic mode keeps your place in the current book &mdash; the device re-flows pages around the byte you're reading and lands on the page that contains it."
 #define D_WEB_FONT_FAMILY_LABEL     "Font family"
-#define D_WEB_FONT_FAMILY_HELVETICA "Helvetica"
-#define D_WEB_FONT_FAMILY_DYSLEXIC  "OpenDyslexic"
-#define D_WEB_FONT_FAMILY_HINT      "OpenDyslexic uses heavier letter shapes designed for easier scanning."
+#define D_WEB_FONT_FAMILY_HELVETICA "Pala Sans"
+#define D_WEB_FONT_FAMILY_DYSLEXIC  "Pala Dys"
+#define D_WEB_FONT_FAMILY_HINT      "Pala Dys is based on OpenDyslexic."
 #define D_WEB_BIONIC_LABEL          "Bionic reading"
 #define D_WEB_BIONIC_HINT           "Bolds the leading characters of each word to help your eyes anchor."
 #define D_WEB_SETTINGS_APPLY_HINT   "Changes apply to the next page render."
@@ -507,4 +522,49 @@
 #define D_WEB_SS_DST_OVERWRITE      " (overwrite)"
 #define D_WEB_SS_UPLOAD_EDITED      "Upload edited image"
 
+#define D_WEB_RESPONSE_LABEL "Button response"
+#define D_WEB_RESPONSE_FAST "Quick (120 ms)"
+#define D_WEB_RESPONSE_BALANCED "Balanced (175 ms)"
+#define D_WEB_RESPONSE_RELAXED "Relaxed (250 ms)"
+#define D_WEB_RESPONSE_HINT "Quick responds sooner; double and triple clicks need a faster rhythm."
+
 #endif  // PALA_LANG_EN_H
+
+#ifdef PALA_COMPANION_TEST
+#undef D_MENU_UPLOAD
+#define D_MENU_UPLOAD "Connect"
+#endif
+
+#define D_READER_INDEXING "Finding page"
+#define D_READER_INDEX_CANCEL "Press to cancel"
+
+// Compact read-only statistics dashboard.
+#define D_STATS_STREAK "Reading streak"
+#define D_STATS_TOTALS "Totals"
+#define D_STATS_CURRENT_FMT "Current: %u %s"
+#define D_STATS_RECORD_FMT "Best: %u %s"
+#define D_STATS_SESSIONS_FMT "Sessions: %u"
+#define D_STATS_DAY "day"
+#define D_STATS_DAYS "days"
+#define D_STATS_PAGES "Pages turned"
+#define D_STATS_PRESSES "Button presses"
+
+// Reader menu and on-device typography controls.
+#define D_READER_MENU_TITLE "Reading menu"
+#define D_READER_MENU_BOOKMARK "Add bookmark"
+#define D_READER_MENU_FONT "Font & spacing"
+#define D_READER_MENU_STATUS "Statusbar"
+#define D_READER_MENU_CLOSE "Close book"
+#define D_READER_MENU_LOCK "Lock device"
+#define D_READER_MENU_CONTINUE "Continue reading · 2x"
+#define D_READER_MENU_FAMILY "Font"
+#define D_READER_MENU_SIZE "Size"
+#define D_READER_MENU_GAP "Line gap"
+#define D_READER_MENU_BIONIC "Bionic"
+#define D_READER_MENU_ON "On"
+#define D_READER_MENU_OFF "Off"
+#define D_READER_MENU_FULL "Full"
+#define D_READER_MENU_MINIMAL "Minimal"
+#define D_READER_MENU_HIDDEN "Hidden"
+#define D_READER_MENU_PAGE "Page %d (%u%%)"
+#define D_READER_MENU_PAGE_TOTAL "Page %d of %d (%u%%)"
