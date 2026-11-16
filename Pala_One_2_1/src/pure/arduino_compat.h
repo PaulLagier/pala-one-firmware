@@ -251,15 +251,12 @@ inline String operator+(const char *a, const String &b) { return String(a) + b; 
 inline bool operator==(const char *a, const String &b) { return b == a; }
 inline bool operator!=(const char *a, const String &b) { return b != a; }
 
-// Arduino min/max are macros; provide template versions in host build.
-template <typename A, typename B> inline auto _arduino_min(A a, B b) -> std::common_type_t<A, B> {
-  return a < b ? a : b;
-}
-template <typename A, typename B> inline auto _arduino_max(A a, B b) -> std::common_type_t<A, B> {
-  return a > b ? a : b;
-}
-#define min(a, b) _arduino_min((a), (b))
-#define max(a, b) _arduino_max((a), (b))
+// Match Arduino's global numeric helpers without macros: macros corrupt
+// std::min/std::max inside standard headers included later (notably libstdc++).
+template <typename A, typename B>
+inline auto min(A a, B b) -> std::common_type_t<A, B> { return a < b ? a : b; }
+template <typename A, typename B>
+inline auto max(A a, B b) -> std::common_type_t<A, B> { return a > b ? a : b; }
 
 #endif // ARDUINO
 
