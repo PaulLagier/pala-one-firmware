@@ -47,7 +47,7 @@ two methods: Improv WiFi provisioning via USB; or, the Web UI.
 
 ### Configuring using Improv
 
-The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using the [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
+The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using a [vendored serial subset](Pala_One_2_1/src/third_party/improv/README.md) of [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). The same bounded parser is compiled by Arduino IDE and PlatformIO; no separate Improv library installation is required. When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
 
 Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
 

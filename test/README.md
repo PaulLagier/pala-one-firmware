@@ -97,3 +97,20 @@ The pure modules compile here because they include
 [`src/pure/arduino_compat.h`](../src/pure/arduino_compat.h) — which provides
 a minimal `String` shim when `ARDUINO` isn't defined. If you need a method
 on `String` that isn't there yet, add it to the shim.
+
+## Improv Serial regression tests
+
+`improv_serial_tests` compiles the exact vendored serial parser with deterministic
+Stream, clock and Wi-Fi adapters. It does not access real networks or save
+credentials. It covers consecutive requests, all 256 advertised payload lengths,
+short credential fields, wire checksums, prefix resynchronization, partial-frame
+timeouts (including clock wraparound), explicit reset and valid/open-network
+credentials. Every device-info response is checked for framing and checksum.
+
+For memory-safety checks with GCC or Clang, configure a separate build with:
+
+```bash
+cmake -S test -B test/build-sanitized -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+cmake --build test/build-sanitized
+ctest --test-dir test/build-sanitized --output-on-failure
+```

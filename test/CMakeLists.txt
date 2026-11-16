@@ -70,3 +70,13 @@ endif()
 
 enable_testing()
 add_test(NAME host_tests COMMAND host_tests)
+
+# Production Improv Serial implementation; adapters never access real networks.
+add_executable(improv_serial_tests
+  main.cpp native/improv_serial/main.cpp
+  ${FW_SRC}/third_party/improv/ImprovWiFiLibrary.cpp)
+target_compile_definitions(improv_serial_tests PRIVATE ARDUINO ARDUINO_ARCH_ESP32)
+target_include_directories(improv_serial_tests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/native/improv_serial/stubs
+  ${FW_SRC}/third_party/improv ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME improv_serial_tests COMMAND improv_serial_tests)
