@@ -322,7 +322,7 @@ TEST_CASE("Companion bookmark text chunks retain UTF8 boundaries and reject stal
   reset();
   std::string text(159, 'a');
   for (int i = 0; i < 100; ++i)
-    text += "é";
+    text += u8"é";
   seed("/books/book.txt", text);
   mark("/books/book.txt");
   std::string restored;
@@ -430,4 +430,15 @@ TEST_CASE("Companion binary frames enforce the exact 500-byte payload boundary")
   result = finish(transfer, hash(bytes));
   REQUIRE(result["ok"].as<bool>());
   CHECK(*FS.files.at("/books/book.txt") == bytes);
+}
+
+TEST_CASE("Companion book names retain UTF8 beyond the catalog display buffer") {
+  reset();
+  std::string name;
+  for (int i = 0; i < 41; ++i)
+    name += u8"é";
+  seed(("/books/" + name + ".txt").c_str(), "text");
+  auto result = call("{\"id\":1,\"op\":\"books.list\"}");
+  REQUIRE(result["ok"].as<bool>());
+  CHECK(result["books"][0]["name"].as<std::string>() == name);
 }

@@ -272,7 +272,9 @@ String companionRpcControl(const uint8_t *bytes, size_t length) {
     if (cursor < g_library.bookCount) {
       const auto &b = g_library.books[cursor];
       auto item = books.add<JsonObject>();
-      item["name"] = b.name;
+      // Catalog display names have a fixed byte buffer. Build from the full
+      // canonical path so its truncation cannot split a UTF-8 character.
+      item["name"] = prettyRelativeLabel(String(b.path).substring(7));
       item["path"] = b.path;
       item["size"] = b.size;
       cursor++;
