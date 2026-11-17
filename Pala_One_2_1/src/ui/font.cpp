@@ -5,9 +5,11 @@
 #include <U8g2_for_Adafruit_GFX.h>
 
 #include "src/config.h"
-#include "src/hal/display.h"  // u8g2 instance
-#include "src/state.h"        // prefs
-#include "src/ui/statusbar.h" // Statusbar::reserveH
+#include "src/hal/display.h"    // u8g2 instance
+#include "src/state.h"          // prefs
+#include "src/ui/print_state.h" // PrintState::State
+#include "src/ui/statusbar.h"   // Statusbar::reserveH
+#include "src/pure/text_util.h" // constants for markdown
 
 // Extended Latin/Cyrillic faces preserve the saved family IDs.
 // Source attribution and licenses live in ui/font_licenses/.
@@ -27,17 +29,19 @@ static const uint8_t *s_uiTiny = pala_font_ui_tiny08;
 static const uint8_t *s_toast = pala_font_sans_r08;
 
 // Owned settings.
-//   s_size    — body font size (8/10/12/14). Out-of-set values fall back to 10.
-//   s_lineGap — extra px between body lines, [0, 4].
-//   s_family  — body face family. Drives which table set applyBodySize picks.
-//   s_bionic  — render body text in "bionic reading" mode (bold prefix of
-//               each word). Hooked into text.cpp's draw path; the paginator
-//               picks it up via measureBionicWord.
+//   s_size     — body font size (8/10/12/14). Out-of-set values fall back to 10.
+//   s_lineGap  — extra px between body lines, [0, 4].
+//   s_family   — body face family. Drives which table set applyBodySize picks.
+//   s_bionic   — render body text in "bionic reading" mode (bold prefix of
+//                each word). Hooked into text.cpp's draw path; the paginator
+//                picks it up via measureBionicWord.
+//   s_markdown — render markdown bold formatting.
 static int s_size = 10;
 static int s_lineGap = 0;
 static Family s_family = Family::Helvetica;
 static bool s_bionic = false;
 static bool s_halfGaps = false;
+static bool s_markdown = false;
 
 // Layout-metrics cache. Invalid after the mutators below; recomputed on the
 // next bodyLayout() call.
@@ -50,6 +54,7 @@ static constexpr const char *kKeyLineGap = "cfg_lgap";
 static constexpr const char *kKeyFamily = "cfg_font_fam";
 static constexpr const char *kKeyBionic = "cfg_bionic";
 static constexpr const char *kKeyHalfGaps = "cfg_hgap";
+static constexpr const char* kKeyMarkdown = "cfg_markdown";
 
 // Pick the (regular, bold) pair for a given size + family. Centralized so
 // applyBodySize and applyFamily share one switch. Returns true if `sz` was
@@ -201,7 +206,10 @@ void loadSettings() {
   applyLineGap(prefs.getInt(kKeyLineGap, 0));
   s_bionic = (prefs.getInt(kKeyBionic, 0) != 0);
   // Public key wins; retain the earlier local boolean preference on upgrade.
+  // TODO: Don't think this `getBool` does anything. Under the hood it is calling
+  // `getInt` on the same key, so just redundant.
   s_halfGaps = (prefs.getInt(kKeyHalfGaps, prefs.getBool("cfg_half_gaps", false) ? 1 : 0) != 0);
+  s_markdown = (prefs.getInt(kKeyMarkdown, prefs.getBool("cfg_markdown", false) ? 1 : 0) != 0);
 }
 
 void setBodySize(int sz) {
@@ -239,11 +247,21 @@ void setHalfParagraphGaps(bool on) {
   prefs.putInt(kKeyHalfGaps, on ? 1 : 0);
 }
 
+void setMarkdown(bool on) {
+  if (s_markdown == on) return;
+  s_markdown = on;
+  // Layout cache is unchanged (per-line height/width-budget don't move), but
+  // the on-disk page cache is stamped with the markdown flag so it'll reject
+  // any stale entries on the next load — no explicit invalidation needed.
+  prefs.putInt(kKeyMarkdown, on ? 1 : 0);
+}
+
 int currentBodySize() { return s_size; }
 int currentLineGap() { return s_lineGap; }
 Family currentFamily() { return s_family; }
 bool bionicEnabled() { return s_bionic; }
 bool halfParagraphGapsEnabled() { return s_halfGaps; }
+bool markdownEnabled()          { return s_markdown; }
 
 PageCacheLayout layoutForCache() {
   // Statusbar reserve goes into the cache stamp too — toggling between
@@ -256,6 +274,7 @@ PageCacheLayout layoutForCache() {
       /*family          =*/(uint8_t)s_family,
       /*bionic          =*/(uint8_t)(s_bionic ? 1 : 0),
       /*halfGaps        =*/(uint8_t)(s_halfGaps ? 1 : 0),
+      /*markdown        =*/(uint8_t)(s_markdown ? 1 : 0),
       /*statusbarReserve=*/(uint8_t)Statusbar::reserveH(),
   };
 }
@@ -317,13 +336,15 @@ static int measureBionicWord(const char *word, int len) {
   return wStrong + kBionicRestGapPx + wTail;
 }
 
-int measureBionicLine(const char *line) {
+int measureLine(const char* line) {
   if (!line)
     return 0;
-  if (!s_bionic) {
-    useBody();
-    return renderText(u8g2, line, strlen(line));
-  }
+  if (s_bionic) return measureBionicLine(line);
+  useBody();
+  return u8g2.getUTF8Width(line);
+}
+
+int measureBionicLine(const char *line) {
   int total = 0;
   forEachLineSegment(line, [&](const char *seg, int segLen, bool isWord) {
     if (!isWord) {
@@ -337,20 +358,45 @@ int measureBionicLine(const char *line) {
   return total;
 }
 
-void drawBionicLine(int x, int y, const char *line) {
-  if (!line)
-    return;
-  if (!s_bionic) {
-    useBody();
-    renderText(u8g2, line, strlen(line), x, y, true);
+void drawLine(int x, int y, const char* line, PrintState::State &state) {
+  if (!line) return;
+  if (s_bionic) {
+    drawBionicLine(x, y, line, state);
     return;
   }
+  if (s_markdown) {
+    drawMarkdownLine(x, y, line, state);
+    return;
+  }
+  int cursorX = x;
+  forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
+    if (segLen <= 0) return;
+    if (!isWord) {
+      useBody();
+      state.isBold = false;
+      printSlice(cursorX, y, seg, segLen);
+      cursorX += measureSlice(seg, segLen);
+      return;
+    }
+    useBody();
+    state.isBold = false;
+    printSlice(cursorX, y, seg, segLen);
+    cursorX += measureSlice(seg, segLen);
+    return;
+  });
+  useBody();
+  renderText(u8g2, line, strlen(line), x, y, true);
+  return;
+}
+
+void drawBionicLine(int x, int y, const char* line, PrintState::State &state) {
   int cursorX = x;
   forEachLineSegment(line, [&](const char *seg, int segLen, bool isWord) {
     if (segLen <= 0)
       return;
     if (!isWord) {
       useBody();
+      state.isBold = false;
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
       return;
@@ -358,19 +404,57 @@ void drawBionicLine(int x, int y, const char *line) {
     int strong = bionicPrefixBytes(seg, segLen);
     if (strong <= 0) {
       useBody();
+      state.isBold = false;
       printSlice(cursorX, y, seg, segLen);
       cursorX += measureSlice(seg, segLen);
       return;
     }
     useBold();
+    state.isBold = true;
     printSlice(cursorX, y, seg, strong);
     cursorX += measureSlice(seg, strong);
     cursorX += kBionicRestGapPx;
     useBody();
+    state.isBold = false;
     printSlice(cursorX, y, seg + strong, segLen - strong);
     cursorX += measureSlice(seg + strong, segLen - strong);
   });
   useBody();
+  state.isBold = false;
+}
+
+void drawMarkdownLine(int x, int y, const char* line, PrintState::State &state) {
+  int cursorX = x;
+  forEachLineSegment(line, [&](const char* seg, int segLen, bool isWord) {
+    state.isBold ? useBold() : useBody();
+    if (segLen <= 0) return;
+    if (!isWord) {
+      printSlice(cursorX, y, seg, segLen);
+      cursorX += measureSlice(seg, segLen);
+      return;
+    };
+    for (int i = 0; i < segLen; i++) {
+      if (seg[i] == DIRECTIVE_BOLD) {
+        useBold();
+        state.isBold = true;
+        i++;
+      } else if (seg[i] == DIRECTIVE_HEADING) {
+        // useHeading();
+        useBold();
+        state.isBold = true;
+        i++;
+      } else if (seg[i] == DIRECTIVE_NORMAL) {
+        useBody();
+        state.isBold = false;
+        i++;
+      }
+      // Handle if directive is last thing in the word
+      if (i < segLen) {
+        printSlice(cursorX, y, seg + i, 1);
+        cursorX += measureSlice(seg + i, 1);
+      }
+    }
+  });
 }
 
 void invalidateLayoutCache() { s_layoutValid = false; }

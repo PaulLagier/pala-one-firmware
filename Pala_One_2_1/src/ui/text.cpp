@@ -2,10 +2,11 @@
 #include "src/ui/text.h"
 #include "src/ui/body_page.h"
 
-#include "src/hal/display.h"          // u8g2
-#include "src/pure/bookmarks_codec.h" // kOffsetUnset
-#include "src/storage/page_cache.h"   // on-disk page-offset cache
-#include "src/ui/font.h" // Font::useBody / bodyLayout / measureBionicLine / layoutForCache
+#include "src/hal/display.h"            // u8g2
+#include "src/pure/bookmarks_codec.h"   // kOffsetUnset
+#include "src/storage/page_cache.h"     // on-disk page-offset cache
+#include "src/ui/font.h"                // Font::useBody / bodyLayout / measureLine / layoutForCache
+#include "src/ui/print_state.h"         // PrintState::State
 
 // Measure-width adapter for the paginator. Routes through Font::measureBionicLine
 // so the bionic 1-px-per-split-word adjustment is folded into the same width
@@ -22,7 +23,7 @@ static PageCacheLayout s_preparedLayout{};
 static bool sameLayout(const PageCacheLayout &a, const PageCacheLayout &b) {
   return a.bodySize == b.bodySize && a.lineGap == b.lineGap && a.family == b.family &&
          a.bionic == b.bionic && a.halfGaps == b.halfGaps &&
-         a.statusbarReserve == b.statusbarReserve;
+         a.statusbarReserve == b.statusbarReserve && a.markdown == b.markdown;
 }
 void clearPagePrefetch() { s_preparedStream = nullptr; }
 void prefetchPage(IReadStream &stream, uint32_t start) {
@@ -47,7 +48,7 @@ void prefetchPage(IReadStream &stream, uint32_t start) {
     s_preparedStream = &stream;
 }
 
-static int bodyMeasure(const char *s) { return Font::measureBionicLine(s); }
+static int bodyMeasure(const char *s) { return Font::measureLine(s); }
 
 // ============================================================================
 //  Page primitives — one page at `startPos`, three flavors.
@@ -56,15 +57,15 @@ static int bodyMeasure(const char *s) { return Font::measureBionicLine(s); }
 //  function and the metrics describe the same face. Each returns the byte
 //  offset where the next page begins.
 // ============================================================================
-uint32_t drawPageAt(File &f, uint32_t startPos) {
+uint32_t drawPageAt(File &f, uint32_t startPos, PrintState::State &state) {
   BookReadStream stream(f);
   clearPagePrefetch();
-  const auto next = drawPageAt(stream, startPos);
+  const auto next = drawPageAt(stream, startPos, state);
   clearPagePrefetch();
   return next;
 }
 
-uint32_t drawPageAt(IReadStream &stream, uint32_t startPos) {
+uint32_t drawPageAt(IReadStream &stream, uint32_t startPos, PrintState::State &state) {
   prefetchPage(stream, startPos);
   LayoutMetrics m = s_preparedMetrics;
   const uint32_t next = s_preparedNext;
@@ -77,9 +78,9 @@ uint32_t drawPageAt(IReadStream &stream, uint32_t startPos) {
       cursorY += m.paragraphGapH;
       return;
     }
-    // drawBionicLine sets the active u8g2 font back to Body before returning,
+    // drawLine sets the active u8g2 font back to Body before returning,
     // so the next line measurement (via bodyMeasure) is consistent.
-    Font::drawBionicLine(MARGIN_X, cursorY, buf);
+    Font::drawLine(MARGIN_X, cursorY, buf, state);
     cursorY += m.lineH;
   };
 

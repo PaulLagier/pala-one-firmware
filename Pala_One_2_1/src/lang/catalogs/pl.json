@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Automatycznie blokuje czytnik przy każdym uśpieniu. Przytrzymaj przycisk po wybudzeniu, aby odblokować.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Blokuj przy uśpieniu",
   "D_WEB_MANAGE_FILES_BUTTON": "Zarządzaj plikami",
+  "D_WEB_MARKDOWN_LABEL": "Formatowanie Markdown",
+  "D_WEB_MARKDOWN_HINT": "Stosuje pogrubienie oraz formatowanie nagłówków. Funkcja nie działa, gdy włączony jest tryb czytania bionicznego (bionic reading).",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "Te działania muszą być zawsze dostępne: menu główne, następny element/strona, OK/otwórz menu (zależnie od kontekstu)",
   "D_WEB_MOVE_BUTTON": "Przenieś",
   "D_WEB_MOVE_HINT": "Podaj dokładną ścieżkę folderu.",

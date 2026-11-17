@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Automaticky zamkne čtečku při každém uspání. Po probuzení ji odemknete podržením tlačítka.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Zamknout při uspání",
   "D_WEB_MANAGE_FILES_BUTTON": "Spravovat soubory",
+  "D_WEB_MARKDOWN_LABEL": "Formátování Markdown",
+  "D_WEB_MARKDOWN_HINT": "Aplikuje tučné písmo a formátování nadpisů. Nefunguje, je-li aktivováno bionické čtení.",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "Tyto akce musí být vždy dostupné: hlavní nabídka, další položka/strana, OK/otevřít nabídku (podle kontextu)",
   "D_WEB_MOVE_BUTTON": "Přesunout",
   "D_WEB_MOVE_HINT": "Zadejte přesnou cestu složky.",

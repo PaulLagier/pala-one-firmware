@@ -49,6 +49,19 @@ bool isBreakablePunctuationByte(char b);
 // quotes, em/en dashes -> '-', ellipsis -> "...". Preserves all other bytes.
 String normalizeTypography(const String& in);
 
+// Adds formatting directives when markdown delineators are found.
+String addFormattingDirectiveChars(const String& in);
+
+// I'm using "Device Control" 1 and 2. See
+// https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
+// for more info on the used codes.
+// `useBody`
+#define DIRECTIVE_NORMAL   0x11
+// `useBold`
+#define DIRECTIVE_BOLD     0x12
+// `useBold` (or `useAppLarge`)
+#define DIRECTIVE_HEADING  0x13
+
 // Compact text for storage: collapse runs of spaces, normalize line endings,
 // limit consecutive newlines to 2, strip trailing whitespace.
 String compactText(const String& in);

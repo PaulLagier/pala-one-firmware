@@ -601,6 +601,8 @@
 #define D_WEB_BIONIC_HINT           "Bolds the leading characters of each word to help your eyes anchor."
 #define D_WEB_PARA_GAP_LABEL        "Compact paragraph gaps"
 #define D_WEB_PARA_GAP_HINT         "If enabled, paragraph breaks will be reduced to half normal height allowing more lines of text to fit on a single page."
+#define D_WEB_MARKDOWN_LABEL        "Markdown formatting"
+#define D_WEB_MARKDOWN_HINT         "Applies bold and heading formatting. Does not work when bionic reading is enabled."
 #define D_WEB_SETTINGS_APPLY_HINT   "Changes apply to the next page render."
 #define D_WEB_SETTINGS_LEGACY_CONTROLS   "Enable legacy controls"
 

@@ -3,6 +3,7 @@
 
 #include "src/pure/paginator.h"     // LayoutMetrics
 #include "src/storage/page_cache.h" // PageCacheLayout
+#include "src/ui/print_state.h"     // PrintState::State
 
 // ============================================================================
 //  Font module — owns the device-wide font role mapping (which u8g2 font
@@ -76,6 +77,7 @@ void setLineGap(int gap);
 void setFamily(Family fam);
 void setBionic(bool on);
 void setHalfParagraphGaps(bool on);
+void setMarkdown(bool on);
 
 // Current applied values. Page-cache stamping passes everything through
 // `layoutForCache()`; these direct accessors exist for places that need
@@ -84,6 +86,7 @@ int currentBodySize();
 int currentLineGap();
 Family currentFamily();
 bool bionicEnabled();
+bool markdownEnabled();
 bool halfParagraphGapsEnabled();
 
 // One-shot snapshot of every layout-affecting setting, packed for stamping
@@ -109,10 +112,14 @@ constexpr int kBionicRestGapPx = 1;
 // matches the draw width exactly so the paginator's wrap budget stays
 // correct.
 //
-// `line` is NUL-terminated. drawBionicLine sets u8g2's cursor to (x, y)
-// and leaves the active u8g2 font on Body afterwards.
-int measureBionicLine(const char *line);
-void drawBionicLine(int x, int y, const char *line);
+// `line` is NUL-terminated.
+int measureLine(const char* line);
+// drawBionicLine sets u8g2's cursor to (x, y) and leaves the active u8g2 font
+// on Body afterwards.
+int  measureBionicLine(const char* line);
+void drawLine(int x, int y, const char* line, PrintState::State &state);
+void drawBionicLine(int x, int y, const char* line, PrintState::State &state);
+void drawMarkdownLine(int x, int y, const char* line, PrintState::State &state);
 
 // Byte length of the leading "strong" (bold) prefix of `word` when rendered
 // in bionic mode. Returns 0 if the word doesn't qualify (punctuation-only,

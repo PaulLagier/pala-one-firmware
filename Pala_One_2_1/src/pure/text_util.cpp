@@ -135,6 +135,65 @@ String normalizeTypography(const String& in) {
   return out;
 }
 
+String addFormattingDirectiveChars(const String& in) {
+  String out;
+  // not sure what length it needs because we are adding characters to the book now
+  // maybe do a pass on book (regex, doubtful) for all delineators and all headings, then add that
+  out.reserve(in.length() + 8);
+  size_t i = 0;
+  bool isBold = false;
+  bool isHeading = false;
+  char c;
+  char c2;
+
+  for (i = 0; i < in.length(); i++) {
+    c = in[i];
+    c2 = in[i + 1];
+
+    String out_line = "";
+
+    // HEADING
+    if (isHeading && c == '\n') {
+      isHeading = !isHeading;
+      char buffer[8];
+      snprintf(buffer, sizeof buffer, "%c%c", DIRECTIVE_NORMAL, c);
+      out_line += buffer;
+    } else if ((c == '\n' && c2 == '#') || (i == 0 && c == '#')) {
+      isHeading = !isHeading;
+      char buffer[8];
+      // If it's the first thing in the book, bold goes first
+      if (i == 0) {
+        snprintf(buffer, sizeof buffer, "%c%c", DIRECTIVE_HEADING, c);
+      } else {
+        snprintf(buffer, sizeof buffer, "%c%c", c, DIRECTIVE_HEADING);
+      }
+      out_line += buffer;
+    // BOLD
+    } else if (!isHeading && ((c == '*' && c2 == '*') || (c == '_' && c2 =='_'))) {
+      isBold = !isBold;
+      char buffer[8];
+      if (isBold) {
+        snprintf(buffer, sizeof buffer, "%c%c%c", DIRECTIVE_BOLD, c, c2);
+      } else {
+        snprintf(buffer, sizeof buffer, "%c%c%c", c, c2, DIRECTIVE_NORMAL);
+      }
+      out_line += buffer;
+      i += 1;
+    } else {
+      out_line += c;
+    }
+    out += out_line;
+  }
+  // Handle edge case of unfinished state
+  // Not sure if this will end up after a `\0`, need to verify
+  if (isBold || isHeading) {
+    char buffer[8];
+    snprintf(buffer, sizeof buffer, "%c", DIRECTIVE_NORMAL);
+    out += buffer;
+  }
+  return out;
+}
+
 String compactText(const String& in,
                    bool* ioLastWasSpace,
                    int* ioNewlineCount,

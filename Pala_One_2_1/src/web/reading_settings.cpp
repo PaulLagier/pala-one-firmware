@@ -51,5 +51,10 @@ bool applyReadingSettingsForm() {
     Font::setHalfParagraphGaps(wantHalfGaps);
     layoutChanged = true;
   }
+  bool wantMarkdown = server.hasArg("markdown");
+  if (wantMarkdown != Font::markdownEnabled()) {
+    Font::setMarkdown(wantMarkdown);
+    layoutChanged = true;
+  }
   return layoutChanged;
 }

@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Blocca automaticamente il lettore a ogni riposo. Tieni premuto il pulsante al risveglio per sbloccare.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Blocca in riposo",
   "D_WEB_MANAGE_FILES_BUTTON": "Gestisci file",
+  "D_WEB_MARKDOWN_LABEL": "Formattazione Markdown",
+  "D_WEB_MARKDOWN_HINT": "Applica la formattazione in grassetto e i titoli. Non funziona quando la lettura bionica (bionic reading) è attiva.",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "Devono essere sempre disponibili: menu principale, voce/pagina successiva, OK/apri menu (secondo il contesto)",
   "D_WEB_MOVE_BUTTON": "Sposta",
   "D_WEB_MOVE_HINT": "Inserisci il percorso esatto della cartella.",

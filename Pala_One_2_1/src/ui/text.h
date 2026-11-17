@@ -10,6 +10,7 @@
 #include "src/pure/paginator.h"
 #include "src/pure/bookmark_label.h"
 #include "src/hal/packed_file_stream.h"
+#include "src/ui/print_state.h"
 
 // ============================================================================
 //  Page-level operations on a book file.
@@ -32,12 +33,11 @@
 // ============================================================================
 void clearPagePrefetch();
 void prefetchPage(IReadStream &stream, uint32_t startPos);
-uint32_t drawPageAt(File &f, uint32_t startPos);
-uint32_t drawPageAt(IReadStream &stream, uint32_t startPos);
+uint32_t drawPageAt(File &f, uint32_t startPos, PrintState::State &state);
+uint32_t drawPageAt(IReadStream &stream, uint32_t startPos, PrintState::State &state);
 uint32_t extractPageText(File &f, uint32_t startPos, String &out);
 uint32_t nextPageOffset(File &f, uint32_t startPos);
 uint32_t nextPageOffset(IReadStream &stream, uint32_t startPos);
-
 // Find page N's byte offset in `f` (which must be opened to `path`). Reads
 // the on-disk page cache for an O(1) start, walks forward via
 // `nextPageOffset` if the requested page is past the cached portion.

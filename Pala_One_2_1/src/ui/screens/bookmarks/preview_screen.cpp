@@ -25,10 +25,13 @@ void BookmarkPreviewScreen::draw() {
     return;
   }
 
-  renderCurrentPage();
+  PrintState::State state = { .isBold = false };
+  renderCurrentPage(state);
 }
 
 void BookmarkPreviewScreen::onButton(const ButtonEvent &e) {
+  PrintState::State state = { .isBold = false };
+
   if (NavigationProfile::readingFocused()) {
 
     if (e.kind == ButtonEvent::Triple) {
@@ -70,13 +73,13 @@ void BookmarkPreviewScreen::onButton(const ButtonEvent &e) {
 
   if (Gestures::resolveLegacyAction(e, ButtonEvent::Double, ACTION_PREV)) {
     if (retreatPage())
-      renderCurrentPage();
+      renderCurrentPage(state);
     return;
   }
 
   if (Gestures::resolveLegacyAction(e, ButtonEvent::Short, ACTION_NEXT)) {
     if (advancePage())
-      renderCurrentPage();
+      renderCurrentPage(state);
     return;
   }
 }

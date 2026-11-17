@@ -429,7 +429,7 @@ bool renderBookmarkPreview(bool readSelected) {
   return true;
 }
 
-void renderCurrentPage() {
+void renderCurrentPage(PrintState::State &state) {
   CpuBurst cpu;
 #if PALA_DIAGNOSTICS
   const uint32_t renderStarted = micros();
@@ -456,9 +456,9 @@ void renderCurrentPage() {
   }
 
   beginPageCanvas();
-  Font::useBody();
+  state.isBold ? Font::useBold() : Font::useBody();
 
-  uint32_t nextOff = drawPageAt(g_bookview.book.stream(), start);
+  uint32_t nextOff = drawPageAt(g_bookview.book.stream(), start, state);
   // Record what render learned about the next page so a later advance
   // doesn't re-paginate this same page. Only meaningful when the cursor is
   // at the table's current last page; appendPageOffset is a no-op otherwise.

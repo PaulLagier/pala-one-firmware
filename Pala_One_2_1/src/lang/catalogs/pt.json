@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Bloqueia o leitor sempre que entra em repouso. Ao acordar, mantenha o botão premido para desbloquear.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Bloquear ao entrar em repouso",
   "D_WEB_MANAGE_FILES_BUTTON": "Gerir ficheiros",
+  "D_WEB_MARKDOWN_LABEL": "Formatação Markdown",
+  "D_WEB_MARKDOWN_HINT": "Aplica formatação de negrito e títulos. Não funciona quando a leitura biônica (bionic reading) está ativada.",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "Estas ações têm de estar sempre disponíveis: menu principal, item/página seguinte, OK/abrir menu (consoante o contexto)",
   "D_WEB_MOVE_BUTTON": "Mover",
   "D_WEB_MOVE_HINT": "Introduza o caminho exato da pasta.",

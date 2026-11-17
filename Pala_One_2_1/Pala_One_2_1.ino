@@ -259,7 +259,7 @@ void setup() {
       // force the user to repeat the unlock gesture.
       markUserActivity();
     } else {
-      renderCurrentPage();      // ~300ms draw — wake-press releases during this
+      renderCurrentPage(g_currentScreen->state); // ~300ms draw — wake-press releases during this
       if (!wokeFromSleep) resetInputFrontend();
     }
   } else {

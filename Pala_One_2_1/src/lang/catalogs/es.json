@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Bloquea el dispositivo automáticamente cada vez que se duerme. Necesitarás una pulsación larga para desbloquearlo al despertar.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Bloquear al dormir",
   "D_WEB_MANAGE_FILES_BUTTON": "Administrar archivos",
+  "D_WEB_MARKDOWN_LABEL": "Formato de Markdown",
+  "D_WEB_MARKDOWN_HINT": "Aplica formato de negrita y de encabezado. No funciona cuando la lectura biónica está activada.",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "Las siguientes acciones siempre deben estar presentes:Ir al menú principal, Siguiente elemento/página, OK/Abrir el menú (depende del contexto)",
   "D_WEB_MOVE_BUTTON": "Mover",
   "D_WEB_MOVE_HINT": "Use la ruta exacta de la carpeta.",

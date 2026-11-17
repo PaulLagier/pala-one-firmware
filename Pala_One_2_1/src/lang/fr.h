@@ -613,6 +613,8 @@
 #define D_WEB_BIONIC_HINT           "Met en gras les premières lettres de chaque mot pour aider vos yeux à s’ancrer."
 #define D_WEB_PARA_GAP_LABEL        "Espacement réduit entre paragraphes"
 #define D_WEB_PARA_GAP_HINT         "Si cette option est activée, les sauts de paragraphe sont réduits de moitié, ce qui permet d’afficher plus de lignes sur une page."
+#define D_WEB_MARKDOWN_LABEL        "Formatage Markdown"
+#define D_WEB_MARKDOWN_HINT         "Applique une mise en forme en gras et des styles de titre. Ne fonctionne pas lorsque la lecture bionique est activée."
 #define D_WEB_SETTINGS_APPLY_HINT   "Les changements s’appliquent au prochain affichage de page."
 #define D_WEB_SETTINGS_LEGACY_CONTROLS   "Activer les commandes classiques"
 

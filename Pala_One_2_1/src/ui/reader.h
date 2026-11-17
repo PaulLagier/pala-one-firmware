@@ -5,6 +5,7 @@
 #include "src/state.h" // File, FS macro
 #include "src/pure/page_offset_table.h"
 #include "src/hal/packed_file_stream.h"
+#include "src/ui/print_state.h"
 
 // ============================================================================
 //  The currently open book and where the user is looking at it. Shared
@@ -71,7 +72,7 @@ struct BookView {
 extern BookView g_bookview;
 
 bool openBookByIndex(int idx);
-void renderCurrentPage();
+void renderCurrentPage(PrintState::State &state);
 bool renderBookmarkPreview(bool readSelected);
 void prefetchNextReaderPage();
 bool readerIndexWasCancelled();

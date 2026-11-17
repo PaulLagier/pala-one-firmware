@@ -20,7 +20,7 @@ uint32_t encodeLayoutVersion(const PageCacheLayout &layout) {
   return (1UL << 22) | uint32_t((layout.bodySize & 127) | 128) |
          (uint32_t(layout.lineGap & 255) << 8) | (uint32_t(layout.family & 15) << 16) |
          (uint32_t(layout.bionic & 1) << 20) | (uint32_t(layout.halfGaps & 1) << 21) |
-         (uint32_t(layout.statusbarReserve) << 24);
+         (uint32_t(layout.statusbarReserve) << 24) | ((uint32_t)(layout.markdown & 0x01) << 20);
 }
 String pageCachePathForBook(const String &path) {
   return String("/pc_") + prefKeyForBook(path) + ".bin";

@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Vergrendelt de lezer bij elke slaapstand. Houd na ontwaken de knop ingedrukt om te ontgrendelen.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Vergrendelen bij slaapstand",
   "D_WEB_MANAGE_FILES_BUTTON": "Bestanden beheren",
+  "D_WEB_MARKDOWN_LABEL": "Markdown-opmaak",
+  "D_WEB_MARKDOWN_HINT": "Past vetgedrukte tekst en kopstijlen toe. Werkt niet wanneer 'bionic reading' is ingeschakeld.",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "Deze acties moeten altijd beschikbaar zijn: hoofdmenu, volgend item/pagina, OK/menu openen (afhankelijk van de context)",
   "D_WEB_MOVE_BUTTON": "Verplaatsen",
   "D_WEB_MOVE_HINT": "Geef het exacte mappad op.",

@@ -2,6 +2,7 @@
 #define PALA_UI_SCREEN_H
 
 #include "src/hal/input.h"           // ButtonState + ButtonEvent
+#include "src/ui/print_state.h"
 #include "src/state.h"
 
 class Screen {
@@ -11,6 +12,7 @@ public:
   virtual void onButton(const ButtonEvent& e) = 0;
   virtual void draw() = 0;
   virtual void onIdleTick() {}
+  PrintState::State state;
 
   // Called once just before the device deep-sleeps. Default: no-op — wake
   // state is empty during runtime (consumed at boot) and stays that way
