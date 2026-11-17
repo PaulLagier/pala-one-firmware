@@ -415,7 +415,7 @@
 #define D_WEB_BUTTONS_EXTRA_LONG    "Extra-long press"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Click, then hold"
 #define D_WEB_BUTTONS_SAVE          "Save buttons"
-#define D_WEB_BUTTONS_LOCK_HINT     "If locked, repeat any hold gesture to unlock."
+#define D_WEB_BUTTONS_LOCK_HINT "Custom controls: repeat a gesture assigned to Lock to unlock. With legacy controls or no Lock binding, hold to unlock."
 #define D_WEB_BUTTONS_ACTION_NONE     "None"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Bookmark page"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Lock device"
@@ -424,7 +424,7 @@
 #define D_WEB_BUTTONS_ACTION_NEXT "Next item/page"
 #define D_WEB_BUTTONS_ACTION_PREV "Previous item/page"
 #define D_WEB_BUTTONS_ACTION_HOME "Go to main menu"
-#define D_WEB_BUTTONS_LEGACY_HINT "If enabled, mapping single, double and triple clicks has no effect."
+#define D_WEB_BUTTONS_LEGACY_HINT "Legacy controls ignore single, double, triple and quadruple click bindings."
 
 // Click timing section.
 #define D_WEB_TIMINGS_HEADING        "Click timing"

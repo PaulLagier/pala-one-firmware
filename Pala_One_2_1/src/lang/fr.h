@@ -427,7 +427,7 @@
 #define D_WEB_BUTTONS_EXTRA_LONG    "Appui très long"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Clic, puis maintien"
 #define D_WEB_BUTTONS_SAVE          "Enregistrer le bouton"
-#define D_WEB_BUTTONS_LOCK_HINT     "Si l’appareil est verrouillé, répétez n’importe quel appui maintenu pour le déverrouiller."
+#define D_WEB_BUTTONS_LOCK_HINT "Commandes personnalisées : répétez un geste associé au verrouillage pour déverrouiller. Avec les anciennes commandes ou sans association, maintenez le bouton."
 #define D_WEB_BUTTONS_ACTION_NONE     "Aucune"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Marquer la page"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Verrouiller l’appareil"
@@ -436,7 +436,7 @@
 #define D_WEB_BUTTONS_ACTION_NEXT "Élément ou page suivante"
 #define D_WEB_BUTTONS_ACTION_PREV "Élément ou page précédente"
 #define D_WEB_BUTTONS_ACTION_HOME "Aller au menu principal"
-#define D_WEB_BUTTONS_LEGACY_HINT "Si cette option est activée, l’association des clics simple, double et triple n’a aucun effet."
+#define D_WEB_BUTTONS_LEGACY_HINT "Les anciennes commandes ignorent les associations des clics simples, doubles, triples et quadruples."
 
 // Click timing section.
 #define D_WEB_TIMINGS_HEADING        "Délais des clics"

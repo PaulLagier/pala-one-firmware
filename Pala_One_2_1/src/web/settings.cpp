@@ -486,6 +486,7 @@ static void handleSettings() {
   out += "<input type='checkbox' name='legacy_cont' value='1' " + legacyControlsOn +
          " style='width:auto'>";
   out += Language::join({"<span> ", D_WEB_SETTINGS_LEGACY_CONTROLS, "</span></label>"}).c_str();
+  out += Language::join({"<div class='hint'>", D_WEB_BUTTONS_LEGACY_HINT, "</div>"});
   out +=
       Language::join({"</div><div class='actions' style='margin-top:24px'><button type='submit'>",
                       D_WEB_BUTTONS_SAVE, "</button>"})

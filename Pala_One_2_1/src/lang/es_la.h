@@ -402,7 +402,7 @@
 #define D_WEB_BUTTONS_EXTRA_LONG    "Pulsación muy larga"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Clic y mantener"
 #define D_WEB_BUTTONS_SAVE          "Guardar botones"
-#define D_WEB_BUTTONS_LOCK_HINT     "Si está bloqueado, repita cualquier pulsación larga para desbloquear."
+#define D_WEB_BUTTONS_LOCK_HINT "Controles personalizados: repite un gesto asignado a Bloquear para desbloquear. Con controles clásicos o sin asignación, mantén pulsado."
 #define D_WEB_BUTTONS_ACTION_NONE     "Ninguna"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Marcar página"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Bloquear dispositivo"
@@ -411,7 +411,7 @@
 #define D_WEB_BUTTONS_ACTION_NEXT "Siguiente elemento/página" // AI translated
 #define D_WEB_BUTTONS_ACTION_PREV "Elemento/página anterior" // AI translated
 #define D_WEB_BUTTONS_ACTION_HOME "Ir al menú principal" // AI translated
-#define D_WEB_BUTTONS_LEGACY_HINT "Si está habilitado, el mapeo de los clics único, doble y triple no tiene efecto." //AI translated
+#define D_WEB_BUTTONS_LEGACY_HINT "Los controles clásicos ignoran las asignaciones de clic simple, doble, triple y cuádruple." //AI translated
 
 // Click timing section.
 #define D_WEB_TIMINGS_HEADING        "Tiempos de clic"
