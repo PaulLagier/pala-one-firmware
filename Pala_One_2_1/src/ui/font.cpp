@@ -448,8 +448,11 @@ void drawMarkdownLine(int x, int y, const char* line, PrintState::State &state) 
         state.isBold = false;
         i++;
       }
-      printSlice(cursorX, y, seg + i, 1);
-      cursorX += measureSlice(seg + i, 1);
+      // Handle if directive is last thing in the word
+      if (i < segLen) {
+        printSlice(cursorX, y, seg + i, 1);
+        cursorX += measureSlice(seg + i, 1);
+      }
     }
   });
 }
