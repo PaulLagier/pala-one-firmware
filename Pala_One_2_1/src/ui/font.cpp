@@ -204,6 +204,8 @@ void loadSettings() {
   applyLineGap(prefs.getInt(kKeyLineGap, 0));
   s_bionic = (prefs.getInt(kKeyBionic, 0) != 0);
   // Public key wins; retain the earlier local boolean preference on upgrade.
+  // TODO: Don't think this `getBool` does anything. Under the hood it is calling
+  // `getInt` on the same key, so just redundant.
   s_halfGaps = (prefs.getInt(kKeyHalfGaps, prefs.getBool("cfg_half_gaps", false) ? 1 : 0) != 0);
   s_markdown = (prefs.getInt(kKeyMarkdown, prefs.getBool("cfg_markdown", false) ? 1 : 0) != 0);
 }
