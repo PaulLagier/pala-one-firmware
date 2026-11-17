@@ -10,8 +10,20 @@ namespace Lock {
 static constexpr const char *kKey = "cfg_locked";
 
 static bool s_locked = false;
+static bool s_iconEnabled = true;
+static constexpr const char *kIconKey = "cfg_lockicon";
 
-void loadSettings() { s_locked = prefs.getBool(kKey, false); }
+void loadSettings() {
+  s_locked = prefs.getBool(kKey, false);
+  s_iconEnabled = prefs.getBool(kIconKey, true);
+}
+bool iconEnabled() { return s_iconEnabled; }
+void setIconEnabled(bool enabled) {
+  if (s_iconEnabled == enabled)
+    return;
+  s_iconEnabled = enabled;
+  prefs.putBool(kIconKey, enabled);
+}
 
 bool isLocked() { return s_locked; }
 
@@ -33,8 +45,9 @@ bool isUnlockGesture(const ButtonEvent &ev) {
   if (!Gestures::legacyControlsOn()) {
     // Match saved lock bindings, including clicks. If none is assigned,
     // retain the hold fallback for automatic locking and older settings.
-    const auto kinds = {ButtonEvent::Short, ButtonEvent::Double, ButtonEvent::Triple,
-                        ButtonEvent::Long, ButtonEvent::VeryLong, ButtonEvent::ClickHold};
+    const auto kinds = {ButtonEvent::Short,    ButtonEvent::Double, ButtonEvent::Triple,
+                        ButtonEvent::Quad,     ButtonEvent::Long,   ButtonEvent::VeryLong,
+                        ButtonEvent::ClickHold};
     if (std::any_of(kinds.begin(), kinds.end(), [](ButtonEvent::Kind kind) {
           return Gestures::actionFor(kind) == ACTION_LOCK;
         }))

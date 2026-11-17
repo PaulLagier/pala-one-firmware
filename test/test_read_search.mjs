@@ -4,7 +4,7 @@ import vm from 'node:vm';
 const probe=process.argv[2];
 for(const locale of ['de','en','fr','es','it','pl','cs','ru','uk','nl','pt']){
  const html=execFileSync(probe,[locale],{encoding:'utf8'});
- let code=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+ let code=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].slice(0,2).map(x=>x[1]).join('\n');
  const end=code.lastIndexOf('})();');assert(end>=0);
  code=code.slice(0,end)+'globalThis.readerTest={normTextMap,findMatches,utf8Len};'+code.slice(end);
  const nodes={};const posted=[];
@@ -15,7 +15,7 @@ for(const locale of ['de','en','fr','es','it','pl','cs','ru','uk','nl','pt']){
  const context={document:{getElementById:get},TextEncoder,FormData:Fields,
   palaFmt(format,...args){return format.replace(/%(\d+)/g,(_,n)=>String(args[Number(n)-1]))},
   fetch(url,options){if(url.startsWith('/readbook-text'))return Promise.resolve({text:async()=>raw});posted.push(options.body.get('offset'));return Promise.resolve({ok:true,status:200})}};
- vm.runInNewContext(code,context);await new Promise(setImmediate);
+ context.window=context;vm.runInNewContext(code,context);await new Promise(setImmediate);
  assert(get('bvFindStat').textContent.includes(String(Buffer.byteLength(raw,'utf8'))));
  const engine=context.readerTest;
  const found=engine.findMatches(raw,query,null);assert.equal(found.hits.length,1);

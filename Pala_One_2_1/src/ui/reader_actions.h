@@ -4,20 +4,15 @@
 #include "src/hal/input.h"  // ButtonEvent::Kind
 
 // ============================================================================
-//  Reader hold-gesture bindings
+//  Reader gesture bindings
 //
-//  Maps the three remappable hold gestures (Long / VeryLong / ClickHold)
-//  to one of the reader's actions (none / bookmark / lock / menu) and
-//  persists the choice. Lives here, not in `src/hal/input.h`, because the
-//  bindable actions are reader-screen concepts — the input layer just
-//  classifies button events; what an event *means* belongs to the screen
-//  that consumes it. If another screen ever wants its own gesture-to-action
-//  table it can do so without touching the HAL.
+//  Maps Short / Double / Triple / Quad / Long / VeryLong / ClickHold to
+//  reader actions and persists each choice. The input layer classifies
+//  events; screens decide what the selected action means in their context.
+//  Custom bindings apply when legacy controls are disabled.
 //
-//  Defaults (chosen to be useful out of the box):
-//    Long      = Bookmark — the most common action while reading
-//    VeryLong  = Lock     — a deliberate "I'm putting it down" gesture
-//    ClickHold = Menu     — easy chord, doesn't fight short-click paging
+//  Defaults: Short = Next, Double = Previous, Triple = Home, Quad = None,
+//  Long = Menu, VeryLong = Lock, ClickHold = Bookmark.
 // ============================================================================
 
 enum ButtonAction
@@ -42,6 +37,7 @@ void loadSettings();
 ButtonAction actionShort();
 ButtonAction actionDouble();
 ButtonAction actionTriple();
+ButtonAction actionQuad();
 ButtonAction actionLong();       // plain long press (>= kDefaultLongMs, < kDefaultVeryLongMs, no preceding click)
 ButtonAction actionExtraLong();  // very-long press (>= kDefaultVeryLongMs, no preceding click)
 ButtonAction actionClickHold();  // short click then immediate long hold
@@ -50,6 +46,7 @@ ButtonAction actionClickHold();  // short click then immediate long hold
 void setActionShort(ButtonAction a);
 void setActionDouble(ButtonAction a);
 void setActionTriple(ButtonAction a);
+void setActionQuad(ButtonAction a);
 void setActionLong(ButtonAction a);
 void setActionExtraLong(ButtonAction a);
 void setActionClickHold(ButtonAction a);
@@ -67,7 +64,7 @@ bool isNonLegacyAction(const ButtonEvent &e, ButtonAction action);
 
 // Convenience: which action (if any) is currently bound to the gesture
 // kind that just fired. Returns ACTION_NONE for non-remappable kinds
-// (Quad, None).
+// (None). Quad is optional and defaults to no action.
 ButtonAction actionFor(ButtonEvent::Kind kind);
 
 } // namespace Gestures

@@ -427,7 +427,7 @@
 #define D_WEB_BUTTONS_EXTRA_LONG    "Appui très long"
 #define D_WEB_BUTTONS_CLICK_HOLD    "Clic, puis maintien"
 #define D_WEB_BUTTONS_SAVE          "Enregistrer le bouton"
-#define D_WEB_BUTTONS_LOCK_HINT     "Si l’appareil est verrouillé, répétez n’importe quel appui maintenu pour le déverrouiller."
+#define D_WEB_BUTTONS_LOCK_HINT "Commandes personnalisées : répétez un geste associé au verrouillage pour déverrouiller. Avec les anciennes commandes ou sans association, maintenez le bouton."
 #define D_WEB_BUTTONS_ACTION_NONE     "Aucune"
 #define D_WEB_BUTTONS_ACTION_BOOKMARK "Marquer la page"
 #define D_WEB_BUTTONS_ACTION_LOCK     "Verrouiller l’appareil"
@@ -436,7 +436,7 @@
 #define D_WEB_BUTTONS_ACTION_NEXT "Élément ou page suivante"
 #define D_WEB_BUTTONS_ACTION_PREV "Élément ou page précédente"
 #define D_WEB_BUTTONS_ACTION_HOME "Aller au menu principal"
-#define D_WEB_BUTTONS_LEGACY_HINT "Si cette option est activée, l’association des clics simple, double et triple n’a aucun effet."
+#define D_WEB_BUTTONS_LEGACY_HINT "Les anciennes commandes ignorent les associations des clics simples, doubles, triples et quadruples."
 
 // Click timing section.
 #define D_WEB_TIMINGS_HEADING        "Délais des clics"
@@ -753,3 +753,11 @@
 #define D_WEB_RESET_RESTARTING "Pala One redémarre. Rouvrez ensuite son mode de connexion."
 
 #define D_MENU_CONNECT "Connexion"
+
+// Browser display and optional gesture preferences.
+#define D_WEB_BUTTONS_QUAD "Quadruple clic"
+#define D_WEB_STATUSBAR_LABEL "Barre de progression de lecture"
+#define D_WEB_LOCK_ICON_LABEL "Afficher le cadenas sur l’écran de veille"
+#define D_WEB_SETTINGS_INVALID "Réglages d’affichage non valides"
+
+#define D_WEB_READING_DISPLAY "Affichage de lecture"

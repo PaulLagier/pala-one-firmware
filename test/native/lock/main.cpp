@@ -14,6 +14,7 @@ void reset(bool legacy) {
   Gestures::setActionShort(ACTION_NONE);
   Gestures::setActionDouble(ACTION_NONE);
   Gestures::setActionTriple(ACTION_NONE);
+  Gestures::setActionQuad(ACTION_NONE);
   Gestures::setActionLong(ACTION_NONE);
   Gestures::setActionExtraLong(ACTION_NONE);
   Gestures::setActionClickHold(ACTION_NONE);
@@ -21,8 +22,9 @@ void reset(bool legacy) {
 }
 } // namespace
 TEST_CASE("Custom lock accepts exactly the configured gesture after saved settings reload") {
-  for (auto target : {ButtonEvent::Short, ButtonEvent::Double, ButtonEvent::Triple,
-                      ButtonEvent::Long, ButtonEvent::VeryLong, ButtonEvent::ClickHold}) {
+  for (auto target :
+       {ButtonEvent::Short, ButtonEvent::Double, ButtonEvent::Triple, ButtonEvent::Quad,
+        ButtonEvent::Long, ButtonEvent::VeryLong, ButtonEvent::ClickHold}) {
     reset(false);
     switch (target) {
     case ButtonEvent::Short:
@@ -33,6 +35,9 @@ TEST_CASE("Custom lock accepts exactly the configured gesture after saved settin
       break;
     case ButtonEvent::Triple:
       Gestures::setActionTriple(ACTION_LOCK);
+      break;
+    case ButtonEvent::Quad:
+      Gestures::setActionQuad(ACTION_LOCK);
       break;
     case ButtonEvent::Long:
       Gestures::setActionLong(ACTION_LOCK);
@@ -71,4 +76,29 @@ TEST_CASE("Legacy controls and unassigned automatic locks retain safe hold fallb
             (kind == ButtonEvent::Long || kind == ButtonEvent::VeryLong ||
              kind == ButtonEvent::ClickHold));
   }
+}
+
+TEST_CASE("Optional quadruple binding defaults to none and persists public action IDs") {
+  reset(false);
+  CHECK_EQ(Gestures::actionQuad(), ACTION_NONE);
+  for (int action = ACTION_NONE; action <= ACTION_ROTATE; ++action) {
+    Gestures::setActionQuad(ButtonAction(action));
+    Gestures::loadSettings();
+    CHECK_EQ(int(Gestures::actionFor(ButtonEvent::Quad)), action);
+    CHECK_EQ(Gestures::actionFor(ButtonEvent::None), ACTION_NONE);
+  }
+  Gestures::setActionQuad(ButtonAction(99));
+  CHECK_EQ(Gestures::actionQuad(), ACTION_NONE);
+}
+TEST_CASE("Hiding the sleep badge does not unlock or change saved lock bindings") {
+  reset(false);
+  CHECK(Lock::iconEnabled());
+  Gestures::setActionQuad(ACTION_LOCK);
+  Lock::engage();
+  Lock::setIconEnabled(false);
+  Lock::loadSettings();
+  CHECK(!Lock::iconEnabled());
+  CHECK(Lock::isLocked());
+  CHECK(Lock::isUnlockGesture(ButtonEvent{ButtonEvent::Quad}));
+  CHECK(!Lock::isUnlockGesture(ButtonEvent{ButtonEvent::Long}));
 }

@@ -19,6 +19,7 @@
 #include "src/ui/screen_settings.h"
 #include "src/hal/display.h"
 #include "src/ui/statusbar.h"
+#include "src/ui/lock.h"
 #include "src/ui/sleep.h"
 #include "src/ui/header_title.h"
 #include "src/ui/reader_actions.h"
@@ -145,6 +146,10 @@ bool setSetting(const String &key, JsonVariant v) {
     Sleep::setLockOnSleep(v.as<bool>());
     return true;
   }
+  if (key == "lockIcon" && v.is<bool>()) {
+    Lock::setIconEnabled(v.as<bool>());
+    return true;
+  }
   if (!v.is<int>())
     return false;
   const int n = v.as<int>();
@@ -165,6 +170,10 @@ bool setSetting(const String &key, JsonVariant v) {
     if (uint32_t(n) < setting.minValue() || uint32_t(n) > setting.maxValue())
       return false;
     setting.set(uint32_t(n));
+    return true;
+  }
+  if (key == "quadAction" && n >= ACTION_NONE && n <= ACTION_ROTATE) {
+    Gestures::setActionQuad(ButtonAction(n));
     return true;
   }
   if (key == "statusbar" && n >= 0 && n <= 2) {
@@ -311,6 +320,7 @@ String companionRpcControl(const uint8_t *bytes, size_t length) {
     o["halfParagraphGaps"] = Font::halfParagraphGapsEnabled();
     o["flipped"] = ScreenSettings::isScreenFlipped();
     o["statusbar"] = int(Statusbar::mode());
+    o["lockIcon"] = Lock::iconEnabled();
     o["clickGapMs"] = ClickTimings::maxClickGapMs();
     o["clickSequenceMs"] = ClickTimings::maxClickSequenceMs();
     o["legacyControls"] = Gestures::legacyControlsOn();
@@ -318,6 +328,7 @@ String companionRpcControl(const uint8_t *bytes, size_t length) {
     actions["short"] = int(Gestures::actionShort());
     actions["double"] = int(Gestures::actionDouble());
     actions["triple"] = int(Gestures::actionTriple());
+    actions["quad"] = int(Gestures::actionQuad());
     actions["long"] = int(Gestures::actionLong());
     actions["veryLong"] = int(Gestures::actionExtraLong());
     actions["clickHold"] = int(Gestures::actionClickHold());

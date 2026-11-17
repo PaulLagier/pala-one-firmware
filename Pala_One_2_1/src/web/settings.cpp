@@ -1,6 +1,9 @@
 #include "src/storage/navigation_profile.h"
 #include "src/lang/join.h"
 #include "src/web/settings.h"
+#include "src/web/display_settings.h"
+#include "src/web/reading_settings.h"
+#include "src/ui/statusbar.h"
 
 #include "src/config.h"
 #include "src/state.h"
@@ -327,7 +330,7 @@ static void handleSettings() {
 
   // Header status icons — own form (icons_form sentinel) so an unchecked box
   // here is never confused with a POST from one of the other cards.
-  out += Language::join({"<div class='card'><h2>", D_WEB_ICONS_HEADING, "</h2>"}).c_str();
+  out += Language::join({"<div class='card'><h2>", D_WEB_READING_DISPLAY, "</h2>"}).c_str();
   out += Language::join({"<p class='muted'>", D_WEB_ICONS_INTRO, "</p>"}).c_str();
   out += "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>";
   out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
@@ -472,6 +475,7 @@ static void handleSettings() {
   appendActionSelect(out, "btnS", D_WEB_BUTTONS_SHORT, (int)Gestures::actionShort());
   appendActionSelect(out, "btnD", D_WEB_BUTTONS_DOUBLE, (int)Gestures::actionDouble());
   appendActionSelect(out, "btnT", D_WEB_BUTTONS_TRIPLE, (int)Gestures::actionTriple());
+  appendActionSelect(out, "btnQ", D_WEB_BUTTONS_QUAD, (int)Gestures::actionQuad());
   appendActionSelect(out, "btnL", D_WEB_BUTTONS_LONG, (int)Gestures::actionLong());
   appendActionSelect(out, "btnXL", D_WEB_BUTTONS_EXTRA_LONG, (int)Gestures::actionExtraLong());
   appendActionSelect(out, "btnCH", D_WEB_BUTTONS_CLICK_HOLD, (int)Gestures::actionClickHold());
@@ -482,6 +486,7 @@ static void handleSettings() {
   out += "<input type='checkbox' name='legacy_cont' value='1' " + legacyControlsOn +
          " style='width:auto'>";
   out += Language::join({"<span> ", D_WEB_SETTINGS_LEGACY_CONTROLS, "</span></label>"}).c_str();
+  out += Language::join({"<div class='hint'>", D_WEB_BUTTONS_LEGACY_HINT, "</div>"});
   out +=
       Language::join({"</div><div class='actions' style='margin-top:24px'><button type='submit'>",
                       D_WEB_BUTTONS_SAVE, "</button>"})
@@ -543,6 +548,29 @@ static void handleSettings() {
               "</span></div>", "</form></div>"})
              .c_str();
 
+  out += Language::join({"<div class='card'><h2>", D_WEB_READING_DISPLAY,
+                         "</h2><form method='POST' action='/settings'>",
+                         "<input type='hidden' name='display_form' value='1'>",
+                         "<label for='statusbar'>", D_WEB_STATUSBAR_LABEL,
+                         "</label><select id='statusbar' name='statusbar'>"});
+  const char *modes[] = {D_STATUSBAR_MODE_FULL, D_STATUSBAR_MODE_MINIMAL, D_STATUSBAR_MODE_HIDDEN};
+  for (int i = 0; i < 3; ++i) {
+    out += "<option value='";
+    out += i;
+    out += "'";
+    if (i == int(Statusbar::mode()))
+      out += " selected";
+    out += ">";
+    out += modes[i];
+    out += "</option>";
+  }
+  out += "</select><label style='display:flex;gap:8px;align-items:center;margin-top:12px'>";
+  out += "<input type='checkbox' name='lock_icon' value='1' style='width:auto'";
+  if (Lock::iconEnabled())
+    out += " checked";
+  out += Language::join({">", D_WEB_LOCK_ICON_LABEL, "</label><button type='submit'>",
+                         D_WEB_SAVE_SETTINGS_BUTTON, "</button></form></div>"});
+
   out += webPageEnd();
   server.send(200, "text/html; charset=utf-8", out);
 }
@@ -590,13 +618,18 @@ static bool validateRequiredActionsOnPost() {
     return false;
   }
 
-  const int v[6] = {
-      server.arg("btnS").toInt(), server.arg("btnD").toInt(),  server.arg("btnT").toInt(),
-      server.arg("btnL").toInt(), server.arg("btnXL").toInt(), server.arg("btnCH").toInt(),
+  const int v[7] = {
+      server.arg("btnS").toInt(),
+      server.arg("btnD").toInt(),
+      server.arg("btnT").toInt(),
+      server.arg("btnL").toInt(),
+      server.arg("btnXL").toInt(),
+      server.arg("btnCH").toInt(),
+      server.hasArg("btnQ") ? server.arg("btnQ").toInt() : (int)Gestures::actionQuad(),
   };
 
   bool hasNext = false, hasHome = false, hasOkMenu = false;
-  for (int i = 0; i < 6; i++) {
+  for (int i = 0; i < 7; i++) {
     if (v[i] == (int)ACTION_NEXT)
       hasNext = true;
     else if (v[i] == (int)ACTION_HOME)
@@ -606,54 +639,6 @@ static bool validateRequiredActionsOnPost() {
   }
 
   return hasNext && hasHome && hasOkMenu;
-}
-// Apply pending form changes. Returns true if any layout-affecting setting
-// (font size, family, line gap, bionic) was modified — caller uses this to
-// decide whether to remap the reader's byte-offset cursor afterwards.
-static bool applySettingsForm() {
-  bool layoutChanged = false;
-
-  // Font::setBodySize / setLineGap / setFamily / Sleep::setIdleTimeout all
-  // clamp + validate internally — no inline guards needed here.
-  if (server.hasArg("font")) {
-    int fs = server.arg("font").toInt();
-    if (fs != Font::currentBodySize()) {
-      Font::setBodySize(fs);
-      layoutChanged = true;
-    }
-  }
-  if (server.hasArg("family")) {
-    String f = server.arg("family");
-    Font::Family want = (f == "dys") ? Font::Family::OpenDyslexic : Font::Family::Helvetica;
-    if (want != Font::currentFamily()) {
-      Font::setFamily(want);
-      layoutChanged = true;
-    }
-  }
-  if (server.hasArg("sleep")) {
-    int ss = server.arg("sleep").toInt();
-    if (ss != Sleep::idleTimeoutSecs())
-      Sleep::setIdleTimeout(ss);
-  }
-  if (server.hasArg("lgap")) {
-    int lg = server.arg("lgap").toInt();
-    if (lg != Font::currentLineGap()) {
-      Font::setLineGap(lg);
-      layoutChanged = true;
-    }
-  }
-  // Checkbox is absent from the POST when unchecked.
-  bool wantBionic = server.hasArg("bionic");
-  if (wantBionic != Font::bionicEnabled()) {
-    Font::setBionic(wantBionic);
-    layoutChanged = true;
-  }
-  bool wantHalfGaps = server.hasArg("hgap");
-  if (wantHalfGaps != Font::halfParagraphGapsEnabled()) {
-    Font::setHalfParagraphGaps(wantHalfGaps);
-    layoutChanged = true;
-  }
-  return layoutChanged;
 }
 
 static void applyTimingSettingsForm() {
@@ -676,6 +661,8 @@ static void applyTimingSettingsForm() {
 }
 
 static void handleSettingsPost() {
+  if (handleDisplaySettingsPost())
+    return;
   if (server.hasArg("menuForm")) {
     if (!NavigationProfile::setReadingFocused(server.hasArg("readingMenu") &&
                                               server.arg("readingMenu") == "1")) {
@@ -715,7 +702,7 @@ static void handleSettingsPost() {
     savedByte = g_bookview.pages.offsetAt(g_bookview.cursor.pageIndex);
   }
 
-  bool layoutChanged = applySettingsForm();
+  bool layoutChanged = applyReadingSettingsForm();
   applyTimingSettingsForm();
 
   // Layout shifted under our feet — the in-memory page table no longer
@@ -786,7 +773,8 @@ static void handleSettingsPost() {
 
   // Gesture bindings
   if (server.hasArg("btnS") || server.hasArg("btnD") || server.hasArg("btnT") ||
-      server.hasArg("btnL") || server.hasArg("btnXL") || server.hasArg("btnCH")) {
+      server.hasArg("btnL") || server.hasArg("btnXL") || server.hasArg("btnCH") ||
+      server.hasArg("btnQ")) {
 
     // Enforce required action contract.
     if (!validateRequiredActionsOnPost()) {
@@ -802,6 +790,9 @@ static void handleSettingsPost() {
       }
       if (server.hasArg("btnT")) {
         Gestures::setActionTriple((ButtonAction)server.arg("btnT").toInt());
+      }
+      if (server.hasArg("btnQ")) {
+        Gestures::setActionQuad((ButtonAction)server.arg("btnQ").toInt());
       }
       if (server.hasArg("btnL")) {
         Gestures::setActionLong((ButtonAction)server.arg("btnL").toInt());
