@@ -5,6 +5,7 @@
 
 #include "arduino_compat.h"
 #include "stream.h"
+#include "src/ui/print_state.h"
 
 #define K_LINE_MAX 256
 

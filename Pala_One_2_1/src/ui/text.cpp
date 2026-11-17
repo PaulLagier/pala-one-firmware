@@ -6,7 +6,7 @@
 #include "src/pure/bookmarks_codec.h"   // kOffsetUnset
 #include "src/storage/page_cache.h"     // on-disk page-offset cache
 #include "src/ui/font.h"                // Font::useBody / bodyLayout / measureLine / layoutForCache
-#include "src/ui/text.h"                // Text::PrintState
+#include "src/ui/print_state.h"         // PrintState::State
 
 // Measure-width adapter for the paginator. Routes through Font::measureBionicLine
 // so the bionic 1-px-per-split-word adjustment is folded into the same width
@@ -57,7 +57,7 @@ static int bodyMeasure(const char *s) { return Font::measureLine(s); }
 //  function and the metrics describe the same face. Each returns the byte
 //  offset where the next page begins.
 // ============================================================================
-uint32_t drawPageAt(File &f, uint32_t startPos) {
+uint32_t drawPageAt(File &f, uint32_t startPos, PrintState::State &state) {
   BookReadStream stream(f);
   clearPagePrefetch();
   const auto next = drawPageAt(stream, startPos);
@@ -65,14 +65,11 @@ uint32_t drawPageAt(File &f, uint32_t startPos) {
   return next;
 }
 
-uint32_t drawPageAt(IReadStream &stream, uint32_t startPos) {
+uint32_t drawPageAt(IReadStream &stream, uint32_t startPos, PrintState::State &state) {
   prefetchPage(stream, startPos);
   LayoutMetrics m = s_preparedMetrics;
   const uint32_t next = s_preparedNext;
   Font::useBody();
-
-  Text::PrintState state = Text::PrintState();
-  state.isBold = false;
 
   int cursorY = TOP_PAD + m.ascent;
   auto onLine = [&](const char *buf, size_t len) {
