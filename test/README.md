@@ -1,20 +1,53 @@
 # Host-side unit tests
 
-These tests run on your laptop (not on the device) against the pure modules
-in [`src/pure/`](../src/pure/) and the KV-store-backed modules in
-[`src/storage/`](../src/storage/) (`bookmarks.cpp`, `list_items.cpp`).
+The CMake/CTest suite runs on a computer without a reader. It combines pure
+C++ tests, production firmware modules compiled against deterministic hardware
+adapters, and Python/Node.js checks of generated assets, browser behavior and
+release packaging. Firmware SDK builds are a separate validation layer.
 
-They're a separate build from the firmware. The firmware build (`pio run`)
-ignores this directory; CMake here ignores everything that depends on the
-ESP32 toolchain.
+Run the commands below from the repository root. Production sources live in
+[`Pala_One_2_1/src/`](../Pala_One_2_1/src/). Host adapters replace external
+hardware boundaries; keep the production implementation under test wherever
+possible instead of duplicating its decisions in the test.
 
 > **Note:** PlatformIO's built-in test runner (`pio test`) also defaults to
 > this directory. We don't use it — `platformio.ini` sets `test_ignore = *`
 > so `pio test` is a no-op. Run tests with CMake / `ctest` as shown below.
 
+## Validation strategy
+
+| Layer | Run / automation | What it establishes |
+|---|---|---|
+| Pure logic and storage codecs | CMake / CTest; `Host tests` on every push and PR | Deterministic algorithms, bounds, serialization and migration behavior |
+| Firmware integration with host adapters | Same CTest suite | Production parser, upload, reader, recovery, input, idle-loop and companion lifecycle behavior under injected failures |
+| Browser and generated resources | Python and Node.js targets registered in CTest | Locale completeness, deterministic bundles, browser search/editor behavior and installer selection |
+| Static analysis | `Static analysis` workflow | cppcheck findings in the V1.2 English configuration; this is not exhaustive analysis of all preprocessor variants |
+| ESP32 SDK compilation | `Build firmware` workflow | All six V1.1/V1.2 × EN/ES/FR default builds link and their final padded images fit the 1,900,544-byte OTA slot |
+| Release packaging | CTest packaging checks and tag deployment validation | Board/chip identity, offsets, artifact metadata and checksums before publication |
+| Physical reader | Separate observations on available hardware | Actual display, electrical input, wake response, radio behavior and persistence on that device |
+
+Each default-language image contains all eleven runtime catalogs. Compilation
+for both boards does not establish physical display or power behavior on both.
+Host Wi-Fi, filesystem and graphics adapters do not measure charging, current
+draw, router compatibility, real flash power loss or e-paper timing.
+
+For a bug fix, first reproduce the observable failure at the smallest practical
+layer, exercise the actual affected implementation, and check the resulting
+state as well as the response. Add fault cases when they protect meaningful
+behavior (for example interrupted uploads or stale provisioning callbacks).
+Document a physical-only failure honestly when it cannot be reproduced on the
+host. Formatting and prose changes normally need a diff review, not new tests.
+
+Before merging firmware changes, require the host suite, static analysis and
+all six SDK builds to pass. Use the release workflow to package a tagged build;
+do not substitute an unrelated local binary. Record hardware findings separately,
+including firmware version, board revision, steps and observed result. Never
+publish credentials, raw device settings or book contents as test evidence.
+
 ## Requirements
 
 - **CMake 3.13+**
+- **Node.js 22** for browser-script tests.
 - **Python 3.8+** and the **zlib and OpenSSL development libraries** for packed-book tests.
 - A **C++17 compiler** — MSVC, GCC, or Clang. CMake picks one automatically.
 
@@ -45,7 +78,9 @@ sudo pacman -S base-devel cmake python zlib openssl
 
 ```bash
 xcode-select --install        # Clang + make
-brew install cmake            # CMake (or download from cmake.org)
+brew install cmake openssl@3 node@22
+export PATH="$(brew --prefix node@22)/bin:$PATH"
+# If OpenSSL is not discovered, add -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)" to CMake.
 ```
 
 ## Run
@@ -97,7 +132,7 @@ test/build/host_tests                 # Linux / macOS / MinGW
    `REQUIRE(expr)` from [`test_framework.h`](test_framework.h).
 
 The pure modules compile here because they include
-[`src/pure/arduino_compat.h`](../src/pure/arduino_compat.h) — which provides
+[`src/pure/arduino_compat.h`](../Pala_One_2_1/src/pure/arduino_compat.h) — which provides
 a minimal `String` shim when `ARDUINO` isn't defined. If you need a method
 on `String` that isn't there yet, add it to the shim.
 
