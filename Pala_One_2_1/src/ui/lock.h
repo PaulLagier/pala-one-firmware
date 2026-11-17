@@ -24,6 +24,11 @@ void loadSettings();
 // Is the device currently locked?
 bool isLocked();
 
+// Only controls the screensaver badge; locking and unlock gestures are unchanged.
+// Enabled by default for compatibility with existing saved settings.
+bool iconEnabled();
+void setIconEnabled(bool enabled);
+
 // Engage the lock and persist. Caller is expected to then put the device
 // to sleep — Lock does not itself enter deep sleep so the call site can
 // arrange any other pre-sleep work (toast, save, etc.) first.

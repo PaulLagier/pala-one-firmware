@@ -64,6 +64,8 @@ void setLockOnSleep(bool val) {
 // White-on-black pill, icon only (no text label) — stays readable over both
 // the built-in screensaver and any user-uploaded image.
 static void drawLockBadge() {
+  if (!Lock::iconEnabled())
+    return;
   const int iconW = 7;   // padlock body width (cols 0–6)
   const int iconH = 9;   // total height: 4 rows shackle + 5 rows body
   const int padX  = 4;

@@ -122,3 +122,18 @@ for a physical radio/phone pairing test or claim V1.1 hardware coverage.
 `settings.set` accepts the boolean `readingMenu`; `settings.advanced.get` reports it. The compact `settings.get` response keeps its existing size budget. The reading view shows books and folders, bookmarks, connection and Device. Device contains statistics, updates, firmware information and a library return. Short presses move focus; a double press or hold opens the selected item. Reader gesture mappings remain unchanged. Turning the view off restores the complete custom library menu order and installed apps without changing their data. The web settings page provides a separate reading-menu form.
 
 Bookmarks support unsigned 32-bit page labels. Existing V1 and V2 records remain readable; ordinary records are still written as V2. A bookmark beyond page 65535 uses the extended V3 format with its canonical byte offset. Firmware predating V3 cannot read those extended records; retain a data backup before rolling back across this format boundary.
+
+### Optional reader controls
+
+`settings.set` accepts `quadAction` as an integer using the public action IDs
+`0:none, 1:next, 2:previous, 3:menu, 4:lock, 5:home, 6:bookmark, 7:rotate`.
+It defaults to no action. `settings.advanced.get` reports it as `rawActions.quad`.
+The existing hold-action wire values and app API v3 event constants are unchanged.
+Quad bindings apply with custom controls enabled; legacy controls retain their
+existing gestures. A Quad binding to Lock also becomes a valid unlock gesture.
+
+`lockIcon` is a boolean, enabled by default. It controls only the badge on the
+sleep screen, independently of the saved lock state and unlock gestures.
+The advanced response reports it alongside `statusbar` (`0:full, 1:minimal,
+2:hidden`). The browser provides these two display preferences in a dedicated
+form; changing progress-bar height preserves the canonical reading position.

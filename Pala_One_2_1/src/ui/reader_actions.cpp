@@ -8,6 +8,7 @@ static constexpr const char* kKeyLegacyControls = "cfg_legaCont";
 
 static constexpr const char* kKeyShort    = "cfg_btnS";
 static constexpr const char* kKeyDouble    = "cfg_btnD";
+static constexpr const char *kKeyQuad = "cfg_btnQ";
 static constexpr const char* kKeyTriple     = "cfg_btnT";
 static constexpr const char* kKeyLong      = "cfg_btnL";
 static constexpr const char* kKeyExtraLong = "cfg_btnXL";
@@ -17,6 +18,7 @@ static constexpr const char* kKeyClickHold = "cfg_btnCH";
 static ButtonAction s_short    = ACTION_NEXT;
 static ButtonAction s_double    = ACTION_PREV;
 static ButtonAction s_triple     = ACTION_HOME;
+static ButtonAction s_quad = ACTION_NONE;
 static ButtonAction s_long      = ACTION_MENU;
 static ButtonAction s_extraLong = ACTION_LOCK;
 static ButtonAction s_clickHold = ACTION_BOOKMARK;
@@ -28,6 +30,7 @@ static ButtonAction clamp(int v) {
 }
 
 void loadSettings() {
+  s_quad = clamp(prefs.getInt(kKeyQuad, ACTION_NONE));
   s_short    = clamp(prefs.getInt(kKeyShort,      ACTION_NEXT));
   s_double    = clamp(prefs.getInt(kKeyDouble,      ACTION_PREV));
   s_triple    = clamp(prefs.getInt(kKeyTriple,      ACTION_HOME));
@@ -40,6 +43,7 @@ void loadSettings() {
 ButtonAction actionShort()    { return s_short; }
 ButtonAction actionDouble()    { return s_double; }
 ButtonAction actionTriple()    { return s_triple; }
+ButtonAction actionQuad() { return s_quad; }
 ButtonAction actionLong()      { return s_long; }
 ButtonAction actionExtraLong() { return s_extraLong; }
 ButtonAction actionClickHold() { return s_clickHold; }
@@ -54,6 +58,7 @@ static void persist(const char* key, ButtonAction& dest, ButtonAction value) {
 void setActionShort(ButtonAction a)    { persist(kKeyShort,      s_short,      a); }
 void setActionDouble(ButtonAction a)    { persist(kKeyDouble,      s_double,      a); }
 void setActionTriple(ButtonAction a)    { persist(kKeyTriple,      s_triple,      a); }
+void setActionQuad(ButtonAction a) { persist(kKeyQuad, s_quad, a); }
 void setActionLong(ButtonAction a)      { persist(kKeyLong,      s_long,      a); }
 void setActionExtraLong(ButtonAction a) { persist(kKeyExtraLong, s_extraLong, a); }
 void setActionClickHold(ButtonAction a) { persist(kKeyClickHold, s_clickHold, a); }
@@ -93,6 +98,8 @@ ButtonAction actionFor(ButtonEvent::Kind kind) {
     case ButtonEvent::Short:      return s_short;
     case ButtonEvent::Double:      return s_double;
     case ButtonEvent::Triple:      return s_triple;
+    case ButtonEvent::Quad:
+      return s_quad;
     case ButtonEvent::Long:      return s_long;
     case ButtonEvent::VeryLong:  return s_extraLong;
     case ButtonEvent::ClickHold: return s_clickHold;

@@ -755,3 +755,11 @@
 #define D_WEB_RESET_RESTARTING "Pala One se está reiniciando. Después, abre de nuevo el modo de conexión."
 
 #define D_MENU_CONNECT "Conectar"
+
+// Browser display and optional gesture preferences.
+#define D_WEB_BUTTONS_QUAD "Cuádruple clic"
+#define D_WEB_STATUSBAR_LABEL "Barra de progreso de lectura"
+#define D_WEB_LOCK_ICON_LABEL "Mostrar el candado en la pantalla de reposo"
+#define D_WEB_SETTINGS_INVALID "Ajustes de pantalla no válidos"
+
+#define D_WEB_READING_DISPLAY "Pantalla de lectura"

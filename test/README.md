@@ -229,3 +229,14 @@ isolation and SDK credential lengths. Tests access no real networks or credentia
 Physical reader checks are recorded separately from host tests. A native pass
 or a board build does not establish the cause of an individual hardware freeze,
 charging fault or router compatibility report.
+
+## Optional reader controls
+
+`display_settings_tests` compiles the actual browser reading/display-form handlers,
+statusbar, lock and gesture storage. It checks strict mode validation before
+writes, preservation of reading checkboxes when saving other cards, persisted Full/Minimal/Hidden modes, geometry
+invalidation, redraw decisions and an independently hidden lock badge.
+`lock_gesture_tests` also covers persisted Quad bindings and matching unlock
+behavior. Companion RPC tests check additive control types/ranges and retain
+legacy hold-action IDs and the response-size budget. Host graphics adapters do
+not establish how a physical sleep image looks.

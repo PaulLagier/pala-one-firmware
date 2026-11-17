@@ -26,6 +26,9 @@ ButtonAction holds[3] = {ACTION_MENU, ACTION_LOCK, ACTION_BOOKMARK};
 ButtonAction actionShort() { return ACTION_NEXT; }
 ButtonAction actionDouble() { return ACTION_PREV; }
 ButtonAction actionTriple() { return ACTION_HOME; }
+ButtonAction quad = ACTION_NONE;
+ButtonAction actionQuad() { return quad; }
+void setActionQuad(ButtonAction value) { quad = value; }
 ButtonAction actionLong() { return holds[0]; }
 ButtonAction actionExtraLong() { return holds[1]; }
 ButtonAction actionClickHold() { return holds[2]; }
@@ -497,4 +500,28 @@ TEST_CASE("Companion reading menu selection is typed and reversible") {
   result = call(R"({"id":1,"op":"settings.set","key":"readingMenu","value":false})");
   REQUIRE(result["ok"].as<bool>());
   CHECK(!NavigationProfile::readingFocused());
+}
+
+TEST_CASE("Companion optional controls use strict types and preserve legacy action mapping") {
+  reset();
+  for (const char *value : {"-1", "8", "1.5", "true", "\"4\""}) {
+    auto result = call(std::string(R"({"id":1,"op":"settings.set","key":"quadAction","value":)") +
+                       value + "}");
+    CHECK(result["error"] == "invalid-setting");
+  }
+  for (int action = ACTION_NONE; action <= ACTION_ROTATE; ++action) {
+    auto result = call(std::string(R"({"id":1,"op":"settings.set","key":"quadAction","value":)") +
+                       std::to_string(action) + "}");
+    REQUIRE(result["ok"].as<bool>());
+    result = call(R"({"id":1,"op":"settings.advanced.get"})");
+    REQUIRE(result["ok"].as<bool>());
+    CHECK_EQ(result["settings"]["rawActions"]["quad"].as<int>(), action);
+  }
+  auto result = call(R"({"id":1,"op":"settings.set","key":"lockIcon","value":false})");
+  REQUIRE(result["ok"].as<bool>());
+  result = call(R"({"id":1,"op":"settings.advanced.get"})");
+  CHECK(result["settings"]["lockIcon"].is<bool>());
+  CHECK(!result["settings"]["lockIcon"].as<bool>());
+  result = call(R"({"id":1,"op":"settings.set","key":"lockIcon","value":0})");
+  CHECK(result["error"] == "invalid-setting");
 }

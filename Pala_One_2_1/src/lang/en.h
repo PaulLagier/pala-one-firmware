@@ -779,3 +779,11 @@
 #define D_WEB_RESET_RESTARTING "Pala One is restarting. Open its connection mode again afterwards."
 
 #define D_MENU_CONNECT "Connect"
+
+// Browser display and optional gesture preferences.
+#define D_WEB_BUTTONS_QUAD "Quadruple click"
+#define D_WEB_STATUSBAR_LABEL "Reading progress bar"
+#define D_WEB_LOCK_ICON_LABEL "Show the lock icon on the sleep screen"
+#define D_WEB_SETTINGS_INVALID "Invalid display settings"
+
+#define D_WEB_READING_DISPLAY "Reading display"

@@ -336,3 +336,13 @@ target_compile_definitions(idle_loop_tests PRIVATE LANG_EN)
 target_include_directories(idle_loop_tests PRIVATE native/input_frontend/stubs
   ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME idle_loop_tests COMMAND idle_loop_tests)
+
+# Dedicated web display form with actual statusbar, lock and gesture persistence.
+add_executable(display_settings_tests main.cpp native/display_settings/main.cpp
+  ${FW_SRC}/web/display_settings.cpp ${FW_SRC}/web/reading_settings.cpp
+  ${FW_SRC}/ui/statusbar.cpp
+  ${FW_SRC}/ui/lock.cpp ${FW_SRC}/ui/reader_actions.cpp)
+target_include_directories(display_settings_tests PRIVATE native/display_settings/stubs
+  native/display_settings native/lock/stubs
+  ${CMAKE_SOURCE_DIR}/../Pala_One_2_1 ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME display_settings_tests COMMAND display_settings_tests)
