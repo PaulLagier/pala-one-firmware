@@ -3165,6 +3165,8 @@ inline const char* nameAt(size_t i){return i<count()?names[i]:nullptr;}
 #define D_WEB_LOCK_ON_SLEEP_HINT Language::text(Language::Key::K_WEB_LOCK_ON_SLEEP_HINT)
 #define D_WEB_LOCK_ON_SLEEP_LABEL Language::text(Language::Key::K_WEB_LOCK_ON_SLEEP_LABEL)
 #define D_WEB_MANAGE_FILES_BUTTON Language::text(Language::Key::K_WEB_MANAGE_FILES_BUTTON)
+#define D_WEB_MARKDOWN_HINT Language::text(Language::Key::K_WEB_MARKDOWN_HINT)
+#define D_WEB_MARKDOWN_LABEL Language::text(Language::Key::K_WEB_MARKDOWN_LABEL)
 #define D_WEB_MISSING_REQUIRED_BUTTON_MSG Language::text(Language::Key::K_WEB_MISSING_REQUIRED_BUTTON_MSG)
 #define D_WEB_MOVE_BUTTON Language::text(Language::Key::K_WEB_MOVE_BUTTON)
 #define D_WEB_MOVE_HINT Language::text(Language::Key::K_WEB_MOVE_HINT)
