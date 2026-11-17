@@ -1,6 +1,7 @@
 #ifndef PALA_UI_SCREENS_READER_SCREEN_H
 #define PALA_UI_SCREENS_READER_SCREEN_H
 
+#include "src/ui/print_state.h"
 #include "src/ui/screen.h"
 
 class ReaderScreen : public Screen {
@@ -10,6 +11,7 @@ public:
   void draw() override;
   void onSleep() override;
   void onIdleTick() override;
+  static PrintState::State state;
 };
 
 extern ReaderScreen g_readerScreen;

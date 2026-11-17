@@ -429,7 +429,7 @@ bool renderBookmarkPreview(bool readSelected) {
   return true;
 }
 
-void renderCurrentPage() {
+void renderCurrentPage(PrintState::State &state) {
   CpuBurst cpu;
 #if PALA_DIAGNOSTICS
   const uint32_t renderStarted = micros();
@@ -456,8 +456,7 @@ void renderCurrentPage() {
   }
 
   beginPageCanvas();
-  Font::useBody();
-  PrintState::State state = { .isBold = false };
+  state.isBold ? Font::useBold() : Font::useBody();
 
   uint32_t nextOff = drawPageAt(g_bookview.book.stream(), start, state);
   // Record what render learned about the next page so a later advance

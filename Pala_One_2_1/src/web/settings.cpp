@@ -689,7 +689,8 @@ static void handleSettingsPost() {
     saveSavedPage(kv, g_bookview.book.key(), newPage);
     // Offset is unchanged — no need to rewrite the canonical position.
 
-    renderCurrentPage();
+    PrintState::State state = { .isBold = false };
+    renderCurrentPage(state);
   }
 
   // noscr_form is a hidden sentinel always present when the settings form is
