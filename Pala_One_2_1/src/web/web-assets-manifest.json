@@ -30,11 +30,11 @@
     {
       "name": "EditorJs",
       "file": "editor.js",
-      "url": "/assets/editor.758508cb168a.js",
-      "rawBytes": 6366,
-      "gzipBytes": 2326,
-      "rawSHA256": "758508cb168af309a8988a72ce3dae6a1607b43205d42a74b474207f96cd5625",
-      "gzipSHA256": "ddd69828240389a6892eda1885ef46ff708c13a9e1ebecd792330f7f20743483"
+      "url": "/assets/editor.c3ec89b64df2.js",
+      "rawBytes": 7272,
+      "gzipBytes": 2615,
+      "rawSHA256": "c3ec89b64df26841f0903a71267313181b815dc51bbd196db6bff34a4ca4ff63",
+      "gzipSHA256": "1774508e8086e2a5bf32675939d0d7737e42df18004737cc639eb58c3cceca8b"
     },
     {
       "name": "ReaderJs",
@@ -46,6 +46,6 @@
       "gzipSHA256": "e650ffc0d25363921a102a819ec54caf4ed5d102723af06a295dd73c5db4a5f6"
     }
   ],
-  "rawBytes": 18352,
-  "gzipBytes": 6871
+  "rawBytes": 19258,
+  "gzipBytes": 7160
 }

@@ -265,3 +265,11 @@ and progress and that deletion follows canonical anchors after font reflow.
 Settings-control tests check exact selection and retention of valid app values
 outside the preset dropdown choices, such as a 45-second idle timeout and a
 four-pixel line gap.
+
+The screensaver editor also has an optional real-Canvas regression. Run
+`node test/test_editor_browser.mjs /path/to/chrome` with a Chrome or Chromium
+executable. It uses an isolated temporary profile and synthetic files to verify
+exact raw bitmap import/export, standard PNG import, clockwise rotation at 90/180/270 degrees,
+lossless four-turn restoration, and rejection of invalid bitmap lengths. The
+regular Node editor tests run the actual localized scripts for all eleven
+languages; the optional browser check supplies pixel-level evidence.

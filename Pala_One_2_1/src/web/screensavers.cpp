@@ -458,7 +458,7 @@ static String editorCardHtml(int nextFreeSlot) {
                       "<div class='full'><div class='ss-label-row'><label for='ssEditFile'>",
                       D_WEB_SS_SOURCE_IMAGE,
                       "</label></div>",
-                      "<input id='ssEditFile' type='file' accept='image/*'></div>",
+                      "<input id='ssEditFile' type='file' accept='image/*,.bin'></div>",
                       "<div class='full'><div class='ss-label-row'><label for='ssTolerance'>",
                       D_WEB_SS_TOLERANCE,
                       "</label>",
@@ -495,6 +495,8 @@ static String editorCardHtml(int nextFreeSlot) {
                       "<button type='button' class='btn secondary' id='ssResetBtn' "
                       "style='align-self:flex-start;padding:6px 12px;font-size:13px'>",
                       D_WEB_SS_RESET_FIT,
+                      "</button><button type='button' class='btn secondary' id='ssRotateBtn'>",
+                      D_WEB_SS_ROTATE,
                       "</button>",
                       "<div class='ss-meta' id='ssMeta'>",
                       D_WEB_SS_NO_IMAGE,
