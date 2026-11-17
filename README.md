@@ -25,8 +25,8 @@ https://ko-fi.com/s/e14ed892ea
 
 The easiest way to flash a board is via the web installer. Plug your Heltec Wireless Paper into a desktop computer running Chrome, Edge, or Opera, then open the installer page and pick a channel:
 
-- **Stable** ([`/stable/`](https://paullagier.github.io/pala-one-firmware/stable/)) — latest tagged release (`vX.Y.Z`). Use this unless you have a reason not to.
-- **Development** ([`/dev/`](https://paullagier.github.io/pala-one-firmware/dev/)) — latest build from `dev`; new features, may break.
+- **Stable** ([`/stable/`](https://paullagier.github.io/pala-one-firmware/stable/)) — [latest tagged release](https://github.com/PaulLagier/pala-one-firmware/releases/latest). Use this unless you have a reason not to.
+- **Development** ([`/dev/`](https://paullagier.github.io/pala-one-firmware/dev/)) — development channel; may contain unreleased changes. It can match Stable when the branches are synchronized.
 
 Each channel page lists both display revisions (V1.1 / V1.2) and EN/ES/FR initial-default images. Every image contains all eleven runtime languages. Pick your board, install, close the dialog and apply your preferred language with **Apply language over USB**; its initial selection follows the browser language. The Pala app and reader web settings can also change the language. Leave the installer’s erase option disabled to retain stored content with the unchanged partition layout. Back up content before migrating another layout or rolling back.
 
@@ -98,9 +98,9 @@ two methods: Improv WiFi provisioning via USB; or, the Web UI.
 
 USB provisioning keeps the reader awake for up to five minutes after the latest host traffic. An idle USB connection or charging cable does not disable automatic sleep indefinitely. Wake the reader before starting setup if it has already slept. Wi-Fi association is advanced between normal input-loop iterations, with a 30-second timeout; failed or cancelled attempts do not replace saved credentials.
 
-The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using a [vendored serial subset](Pala_One_2_1/src/third_party/improv/README.md) of [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). The same bounded parser is compiled by Arduino IDE and PlatformIO; no separate Improv library installation is required. When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) does this right after flashing and then redirects to `connected.html`.
+The firmware supports **Improv Serial** Wi-Fi provisioning ([improv-wifi.com](https://www.improv-wifi.com)) over the USB-CDC port, using a [vendored serial subset](Pala_One_2_1/src/third_party/improv/README.md) of [`jnthas/Improv-WiFi-Library`](https://github.com/jnthas/Improv-WiFi-Library). The same bounded parser is compiled by Arduino IDE and PlatformIO; no separate Improv library installation is required. When the board is plugged into a computer, a browser can hand it Wi-Fi credentials directly — the [web installer](https://paullagier.github.io/pala-one-firmware/) offers **Connect to Wi-Fi** when provisioning is available and can then redirect to `connected.html`.
 
-Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the open SoftAP at `192.168.4.1`.
+Saved credentials let the device join your network in **Station mode** the next time it enters the web UI / upload mode; if none are saved (or the join fails) it falls back to the built-in SoftAP at `192.168.4.1` (password: `palaread`).
 
 ### Configuring using Web UI
 
@@ -130,22 +130,35 @@ The following table summarizes the different **actions** with their effect in th
 | BOOKMARK | /                  | /                               | Bookmark page      | /      | Click + Hold                |
 | ROTATE   | Flip screen 180deg |  Flip screen 180deg             | Flip screen 180deg | /      | /                           |
 
-If "Legacy mode" is enabled, mapping single, double and triple click will have no effect and the behaviour will remain the same of versions <= 3.1.
+If "Legacy mode" is enabled, single, double and triple clicks retain their legacy behavior regardless of custom bindings. Quadruple clicks are ignored. With custom controls enabled, a quadruple click can also be assigned an action; it is unassigned by default.
 
 ### Main menu
 
-Starting from version 3.2 you can use the web UI to hide and rearrange the entries of the main menu. The book and folder items will remain at the top of the main menu while all the others can be customized. 
+You can use the web UI to hide and rearrange the entries of the complete main menu. The book and folder items will remain at the top of the main menu while all the others can be customized.
 
 Note that the "Upload" item cannot be hidden as this would make it impossible to further interact with the Pala One from an external device.
 
 
+### Browser reading and screensaver settings
+
+Browser settings include a Full/Minimal/Hidden reading status bar, lock-badge visibility
+and optional bookmark-action toggling. Toggling is off by default: when enabled,
+repeating the bookmark action removes a unique bookmark on the displayed page;
+ambiguous matches are preserved. See [Companion settings](docs/COMPANION.md)
+for the corresponding app protocol options.
+
+The screensaver editor accepts normal images and existing 3904-byte `.bin` files,
+with clockwise 90-degree rotation. The main download button saves a standard BMP
+image; the separate **BIN** link retains the raw format for backups and direct
+slot uploads. Both formats can be reopened in the editor.
+
 ## OTA firmware updates
 
-Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-provisioning-improv)), firmware updates can be installed wirelessly — no USB cable, no computer required.
+Once the device has Wi-Fi credentials stored (see [Wi-Fi Setup](#wi-fi-setup)), firmware updates can be installed wirelessly — no USB cable, no computer required.
 
 ### How to update
 
-1. Navigate to **Firmware Update** at the bottom of the library menu.
+1. Open **Device → Firmware Update** when using reading-focused menus, or **Firmware Update** in the complete library menu.
 2. The device connects to your home network automatically.
 3. Select a channel with **1×** press:
    - `[x] Stable` — latest tagged release. 
@@ -158,7 +171,7 @@ Once the device has Wi-Fi credentials stored (see [Wi-Fi provisioning](#wi-fi-pr
 
 ### Requirements
 
-- Wi-Fi credentials must be provisioned first (see below). If none are stored the screen shows *"No Wi-Fi credentials — setup via web installer"*.
+- Wi-Fi credentials must be provisioned first (see [Wi-Fi Setup](#wi-fi-setup)). If none are stored the screen shows *"No Wi-Fi credentials — setup via web installer"*.
 - The device must be able to reach `paullagier.github.io` over HTTPS. A local network without internet access will be reported as *"Cannot reach update server"*.
 
 ## Notes
@@ -209,13 +222,13 @@ The build-time default only affects the *first* visit from a given browser — o
 
 The device can be locked to stop accidental input (page turns, menu, navigation) while it rests in a bag or pocket. The locked state is persisted to NVS (`cfg_locked`), so a device that fully powers down comes back locked.
 
-Locking is a remappable button action. In the web UI under **Settings → Buttons** you can bind each of the three hold gestures — long press, very-long press, click-hold — to *None*, *Bookmark*, *Lock device*, or *Menu*. Out-of-box defaults:
+Locking is a remappable button action. Configure gesture bindings in the web UI under **Settings → Buttons**. Out-of-box hold defaults:
 
-- **Long press** → Bookmark
+- **Long press** → Menu
 - **Very-long press** (≥ 2 s) → Lock device
-- **Click-hold** → Menu
+- **Click-hold** → Bookmark
 
-With custom controls enabled, unlock using a gesture assigned to **Lock device**. Unrelated gestures do not unlock the reader. Legacy controls, and automatic locking with no assigned lock gesture, retain the long/very-long/click-hold fallback. Saved bindings are loaded before storage recovery, and wake input preserves click-hold sequences. While locked, the sleep screen shows a small padlock badge in the top-right corner.
+With custom controls enabled, unlock using a gesture assigned to **Lock device**. Unrelated gestures do not unlock the reader. Legacy controls, and automatic locking with no assigned lock gesture, retain the long/very-long/click-hold fallback. Saved bindings are loaded before storage recovery, and wake input preserves click-hold sequences. While locked, the sleep screen shows a small padlock badge in the top-right corner by default; its visibility can be changed in browser settings or through the companion API.
 
 ## Apps
 
@@ -252,6 +265,8 @@ make
 
 ## Contributing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for formatting, compatibility and validation guidelines.
+
 If you improve the firmware, add features or fix bugs, feel free to open a pull request.
 Please clearly mention:
 - which board version(s) you tested on (V1.1, V1.2, or both)
@@ -280,9 +295,9 @@ The same sources build under either toolchain.
    pio device monitor
    ```
 
-Both envs share libraries and partition table via `platformio.ini`. The PIO build also runs `scripts/build_info.py` to inject:
+All six environments share libraries and the partition table via `platformio.ini`. The PIO build also runs `scripts/build_info.py` to inject:
 
-- `FW_VERSION` from `git describe --tags --always --dirty` (e.g. `v2.1`, `v2.1-3-gabc1234`, `…-dirty`)
+- `FW_VERSION` from `git describe --tags --always --dirty` (e.g. `v3.1.8`, `v3.1.8-3-gabc1234`, `…-dirty`)
 - `BUILD_GIT_HASH` from the current short SHA
 
 ### Arduino IDE 2 (outdated)
@@ -437,7 +452,7 @@ Return from `app_main` to exit back to the Apps menu. Apps decide their own exit
 
 ## Features
 
-- TXT book support
+- TXT and packed PBT book support
 - Adjustable font size and line spacing
 - Font family choice (Helvetica / OpenDyslexic)
 - Bionic reading mode
@@ -447,8 +462,9 @@ Return from `app_main` to exit back to the Apps menu. Apps decide their own exit
 - Todo list
 - Device lock (see [Device lock](#device-lock))
 - Remappable button gestures
-- Custom screensaver image
+- Custom screensavers with rotation slots, image rotation, BIN import and BMP/BIN downloads
 - Adjustable idle sleep timeout
+- Bluetooth connection to the Pala app
 - Wi-Fi provisioning (Improv) + captive-portal web UI
 - OTA firmware updates over Wi-Fi (see [OTA firmware updates](#ota-firmware-updates))
 - User-installable apps (see [Apps](#apps))
