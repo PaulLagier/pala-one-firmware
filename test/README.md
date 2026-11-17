@@ -269,7 +269,7 @@ four-pixel line gap.
 The screensaver editor also has an optional real-Canvas regression. Run
 `node test/test_editor_browser.mjs /path/to/chrome` with a Chrome or Chromium
 executable. It uses an isolated temporary profile and synthetic files to verify
-exact raw bitmap import/export, standard PNG import, clockwise rotation at 90/180/270 degrees,
+exact raw bitmap import/export, standard PNG/BMP import, clockwise rotation at 90/180/270 degrees,
 lossless four-turn restoration, and rejection of invalid bitmap lengths. The
 regular Node editor tests run the actual localized scripts for all eleven
 languages; the optional browser check supplies pixel-level evidence.

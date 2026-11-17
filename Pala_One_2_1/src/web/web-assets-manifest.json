@@ -21,11 +21,11 @@
     {
       "name": "EditorCss",
       "file": "editor.css",
-      "url": "/assets/editor.0ca689b4d0e4.css",
-      "rawBytes": 2414,
-      "gzipBytes": 840,
-      "rawSHA256": "0ca689b4d0e4147ddd4ea7b4af3aba357fff7c9e0331aadfb1dcbac42f1219a3",
-      "gzipSHA256": "e79c292014fed20c010bf2b59e0cf6d324425db1a398fa48e64020e4182f8aa9"
+      "url": "/assets/editor.de0029889df2.css",
+      "rawBytes": 2429,
+      "gzipBytes": 845,
+      "rawSHA256": "de0029889df280baf5c55208c0c8b16d23f99ea889a72c6ca1da8c0a288df982",
+      "gzipSHA256": "c410061d14b0f1db613b101515e5e47511ca9ee5b2c3d9d586e9d7397c02e60b"
     },
     {
       "name": "EditorJs",
@@ -46,6 +46,6 @@
       "gzipSHA256": "e650ffc0d25363921a102a819ec54caf4ed5d102723af06a295dd73c5db4a5f6"
     }
   ],
-  "rawBytes": 19258,
-  "gzipBytes": 7160
+  "rawBytes": 19273,
+  "gzipBytes": 7165
 }

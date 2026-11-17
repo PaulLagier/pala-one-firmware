@@ -144,6 +144,8 @@ static void handleSleepThumb() {
   // 1 = white pixel, so flip the palette so the preview matches.
   uint8_t palette[8] = {0, 0, 0, 0, 255, 255, 255, 0};
 
+  if (server.hasArg("download"))
+    server.sendHeader("Content-Disposition", "attachment; filename=\"screensaver.bmp\"");
   server.setContentLength(total);
   server.send(200, "image/bmp", "");
   WiFiClient client = server.client();
@@ -381,16 +383,16 @@ static String screensaverActionsHtml(bool single, int slot, bool populated) {
   out += "</label></form>";
 
   if (populated) {
-    out += "<a class='btn-icon' href='/screensavers/download?";
-    if (single)
-      out += "single=1";
-    else
-      out += "slot=" + String(slot);
+    const String query = single ? String("single=1") : "slot=" + String(slot);
+    out += "<a class='btn-icon' href='/screensavers/thumb?download=1&" + query;
     out += Language::join({"' download title='", D_WEB_SS_DOWNLOAD_ARIA, "' aria-label='",
                            D_WEB_SS_DOWNLOAD_ARIA, "'>"})
                .c_str();
     out += FPSTR(kIconDownload);
     out += "</a>";
+    // Keep the raw format available for direct slot uploads and backups.
+    out += "<a class='btn-icon' href='/screensavers/download?" + query +
+           "' download>BIN</a>";
     out += "<form method='POST' action='/screensavers/delete' style='margin:0'>";
     if (single) {
       out += "<input type='hidden' name='single' value='1'>";

@@ -12,8 +12,9 @@ const folder=await mkdtemp(join(tmpdir(),'pala-editor-browser-'));
 const page=join(folder,'test.html');
 const fixture=await readFile(join(root,'test/editor-browser-fixture.html'),'utf8');
 const source=await readFile(join(root,'Pala_One_2_1/src/web/assets/editor.js'),'utf8');
+const style=await readFile(join(root,'Pala_One_2_1/src/web/assets/editor.css'),'utf8');
 assert.equal(fixture.split('__PALA_EDITOR_SOURCE__').length,2);
-await writeFile(page,fixture.replace('__PALA_EDITOR_SOURCE__',()=>source));
+await writeFile(page,fixture.replace('__PALA_EDITOR_SOURCE__',()=>source).replace('__PALA_EDITOR_STYLE__',()=>style));
 const chrome=spawn(process.argv[2],[`--user-data-dir=${folder}/profile`,'--headless=new',
  '--remote-debugging-address=127.0.0.1','--remote-debugging-port=0','--no-first-run',
  '--no-default-browser-check','--disable-background-networking','--disable-extensions','about:blank'],
