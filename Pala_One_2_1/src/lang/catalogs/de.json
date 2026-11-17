@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Das Gerät wird beim Einschlafen gesperrt. Halte beim nächsten Aufwachen die Taste gedrückt, um es zu entsperren.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Im Ruhemodus sperren",
   "D_WEB_MANAGE_FILES_BUTTON": "Dateien verwalten",
+  "D_WEB_MARKDOWN_LABEL": "Markdown-Formatierung",
+  "D_WEB_MARKDOWN_HINT": "Wendet Fett- und Überschriftenformatierungen an. Funktioniert nicht, wenn „Bionic Reading“ aktiviert ist.",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "Diese Aktionen müssen immer belegt sein: Hauptmenü, nächster Eintrag/nächste Seite, OK/Menü öffnen (je nach Kontext)",
   "D_WEB_MOVE_BUTTON": "Verschieben",
   "D_WEB_MOVE_HINT": "Gib den vollständigen Ordnerpfad an.",

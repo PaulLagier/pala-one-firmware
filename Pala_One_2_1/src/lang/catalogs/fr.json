@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Verrouille automatiquement l’appareil à chaque mise en veille. Un appui long sera nécessaire pour le déverrouiller au prochain réveil.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Verrouiller à la mise en veille",
   "D_WEB_MANAGE_FILES_BUTTON": "Gérer les fichiers",
+  "D_WEB_MARKDOWN_LABEL": "Formatage Markdown",
+  "D_WEB_MARKDOWN_HINT": "Applique une mise en forme en gras et des styles de titre. Ne fonctionne pas lorsque la lecture bionique est activée.",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "Ces actions doivent toujours être présentes : Aller au menu principal, Élément ou page suivante, OK/Ouvrir le menu (selon le contexte)",
   "D_WEB_MOVE_BUTTON": "Déplacer",
   "D_WEB_MOVE_HINT": "Utilisez le chemin exact du dossier.",

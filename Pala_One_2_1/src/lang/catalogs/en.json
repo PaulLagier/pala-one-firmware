@@ -352,6 +352,8 @@
   "D_WEB_LOCK_ON_SLEEP_HINT": "Automatically lock the device every time it goes to sleep. You will need to perform a long press to unlock on the next wake.",
   "D_WEB_LOCK_ON_SLEEP_LABEL": "Lock on sleep",
   "D_WEB_MANAGE_FILES_BUTTON": "Manage files",
+  "D_WEB_MARKDOWN_LABEL": "Markdown formatting",
+  "D_WEB_MARKDOWN_HINT": "Applies bold and heading formatting. Does not work when bionic reading is enabled.",
   "D_WEB_MISSING_REQUIRED_BUTTON_MSG": "The following actions must always be present: Go to main menu, Next item/page, OK/Open menu(Context dependent)",
   "D_WEB_MOVE_BUTTON": "Move",
   "D_WEB_MOVE_HINT": "Use the exact folder path.",
