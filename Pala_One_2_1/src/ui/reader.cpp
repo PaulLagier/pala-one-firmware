@@ -18,6 +18,7 @@
 
 #include "src/ui/font.h"                   // layoutForCache for cache stamping
 #include "src/ui/screens/library_screen.h" // navigateToLibraryRoot — fallback on error
+#include "src/ui/bookmark_settings.h"
 #include "src/ui/statusbar.h"              // Statusbar::mode for the per-mode statusbar render
 #include "src/ui/text.h"
 #include "src/ui/toast.h"   // Toast::isActive / Toast::draw
@@ -615,17 +616,31 @@ const char *addBookmarkForCurrentBook() {
     return nullptr;
 
   PreferencesStore kv(prefs);
-  Bookmarks bm = loadBookmarks(kv, g_bookview.book.key());
-
-  uint32_t pageOff = g_bookview.pages.offsetAt(g_bookview.cursor.pageIndex);
-  BookmarkAddResult r = addBookmark(bm, uint32_t(g_bookview.cursor.pageIndex), pageOff);
-  if (r.added)
-    saveBookmarks(kv, g_bookview.book.key(), bm);
-  // Page table is NOT saved here — every realistic flow that adds a bookmark
-  // is followed by a sleep or explicit exit, both of which call
-  // persistReaderState(). The bookmark's offset is byte-exact and survives
-  // a re-paginate on next open if the disk cache is stale.
-  return r.message;
+  const uint32_t start = g_bookview.pages.offsetAt(g_bookview.cursor.pageIndex);
+  uint32_t end = start;
+  const bool toggle = BookmarkSettings::toggleEnabled();
+  if (toggle) {
+    const int next = g_bookview.cursor.pageIndex + 1;
+    if (g_bookview.pages.contains(next))
+      end = g_bookview.pages.offsetAt(next);
+    else if (g_bookview.pages.eofReached)
+      end = uint32_t(g_bookview.book.size());
+    else {
+      if (s_pagesLayoutDirty)
+        return D_WEB_ERR_WRITE_FAILED;
+      // Usually render already recorded this boundary. Resolve only one page
+      // when needed; never treat the rest of the book as the current page.
+      auto &stream = g_bookview.book.stream();
+      const uint32_t position = stream.position();
+      end = nextPageOffset(stream, start);
+      if (!stream.seek(position))
+        return D_WEB_ERR_WRITE_FAILED;
+    }
+    if (end <= start || end > g_bookview.book.size())
+      return D_WEB_ERR_WRITE_FAILED;
+  }
+  return applyReaderBookmarkAction(kv, g_bookview.book.key(), uint32_t(g_bookview.cursor.pageIndex),
+                                   start, end, toggle);
 }
 
 // Commit everything the active reader has accumulated to durable storage.

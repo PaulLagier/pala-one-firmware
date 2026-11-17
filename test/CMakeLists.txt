@@ -341,6 +341,7 @@ add_test(NAME idle_loop_tests COMMAND idle_loop_tests)
 # Dedicated web display form with actual statusbar, lock and gesture persistence.
 add_executable(display_settings_tests main.cpp native/display_settings/main.cpp
   ${FW_SRC}/web/display_settings.cpp ${FW_SRC}/web/reading_settings.cpp
+  ${FW_SRC}/ui/bookmark_settings.cpp ${FW_SRC}/web/settings_controls.cpp
   ${FW_SRC}/ui/statusbar.cpp
   ${FW_SRC}/ui/lock.cpp ${FW_SRC}/ui/reader_actions.cpp)
 target_include_directories(display_settings_tests PRIVATE native/display_settings/stubs

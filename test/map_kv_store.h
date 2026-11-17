@@ -57,8 +57,12 @@ public:
     strings_.clear();
   }
 
-  bool has(const char* key) const {
+  bool has(const char *key) const override {
     return data_.count(key) > 0 || strings_.count(key) > 0;
+  }
+  size_t bytesSize(const char *key) const override {
+    auto i = data_.find(key);
+    return i == data_.end() ? 0 : i->second.size();
   }
   size_t entryCount() const { return data_.size() + strings_.size(); }
 

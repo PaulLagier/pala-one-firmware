@@ -8,18 +8,26 @@
 // All per-book NVS state — explicit bookmarks AND implicit saved-page
 // progress — lives behind the same hash-keyed scheme (`<hash>_p`,
 // `<hash>_bm`) and follows the same lifecycle (cleared on book delete,
-// migrated on rename, invalidated on layout change), so it shares a file.
+// migrated on rename), so it shares a file. Canonical offsets survive layout changes.
 
 // ============================================================================
 //  Testable KV-store-backed API (host-compatible)
 // ============================================================================
 
-// Load the bookmarks for `bookKey` from `kv`. Decodes both v1 (legacy,
-// 2-byte/entry) and v2 (current, 6-byte/entry) blobs.
+// Load v1 legacy, ordinary v2, and wide-page v3 bookmark blobs.
 Bookmarks loadBookmarks(KeyValueStore &kv, const String &bookKey);
 
-// Save `bm` for `bookKey` into `kv` using the v2 format.
+// Save ordinary bookmarks as v2; use v3 only when a page label exceeds 65535.
 void saveBookmarks(KeyValueStore &kv, const String &bookKey, const Bookmarks &bm);
+
+// Mutation paths reject unreadable/malformed records and verify exact writes.
+bool loadBookmarksChecked(KeyValueStore &kv, const String &bookKey, Bookmarks &marks);
+bool saveBookmarksChecked(KeyValueStore &kv, const String &bookKey, const Bookmarks &marks);
+
+// Apply the reader action and verify the exact persisted blob before reporting
+// success. Neither reading progress nor other books' metadata is modified.
+const char *applyReaderBookmarkAction(KeyValueStore &kv, const String &bookKey, uint32_t page,
+                                      uint32_t start, uint32_t end, bool toggle);
 
 // Per-book reading progress.
 //

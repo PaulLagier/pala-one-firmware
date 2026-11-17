@@ -787,3 +787,8 @@
 #define D_WEB_SETTINGS_INVALID "Invalid display settings"
 
 #define D_WEB_READING_DISPLAY "Reading display"
+
+// Optional bookmark-action toggling.
+#define D_WEB_BOOKMARK_TOGGLE_LABEL "Toggle existing bookmarks with the bookmark action"
+#define D_TOAST_BOOKMARK_REMOVED "Bookmark removed"
+#define D_TOAST_BOOKMARK_AMBIGUOUS "Multiple marks: use app/browser"

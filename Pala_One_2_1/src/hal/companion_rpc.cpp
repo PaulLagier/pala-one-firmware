@@ -20,6 +20,7 @@
 #include "src/hal/display.h"
 #include "src/ui/statusbar.h"
 #include "src/ui/lock.h"
+#include "src/ui/bookmark_settings.h"
 #include "src/ui/sleep.h"
 #include "src/ui/header_title.h"
 #include "src/ui/reader_actions.h"
@@ -145,6 +146,9 @@ bool setSetting(const String &key, JsonVariant v) {
   if (key == "lockOnSleep" && v.is<bool>()) {
     Sleep::setLockOnSleep(v.as<bool>());
     return true;
+  }
+  if (key == "bookmarkToggle" && v.is<bool>()) {
+    return BookmarkSettings::setToggleEnabled(v.as<bool>());
   }
   if (key == "lockIcon" && v.is<bool>()) {
     Lock::setIconEnabled(v.as<bool>());
@@ -321,6 +325,7 @@ String companionRpcControl(const uint8_t *bytes, size_t length) {
     o["flipped"] = ScreenSettings::isScreenFlipped();
     o["statusbar"] = int(Statusbar::mode());
     o["lockIcon"] = Lock::iconEnabled();
+    o["bookmarkToggle"] = BookmarkSettings::toggleEnabled();
     o["clickGapMs"] = ClickTimings::maxClickGapMs();
     o["clickSequenceMs"] = ClickTimings::maxClickSequenceMs();
     o["legacyControls"] = Gestures::legacyControlsOn();

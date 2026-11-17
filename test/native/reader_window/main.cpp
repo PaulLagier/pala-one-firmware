@@ -94,11 +94,45 @@ void exercise(const char* name,const std::vector<uint8_t>& stored,const std::vec
  if(offsets.size()>70001){
   g_bookview.cursor.pageIndex=findChecked(offsets[70000]);assert(g_bookview.cursor.pageIndex==70000);assert(addBookmarkForCurrentBook());
   PreferencesStore store(prefs);const auto mark=loadBookmarks(store,g_bookview.book.key());assert(mark.count==1&&mark.pages[0]==70000&&mark.offsets[0]==offsets[70000]);
+  const auto table = g_bookview.pages;
+  Bookmarks pair;
+  pair.count = 2;
+  pair.pages[0] = 3;
+  pair.offsets[0] = offsets[70000] + 1;
+  pair.pages[1] = 70001;
+  pair.offsets[1] = offsets[70001];
+  saveBookmarks(store, g_bookview.book.key(), pair);
+  g_bookview.pages.firstPage = 70000;
+  g_bookview.pages.count = 1;
+  g_bookview.pages.offsets[0] = offsets[70000];
+  g_bookview.pages.eofReached = false;
+  prefs.putBool("cfg_bm_toggle", true);
+  const auto streamPosition = g_bookview.book.stream().position();
+  const auto progressBefore = loadSavedOffset(store, g_bookview.book.key());
+  assert(String(addBookmarkForCurrentBook()) == D_TOAST_BOOKMARK_REMOVED);
+  const auto remaining = loadBookmarks(store, g_bookview.book.key());
+  assert(remaining.count == 1 && remaining.offsets[0] == offsets[70001]);
+  assert(g_bookview.book.stream().position() == streamPosition);
+  assert(loadSavedOffset(store, g_bookview.book.key()) == progressBefore);
+  prefs.putBool("cfg_bm_toggle", false);
+  g_bookview.pages = table;
  }
  const auto anchor=offsets[offsets.size()/2];g_bookview.cursor.pageIndex=findChecked(anchor);Font::setBodySize(12);repaginateForLayoutChange();
  assert(cpuFrequency==160);cpuFrequency=80;
  const auto changed=oracle(raw);const auto wanted=int(std::upper_bound(changed.begin(),changed.end(),anchor)-changed.begin())-1;
  assert(g_bookview.cursor.pageIndex==wanted&&g_bookview.pages.offsetAt(wanted)==changed[wanted]);
+ PreferencesStore bookmarkStore(prefs);
+ Bookmarks reflowed;
+ reflowed.count = 1;
+ reflowed.pages[0] = uint32_t(offsets.size() / 2);
+ reflowed.offsets[0] = anchor;
+ saveBookmarks(bookmarkStore, g_bookview.book.key(), reflowed);
+ prefs.putBool("cfg_bm_toggle", true);
+ assert(String(addBookmarkForCurrentBook()) == D_TOAST_BOOKMARK_REMOVED);
+ assert(loadBookmarks(bookmarkStore, g_bookview.book.key()).count == 0);
+ assert(g_bookview.cursor.pageIndex == wanted);
+ prefs.putBool("cfg_bm_toggle", false);
+
  std::cout<<name<<": "<<raw.size()<<" logical bytes, "<<offsets.size()<<" pages, all offsets/EOF/reverse/cache/resume/layout passed\n";
 }
 void cancelledIndex(){
@@ -167,6 +201,106 @@ void stagedPageReuse() {
  resetBookView();
  std::cout<<"Idle prefetch reuse preserves stream position and exact rendered pixels for all sizes and Bionic states\n";
 }
+
+// Chrome rendering is a boundary adapter here; these checks exercise bookmark
+// routes/data, not page chrome, styles or HTML escaping.
+String webPageStart(const String &, const String &, const String &, bool) { return ""; }
+String webPageEnd() { return ""; }
+String htmlEscape(const String &text) { return text; }
+uint8_t loadBookmarksForKey(const String &key, uint32_t *pages, uint32_t *offsets) {
+  PreferencesStore store(prefs);
+  const auto marks = loadBookmarks(store, key);
+  for (unsigned i = 0; i < marks.count; ++i) {
+    pages[i] = marks.pages[i];
+    offsets[i] = marks.offsets[i];
+  }
+  return marks.count;
+}
+extern void registerBookmarksRoutes();
+String renderedDeleteReference() {
+  const std::string body = server.body.c_str(), marker = "name='idx' value='";
+  const auto start = body.find(marker);
+  assert(start != std::string::npos);
+  const auto value = start + marker.size(), end = body.find("'", value);
+  assert(end != std::string::npos);
+  return body.substr(value, end - value).c_str();
+}
+void webBookmarks(const std::vector<uint8_t> &plain, const std::vector<uint8_t> &packed) {
+  resetBookView();
+  prefs.clear();
+  FS.nodes.clear();
+  Font::setBodySize(14);
+  Font::setBionic(false);
+  registerBookmarksRoutes();
+  const std::string text(plain.begin(), plain.end());
+  const auto anchor = uint32_t(text.find("Canonical target marker"));
+  assert(anchor < plain.size());
+  const String path = "/books/web.txt", packedPath = "/books/web.pbt";
+  FS.put(path.c_str(), plain);
+  FS.put(packedPath.c_str(), packed);
+  PreferencesStore store(prefs);
+  for (const auto &current : {path, packedPath}) {
+    strcpy(g_library.books[0].path, current.c_str());
+    g_library.bookCount = 1;
+    Bookmarks marks;
+    marks.count = 1;
+    marks.pages[0] = 30;
+    marks.offsets[0] = anchor;
+    const auto key = prefKeyForBook(current);
+    saveBookmarks(store, key, marks);
+    server.request("/bookmarks", HTTP_GET);
+    assert(server.status == 200 &&
+           std::string(server.body.c_str()).find("Canonical target marker") != std::string::npos);
+    const String reference = renderedDeleteReference();
+    server.request("/viewbm", HTTP_GET, {{"book", "0"}, {"idx", "0"}});
+    assert(server.status == 200 &&
+           std::string(server.body.c_str()).find("Canonical target marker") != std::string::npos);
+    server.request("/exportbm", HTTP_GET, {{"book", "0"}});
+    const std::string exported = server.body.c_str(),
+                      divider = "--------------------------------------------------\n";
+    const auto excerpt = exported.find(divider);
+    assert(excerpt != std::string::npos);
+    assert(server.status == 200 &&
+           exported.substr(excerpt + divider.size()).find("Canonical target marker") !=
+               std::string::npos);
+    server.request("/delbm", HTTP_POST, {{"book", "0"}, {"idx", "0"}});
+    assert(server.status == 409 && loadBookmarks(store, key).count == 1);
+    // Reader changed the selected entry while the browser kept an old list.
+    marks.pages[0] = 31;
+    marks.offsets[0] = anchor + 5;
+    saveBookmarks(store, key, marks);
+    server.request("/delbm", HTTP_POST, {{"book", "0"}, {"idx", reference}});
+    assert(server.status == 409 && loadBookmarks(store, key).offsets[0] == anchor + 5);
+    marks.pages[0] = 30;
+    marks.offsets[0] = anchor;
+    saveBookmarks(store, key, marks);
+    prefs.failBytesWrite = true;
+    server.request("/delbm", HTTP_POST, {{"book", "0"}, {"idx", reference}});
+    assert(server.status == 500 && loadBookmarks(store, key).count == 1);
+    prefs.failBytesWrite = false;
+    server.request("/delbm", HTTP_POST, {{"book", "0"}, {"idx", reference}});
+    assert(server.status == 302 && loadBookmarks(store, key).count == 0);
+  }
+  // A shifted library index must not delete another book with the same mark values.
+  Bookmarks marks;
+  marks.count = 1;
+  marks.pages[0] = 70000;
+  marks.offsets[0] = kOffsetUnset;
+  const auto key = prefKeyForBook(path);
+  saveBookmarks(store, key, marks);
+  strcpy(g_library.books[0].path, path.c_str());
+  server.request("/bookmarks", HTTP_GET);
+  const String legacyRef = renderedDeleteReference();
+  strcpy(g_library.books[0].path, packedPath.c_str());
+  saveBookmarks(store, prefKeyForBook(packedPath), marks);
+  server.request("/delbm", HTTP_POST, {{"book", "0"}, {"idx", legacyRef}});
+  assert(server.status == 409 && loadBookmarks(store, prefKeyForBook(packedPath)).count == 1);
+  strcpy(g_library.books[0].path, path.c_str());
+  server.request("/delbm", HTTP_POST, {{"book", "0"}, {"idx", legacyRef}});
+  assert(server.status == 302 && loadBookmarks(store, key).count == 0);
+  std::cout << "Actual web bookmark routes preserve canonical PBT labels/export and reject stale "
+               "deletes/write failures\n";
+}
 int main(int argc,char** argv) {
  assert(argc==2);u8g2.begin(gfx);Font::loadSettings();
  auto raw=load(std::string(argv[1])+"/5.raw");
@@ -175,5 +309,6 @@ int main(int argc,char** argv) {
  std::vector<uint8_t> poetry;for(int i=0;i<320000;++i){poetry.push_back('a');poetry.push_back('\n');poetry.push_back('\n');}
  exercise("poetry.txt",poetry,poetry);
  legacyCache();cancelledIndex();dirtyLayoutPersistence();stagedPageReuse();
+ webBookmarks(load(std::string(argv[1]) + "/web.raw"), load(std::string(argv[1]) + "/web.pbt"));
  std::cout<<"Actual reader window, canonical progress, format/CRC failures and cancellation passed\n";
 }

@@ -6,20 +6,37 @@
 #include "src/pure/hashing.h"
 #include "src/pure/paths.h" // stripTxtExt, lastPathComponent
 #include "src/storage/book_metadata.h"
+#include "src/storage/preferences_store.h"
+#include "src/hal/packed_file_stream.h"
 #include "src/storage/library.h"
 #include "src/ui/text.h" // resolveBookmarkOffset, extractPageText, pageOffsetForPage
 #include "src/web/chrome.h"
 
+// An opaque, exact snapshot identity. Numeric indexes alone can target a
+// different entry after another client or the reader removes a bookmark.
+static String bookmarkDeleteReference(const String &key, int index, uint32_t page,
+                                      uint32_t offset) {
+  String reference = String(index);
+  reference.reserve(key.length() + 36);
+  reference += ".";
+  reference += key;
+  reference += ".";
+  reference += String(page);
+  reference += ".";
+  reference += String(offset);
+  return reference;
+}
+
 // One book page rendered as plain text — used by the bookmark export
-// download. Opens the file, locates page N's offset, captures one page's
+// download. Resolves the stored canonical offset (or legacy page), captures one page's
 // worth of lines into a String. Single-caller helper; lives here rather than
 // in text.cpp because it's pure web concern (the "Open failed" / "(empty)"
 // strings are user-facing for this download flow).
-static String readPageTextForWeb(const String &path, int page) {
+static String readPageTextForWeb(const String &path, int page, uint32_t storedOffset) {
   File f = FS.open(path, "r");
   if (!f)
     return String(D_WEB_BOOKMARK_OPEN_FAILED_DOT);
-  uint32_t off = pageOffsetForPage(f, path, page);
+  uint32_t off = resolveBookmarkOffset(path, uint32_t(page), storedOffset);
   String out;
   out.reserve(900);
   (void)extractPageText(f, off, out);
@@ -69,8 +86,8 @@ static void handleBookmarksWeb() {
 
     for (int j = 0; j < count; j++) {
       int targetPage = (int)pages[j];
-      uint32_t pageOff = resolveBookmarkOffset(filePath, (uint16_t)targetPage, offsets[j]);
-      FileReadStream fs(f);
+      uint32_t pageOff = resolveBookmarkOffset(filePath, uint32_t(targetPage), offsets[j]);
+      BookReadStream fs(f);
       String sn = readBookmarkLabelAtOffset(fs, pageOff, targetPage);
       out += Language::join(
                  {"<li><div class='row'><div><div class='pill'>", D_WEB_BOOKMARK_PILL_PREFIX})
@@ -82,7 +99,8 @@ static void handleBookmarksWeb() {
              "&idx=" + String(j) + Language::join({"'>", D_WEB_BOOKMARK_VIEW, "</a> | "}).c_str();
       out += "<form method='POST' action='/delbm' style='display:inline'>";
       out += "<input type='hidden' name='book' value='" + String(i) + "'>";
-      out += "<input type='hidden' name='idx' value='" + String(j) + "'>";
+      out += "<input type='hidden' name='idx' value='" +
+             bookmarkDeleteReference(key, j, pages[j], offsets[j]) + "'>";
       out +=
           Language::join({"<button type='submit' class='btn secondary' style='padding:4px "
                           "8px;font-size:13px' onclick=\"return confirm('",
@@ -114,20 +132,30 @@ static void handleDeleteBookmarkWeb() {
   }
 
   String key = prefKeyForBook(String(g_library.books[b].path));
-  uint32_t pages[MAX_BOOKMARKS];
-  uint32_t offsets[MAX_BOOKMARKS];
-  uint8_t count = loadBookmarksForKey(key, pages, offsets);
-  if (idx < 0 || idx >= count) {
+  PreferencesStore store(prefs);
+  Bookmarks marks;
+  if (!loadBookmarksChecked(store, key, marks)) {
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_WRITE_FAILED);
+    return;
+  }
+  if (idx < 0 || idx >= marks.count) {
     server.send(400, "text/plain; charset=utf-8", D_WEB_ERR_BAD_IDX);
     return;
   }
-
-  for (int i = idx + 1; i < count; i++) {
-    pages[i - 1] = pages[i];
-    offsets[i - 1] = offsets[i];
+  if (server.arg("idx") !=
+      bookmarkDeleteReference(key, idx, marks.pages[idx], marks.offsets[idx])) {
+    server.send(409, "text/plain; charset=utf-8", D_WEB_ERR_BAD_IDX);
+    return;
   }
-  count--;
-  saveBookmarksForKey(key, pages, offsets, count);
+  for (int i = idx + 1; i < marks.count; ++i) {
+    marks.pages[i - 1] = marks.pages[i];
+    marks.offsets[i - 1] = marks.offsets[i];
+  }
+  --marks.count;
+  if (!saveBookmarksChecked(store, key, marks)) {
+    server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_WRITE_FAILED);
+    return;
+  }
 
   server.sendHeader("Location", "/bookmarks");
   server.send(302, "text/plain", "");
@@ -235,10 +263,10 @@ static void handleExportBookmarksWeb() {
 
   for (int i = 0; i < count; i++) {
     int targetPage = (int)pages[i];
-    uint32_t pageOff = resolveBookmarkOffset(filePath, (uint16_t)targetPage, offsets[i]);
-    FileReadStream fs(f);
+    uint32_t pageOff = resolveBookmarkOffset(filePath, uint32_t(targetPage), offsets[i]);
+    BookReadStream fs(f);
     String label = readBookmarkLabelAtOffset(fs, pageOff, targetPage);
-    String txt = readPageTextForWeb(filePath, targetPage);
+    String txt = readPageTextForWeb(filePath, targetPage, offsets[i]);
 
     out += "==================================================\n";
     out += D_WEB_BMEXPORT_BOOKMARK_LBL;

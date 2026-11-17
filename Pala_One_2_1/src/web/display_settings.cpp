@@ -2,11 +2,21 @@
 #include "src/config.h"
 #include "src/state.h"
 #include "src/ui/lock.h"
+#include "src/ui/bookmark_settings.h"
 #include "src/ui/statusbar.h"
 #include "src/ui/widgets.h"
 #include "src/ui/screen.h"
 
 bool handleDisplaySettingsPost() {
+  if (server.hasArg("bookmark_form")) {
+    if (!BookmarkSettings::setToggleEnabled(server.hasArg("bookmark_toggle"))) {
+      server.send(500, "text/plain; charset=utf-8", D_WEB_ERR_WRITE_FAILED);
+      return true;
+    }
+    server.sendHeader("Location", "/settings");
+    server.send(303, "text/plain", "");
+    return true;
+  }
   if (!server.hasArg("display_form"))
     return false;
   const String mode = server.arg("statusbar");

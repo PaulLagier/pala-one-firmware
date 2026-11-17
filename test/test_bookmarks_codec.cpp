@@ -157,3 +157,63 @@ TEST_CASE("ordinary bookmarks continue to emit the public V2 bytes") {
   const uint8_t expected[] = {1, 255, 255, 120, 86, 52, 18};
   CHECK(std::memcmp(encoded, expected, sizeof(expected)) == 0);
 }
+
+TEST_CASE("Toggle uses unique canonical position and an exclusive page boundary") {
+  Bookmarks marks;
+  marks.count = 2;
+  marks.pages[0] = 70000;
+  marks.offsets[0] = 1150;
+  marks.pages[1] = 9;
+  marks.offsets[1] = 1200;
+  auto result = toggleBookmarkForPage(marks, 9, 1100, 1200);
+  CHECK(result.changed);
+  CHECK_EQ(String(result.message), String(D_TOAST_BOOKMARK_REMOVED));
+  CHECK_EQ(marks.count, 1);
+  CHECK_EQ(marks.offsets[0], 1200u);
+  // A stale page label elsewhere must not be deleted just because it is 9.
+  result = toggleBookmarkForPage(marks, 9, 1100, 1200);
+  REQUIRE(result.changed);
+  CHECK_EQ(marks.count, 2);
+  CHECK_EQ(marks.offsets[0], 1200u);
+  CHECK_EQ(marks.offsets[1], 1100u);
+  REQUIRE(toggleBookmarkForPage(marks, 9, 1100, 1200).changed);
+  CHECK_EQ(marks.count, 1);
+  CHECK_EQ(marks.offsets[0], 1200u);
+}
+TEST_CASE("Toggle preserves ambiguous matches and can remove legacy marks") {
+  Bookmarks marks;
+  marks.count = 2;
+  marks.pages[0] = 7;
+  marks.offsets[0] = kOffsetUnset;
+  marks.pages[1] = 99;
+  marks.offsets[1] = 710;
+  auto result = toggleBookmarkForPage(marks, 7, 700, 800);
+  CHECK(!result.changed);
+  CHECK_EQ(String(result.message), String(D_TOAST_BOOKMARK_AMBIGUOUS));
+  CHECK_EQ(marks.count, 2);
+  result = toggleBookmarkForPage(marks, 7, 600, 700);
+  CHECK(result.changed);
+  CHECK_EQ(marks.count, 1);
+  CHECK_EQ(marks.pages[0], 99u);
+  CHECK_EQ(marks.offsets[0], 710u);
+}
+TEST_CASE("Toggle on an empty page inserts and repeats remove, including wide labels") {
+  Bookmarks marks;
+  for (uint32_t page : {0u, 70000u}) {
+    REQUIRE(toggleBookmarkForPage(marks, page, 0, 100).changed);
+    CHECK_EQ(marks.count, 1);
+    CHECK_EQ(marks.pages[0], page);
+    REQUIRE(toggleBookmarkForPage(marks, page, 0, 100).changed);
+    CHECK_EQ(marks.count, 0);
+  }
+  CHECK(!toggleBookmarkForPage(marks, 1, 100, 100).changed);
+  CHECK(!toggleBookmarkForPage(marks, 1, 100, 99).changed);
+  CHECK_EQ(marks.count, 0);
+}
+
+TEST_CASE("Toggle rejects invalid bookmark counts without mutation") {
+  Bookmarks marks{};
+  marks.count = MAX_BOOKMARKS + 1;
+  CHECK(!toggleBookmarkForPage(marks, 1, 0, 100).changed);
+  CHECK_EQ(marks.count, MAX_BOOKMARKS + 1);
+}

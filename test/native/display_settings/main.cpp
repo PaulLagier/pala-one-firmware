@@ -5,6 +5,8 @@
 #include "src/web/display_settings.h"
 #include "src/web/reading_settings.h"
 #include "src/ui/font.h"
+#include "src/ui/bookmark_settings.h"
+#include "src/web/settings_controls.h"
 LockPrefs prefs;
 DisplayServer server;
 DisplayScreen screen;
@@ -103,4 +105,41 @@ TEST_CASE("Reading form can explicitly clear both unchecked reading checkboxes")
   CHECK_EQ(Font::writes, 2);
   CHECK(!applyReadingSettingsForm());
   CHECK_EQ(Font::writes, 2);
+}
+
+TEST_CASE("Bookmark toggle is opt-in, persistent and isolated from display and reading cards") {
+  reset();
+  CHECK(!BookmarkSettings::toggleEnabled());
+  server.args = {{"bookmark_form", "1"}, {"bookmark_toggle", "1"}};
+  REQUIRE(handleDisplaySettingsPost());
+  CHECK_EQ(server.status, 303);
+  CHECK(BookmarkSettings::toggleEnabled());
+  CHECK_EQ(Statusbar::mode(), Statusbar::Full);
+  CHECK(Lock::iconEnabled());
+  CHECK_EQ(screen.draws, 0);
+  CHECK_EQ(invalidations, 0);
+  server.args = {{"display_form", "1"}, {"statusbar", "1"}, {"lock_icon", "1"}};
+  REQUIRE(handleDisplaySettingsPost());
+  CHECK(BookmarkSettings::toggleEnabled());
+  server.args = {{"bookmark_form", "1"}};
+  REQUIRE(handleDisplaySettingsPost());
+  CHECK(!BookmarkSettings::toggleEnabled());
+}
+
+TEST_CASE("Shared settings select preserves exact values, labels and selected state") {
+  String html;
+  appendSettingsSelect(html, "font", "Größe", "Hint", {{"1", "One"}, {"10", "Ten"}}, "10");
+  const std::string text = html.c_str();
+  CHECK(text.find("<label for='font'>Größe</label><select id='font' name='font'>") != std::string::npos);
+  CHECK(text.find("<option value='1'>One</option>") != std::string::npos);
+  CHECK(text.find("<option value='10' selected>Ten</option>") != std::string::npos);
+  CHECK(text.find("<div class='hint'>Hint</div>") != std::string::npos);
+}
+TEST_CASE("Valid custom app settings are retained rather than silently selecting the first option") {
+  String html;
+  appendSettingsSelect(html, "sleep", "Sleep", nullptr, {{"30", "30 s"}, {"60", "1 min"}}, "45", "45 s");
+  CHECK(std::string(html.c_str()).find("<option value='45' selected>45 s</option>") != std::string::npos);
+  html = "";
+  appendSettingsSelect(html, "lgap", "Gap", nullptr, {{"0", "0 px"}, {"3", "3 px"}}, "4", "4 px");
+  CHECK(std::string(html.c_str()).find("<option value='4' selected>4 px</option>") != std::string::npos);
 }
