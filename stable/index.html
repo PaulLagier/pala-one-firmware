@@ -261,9 +261,11 @@
     <li>
       <strong>Pick your Pala One's serial port.</strong>
       On <strong>Windows</strong> it's usually <em>not</em> <code>COM1</code>.
-      If you only see <code>COM1</code>, the board isn't plugged in or the
-      cable doesn't carry data. On <strong>Mac / Linux</strong>, look for
-      something like <code>/dev/cu.usbmodem*</code> or <code>/dev/ttyACM*</code>;
+      If you only see <code>COM1</code>, check the USB cable and the
+      <a href='#missing-driver'>USB serial driver</a>. On <strong>Mac / Linux</strong>, look for
+      <code>CP2102</code> / <code>CP210x</code>,
+      <code>/dev/cu.usbserial*</code>, <code>/dev/ttyUSB*</code>,
+      <code>/dev/cu.usbmodem*</code> or <code>/dev/ttyACM*</code>;
       skip Bluetooth and debug ports.
     </li>
     <li>
@@ -304,7 +306,23 @@
     </li>
     <li>
       <strong>The board does not appear in the serial-port list.</strong>
-      Try a different USB-C cable, then unplug and reconnect the board. If it still does not show up, the cable may be power-only.
+      Try a USB-C data cable and another USB port, then unplug and reconnect the board.
+      If it still does not appear, check the USB serial driver below.
+    </li>
+    <li id="missing-driver">
+      <strong>Windows shows an unknown USB device, or the CP2102 / CP210x port is missing.</strong>
+      Open Device Manager and check <em>Ports (COM &amp; LPT)</em> and <em>Other devices</em>.
+      Boards with a Silicon Labs CP210x USB-to-UART bridge need the
+      <a href="https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers" target="_blank" rel="noopener noreferrer">official Silicon Labs CP210x VCP driver</a>.
+      Install the driver for your operating system, reconnect the reader, and reopen the browser's port chooser.
+      Select <em>Silicon Labs CP210x USB to UART Bridge</em> (the COM number varies).
+      For macOS or Linux, the same download page provides platform-specific information.
+    </li>
+    <li>
+      <strong>The port appears, but the installer cannot initialize the reader.</strong>
+      Close other flasher dialogs, serial monitors and applications using the same port, then reconnect.
+      If automatic reset fails, hold the board's BOOT button while starting Install;
+      release it once the installer connects. Port detection alone does not establish a bootloader connection.
     </li>
     <li>
       <strong>The install dialog stops or fails partway through.</strong>
