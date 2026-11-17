@@ -1,4 +1,5 @@
 #include "src/storage/book_metadata.h"
+#include <cstring>
 
 // ============================================================================
 //  Testable KV-store-backed API
@@ -15,6 +16,55 @@ void saveBookmarks(KeyValueStore &kv, const String &bookKey, const Bookmarks &bm
   uint8_t buf[BOOKMARKS_ENCODED_MAX_SIZE];
   size_t n = encodeBookmarks(bm, buf);
   kv.putBytes(bmKeyFor(bookKey).c_str(), buf, n);
+}
+
+bool loadBookmarksChecked(KeyValueStore &kv, const String &bookKey, Bookmarks &marks) {
+  const String key = bmKeyFor(bookKey);
+  uint8_t original[BOOKMARKS_ENCODED_MAX_SIZE];
+  const size_t storedSize = kv.bytesSize(key.c_str());
+  if (storedSize > sizeof(original) || (!storedSize && kv.has(key.c_str())))
+    return false;
+  const size_t length = kv.getBytes(key.c_str(), original, sizeof(original));
+  if (length != storedSize)
+    return false;
+  if (length) {
+    const size_t count = original[0] & 0x7f;
+    const bool wide = (original[0] & 0x80) != 0;
+    const bool validLength =
+        wide ? length == 1 + count * 8 : length == 1 + count * 2 || length == 1 + count * 6;
+    if (count > MAX_BOOKMARKS || !validLength)
+      return false;
+  }
+  decodeBookmarks(original, length, marks);
+  return true;
+}
+
+bool saveBookmarksChecked(KeyValueStore &kv, const String &bookKey, const Bookmarks &marks) {
+  uint8_t expected[BOOKMARKS_ENCODED_MAX_SIZE], stored[BOOKMARKS_ENCODED_MAX_SIZE];
+  const size_t size = encodeBookmarks(marks, expected);
+  const String key = bmKeyFor(bookKey);
+  kv.putBytes(key.c_str(), expected, size);
+  const size_t got = kv.getBytes(key.c_str(), stored, sizeof(stored));
+  // Even an empty list must read back its one-byte record, not a failed read.
+  return got == size && kv.bytesSize(key.c_str()) == size &&
+         std::memcmp(expected, stored, size) == 0;
+}
+
+const char *applyReaderBookmarkAction(KeyValueStore &kv, const String &bookKey, uint32_t page,
+                                      uint32_t start, uint32_t end, bool toggle) {
+  Bookmarks marks;
+  if (!loadBookmarksChecked(kv, bookKey, marks))
+    return D_WEB_ERR_WRITE_FAILED;
+  BookmarkEditResult result;
+  if (toggle)
+    result = toggleBookmarkForPage(marks, page, start, end);
+  else {
+    const auto added = addBookmark(marks, page, start);
+    result = {added.added, added.message};
+  }
+  if (!result.changed)
+    return result.message;
+  return saveBookmarksChecked(kv, bookKey, marks) ? result.message : D_WEB_ERR_WRITE_FAILED;
 }
 
 int loadSavedPage(KeyValueStore &kv, const String &bookKey) {

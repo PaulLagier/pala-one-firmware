@@ -55,12 +55,8 @@ size_t encodeBookmarks(const Bookmarks &bm, uint8_t *outBuf) {
   return 1u + size_t(count) * stride;
 }
 
-BookmarkAddResult addBookmark(Bookmarks &bm, uint32_t page, uint32_t offset) {
-  for (uint8_t i = 0; i < bm.count; i++) {
-    if (bm.pages[i] == page)
-      return {false, D_TOAST_BOOKMARK_EXISTS};
-  }
-
+namespace {
+BookmarkAddResult insertBookmark(Bookmarks &bm, uint32_t page, uint32_t offset) {
   if (bm.count < MAX_BOOKMARKS) {
     bm.pages[bm.count] = page;
     bm.offsets[bm.count] = offset;
@@ -91,4 +87,43 @@ BookmarkAddResult addBookmark(Bookmarks &bm, uint32_t page, uint32_t offset) {
   }
 
   return {true, D_TOAST_BOOKMARK_SAVED};
+}
+
+} // namespace
+
+BookmarkAddResult addBookmark(Bookmarks &bm, uint32_t page, uint32_t offset) {
+  if (bm.count > MAX_BOOKMARKS)
+    return {false, D_TOAST_BOOKMARK_AMBIGUOUS};
+  for (uint8_t i = 0; i < bm.count; i++) {
+    if (bm.pages[i] == page)
+      return {false, D_TOAST_BOOKMARK_EXISTS};
+  }
+
+  return insertBookmark(bm, page, offset);
+}
+
+BookmarkEditResult toggleBookmarkForPage(Bookmarks &bm, uint32_t page, uint32_t start,
+                                         uint32_t end) {
+  if (end <= start || bm.count > MAX_BOOKMARKS)
+    return {false, D_TOAST_BOOKMARK_AMBIGUOUS};
+  int matched = -1;
+  for (uint8_t i = 0; i < bm.count; ++i) {
+    const bool here = bm.offsets[i] == kOffsetUnset ? bm.pages[i] == page
+                                                    : bm.offsets[i] >= start && bm.offsets[i] < end;
+    if (!here)
+      continue;
+    if (matched >= 0)
+      return {false, D_TOAST_BOOKMARK_AMBIGUOUS};
+    matched = i;
+  }
+  if (matched < 0) {
+    const auto added = insertBookmark(bm, page, start);
+    return {added.added, added.message};
+  }
+  for (uint8_t i = uint8_t(matched + 1); i < bm.count; ++i) {
+    bm.pages[i - 1] = bm.pages[i];
+    bm.offsets[i - 1] = bm.offsets[i];
+  }
+  --bm.count;
+  return {true, D_TOAST_BOOKMARK_REMOVED};
 }

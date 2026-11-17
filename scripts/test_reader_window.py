@@ -30,6 +30,11 @@ with tempfile.TemporaryDirectory(prefix='pala-reader-window-') as directory:
     offsets.append(offset)
     (data/'5.raw').write_bytes(raw)
     (data/'5.pbt').write_bytes(b'PBT1'+struct.pack('<III',len(raw),4096,len(records))+struct.pack('<'+'I'*len(offsets),*offsets)+b''.join(records))
-    production=['ui/reader.cpp','ui/text.cpp','ui/font.cpp','ui/language_fonts.cpp','ui/statusbar.cpp','storage/page_cache.cpp','storage/book_metadata.cpp','pure/paginator.cpp','pure/text_util.cpp','pure/hashing.cpp','pure/bookmarks_codec.cpp','pure/bookmark_label.cpp']
+    webRaw=("Unique beginning\n\nCanonical target marker here.\n\n" + "Different later text.\n"*60).encode()
+    (data/'web.raw').write_bytes(webRaw)
+    packed=zlib.compress(webRaw,6)
+    record=struct.pack('<II',len(packed),zlib.crc32(webRaw))+packed
+    (data/'web.pbt').write_bytes(b'PBT1'+struct.pack('<III',len(webRaw),4096,1)+struct.pack('<II',24,24+len(record))+record)
+    production=['lang/join.cpp','web/bookmarks.cpp','pure/paths.cpp','ui/bookmark_settings.cpp','ui/reader.cpp','ui/text.cpp','ui/font.cpp','ui/language_fonts.cpp','ui/statusbar.cpp','storage/page_cache.cpp','storage/book_metadata.cpp','pure/paginator.cpp','pure/text_util.cpp','pure/hashing.cpp','pure/bookmarks_codec.cpp','pure/bookmark_label.cpp']
     subprocess.run(['clang++','-std=c++17','-O1','-g','-DLANG_EN','-fsanitize=address,undefined','-I'+str(tests/'stubs'),'-I'+str(root/'test/native/font_catalog/decoder'),'-I'+str(source),str(tests/'main.cpp'),str(tests/'legacy_fonts.cpp'),*[str(source/'src'/name) for name in production],str(root/'test/native/font_catalog/decoder/U8g2_for_Adafruit_GFX.cpp'),'-lz','-o',str(temp/'reader')],check=True)
     subprocess.run([str(temp/'reader'),str(data)],check=True)

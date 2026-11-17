@@ -137,3 +137,13 @@ sleep screen, independently of the saved lock state and unlock gestures.
 The advanced response reports it alongside `statusbar` (`0:full, 1:minimal,
 2:hidden`). The browser provides these two display preferences in a dedicated
 form; changing progress-bar height preserves the canonical reading position.
+
+### Optional bookmark-action toggling
+
+`settings.set` accepts the boolean `bookmarkToggle`; `settings.advanced.get`
+reports it. It defaults to false, preserving existing add-only gestures.
+When enabled, the reader's bookmark action removes a unique mark whose
+canonical offset is on the displayed page, or adds a mark at the current canonical offset. Stale page hints may repeat
+for distinct offsets; capacity and eviction rules are unchanged. Legacy marks without offsets use their page hint. Multiple
+matches are retained and the reader directs the user to the app or browser.
+Reading progress and page geometry are unchanged by the mutation.

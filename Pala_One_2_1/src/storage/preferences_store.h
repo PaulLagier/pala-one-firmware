@@ -27,6 +27,9 @@ public:
     p_.putString(key, v);
   }
 
+  bool has(const char *key) const override { return p_.isKey(key); }
+  size_t bytesSize(const char *key) const override { return p_.getBytesLength(key); }
+
   void remove(const char* key) override { p_.remove(key); }
   void clear() override { p_.clear(); }
 

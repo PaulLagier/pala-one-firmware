@@ -19,6 +19,9 @@ public:
   virtual String getString(const char* key, const String& defaultValue) = 0;
   virtual void   putString(const char* key, const String& value) = 0;
 
+  virtual bool has(const char *key) const = 0;
+  virtual size_t bytesSize(const char *key) const = 0;
+
   virtual void   remove(const char* key) = 0;
   virtual void   clear() = 0;
 };

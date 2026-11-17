@@ -763,3 +763,8 @@
 #define D_WEB_SETTINGS_INVALID "Ajustes de pantalla no válidos"
 
 #define D_WEB_READING_DISPLAY "Pantalla de lectura"
+
+// Optional bookmark-action toggling.
+#define D_WEB_BOOKMARK_TOGGLE_LABEL "Alternar marcadores con la acción Marcador"
+#define D_TOAST_BOOKMARK_REMOVED "Marcador eliminado"
+#define D_TOAST_BOOKMARK_AMBIGUOUS "Varios marcadores: app/web"

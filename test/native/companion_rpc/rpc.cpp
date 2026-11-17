@@ -324,6 +324,21 @@ TEST_CASE("Companion bookmark pagination and deletion preserve the uint16 storag
   CHECK(result["ok"].as<bool>());
   CHECK_EQ(loadBookmarks(kv, prefKeyForBook("/books/book.txt")).count, 0);
 }
+TEST_CASE("Companion deletes the exact offset when canonical marks share a page hint") {
+  reset();
+  seed("/books/book.txt", std::string(200, 'x'));
+  Bookmarks marks{};
+  marks.count = 2;
+  marks.pages[0] = marks.pages[1] = 9;
+  marks.offsets[0] = 0;
+  marks.offsets[1] = 100;
+  saveBookmarks(kv, prefKeyForBook("/books/book.txt"), marks);
+  const auto result = call(R"({"id":1,"op":"bookmarks.delete","path":"/books/book.txt","page":9,"offset":100})");
+  REQUIRE(result["ok"].as<bool>());
+  const auto remaining = loadBookmarks(kv, prefKeyForBook("/books/book.txt"));
+  REQUIRE(remaining.count == 1);
+  CHECK_EQ(remaining.offsets[0], 0u);
+}
 TEST_CASE("Companion bookmark text chunks retain UTF8 boundaries and reject stale bookmarks") {
   reset();
   std::string text(159, 'a');
@@ -524,4 +539,22 @@ TEST_CASE("Companion optional controls use strict types and preserve legacy acti
   CHECK(!result["settings"]["lockIcon"].as<bool>());
   result = call(R"({"id":1,"op":"settings.set","key":"lockIcon","value":0})");
   CHECK(result["error"] == "invalid-setting");
+}
+
+TEST_CASE("Companion bookmark toggle accepts only boolean settings") {
+  reset();
+  auto result = call(R"({"id":1,"op":"settings.set","key":"bookmarkToggle","value":true})");
+  REQUIRE(result["ok"].as<bool>());
+  result = call(R"({"id":1,"op":"settings.advanced.get"})");
+  REQUIRE(result["ok"].as<bool>());
+  CHECK(result["settings"]["bookmarkToggle"].as<bool>());
+  for (const char *value : {"0", "1", "null", "\"false\""}) {
+    result = call(std::string(R"({"id":1,"op":"settings.set","key":"bookmarkToggle","value":)") +
+                  value + "}");
+    CHECK(result["error"] == "invalid-setting");
+  }
+  result = call(R"({"id":1,"op":"settings.set","key":"bookmarkToggle","value":false})");
+  REQUIRE(result["ok"].as<bool>());
+  result = call(R"({"id":1,"op":"settings.advanced.get"})");
+  CHECK(!result["settings"]["bookmarkToggle"].as<bool>());
 }

@@ -46,4 +46,15 @@ struct BookmarkAddResult {
 // on insertion or `{false, "Bookmark exists"}` if `page` is already bookmarked.
 BookmarkAddResult addBookmark(Bookmarks &bm, uint32_t page, uint32_t offset);
 
+// Optional reader action: remove a unique mark in [start, end), matching
+// canonical offsets rather than stale page labels. Legacy marks use the page
+// label only. Ambiguous matches are unchanged. Insertion retains the capacity
+// and eviction rules, allowing repeated page hints at distinct canonical offsets.
+struct BookmarkEditResult {
+  bool changed;
+  const char *message;
+};
+BookmarkEditResult toggleBookmarkForPage(Bookmarks &bm, uint32_t page, uint32_t start,
+                                         uint32_t end);
+
 #endif // PALA_PURE_BOOKMARKS_CODEC_H

@@ -1,6 +1,7 @@
 #include "src/storage/navigation_profile.h"
 #include "src/lang/join.h"
 #include "src/web/settings.h"
+#include "src/web/settings_controls.h"
 #include "src/web/display_settings.h"
 #include "src/web/reading_settings.h"
 #include "src/ui/statusbar.h"
@@ -22,6 +23,7 @@
 #include "src/storage/wifi_creds.h"
 #include "src/ui/icons.h"
 #include "src/ui/lock.h"
+#include "src/ui/bookmark_settings.h"
 #include "src/ui/sleep.h"
 #include "src/web/chrome.h"
 #include "src/ui/screen_settings.h"
@@ -219,28 +221,12 @@ static void handleLibraryMenuOrderPost() {
 
 static void handleSettings() {
   int curFont = Font::currentBodySize();
-  String sel8 = (curFont == 8) ? " selected" : "";
-  String sel10 = (curFont == 10) ? " selected" : "";
-  String sel12 = (curFont == 12) ? " selected" : "";
-  String sel14 = (curFont == 14) ? " selected" : "";
 
   int curSleep = Sleep::idleTimeoutSecs();
-  String ss30 = (curSleep == 30) ? " selected" : "";
-  String ss60 = (curSleep == 60) ? " selected" : "";
-  String ss120 = (curSleep == 120) ? " selected" : "";
-  String ss300 = (curSleep == 300) ? " selected" : "";
-  String ss600 = (curSleep == 600) ? " selected" : "";
-  String ss1800 = (curSleep == 1800) ? " selected" : "";
 
   int curGap = Font::currentLineGap();
-  String lg0 = (curGap == 0) ? " selected" : "";
-  String lg1 = (curGap == 1) ? " selected" : "";
-  String lg2 = (curGap == 2) ? " selected" : "";
-  String lg3 = (curGap == 3) ? " selected" : "";
 
   Font::Family curFam = Font::currentFamily();
-  String famH = (curFam == Font::Family::Helvetica) ? " selected" : "";
-  String famD = (curFam == Font::Family::OpenDyslexic) ? " selected" : "";
 
   bool curBionic = Font::bionicEnabled();
   String bChecked = curBionic ? " checked" : "";
@@ -330,7 +316,7 @@ static void handleSettings() {
 
   // Header status icons — own form (icons_form sentinel) so an unchecked box
   // here is never confused with a POST from one of the other cards.
-  out += Language::join({"<div class='card'><h2>", D_WEB_READING_DISPLAY, "</h2>"}).c_str();
+  out += Language::join({"<div class='card'><h2>", D_WEB_ICONS_HEADING, "</h2>"}).c_str();
   out += Language::join({"<p class='muted'>", D_WEB_ICONS_INTRO, "</p>"}).c_str();
   out += "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>";
   out += "<label style='display:flex;gap:8px;align-items:center;margin-top:10px;cursor:pointer'>";
@@ -374,64 +360,26 @@ static void handleSettings() {
                          D_WEB_LIBRARY_ORDER_HINT, "</span>", "</div>", "</form></div>"})
              .c_str();
 
-  out +=
-      Language::join(
-          {"<div class='card'><h2>", D_WEB_READING_HEADING, "</h2>", "<p class='muted'>",
-           D_WEB_READING_INTRO, "</p>",
-           "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>",
-           "<div class='grid cols-2'>", "<div><label for='font'>", D_WEB_FONT_SIZE_LABEL,
-           "</label><select id='font' name='font'>", "<option value='8'"})
-          .c_str();
-  out += sel8;
-  out += Language::join({">", D_WEB_FONT_SIZE_8, "</option>", "<option value='10'"}).c_str();
-  out += sel10;
-  out += Language::join({">", D_WEB_FONT_SIZE_10, "</option>", "<option value='12'"}).c_str();
-  out += sel12;
-  out += Language::join({">", D_WEB_FONT_SIZE_12, "</option>", "<option value='14'"}).c_str();
-  out += sel14;
-  out += Language::join({">", D_WEB_FONT_SIZE_14, "</option>", "</select><div class='hint'>",
-                         D_WEB_FONT_SIZE_HINT, "</div></div>", "<div><label for='family'>",
-                         D_WEB_FONT_FAMILY_LABEL, "</label><select id='family' name='family'>",
-                         "<option value='helv'"})
-             .c_str();
-  out += famH;
-  out += Language::join({">", D_WEB_FONT_FAMILY_HELVETICA, "</option>", "<option value='dys'"})
-             .c_str();
-  out += famD;
-  out += Language::join({">", D_WEB_FONT_FAMILY_DYSLEXIC, "</option>",
-                         "</select><div class='hint'>", D_WEB_FONT_FAMILY_HINT, "</div></div>",
-                         "<div><label for='sleep'>", D_WEB_SLEEP_AFTER_LABEL,
-                         "</label><select id='sleep' name='sleep'>", "<option value='30'"})
-             .c_str();
-  out += ss30;
-  out += Language::join({">", D_WEB_SLEEP_30S, "</option>", "<option value='60'"}).c_str();
-  out += ss60;
-  out += Language::join({">", D_WEB_SLEEP_1M, "</option>", "<option value='120'"}).c_str();
-  out += ss120;
-  out += Language::join({">", D_WEB_SLEEP_2M, "</option>", "<option value='300'"}).c_str();
-  out += ss300;
-  out += Language::join({">", D_WEB_SLEEP_5M, "</option>", "<option value='600'"}).c_str();
-  out += ss600;
-  out += Language::join({">", D_WEB_SLEEP_10M, "</option>", "<option value='1800'"}).c_str();
-  out += ss1800;
-  out += Language::join({">", D_WEB_SLEEP_30M, "</option>", "</select><div class='hint'>",
-                         D_WEB_SLEEP_HINT, "</div></div>", "<div><label for='lgap'>",
-                         D_WEB_LINE_SPACING_LABEL, "</label><select id='lgap' name='lgap'>",
-                         "<option value='0'"})
-             .c_str();
-  out += lg0;
-  out += Language::join({">", D_WEB_LINE_SPACING_0, "</option>", "<option value='1'"}).c_str();
-  out += lg1;
-  out += Language::join({">", D_WEB_LINE_SPACING_1, "</option>", "<option value='2'"}).c_str();
-  out += lg2;
-  out += Language::join({">", D_WEB_LINE_SPACING_2, "</option>", "<option value='3'"}).c_str();
-  out += lg3;
-  out += Language::join({">", D_WEB_LINE_SPACING_3, "</option>", "</select><div class='hint'>",
-                         D_WEB_LINE_SPACING_HINT, "</div></div>",
-                         "<div class='full' style='grid-column:1/-1'><label "
-                         "style='display:flex;gap:10px;align-items:center;font-weight:600'>",
-                         "<input type='checkbox' name='bionic' value='1'"})
-             .c_str();
+  out += Language::join({"<div class='card'><h2>", D_WEB_READING_HEADING,
+                         "</h2><p class='muted'>", D_WEB_READING_INTRO, "</p>",
+                         "<form method='POST' action='/settings' accept-charset='UTF-8' style='margin-top:12px'>",
+                         "<div class='grid cols-2'>"});
+  appendSettingsSelect(out, "font", D_WEB_FONT_SIZE_LABEL, D_WEB_FONT_SIZE_HINT,
+      {{"8", D_WEB_FONT_SIZE_8}, {"10", D_WEB_FONT_SIZE_10},
+       {"12", D_WEB_FONT_SIZE_12}, {"14", D_WEB_FONT_SIZE_14}}, String(curFont));
+  appendSettingsSelect(out, "family", D_WEB_FONT_FAMILY_LABEL, D_WEB_FONT_FAMILY_HINT,
+      {{"helv", D_WEB_FONT_FAMILY_HELVETICA}, {"dys", D_WEB_FONT_FAMILY_DYSLEXIC}},
+      curFam == Font::Family::OpenDyslexic ? "dys" : "helv");
+  appendSettingsSelect(out, "sleep", D_WEB_SLEEP_AFTER_LABEL, D_WEB_SLEEP_HINT,
+      {{"30", D_WEB_SLEEP_30S}, {"60", D_WEB_SLEEP_1M}, {"120", D_WEB_SLEEP_2M},
+       {"300", D_WEB_SLEEP_5M}, {"600", D_WEB_SLEEP_10M}, {"1800", D_WEB_SLEEP_30M}},
+      String(curSleep), String(curSleep) + " s");
+  appendSettingsSelect(out, "lgap", D_WEB_LINE_SPACING_LABEL, D_WEB_LINE_SPACING_HINT,
+      {{"0", D_WEB_LINE_SPACING_0}, {"1", D_WEB_LINE_SPACING_1},
+       {"2", D_WEB_LINE_SPACING_2}, {"3", D_WEB_LINE_SPACING_3}},
+      String(curGap), String(curGap) + " px");
+  out += "<div class='full' style='grid-column:1/-1'><label style='display:flex;gap:10px;align-items:center;font-weight:600'>";
+  out += "<input type='checkbox' name='bionic' value='1'";
   out += bChecked;
   out += Language::join({"><span>", D_WEB_BIONIC_LABEL, "</span></label>", "<div class='hint'>",
                          D_WEB_BIONIC_HINT, "</div></div>",
@@ -569,6 +517,15 @@ static void handleSettings() {
   if (Lock::iconEnabled())
     out += " checked";
   out += Language::join({">", D_WEB_LOCK_ICON_LABEL, "</label><button type='submit'>",
+                         D_WEB_SAVE_SETTINGS_BUTTON, "</button></form></div>"});
+
+  out += "<div class='card'><form method='POST' action='/settings'>";
+  out += "<input type='hidden' name='bookmark_form' value='1'>";
+  out += "<label style='display:flex;gap:8px;align-items:center'>";
+  out += "<input type='checkbox' name='bookmark_toggle' value='1' style='width:auto'";
+  if (BookmarkSettings::toggleEnabled())
+    out += " checked";
+  out += Language::join({">", D_WEB_BOOKMARK_TOGGLE_LABEL, "</label><button type='submit'>",
                          D_WEB_SAVE_SETTINGS_BUTTON, "</button></form></div>"});
 
   out += webPageEnd();

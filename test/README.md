@@ -245,3 +245,23 @@ The reader and image-editor scripts are served as content-hashed gzip assets.
 The host probe combines each production script with its actual runtime label
 array. Browser tests execute the resulting scripts in all eleven languages;
 asset tests separately verify exact decompression, hashes and regeneration.
+
+## Bookmark mutation and browser consistency
+
+The native codec/store cases cover opt-in page toggling, exclusive canonical
+page boundaries, ambiguous and legacy marks, wide labels, exact write readback,
+failed reads/writes and malformed/oversized records. The shared KV adapter now
+exposes key presence and blob length so a read failure is distinguishable from
+an absent bookmark list.
+
+`reader_window_integration` also compiles the production bookmark web routes.
+A local request adapter drives actual rendered deletion tokens, stale lists,
+shifted library indexes, failed persistence, legacy/wide identities and
+canonical text/PBT previews and exports. Chrome layout/escaping is a boundary
+adapter here; these checks do not claim browser styling or e-paper coverage.
+Actual reader checks verify one-page boundary lookup preserves stream position
+and progress and that deletion follows canonical anchors after font reflow.
+
+Settings-control tests check exact selection and retention of valid app values
+outside the preset dropdown choices, such as a 45-second idle timeout and a
+four-pixel line gap.

@@ -761,3 +761,8 @@
 #define D_WEB_SETTINGS_INVALID "Réglages d’affichage non valides"
 
 #define D_WEB_READING_DISPLAY "Affichage de lecture"
+
+// Optional bookmark-action toggling.
+#define D_WEB_BOOKMARK_TOGGLE_LABEL "Activer ou retirer les signets avec l’action Signet"
+#define D_TOAST_BOOKMARK_REMOVED "Signet supprimé"
+#define D_TOAST_BOOKMARK_AMBIGUOUS "Plusieurs signets : app/web"
