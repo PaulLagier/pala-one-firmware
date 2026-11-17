@@ -102,3 +102,18 @@ TEST_CASE("Hiding the sleep badge does not unlock or change saved lock bindings"
   CHECK(Lock::isUnlockGesture(ButtonEvent{ButtonEvent::Quad}));
   CHECK(!Lock::isUnlockGesture(ButtonEvent{ButtonEvent::Long}));
 }
+
+TEST_CASE("Legacy mode suppresses every optional Quad action without losing the saved binding") {
+  reset(false);
+  Gestures::setActionLong(ACTION_BOOKMARK);
+  for (int action = ACTION_NONE; action <= ACTION_ROTATE; ++action) {
+    Gestures::setActionQuad(ButtonAction(action));
+    Gestures::setLegacyControls(true);
+    Gestures::loadSettings();
+    CHECK_EQ(int(Gestures::actionQuad()), action);
+    CHECK_EQ(Gestures::actionFor(ButtonEvent::Quad), ACTION_NONE);
+    CHECK_EQ(Gestures::actionFor(ButtonEvent::Long), ACTION_BOOKMARK);
+    Gestures::setLegacyControls(false);
+    CHECK_EQ(int(Gestures::actionFor(ButtonEvent::Quad)), action);
+  }
+}

@@ -99,7 +99,7 @@ ButtonAction actionFor(ButtonEvent::Kind kind) {
     case ButtonEvent::Double:      return s_double;
     case ButtonEvent::Triple:      return s_triple;
     case ButtonEvent::Quad:
-      return s_quad;
+      return s_legacyControls ? ACTION_NONE : s_quad;
     case ButtonEvent::Long:      return s_long;
     case ButtonEvent::VeryLong:  return s_extraLong;
     case ButtonEvent::ClickHold: return s_clickHold;
@@ -107,4 +107,4 @@ ButtonAction actionFor(ButtonEvent::Kind kind) {
   }
 }
 
-}  // namespace Gestures
+} // namespace Gestures
