@@ -60,7 +60,7 @@ static int bodyMeasure(const char *s) { return Font::measureLine(s); }
 uint32_t drawPageAt(File &f, uint32_t startPos, PrintState::State &state) {
   BookReadStream stream(f);
   clearPagePrefetch();
-  const auto next = drawPageAt(stream, startPos);
+  const auto next = drawPageAt(stream, startPos, state);
   clearPagePrefetch();
   return next;
 }
