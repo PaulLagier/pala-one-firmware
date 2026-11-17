@@ -415,6 +415,7 @@ void drawBionicLine(int x, int y, const char* line, PrintState::State &state) {
     cursorX += measureSlice(seg, strong);
     cursorX += kBionicRestGapPx;
     useBody();
+    state.isBold = false;
     printSlice(cursorX, y, seg + strong, segLen - strong);
     cursorX += measureSlice(seg + strong, segLen - strong);
   });
