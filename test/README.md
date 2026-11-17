@@ -240,3 +240,8 @@ invalidation, redraw decisions and an independently hidden lock badge.
 behavior. Companion RPC tests check additive control types/ranges and retain
 legacy hold-action IDs and the response-size budget. Host graphics adapters do
 not establish how a physical sleep image looks.
+
+The reader and image-editor scripts are served as content-hashed gzip assets.
+The host probe combines each production script with its actual runtime label
+array. Browser tests execute the resulting scripts in all eleven languages;
+asset tests separately verify exact decompression, hashes and regeneration.

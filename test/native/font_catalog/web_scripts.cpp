@@ -8,13 +8,18 @@
 #include <iterator>
 #include <string>
 namespace WebAssets {
-void appendScript(String& out, Id id) {
-  if(id!=Id::EditorJs) std::abort();
-  std::ifstream file(WEB_EDITOR_ASSET);if(!file) std::abort();
-  const std::string text((std::istreambuf_iterator<char>(file)),{});
-  out+="<script>";out+=text.c_str();out+="</script>";
+void appendScript(String &out, Id id) {
+  if (id != Id::EditorJs && id != Id::ReaderJs)
+    std::abort();
+  std::ifstream file(id == Id::EditorJs ? WEB_EDITOR_ASSET : WEB_READER_ASSET);
+  if (!file)
+    std::abort();
+  const std::string text((std::istreambuf_iterator<char>(file)), {});
+  out += "<script>";
+  out += text.c_str();
+  out += "</script>";
 }
-}
+} // namespace WebAssets
 static bool inflate(const uint8_t *in, size_t n, uint8_t *out, size_t m) {
   CatalogInflater decoder;
   return decoder.inflate(in, n, out, m);

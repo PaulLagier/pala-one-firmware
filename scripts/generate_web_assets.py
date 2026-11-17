@@ -2,7 +2,7 @@
 """Emit deterministic gzip assets, content-hashed URLs and size/hash metadata."""
 import argparse,hashlib,json,struct,zlib
 from pathlib import Path
-ITEMS=[('CoreCss','core.css','text/css; charset=utf-8'),('ReadCss','read.css','text/css; charset=utf-8'),('EditorCss','editor.css','text/css; charset=utf-8'),('EditorJs','editor.js','application/javascript; charset=utf-8')]
+ITEMS=[('CoreCss','core.css','text/css; charset=utf-8'),('ReadCss','read.css','text/css; charset=utf-8'),('EditorCss','editor.css','text/css; charset=utf-8'),('EditorJs','editor.js','application/javascript; charset=utf-8'),('ReaderJs','reader.js','application/javascript; charset=utf-8')]
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--assets',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--quiet',action='store_true');a=p.parse_args();a.out.mkdir(parents=True,exist_ok=True)
 def write(path,text):
     if not path.exists() or path.read_text()!=text:path.write_text(text)

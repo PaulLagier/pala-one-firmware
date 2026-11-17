@@ -5,7 +5,7 @@ const probe=process.argv[2];
 for(const locale of ['de','en','fr','es','it','pl','cs','ru','uk','nl','pt']){
  const html=execFileSync(probe,[locale],{encoding:'utf8'});
  const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
- assert.equal(scripts.length,3);
+ assert.equal(scripts.length,4);
  const nodes={},posted=[],alerts=[],draws=[];
  const pixels=new Uint8ClampedArray(250*122*4).fill(255);
  const ctx={fillRect(){},drawImage(...a){draws.push(a)},getImageData(){return{data:pixels.slice()}},putImageData(){}};
@@ -18,7 +18,7 @@ for(const locale of ['de','en','fr','es','it','pl','cs','ru','uk','nl','pt']){
   FormData:Fields,FileReader:Reader,Image,Blob,Uint8Array,alert:x=>alerts.push(x),setTimeout(){},
   palaFmt(format,...args){return format.replace(/%(\d+)/g,(_,n)=>String(args[Number(n)-1]))},
   fetch(url,options){posted.push({url,fields:options.body.values});return Promise.resolve({ok:true})}};
- context.window=context;vm.runInNewContext(scripts.slice(1).join('\n'),context);
+ context.window=context;vm.runInNewContext(scripts.slice(2).join('\n'),context);
  get('ssUploadBtn').events.click();assert.equal(alerts.length,1);assert.equal(posted.length,0);
  get('ssEditFile').files=[{}];get('ssEditFile').events.change();
  assert(draws.length>0);assert.equal(draws.at(-1)[3],250);assert.equal(draws.at(-1)[4],122);

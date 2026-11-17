@@ -35,8 +35,17 @@
       "gzipBytes": 2326,
       "rawSHA256": "758508cb168af309a8988a72ce3dae6a1607b43205d42a74b474207f96cd5625",
       "gzipSHA256": "ddd69828240389a6892eda1885ef46ff708c13a9e1ebecd792330f7f20743483"
+    },
+    {
+      "name": "ReaderJs",
+      "file": "reader.js",
+      "url": "/assets/reader.513df9f440fb.js",
+      "rawBytes": 3784,
+      "gzipBytes": 1607,
+      "rawSHA256": "513df9f440fb9661c256723624fa949ae147cf45ddfe92e02fcfbe79356ceabd",
+      "gzipSHA256": "e650ffc0d25363921a102a819ec54caf4ed5d102723af06a295dd73c5db4a5f6"
     }
   ],
-  "rawBytes": 14568,
-  "gzipBytes": 5264
+  "rawBytes": 18352,
+  "gzipBytes": 6871
 }

@@ -15,7 +15,7 @@ for path in (root / 'Pala_One_2_1/src/lang/catalogs').glob('*.json'):
     cases.extend(v for k,v in values.items() if '_JS_' in k)
     script = subprocess.check_output([probe, path.stem], text=True)
     # A translated closing tag must remain escaped, not create another script.
-    assert script.count('<script>') == script.count('</script>') == 3, path
+    assert script.count('<script>') == script.count('</script>') == 4, path
     with tempfile.TemporaryDirectory() as folder:
         p = Path(folder)/'scripts.js'
         p.write_text(script.replace('<script>', '').replace('</script>', ''))
